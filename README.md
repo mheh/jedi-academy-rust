@@ -33,6 +33,12 @@ The [`oracle/`](oracle) submodule holds Raven's original Jedi Academy C++
 source. It's the reference the port is compared against when something looks
 wrong.
 
+## Contributing
+
+Agents are OK — a lot of this was written by one. But only clear, small commits
+are accepted. Each commit should do one understandable thing so it can be
+reviewed and checked against the `oracle` reference.
+
 ## Status
 
 Early and unstructured. Things move, break, and get rewritten. Treat it as a
