@@ -1,0 +1,52 @@
+[package]
+name = "jedi-academy-rust"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.77"  # core::mem::offset_of! (used in q_shared_h layout asserts)
+license = "GPL-2.0-only"
+description = "Jedi Academy MP AI port in Rust"
+repository = "https://github.com/mheh/jedi-academy-rust"
+readme = "README.md"
+
+# Produces the JKA server game module. `cdylib` is the shipped artifact (the
+# shared library the engine loads); `rlib` lets `cargo test` build the unit tests.
+#
+# The engine expects the file named `jampgame<arch>` (e.g. jampgamex86_64.so,
+# jampgamei386.so, jampgamex86.dll). Cargo emits `libjampgame.{so,dylib}` /
+# `jampgame.dll`; packaging renames to the arch-suffixed name per target.
+[lib]
+name = "jampgame"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# `oracle` compiles the extracted original C functions (oracle/*.c) and links them
+# so tests can compare the Rust port against the real Raven C. OFF by default — the
+# shipped cdylib never contains C. Run parity tests with: cargo test --features oracle
+oracle = []
+
+# `vm` is the Rust mirror of the original-JKA C `Q3_VM` define (1:1). Original JKA
+# can compile the game module to sandboxed Q3VM bytecode; that build needs the
+# in-module libc replacements in `bg_lib.c` that sit behind `#if defined(Q3_VM)`.
+# OFF by default → the native build uses std/libc for those; `--features vm`
+# provides the no-libc shims a VM/WASM target needs. See CONVENTIONS.md
+# "Conditional compilation" and memory `project-vm-capability`. (No deps yet — the
+# runtime is deferred; this just keeps the codebase VM-capable as porting proceeds.)
+vm = []
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+# Never unwind across the FFI boundary into the C engine — that is UB. Aborting
+# is the safe choice for the shipped module. (vmMain also catches panics as a
+# belt-and-suspenders so dev/test builds, which unwind, stay sound too.)
+panic = "abort"
+strip = true
+
+# Release-with-symbols: identical codegen to `release` but keeps debug info for
+# profiling / gdb / symbolized backtraces. A separate profile so the shipped
+# `release` artifact stays stripped. Build with: cargo build --profile release-dbg
+[profile.release-dbg]
+inherits = "release"
+strip = false
+debug = true          # or "line-tables-only" for smaller symbol tables
