@@ -1,5 +1,5 @@
 //! Build script. Only does work when the `oracle` cargo feature is enabled:
-//! compiles the extracted original C functions in `oracle/` into a static lib and
+//! compiles the extracted original C functions in `oracle_c/` into a static lib and
 //! links it, so tests can call the real Raven C as a parity oracle. Dependency-free
 //! (invokes the system `cc`/`ar` directly) to avoid any crates.io fetch.
 
@@ -25,7 +25,7 @@ fn main() {
     }
 
     let out = PathBuf::from(env::var("OUT_DIR").unwrap());
-    println!("cargo:rerun-if-changed=oracle");
+    println!("cargo:rerun-if-changed=oracle_c");
 
     let cc = env::var("CC").unwrap_or_else(|_| "cc".to_string());
     // (source, per-file extra flags). All sources also get the common base flags
@@ -40,43 +40,43 @@ fn main() {
     // AUTHENTIC Raven `anims.h` directly (it is a clang-clean pure enum), so the C
     // compiler reading the header is independent of the Rust port generated from it.
     // The extra -I points at the reference tree, relative to the package manifest dir
-    // (this build script's cwd): the crate is the root of the jedi-academy-rust
-    // project, and the pinned reference repos live in the sibling `refs/` dir.
+    // (this build script's cwd): the raven PC source lives in the `oracle/` submodule
+    // at the project root, so headers resolve under `oracle/codemp/...`.
     let sources: &[(&str, &[&str])] = &[
         ("q_math_oracle.c", &[]),
         ("q_shared_oracle.c", &[]),
         ("q_shared_h_oracle.c", &[]),
         ("bg_lib_oracle.c", &["-fwrapv", "-Wno-null-pointer-subtraction"]),
         ("tri_coll_test_oracle.c", &[]),
-        ("anims_oracle.c", &["-I../refs/raven-jediacademy/codemp/game"]),
+        ("anims_oracle.c", &["-Ioracle/codemp/game"]),
         (
             "animtable_oracle.c",
             &[
-                "-I../refs/raven-jediacademy/codemp/cgame",
-                "-I../refs/raven-jediacademy/codemp/game",
+                "-Ioracle/codemp/cgame",
+                "-Ioracle/codemp/game",
             ],
         ),
         ("bg_public_oracle.c", &[]),
         ("bg_public_enums_oracle.c", &[]),
         ("bg_public_structs_oracle.c", &[]),
         ("bg_vehicles_h_oracle.c", &[]),
-        ("bg_weapons_h_oracle.c", &["-I../refs/raven-jediacademy/codemp/game"]),
-        ("bg_weapons_oracle.c", &["-I../refs/raven-jediacademy/codemp/game"]),
+        ("bg_weapons_h_oracle.c", &["-Ioracle/codemp/game"]),
+        ("bg_weapons_oracle.c", &["-Ioracle/codemp/game"]),
         ("bg_local_h_oracle.c", &[]),
         ("bg_misc_oracle.c", &[]),
         ("bg_misc_items_oracle.c", &[]),
         ("bg_misc_parsefield_oracle.c", &[]),
         ("bg_misc_give_me_vector_from_matrix_oracle.c", &[]),
-        ("bg_panimate_oracle.c", &["-I../refs/raven-jediacademy/codemp/game"]),
-        ("bg_panimate_setters_oracle.c", &["-I../refs/raven-jediacademy/codemp/game"]),
-        ("bg_pmove_oracle.c", &["-I../refs/raven-jediacademy/codemp/game"]),
-        ("surfaceflags_h_oracle.c", &["-I../refs/raven-jediacademy/codemp/game"]),
-        ("bg_saber_oracle.c", &["-I../refs/raven-jediacademy/codemp/game"]),
+        ("bg_panimate_oracle.c", &["-Ioracle/codemp/game"]),
+        ("bg_panimate_setters_oracle.c", &["-Ioracle/codemp/game"]),
+        ("bg_pmove_oracle.c", &["-Ioracle/codemp/game"]),
+        ("surfaceflags_h_oracle.c", &["-Ioracle/codemp/game"]),
+        ("bg_saber_oracle.c", &["-Ioracle/codemp/game"]),
         ("bg_saberLoad_oracle.c", &[]),
         ("bg_saga_oracle.c", &[]),
         ("bg_vehicleLoad_oracle.c", &[]),
         ("fighternpc_oracle.c", &[]),
-        ("w_saber_h_oracle.c", &["-I../refs/raven-jediacademy/codemp/game"]),
+        ("w_saber_h_oracle.c", &["-Ioracle/codemp/game"]),
         ("w_saber_oracle.c", &[]),
         ("g_public_h_oracle.c", &[]),
         ("teams_h_oracle.c", &[]),
@@ -99,7 +99,7 @@ fn main() {
         ("g_cmds_oracle.c", &[]),
         ("g_trigger_oracle.c", &[]),
         ("g_vehicles_oracle.c", &[]),
-        ("g_active_oracle.c", &["-I../refs/raven-jediacademy/codemp/game"]),
+        ("g_active_oracle.c", &["-Ioracle/codemp/game"]),
         ("w_force_oracle.c", &[]),
         ("ai_main_oracle.c", &[]),
         ("npc_senses_oracle.c", &[]),
@@ -118,9 +118,9 @@ fn main() {
         let mut cmd = Command::new(&cc);
         // -ffp-contract=off: disable FMA fusion so the C does discrete IEEE-754
         // mul/add steps, matching Rust (which never auto-fuses) bit-for-bit.
-        cmd.args(["-c", "-O2", "-fPIC", "-Wall", "-ffp-contract=off", "-Ioracle"]);
+        cmd.args(["-c", "-O2", "-fPIC", "-Wall", "-ffp-contract=off", "-Ioracle_c"]);
         cmd.args(*extra);
-        cmd.arg(format!("oracle/{src}")).arg("-o").arg(&obj);
+        cmd.arg(format!("oracle_c/{src}")).arg("-o").arg(&obj);
         let status = cmd
             .status()
             .expect("failed to invoke C compiler for oracle");
