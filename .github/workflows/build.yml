@@ -48,6 +48,9 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Cache cargo
+        # Pushes (master / tags) only — PRs build clean from scratch for a
+        # trustworthy, cache-free signal.
+        if: github.event_name != 'pull_request'
         uses: actions/cache@v4
         with:
           path: |
@@ -113,6 +116,9 @@ jobs:
           sudo apt-get install -y gcc-multilib
 
       - name: Cache cargo
+        # Pushes (master / tags) only — PRs build clean from scratch for a
+        # trustworthy, cache-free signal.
+        if: github.event_name != 'pull_request'
         uses: actions/cache@v4
         with:
           path: |
