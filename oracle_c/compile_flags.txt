@@ -1,0 +1,10 @@
+# clangd / C-IDE config for the oracle translation units.
+#
+# These files are compiled by build.rs (only under the `oracle` cargo feature),
+# which supplies the include paths per-TU. Editors' C language servers don't read
+# build.rs, so without this they can't resolve `#include "qshared_shim.h"` or the
+# authentic `#include "anims.h"` -- which makes e.g. anims_oracle.c show every
+# enumerator (FACE_TALK0, ...) as "undefined". These flags mirror build.rs's so
+# the IDE resolves the same headers. (Not used by the cargo build itself.)
+-I.
+-I../../raven-jediacademy/codemp/game
