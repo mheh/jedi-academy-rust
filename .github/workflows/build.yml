@@ -20,6 +20,10 @@ name: Build module
 # 4 targets x 2 profiles = 8 zips. NOTE: the debug build is a real link gate — the
 # cdylib's *release* link catches undefined symbols that a local debug `cargo build`
 # tolerates on macOS/Linux, and Windows MSVC catches them in either profile.
+#
+# The whole build matrix is gated behind a `test` job (unit tests + oracle parity
+# tests); builds only run if the tests pass. On pull requests and pushes to master
+# this runs test -> build; on v* tags it additionally runs build -> release.
 
 on:
   push:
@@ -32,8 +36,37 @@ permissions:
   contents: write # needed by the release job to attach assets on tag pushes
 
 jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive # the oracle parity tests need the submodule headers
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: test-cargo-${{ hashFiles('**/Cargo.lock', '**/Cargo.toml') }}
+          restore-keys: test-cargo-
+
+      - name: Unit tests
+        run: cargo test
+
+      - name: Oracle parity tests
+        # single-threaded: the RNG parity tests share one global C seed
+        run: cargo test --features oracle -- --test-threads=1
+
   build:
     name: ${{ matrix.target.module }} (${{ matrix.profile }})
+    needs: test # multi-arch build only runs if the test + oracle suites pass
     runs-on: ${{ matrix.target.runner }}
     strategy:
       fail-fast: false
