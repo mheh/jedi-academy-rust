@@ -217,7 +217,10 @@ void BG_SetTorsoAnimTimer(playerState_t *ps, int time )
 	}
 }
 
-qboolean PM_InSaberAnim( int anim )
+// File-local: bg_panimate_oracle.c also defines PM_InSaberAnim as an external
+// symbol. macOS ld tolerates the duplicate (pulls one); Linux lld errors. This
+// copy is only used within this TU, so make it static to avoid the collision.
+static qboolean PM_InSaberAnim( int anim )
 {
 	if ( (anim) >= BOTH_A1_T__B_ && (anim) <= BOTH_H1_S1_BR )
 	{
