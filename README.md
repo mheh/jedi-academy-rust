@@ -33,6 +33,27 @@ The [`oracle/`](oracle) submodule holds Raven's original Jedi Academy C++
 source. It's the reference the port is compared against when something looks
 wrong.
 
+## Building & testing
+
+```sh
+# clone with the oracle submodule (or run: git submodule update --init)
+git clone --recurse-submodules <repo-url>
+
+cargo build          # builds the jampgame cdylib (pure Rust)
+cargo test           # runs the unit tests
+```
+
+### Parity tests against the original C
+
+The `oracle` feature compiles extracted Raven C functions with headers from the
+oracle subdir. Primarily for math and RNG.
+
+```sh
+cargo test --features oracle -- --test-threads=1
+```
+
+`--test-threads=1` is required because of single global C state.
+
 ## Contributing
 
 Agents are OK — a lot of this was written by one. But only clear, small commits
