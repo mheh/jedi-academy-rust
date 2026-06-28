@@ -2,6 +2,7 @@
 
 pub mod config_h;
 pub mod copyright_h;
+pub mod cup;
 pub mod cupini;
 pub mod cupl1;
 pub mod htable_h;
