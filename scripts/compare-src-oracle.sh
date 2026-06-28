@@ -2,6 +2,12 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+show_rust_extras=0
+
+if [[ "${1:-}" == "--show-rust-extras" ]]; then
+  show_rust_extras=1
+fi
+
 tmp_dir="$(mktemp -d)"
 trap 'rm -rf "$tmp_dir"' EXIT
 
@@ -88,12 +94,25 @@ awk -F '\t' '
 
 oracle_missing_count="$(wc -l < "$oracle_missing" | tr -d ' ')"
 rust_missing_count="$(wc -l < "$rust_missing" | tr -d ' ')"
+oracle_code_missing_count="$(
+  awk -F '\t' '$1 ~ /^oracle\/code\// { count++ } END { print count + 0 }' "$oracle_missing"
+)"
+oracle_codemp_missing_count="$(
+  awk -F '\t' '$1 ~ /^oracle\/codemp\// { count++ } END { print count + 0 }' "$oracle_missing"
+)"
+rust_code_missing_count="$(
+  awk '$0 ~ /^src\/code\// { count++ } END { print count + 0 }' "$rust_missing"
+)"
+rust_codemp_missing_count="$(
+  awk '$0 ~ /^src\/codemp\// { count++ } END { print count + 0 }' "$rust_missing"
+)"
 
 cat <<EOF
 # src/oracle comparison
 
 Oracle files without a paired Rust file: $oracle_missing_count
-Rust files without an obvious oracle source file: $rust_missing_count
+  oracle/code: $oracle_code_missing_count
+  oracle/codemp: $oracle_codemp_missing_count
 
 ## Oracle missing Rust
 
@@ -105,14 +124,20 @@ else
   awk -F '\t' '{ print "- " $1 " -> " $2 }' "$oracle_missing"
 fi
 
-cat <<EOF
+if [[ "$show_rust_extras" -eq 1 ]]; then
+  cat <<EOF
 
 ## Rust missing Oracle
 
 EOF
 
-if [[ "$rust_missing_count" -eq 0 ]]; then
-  printf 'None\n'
-else
-  awk '{ print "- " $0 }' "$rust_missing"
+  printf 'Rust files without an obvious oracle source file: %s\n' "$rust_missing_count"
+  printf '  src/code: %s\n' "$rust_code_missing_count"
+  printf '  src/codemp: %s\n\n' "$rust_codemp_missing_count"
+
+  if [[ "$rust_missing_count" -eq 0 ]]; then
+    printf 'None\n'
+  else
+    awk '{ print "- " $0 }' "$rust_missing"
+  fi
 fi

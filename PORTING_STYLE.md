@@ -1,7 +1,7 @@
 # Porting Style Notes
 
 - Mirror `oracle/` paths 1:1: `oracle/codemp/game/g_main.c` becomes `src/codemp/game/g_main.rs`.
-- `codemp` is considered complete; do not touch `oracle/codemp/` or `src/codemp/` during the full-port loop.
+- Existing `src/` files are considered complete; missing `oracle/code/` and `oracle/codemp/` files are valid full-port work.
 - Keep C file/module names visible, including odd casing, with `#[allow(non_snake_case)]` when needed.
 - Preserve original C symbol names for functions, globals, structs, fields, constants, and cvars unless Rust syntax forces an escape.
 - Use `core::ffi::{c_int, c_char, c_void, ...}` for C ABI-sized types instead of Rust-native guesses.
