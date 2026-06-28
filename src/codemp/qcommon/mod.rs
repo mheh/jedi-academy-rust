@@ -6,6 +6,7 @@ pub mod INetProfile_h;
 pub mod MiniHeap_h;
 pub mod disablewarnings_h;
 pub mod exe_headers_h;
+pub mod files_h;
 pub mod game_version_h;
 pub mod chash_h;
 pub mod cm_patch_h;
