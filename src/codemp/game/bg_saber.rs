@@ -64,8 +64,8 @@ use crate::codemp::game::q_shared_h::{
     BLOCKED_UPPER_RIGHT_PROJ, BUTTON_ALT_ATTACK, BUTTON_ATTACK, ENTITYNUM_NONE, ENTITYNUM_WORLD,
     FORCE_LEVEL_1, FORCE_LEVEL_2, FORCE_LEVEL_3, FP_GRIP, FP_LEVITATION, FP_SABERTHROW,
     FP_SABER_DEFENSE, FP_SABER_OFFENSE, MAX_CLIENTS, NUM_FORCE_POWER_LEVELS, PITCH, QFALSE, QTRUE,
-    ROLL, SFL_NO_ROLL_STAB, SFL_NO_STABDOWN, SS_DESANN, SS_DUAL, SS_FAST, SS_MEDIUM, SS_STAFF,
-    SS_STRONG, SS_TAVION, YAW, saberInfo_t,
+    ROLL, SFL_NO_MIRROR_ATTACKS, SFL_NO_ROLL_STAB, SFL_NO_STABDOWN, SS_DESANN, SS_DUAL, SS_FAST,
+    SS_MEDIUM, SS_STAFF, SS_STRONG, SS_TAVION, YAW, saberInfo_t,
 };
 use crate::codemp::game::bg_weapons_h::WP_SABER;
 use crate::codemp::game::w_saber_h::{
@@ -938,11 +938,20 @@ pub unsafe fn PM_CheckAltKickAttack() -> qboolean {
 ///
 /// # Safety
 /// `pm` must point to a valid `pmove_t`.
-// TODO: Remove-Xbox
 pub unsafe fn PM_CanDoDualDoubleAttacks() -> qboolean {
     let pmv = *addr_of!(pm);
     let ps = (*pmv).ps;
 
+    if (*ps).weapon == WP_SABER {
+        let mut saber: *mut saberInfo_t = BG_MySaber((*ps).clientNum, 0);
+        if !saber.is_null() && (*saber).saberFlags & SFL_NO_MIRROR_ATTACKS != 0 {
+            return QFALSE;
+        }
+        saber = BG_MySaber((*ps).clientNum, 1);
+        if !saber.is_null() && (*saber).saberFlags & SFL_NO_MIRROR_ATTACKS != 0 {
+            return QFALSE;
+        }
+    }
     if BG_SaberInSpecialAttack((*ps).torsoAnim) != QFALSE
         || BG_SaberInSpecialAttack((*ps).legsAnim) != QFALSE
     {
