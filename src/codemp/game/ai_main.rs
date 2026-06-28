@@ -6420,7 +6420,6 @@ pub unsafe fn GetIdealDestination(bs: *mut bot_state_t) {
 
 /// `void StandardBotAI(bot_state_t *bs, float thinktime)` (ai_main.c:5915) — the master
 /// per-frame bot think routine. Faithful line-by-line port of the JKA original.
-// TODO: Remove-Xbox
 pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
     let wp: c_int;
     let enemy: c_int;
@@ -6614,11 +6613,9 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
             BotDeathNotify(bs);
             if PassLovedOneCheck(bs, (*bs).lastHurt) != 0 {
                 //CHAT: Died
-                /*
-                                bs->chatObject = bs->lastHurt;
-                                bs->chatAltObject = NULL;
-                                BotDoChat(bs, "Died", 0);
-                */
+                (*bs).chatObject = (*bs).lastHurt;
+                (*bs).chatAltObject = null_mut();
+                BotDoChat(bs, c"Died".as_ptr() as *mut c_char, 0);
             } else if PassLovedOneCheck(bs, (*bs).lastHurt) == 0
                 && !(*addr_of!(botstates))[(*(*bs).lastHurt).s.number as usize].is_null()
                 && PassLovedOneCheck(
@@ -6627,11 +6624,9 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
                 ) != 0
             {
                 //killed by a bot that I love, but that does not love me
-                /*
-                                bs->chatObject = bs->lastHurt;
-                                bs->chatAltObject = NULL;
-                                BotDoChat(bs, "KilledOnPurposeByLove", 0);
-                */
+                (*bs).chatObject = (*bs).lastHurt;
+                (*bs).chatAltObject = null_mut();
+                BotDoChat(bs, c"KilledOnPurposeByLove".as_ptr() as *mut c_char, 0);
             }
 
             (*bs).deathActivitiesDone = 1;
@@ -7155,11 +7150,9 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
                 && (*bs).lastAttacked == (*bs).currentEnemy
             {
                 //CHAT: Destroyed hated one [KilledHatedOne section]
-                /*
-                                bs->chatObject = bs->revengeEnemy;
-                                bs->chatAltObject = NULL;
-                                BotDoChat(bs, "KilledHatedOne", 1);
-                */
+                (*bs).chatObject = (*bs).revengeEnemy;
+                (*bs).chatAltObject = null_mut();
+                BotDoChat(bs, c"KilledHatedOne".as_ptr() as *mut c_char, 1);
                 (*bs).revengeEnemy = null_mut();
                 (*bs).revengeHateLevel = 0;
             } else if (*(*bs).currentEnemy).health < 1
@@ -7168,11 +7161,9 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
                 && (*bs).lastAttacked == (*bs).currentEnemy
             {
                 //CHAT: Killed
-                /*
-                                bs->chatObject = bs->currentEnemy;
-                                bs->chatAltObject = NULL;
-                                BotDoChat(bs, "Killed", 0);
-                */
+                (*bs).chatObject = (*bs).currentEnemy;
+                (*bs).chatAltObject = null_mut();
+                BotDoChat(bs, c"Killed".as_ptr() as *mut c_char, 0);
             }
 
             (*bs).currentEnemy = null_mut();
