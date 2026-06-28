@@ -11,6 +11,7 @@ pub mod chash_h;
 pub mod cm_patch_h;
 pub mod cm_polylib_h;
 pub mod cm_public_h;
+pub mod cm_randomterrain_h;
 pub mod cm_terrainmap_h;
 pub mod fixedmap_h;
 pub mod platform_h;
