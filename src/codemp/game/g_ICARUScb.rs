@@ -2652,7 +2652,7 @@ pub unsafe fn Q3_SetEnemy(entID: c_int, name: *const c_char) {
                 WL_ERROR,
                 &format!("Q3_SetEnemy: no such enemy: '{}'\n", cstr_or_null(name)),
             );
-            // return;
+            return;
         }
         /*else if(enemy->health <= 0)
         {

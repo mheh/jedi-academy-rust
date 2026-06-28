@@ -2860,15 +2860,15 @@ pub unsafe fn BotAILoadMap(restart: c_int) -> c_int {
     QTRUE
 }
 
-/// `int BotAISetup( int restart )` (ai_main.c:7569) — register all the `bot_*` cvars, clear the
-/// CTF flag-entity globals, and (on a non-restart) zero the bot states and start the bot library.
+/// `int BotAISetup( int restart )` (ai_main.c:7569) — register all the `bot_*` cvars and (on a
+/// non-restart) zero the bot states and start the bot library.
 /// The `#ifndef FINAL_BUILD` `bot_getinthecarrr` register is kept (compiled in the dev build);
 /// the `#ifdef _DEBUG` `bot_nogoals`/`bot_debugmessages` registers are omitted (`_DEBUG` off in
 /// the release server build). Returns `qtrue` on success / a tournament restart, `qfalse` if the
 /// bot library fails to start.
 ///
 /// # Safety
-/// Registers into / writes the module-global bot cvars, flag entities, and [`botstates`].
+/// Registers into / writes the module-global bot cvars and [`botstates`].
 pub unsafe fn BotAISetup(restart: c_int) -> c_int {
     //rww - new bot cvars..
     trap::Cvar_Register(
@@ -2941,11 +2941,6 @@ pub unsafe fn BotAISetup(restart: c_int) -> c_int {
 
     trap::Cvar_Update(&mut *addr_of_mut!(bot_forcepowers));
     //end rww
-
-    eFlagRed = null_mut();
-    eFlagBlue = null_mut();
-    droppedRedFlag = null_mut();
-    droppedBlueFlag = null_mut();
 
     //if the game is restarted for a tournament
     if restart != 0 {
@@ -4079,8 +4074,8 @@ pub unsafe fn BotStraightTPOrderCheck(ent: *mut gentity_t, ordernum: c_int, bs: 
 /// `void BotOrder(gentity_t *ent, int clientnum, int ordernum)` (ai_main.c:184) — a team-leader
 /// player issues `ordernum` to bot `clientnum` (or every same-team bot when `clientnum == -1`),
 /// validated against the per-gametype state range. `-1` ordernum requests a status report; any
-/// other accepted order runs [`BotStraightTPOrderCheck`] and stamps `state_Forced`. The
-/// commented-out `BotDoChat` blocks are not ported.
+/// other accepted order runs [`BotStraightTPOrderCheck`], stamps `state_Forced`, and issues an
+/// `OrderAccepted` chat.
 ///
 /// # Safety
 /// `ent` must be valid (or null); reads the [`botstates`]/[`g_entities`] globals.
@@ -4132,6 +4127,16 @@ pub unsafe fn BotOrder(ent: *mut gentity_t, clientnum: c_int, ordernum: c_int) {
         } else {
             BotStraightTPOrderCheck(ent, ordernum, botstates[clientnum as usize]);
             (*botstates[clientnum as usize]).state_Forced = ordernum;
+            (*botstates[clientnum as usize]).chatObject = ent;
+            (*botstates[clientnum as usize]).chatAltObject = null_mut();
+            if BotDoChat(
+                botstates[clientnum as usize],
+                c"OrderAccepted".as_ptr() as *mut c_char,
+                1,
+            ) != 0
+            {
+                (*botstates[clientnum as usize]).chatTeam = 1;
+            }
         }
     } else {
         while i < MAX_CLIENTS as c_int {
@@ -4143,6 +4148,16 @@ pub unsafe fn BotOrder(ent: *mut gentity_t, clientnum: c_int, ordernum: c_int) {
                 } else {
                     BotStraightTPOrderCheck(ent, ordernum, botstates[i as usize]);
                     (*botstates[i as usize]).state_Forced = ordernum;
+                    (*botstates[i as usize]).chatObject = ent;
+                    (*botstates[i as usize]).chatAltObject = null_mut();
+                    if BotDoChat(
+                        botstates[i as usize],
+                        c"OrderAccepted".as_ptr() as *mut c_char,
+                        0,
+                    ) != 0
+                    {
+                        (*botstates[i as usize]).chatTeam = 1;
+                    }
                 }
             }
 
@@ -4378,7 +4393,7 @@ pub unsafe fn BotSelectMelee(bs: *mut bot_state_t) -> c_int {
 /// `void BotLovedOneDied(bot_state_t *bs, bot_state_t *loved, int lovelevel)` (ai_main.c:5291) — a
 /// bot the player `bs` is attached to was killed: subject to teamplay/duel and not-a-teammate
 /// checks, escalate `bs`'s revenge hatred toward the killer (`loved->lastHurt`), or switch revenge
-/// targets if the current grudge is weak enough. The commented-out `BotDoChat` blocks are omitted.
+/// targets if the current grudge is weak enough, issuing the appropriate `BotDoChat`.
 ///
 /// # Safety
 /// `bs`/`loved` must be valid [`bot_state_t`] pointers.
@@ -4422,6 +4437,10 @@ pub unsafe fn BotLovedOneDied(bs: *mut bot_state_t, loved: *mut bot_state_t, lov
 
     if PassLovedOneCheck(bs, (*loved).lastHurt) == 0 {
         //a loved one killed a loved one.. you cannot hate them
+        (*bs).chatObject = (*loved).lastHurt;
+        (*bs).chatAltObject =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*loved).client as usize);
+        BotDoChat(bs, c"LovedOneKilledLovedOne".as_ptr() as *mut c_char, 0);
         return;
     }
 
@@ -4432,11 +4451,18 @@ pub unsafe fn BotLovedOneDied(bs: *mut bot_state_t, loved: *mut bot_state_t, lov
             if (*bs).revengeHateLevel == (*bs).loved_death_thresh {
                 //broke into the highest anger level
                 //CHAT: Hatred section
+                (*bs).chatObject = (*loved).lastHurt;
+                (*bs).chatAltObject = null_mut();
+                BotDoChat(bs, c"Hatred".as_ptr() as *mut c_char, 1);
             }
         }
     } else if (*bs).revengeHateLevel < (*bs).loved_death_thresh - 1 {
         //only switch hatred if we don't hate the existing revenge-enemy too much
         //CHAT: BelovedKilled section
+        (*bs).chatObject =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*loved).client as usize);
+        (*bs).chatAltObject = (*loved).lastHurt;
+        BotDoChat(bs, c"BelovedKilled".as_ptr() as *mut c_char, 0);
         (*bs).revengeHateLevel = 0;
         (*bs).revengeEnemy = (*loved).lastHurt;
     }
@@ -6587,11 +6613,9 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
             BotDeathNotify(bs);
             if PassLovedOneCheck(bs, (*bs).lastHurt) != 0 {
                 //CHAT: Died
-                /*
-                                bs->chatObject = bs->lastHurt;
-                                bs->chatAltObject = NULL;
-                                BotDoChat(bs, "Died", 0);
-                */
+                (*bs).chatObject = (*bs).lastHurt;
+                (*bs).chatAltObject = null_mut();
+                BotDoChat(bs, c"Died".as_ptr() as *mut c_char, 0);
             } else if PassLovedOneCheck(bs, (*bs).lastHurt) == 0
                 && !(*addr_of!(botstates))[(*(*bs).lastHurt).s.number as usize].is_null()
                 && PassLovedOneCheck(
@@ -6600,11 +6624,9 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
                 ) != 0
             {
                 //killed by a bot that I love, but that does not love me
-                /*
-                                bs->chatObject = bs->lastHurt;
-                                bs->chatAltObject = NULL;
-                                BotDoChat(bs, "KilledOnPurposeByLove", 0);
-                */
+                (*bs).chatObject = (*bs).lastHurt;
+                (*bs).chatAltObject = null_mut();
+                BotDoChat(bs, c"KilledOnPurposeByLove".as_ptr() as *mut c_char, 0);
             }
 
             (*bs).deathActivitiesDone = 1;
@@ -7128,11 +7150,9 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
                 && (*bs).lastAttacked == (*bs).currentEnemy
             {
                 //CHAT: Destroyed hated one [KilledHatedOne section]
-                /*
-                                bs->chatObject = bs->revengeEnemy;
-                                bs->chatAltObject = NULL;
-                                BotDoChat(bs, "KilledHatedOne", 1);
-                */
+                (*bs).chatObject = (*bs).revengeEnemy;
+                (*bs).chatAltObject = null_mut();
+                BotDoChat(bs, c"KilledHatedOne".as_ptr() as *mut c_char, 1);
                 (*bs).revengeEnemy = null_mut();
                 (*bs).revengeHateLevel = 0;
             } else if (*(*bs).currentEnemy).health < 1
@@ -7141,11 +7161,9 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
                 && (*bs).lastAttacked == (*bs).currentEnemy
             {
                 //CHAT: Killed
-                /*
-                                bs->chatObject = bs->currentEnemy;
-                                bs->chatAltObject = NULL;
-                                BotDoChat(bs, "Killed", 0);
-                */
+                (*bs).chatObject = (*bs).currentEnemy;
+                (*bs).chatAltObject = null_mut();
+                BotDoChat(bs, c"Killed".as_ptr() as *mut c_char, 0);
             }
 
             (*bs).currentEnemy = null_mut();

@@ -33,6 +33,7 @@ use crate::codemp::game::bg_saga::{
     bgSiegeClasses, BG_SiegeCheckClassLegality, BG_SiegeFindClassIndexByName,
 };
 use crate::codemp::game::bg_saga_h::siegeClass_t;
+use crate::codemp::game::bg_saberLoad::{WP_SaberStyleValidForSaber, WP_UseFirstValidSaberStyle};
 use crate::codemp::game::g_cmds::{BroadcastTeamChange, G_SetSaber, SetTeam, SetTeamQuick, StopFollowing};
 use crate::codemp::game::g_svcmds::G_FilterPacket;
 use crate::codemp::game::g_bot::{G_BotConnect, G_RemoveQueuedBotBegin};
@@ -3256,6 +3257,27 @@ pub unsafe fn ClientSpawn(ent: *mut gentity_t) {
                 (*(*ent).client).ps.fd.saberAnimLevel = lvl;
                 (*(*ent).client).ps.fd.saberDrawAnimLevel = lvl;
                 (*(*ent).client).sess.saberLevel = lvl;
+            }
+        }
+        if (*addr_of!(g_gametype)).integer != GT_SIEGE {
+            //let's just make sure the styles we chose are cool
+            if WP_SaberStyleValidForSaber(
+                addr_of_mut!((*(*ent).client).saber[0]),
+                addr_of_mut!((*(*ent).client).saber[1]),
+                (*(*ent).client).ps.saberHolstered,
+                (*(*ent).client).ps.fd.saberAnimLevel,
+            ) == QFALSE
+            {
+                WP_UseFirstValidSaberStyle(
+                    addr_of_mut!((*(*ent).client).saber[0]),
+                    addr_of_mut!((*(*ent).client).saber[1]),
+                    (*(*ent).client).ps.saberHolstered,
+                    addr_of_mut!((*(*ent).client).ps.fd.saberAnimLevel),
+                );
+                // C: saberAnimLevelBase = saberCycleQueue = saberAnimLevel
+                let lvl = (*(*ent).client).ps.fd.saberAnimLevel;
+                (*(*ent).client).ps.fd.saberAnimLevelBase = lvl;
+                (*(*ent).client).saberCycleQueue = lvl;
             }
         }
     }

@@ -270,6 +270,9 @@ pub unsafe fn NPC_BSStandGuard() {
 NPC_BSHuntAndKill
 -------------------------
 */
+// Oracle calls `IdealDistance(NPC)`, but oracle `IdealDistance(gentity_t *self)`
+// (NPC_combat.c) never reads `self` — it uses the file-static `NPC`/`NPCInfo` globals —
+// so the parameterless `IdealDistance()` here is behaviorally identical.
 pub unsafe fn NPC_BSHuntAndKill() {
     let mut turned: qboolean = QFALSE;
     let mut vec: vec3_t = [0.0; 3];
