@@ -44,6 +44,7 @@ pub mod botlib_h;
 pub mod chars_h;
 pub mod fighternpc;
 pub mod g_ICARUScb;
+pub mod g_ICARUScb_h;
 pub mod g_active;
 pub mod g_headers_h;
 pub mod g_bot;
