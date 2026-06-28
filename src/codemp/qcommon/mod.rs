@@ -9,6 +9,7 @@ pub mod exe_headers_h;
 pub mod files_h;
 pub mod game_version_h;
 pub mod chash_h;
+pub mod cm_draw_h;
 pub mod cm_patch_h;
 pub mod cm_polylib_h;
 pub mod cm_public_h;
