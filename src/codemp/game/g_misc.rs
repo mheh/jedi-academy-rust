@@ -379,6 +379,7 @@ extern "C" {
 ///
 /// # Safety
 /// `ent` must point to a valid `gentity_t`.
+// TODO: Remove-Xbox
 pub unsafe extern "C" fn SP_misc_holocron(ent: *mut gentity_t) {
     debug_assert!(false, "No holocron!");
 

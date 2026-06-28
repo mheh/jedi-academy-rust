@@ -3112,6 +3112,7 @@ Initializes all non-persistant parts of playerState
 /// # Safety
 /// `ent` must point to a valid `gentity_t` whose `client` is non-null; the
 /// `level`/`g_entities`/cvar globals must be initialised.
+// TODO: Remove-Xbox
 pub unsafe fn ClientSpawn(ent: *mut gentity_t) {
     let index: c_int;
     let mut spawn_origin: vec3_t = [0.0; 3];

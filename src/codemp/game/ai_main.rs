@@ -2869,6 +2869,7 @@ pub unsafe fn BotAILoadMap(restart: c_int) -> c_int {
 ///
 /// # Safety
 /// Registers into / writes the module-global bot cvars, flag entities, and [`botstates`].
+// TODO: Remove-Xbox
 pub unsafe fn BotAISetup(restart: c_int) -> c_int {
     //rww - new bot cvars..
     trap::Cvar_Register(
@@ -4084,6 +4085,7 @@ pub unsafe fn BotStraightTPOrderCheck(ent: *mut gentity_t, ordernum: c_int, bs: 
 ///
 /// # Safety
 /// `ent` must be valid (or null); reads the [`botstates`]/[`g_entities`] globals.
+// TODO: Remove-Xbox
 pub unsafe fn BotOrder(ent: *mut gentity_t, clientnum: c_int, ordernum: c_int) {
     let mut stateMin: c_int = 0;
     let mut stateMax: c_int = 0;
@@ -4382,6 +4384,7 @@ pub unsafe fn BotSelectMelee(bs: *mut bot_state_t) -> c_int {
 ///
 /// # Safety
 /// `bs`/`loved` must be valid [`bot_state_t`] pointers.
+// TODO: Remove-Xbox
 pub unsafe fn BotLovedOneDied(bs: *mut bot_state_t, loved: *mut bot_state_t, lovelevel: c_int) {
     if (*loved).lastHurt.is_null()
         || (*(*loved).lastHurt).client.is_null()
@@ -6394,6 +6397,7 @@ pub unsafe fn GetIdealDestination(bs: *mut bot_state_t) {
 
 /// `void StandardBotAI(bot_state_t *bs, float thinktime)` (ai_main.c:5915) — the master
 /// per-frame bot think routine. Faithful line-by-line port of the JKA original.
+// TODO: Remove-Xbox
 pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
     let wp: c_int;
     let enemy: c_int;

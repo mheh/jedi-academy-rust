@@ -514,6 +514,7 @@ pub unsafe extern "C" fn FighterSuspended(
 //on the bgEntity structure in the MP codebase) -rww
 // ProcessMoveCommands the Vehicle.
 const FIGHTER_MIN_TAKEOFF_FRACTION: f32 = 0.7;
+// TODO: Remove-Xbox
 pub unsafe extern "C" fn ProcessMoveCommands(pVeh: *mut Vehicle_t) {
     /************************************************************************************/
     /*	BEGIN	Here is where we move the vehicle (forward or back or whatever). BEGIN	*/
@@ -640,6 +641,7 @@ pub unsafe extern "C" fn ProcessMoveCommands(pVeh: *mut Vehicle_t) {
         return;
     }
 
+    // TODO: Remove-Xbox
     if (*pVeh).m_ucmd.upmove > 0 && (*(*pVeh).m_pVehicleInfo).turboSpeed != 0.0 {
         if (curTime - (*pVeh).m_iTurboTime) > (*(*pVeh).m_pVehicleInfo).turboRecharge {
             (*pVeh).m_iTurboTime = curTime + (*(*pVeh).m_pVehicleInfo).turboDuration;
@@ -1058,6 +1060,7 @@ pub unsafe extern "C" fn FighterNoseMalfunctionCheck(
     }
 }
 
+// TODO: Port-Bug
 pub unsafe extern "C" fn FighterDamageRoutine(
     pVeh: *mut Vehicle_t,
     _parent: *mut bgEntity_t,

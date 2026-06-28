@@ -7007,6 +7007,7 @@ static mut saberHitFraction: f32 = 1.0; // w_saber.c:3579
 /// entity; trace/entity-state dependent, so no oracle test.
 // `allow(dead_code)`: the callers (G_SPSaberDamageTraceLerped / WP_SaberDamageTrace) are not yet ported.
 #[allow(dead_code)]
+// TODO: Remove-Xbox
 unsafe fn CheckSaberDamage(
     self_: *mut gentity_t,
     rSaberNum: c_int,

@@ -557,6 +557,7 @@ pub unsafe fn G_Knockdown(victim: *mut gentity_t) {
 /// # Safety
 /// Reads the global `g_entities` base pointer; must be called after `G_InitGame` has
 /// allocated it (as all in-game callers are).
+// TODO: Port-Bug
 pub unsafe fn G_GetJediMaster() -> *mut gentity_t {
     let mut i: c_int = 0;
     while i < MAX_CLIENTS as c_int {
@@ -4772,6 +4773,7 @@ player_die
 /// Engine `die` fn-pointer callback. `self` must be a valid entity with a non-NULL
 /// `client`; `inflictor`/`attacker` may be NULL (checked). `g_entities`/`level` must be
 /// initialised.
+// TODO: Remove-Xbox
 pub unsafe extern "C" fn player_die(
     self_: *mut gentity_t,
     inflictor: *mut gentity_t,

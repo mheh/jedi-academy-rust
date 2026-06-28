@@ -3623,6 +3623,7 @@ Touch_Item
 /// No oracle: heavily side-effecting over the `gentity_t`→`client`→`ps` graph, the temp-entity
 /// system, and `level.time`.
 ///
+// TODO: Port-Bug
 pub unsafe extern "C" fn Touch_Item(ent: *mut gentity_t, other: *mut gentity_t, _trace: *mut trace_t) {
     let respawn: c_int;
     let mut predict: qboolean;

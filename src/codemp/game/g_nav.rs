@@ -837,6 +837,7 @@ NAV_TrueCollision
 
 /// `qboolean NAV_TrueCollision( gentity_t *self, gentity_t *blocker, vec3_t movedir,
 /// vec3_t blocked_dir )` (g_nav.c:715). No-oracle: player-velocity overlap predictor.
+// TODO: Port-Bug — checks `self_->client` instead of `blocker->client` (both C sources check blocker)
 pub unsafe fn NAV_TrueCollision(
     self_: *mut gentity_t,
     blocker: *mut gentity_t,

@@ -972,6 +972,7 @@ static mut numNewICARUSEnts: c_int = 0;
 ///
 /// # Safety
 /// `self_` must point to a valid `gentity_t`.
+// TODO: Port-Bug
 pub unsafe extern "C" fn scriptrunner_run(self_: *mut gentity_t) {
     if (*self_).count != -1 {
         if (*self_).count <= 0 {

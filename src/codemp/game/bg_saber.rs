@@ -938,6 +938,7 @@ pub unsafe fn PM_CheckAltKickAttack() -> qboolean {
 ///
 /// # Safety
 /// `pm` must point to a valid `pmove_t`.
+// TODO: Remove-Xbox
 pub unsafe fn PM_CanDoDualDoubleAttacks() -> qboolean {
     let pmv = *addr_of!(pm);
     let ps = (*pmv).ps;
@@ -1246,6 +1247,7 @@ pub unsafe fn PM_SaberKataDone(curmove: c_int, newmove: c_int) -> qboolean {
 ///
 /// # Safety
 /// `pm` must point to a valid `pmove_t`.
+// TODO: Remove-Xbox
 pub unsafe fn PM_SaberFlipOverAttackMove() -> saberMoveName_t {
     let pmv = *addr_of!(pm);
     let ps = (*pmv).ps;
@@ -1322,6 +1324,7 @@ pub unsafe fn PM_SaberFlipOverAttackMove() -> saberMoveName_t {
 ///
 /// # Safety
 /// `pm` must point to a valid `pmove_t`.
+// TODO: Remove-Xbox
 pub unsafe fn PM_SaberBackflipAttackMove() -> c_int {
     let pmv = *addr_of!(pm);
     (*pmv).cmd.upmove = 127;
@@ -1401,6 +1404,7 @@ pub unsafe fn PM_SomeoneInFront(tr: *mut trace_t) -> qboolean {
 ///
 /// # Safety
 /// `pm` must point to a valid `pmove_t`.
+// TODO: Remove-Xbox
 pub unsafe fn PM_SaberLungeAttackMove() -> saberMoveName_t {
     let pmv = *addr_of!(pm);
     let ps = (*pmv).ps;
@@ -1424,6 +1428,7 @@ pub unsafe fn PM_SaberLungeAttackMove() -> saberMoveName_t {
 ///
 /// # Safety
 /// `pm` must point to a valid `pmove_t`.
+// TODO: Remove-Xbox
 pub unsafe fn PM_SaberJumpAttackMove() -> saberMoveName_t {
     let pmv = *addr_of!(pm);
     let ps = (*pmv).ps;
@@ -2087,6 +2092,7 @@ pub unsafe fn PM_KickMoveForConditions() -> c_int {
 ///
 /// # Safety
 /// `genemy` must point to a valid `playerState_t`; `pm` must point to a valid `pmove_t`.
+// TODO: Remove-Xbox
 pub unsafe fn PM_SaberLockBreak(genemy: *mut playerState_t, victory: qboolean, strength: c_int) {
     let pmv = *addr_of!(pm);
     let ps = (*pmv).ps;
@@ -2373,6 +2379,7 @@ pub unsafe fn PM_SaberLocked() {
 ///
 /// # Safety
 /// `pm` must point to a valid `pmove_t`.
+// TODO: Remove-Xbox
 pub unsafe fn PM_SaberAttackForMovement(curmove: saberMoveName_t) -> saberMoveName_t {
     let pmv = *addr_of!(pm);
     let ps = (*pmv).ps;

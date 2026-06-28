@@ -270,6 +270,7 @@ pub unsafe fn NPC_BSStandGuard() {
 NPC_BSHuntAndKill
 -------------------------
 */
+// TODO: Port-Bug — IdealDistance() missing NPC parameter (lines 320, 326; should be IdealDistance(NPC))
 pub unsafe fn NPC_BSHuntAndKill() {
     let mut turned: qboolean = QFALSE;
     let mut vec: vec3_t = [0.0; 3];

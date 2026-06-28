@@ -1426,6 +1426,7 @@ pub static mut bgNumAnimEvents: c_int = 1;
 #[allow(dead_code)]
 static mut bg_animParseIncluding: c_int = 0;
 
+// TODO: Port-Bug
 //ALWAYS call on game/cgame init
 pub unsafe fn BG_InitAnimsets() {
     core::ptr::write_bytes(addr_of_mut!(bgAllAnims), 0, 1);

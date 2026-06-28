@@ -460,6 +460,7 @@ Cmd_Kill_f
 ///
 /// # Safety
 /// `ent`/`ent->client` must be valid; the game globals must be initialized.
+// TODO: Remove-Xbox
 pub unsafe fn Cmd_Kill_f(ent: *mut gentity_t) {
     if (*(*ent).client).sess.sessionTeam == TEAM_SPECTATOR {
         return;
@@ -2725,6 +2726,7 @@ pub unsafe fn G_TeamForSiegeClass(cl_name: *const c_char) -> c_int {
 /// # Safety
 /// `ent` must point to a valid `gentity_t` with a non-null `client`; `saber_name` must
 /// be a valid NUL-terminated C string.
+// TODO: Remove-Xbox
 pub unsafe fn G_SetSaber(
     ent: *mut gentity_t,
     saber_num: c_int,
