@@ -2860,16 +2860,15 @@ pub unsafe fn BotAILoadMap(restart: c_int) -> c_int {
     QTRUE
 }
 
-/// `int BotAISetup( int restart )` (ai_main.c:7569) — register all the `bot_*` cvars, clear the
-/// CTF flag-entity globals, and (on a non-restart) zero the bot states and start the bot library.
+/// `int BotAISetup( int restart )` (ai_main.c:7569) — register all the `bot_*` cvars and (on a
+/// non-restart) zero the bot states and start the bot library.
 /// The `#ifndef FINAL_BUILD` `bot_getinthecarrr` register is kept (compiled in the dev build);
 /// the `#ifdef _DEBUG` `bot_nogoals`/`bot_debugmessages` registers are omitted (`_DEBUG` off in
 /// the release server build). Returns `qtrue` on success / a tournament restart, `qfalse` if the
 /// bot library fails to start.
 ///
 /// # Safety
-/// Registers into / writes the module-global bot cvars, flag entities, and [`botstates`].
-// TODO: Remove-Xbox
+/// Registers into / writes the module-global bot cvars and [`botstates`].
 pub unsafe fn BotAISetup(restart: c_int) -> c_int {
     //rww - new bot cvars..
     trap::Cvar_Register(
@@ -2942,11 +2941,6 @@ pub unsafe fn BotAISetup(restart: c_int) -> c_int {
 
     trap::Cvar_Update(&mut *addr_of_mut!(bot_forcepowers));
     //end rww
-
-    eFlagRed = null_mut();
-    eFlagBlue = null_mut();
-    droppedRedFlag = null_mut();
-    droppedBlueFlag = null_mut();
 
     //if the game is restarted for a tournament
     if restart != 0 {
