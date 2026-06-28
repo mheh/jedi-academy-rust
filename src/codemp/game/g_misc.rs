@@ -371,18 +371,13 @@ extern "C" {
 /// holocron in saber-only mode, or starting in solid), clamps its `count` into the valid
 /// force-power range, then wires it up as a bouncing physics trigger that displays the
 /// dark/light/neutral icon for its power and installs the `HolocronTouch`/`HolocronThink`
-/// callbacks. The C body opens with `assert( 0 )` ("No holocron!") and the whole thing is
-/// `#ifndef _XBOX`; the server builds with `_XBOX` undefined so the live body is ported, and
-/// the assert is rendered as a `debug_assert!(false, ...)` per the g_utils `G_Sound` precedent.
-/// No oracle (entity-state spawn: `trap_Trace`/`G_FreeEntity`/`G_SetOrigin`/`trap_LinkEntity`
-/// side-effects).
+/// callbacks. The retail PC oracle has no `assert( 0 )` here (that was Xbox-build residue)
+/// and actively sets `ent->s.isJediMaster = qtrue`. No oracle test (entity-state spawn:
+/// `trap_Trace`/`G_FreeEntity`/`G_SetOrigin`/`trap_LinkEntity` side-effects).
 ///
 /// # Safety
 /// `ent` must point to a valid `gentity_t`.
-// TODO: Remove-Xbox
 pub unsafe extern "C" fn SP_misc_holocron(ent: *mut gentity_t) {
-    debug_assert!(false, "No holocron!");
-
     let mut dest: vec3_t = [0.0; 3];
 
     if (*addr_of!(g_gametype)).integer != GT_HOLOCRON {
@@ -400,7 +395,7 @@ pub unsafe extern "C" fn SP_misc_holocron(ent: *mut gentity_t) {
         return;
     }
 
-    //	ent->s.isJediMaster = qtrue;
+    (*ent).s.isJediMaster = QTRUE;
 
     VectorSet(&mut (*ent).r.maxs, 8.0, 8.0, 8.0);
     VectorSet(&mut (*ent).r.mins, -8.0, -8.0, -8.0);
