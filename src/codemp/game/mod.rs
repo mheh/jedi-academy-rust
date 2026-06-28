@@ -26,6 +26,7 @@ pub mod bg_misc;
 pub mod bg_panimate;
 pub mod bg_pmove;
 pub mod bg_public;
+pub mod bg_strap_h;
 pub mod bg_saber;
 #[allow(non_snake_case)] // mirrors the upstream C file name `bg_saberLoad.c`
 pub mod bg_saberLoad;
