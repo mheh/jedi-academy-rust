@@ -14,4 +14,5 @@ pub mod cm_terrainmap_h;
 pub mod fixedmap_h;
 pub mod platform_h;
 pub mod stringed_interface_h;
+pub mod tags_h;
 pub mod timing_h;
