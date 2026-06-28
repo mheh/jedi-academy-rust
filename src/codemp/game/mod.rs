@@ -100,6 +100,7 @@ pub mod npc_ai_stormtrooper;
 pub mod npc_ai_utils;
 pub mod npc_ai_wampa;
 pub mod npc_behavior;
+pub mod npc_headers_h;
 pub mod npc_combat;
 pub mod npc_goal;
 pub mod npc_misc;
