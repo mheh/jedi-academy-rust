@@ -10,9 +10,9 @@ Last pairing command:
 
 Latest post-batch summary:
 
-- Oracle files without a paired Rust file: 1118
+- Oracle files without a paired Rust file: 1117
 - oracle/code: 646
-- oracle/codemp: 472
+- oracle/codemp: 471
 
 ## Delegated
 
@@ -46,6 +46,7 @@ Latest post-batch summary:
 - `oracle/codemp/mp3code/cwinb.c` -> `src/codemp/mp3code/cwinb.rs`
 - `oracle/codemp/mp3code/cwinm.c` -> `src/codemp/mp3code/cwinm.rs`
 - `oracle/codemp/mp3code/csbt.c` -> `src/codemp/mp3code/csbt.rs`
+- `oracle/codemp/mp3code/towave.c` -> `src/codemp/mp3code/towave.rs`
 
 ## Committed
 
@@ -78,6 +79,7 @@ Latest post-batch summary:
 - `f18b67f port oracle/codemp/mp3code/cwinb.c`
 - `b7993da port oracle/codemp/mp3code/cwinm.c`
 - `1c06629 port oracle/codemp/mp3code/csbt.c`
+- `aac7d2c port oracle/codemp/mp3code/towave.c`
 
 ## Unresolved Dependencies
 
@@ -99,18 +101,21 @@ Latest post-batch summary:
 - `cwinb.rs` now defines byte-output window helpers using `tableawd_h::wincoef`.
 - `cwinm.rs` now re-exports the shared window coefficient table and the 16-bit/byte window bodies from split Rust modules.
 - `csbt.rs` now defines `sbt_init` plus 16-bit SBT wrapper bodies and uses existing DCT/window modules.
+- `towave.rs` now defines the MP3 stream globals, validation/header/unpack helpers, and streaming decode/rewind entry points.
 - Remaining unresolved decoder/body dependencies include the `cwin.rs` coefficient-table reconciliation.
 - `wavep.rs` preserves the original `#if 0` body as disabled Rust and keeps missing `wcvt.c` conversion boundaries explicit.
 
 ## Next Recommended Batch
 
-Stay in `oracle/codemp/mp3code/` and finish the remaining standalone source:
+`oracle/codemp/mp3code/` now has paired Rust files for every source/header in that directory.
 
-- `oracle/codemp/mp3code/towave.c`
+Good next standalone candidate:
+
+- `oracle/codemp/png/png.cpp`
 
 ## State
 
 - Branch: `full-port`
-- HEAD before this handoff update: `1c06629`
+- HEAD before this handoff update: `aac7d2c`
 - No agent failures.
 - No builds, tests, `cargo check`, or formatting were run.
