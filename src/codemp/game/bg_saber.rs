@@ -53,8 +53,8 @@ use crate::codemp::game::bg_pmove::{
 use crate::codemp::game::bg_public::*;
 use crate::codemp::game::bg_weapons::weaponData;
 use crate::codemp::game::q_math::{
-    AngleVectors, DistanceSquared, Q_random, VectorCopy, VectorLength, VectorMA, VectorNormalize,
-    VectorScale, VectorSet, VectorSubtract,
+    AngleVectors, DistanceSquared, Q_irand, Q_random, VectorCopy, VectorLength, VectorMA,
+    VectorNormalize, VectorScale, VectorSet, VectorSubtract,
 };
 use crate::codemp::game::q_shared_h::{
     playerState_t, qboolean, trace_t, usercmd_t, vec3_t, BLK_NO, BLK_TIGHT, BLK_WIDE,
@@ -2163,17 +2163,16 @@ pub unsafe fn PM_KickMoveForConditions() -> c_int {
 ///
 /// # Safety
 /// `genemy` must point to a valid `playerState_t`; `pm` must point to a valid `pmove_t`.
-// TODO: Remove-Xbox
 pub unsafe fn PM_SaberLockBreak(genemy: *mut playerState_t, victory: qboolean, strength: c_int) {
     let pmv = *addr_of!(pm);
     let ps = (*pmv).ps;
 
     let mut noKnockdown: qboolean = QFALSE;
-    let superBreak: qboolean = if strength + (*ps).saberLockHits > 0 {
+    let superBreak: qboolean = if strength + (*ps).saberLockHits > Q_irand(2, 4) {
         QTRUE
     } else {
         QFALSE
-    }; //Q_irand(2,4));
+    };
 
     let winAnim: c_int = PM_SaberLockWinAnim(victory, superBreak);
     if winAnim != -1 {
