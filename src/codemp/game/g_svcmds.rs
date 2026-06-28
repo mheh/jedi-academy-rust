@@ -96,7 +96,10 @@ struct ipFilter_t {
 // (C: `#ifdef _XBOX` → 1, `#else` → 1024; this is the non-`_XBOX` retail build.)
 const MAX_IPFILTERS: usize = 1024;
 
-static mut ipFilters: [ipFilter_t; MAX_IPFILTERS] = [ipFilter_t { mask: 0, compare: 0 }; MAX_IPFILTERS];
+static mut ipFilters: [ipFilter_t; MAX_IPFILTERS] = [ipFilter_t {
+    mask: 0,
+    compare: 0,
+}; MAX_IPFILTERS];
 static mut numIPFilters: c_int = 0;
 
 /*
@@ -170,7 +173,10 @@ unsafe fn UpdateIPBans() {
 
     // C passes the raw `iplist` char buffer; the trap wrapper takes a `&str`, so
     // bridge the (always-ASCII) buffer back through `CStr`.
-    trap::Cvar_Set("g_banIPs", &CStr::from_ptr(iplist.as_ptr()).to_string_lossy());
+    trap::Cvar_Set(
+        "g_banIPs",
+        &CStr::from_ptr(iplist.as_ptr()).to_string_lossy(),
+    );
 }
 
 /*
@@ -316,7 +322,10 @@ pub fn G_SaveBanIP() {
         }
 
         let str_ = va(format_args!("{} \n", *addr_of!(numIPFilters)));
-        trap::FS_Write(core::slice::from_raw_parts(str_ as *const u8, strlen(str_)), fh);
+        trap::FS_Write(
+            core::slice::from_raw_parts(str_ as *const u8, strlen(str_)),
+            fh,
+        );
         for i in 0..*addr_of!(numIPFilters) {
             let filter = *(addr_of!(ipFilters) as *const ipFilter_t).add(i as usize);
             if filter.compare == 0xffffffff {
@@ -325,7 +334,10 @@ pub fn G_SaveBanIP() {
             } else {
                 let b: [byte; 4] = filter.compare.to_ne_bytes();
                 let str_ = va(format_args!("{}.{}.{}.{} \n", b[0], b[1], b[2], b[3]));
-                trap::FS_Write(core::slice::from_raw_parts(str_ as *const u8, strlen(str_)), fh);
+                trap::FS_Write(
+                    core::slice::from_raw_parts(str_ as *const u8, strlen(str_)),
+                    fh,
+                );
             }
         }
 
@@ -430,7 +442,10 @@ pub fn Svcmd_RemoveIP_f() {
     let cstr = std::ffi::CString::new(str_).unwrap_or_default();
 
     unsafe {
-        let mut f = ipFilter_t { mask: 0, compare: 0 };
+        let mut f = ipFilter_t {
+            mask: 0,
+            compare: 0,
+        };
         if StringToFilter(cstr.as_ptr(), &mut f) == QFALSE {
             return;
         }
@@ -540,7 +555,8 @@ pub unsafe fn Svcmd_EntityList_f() {
     let num_entities = (*addr_of!(level)).num_entities;
 
     for e in 1..num_entities {
-        let check: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(e as isize);
+        let check: *mut gentity_t =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(e as isize);
         if (*check).inuse == QFALSE {
             continue;
         }
@@ -562,7 +578,10 @@ pub unsafe fn Svcmd_EntityList_f() {
         }
 
         if !(*check).classname.is_null() {
-            G_Printf(&format!("{}", CStr::from_ptr((*check).classname).to_string_lossy()));
+            G_Printf(&format!(
+                "{}",
+                CStr::from_ptr((*check).classname).to_string_lossy()
+            ));
         }
         G_Printf("\n");
     }
@@ -730,7 +749,10 @@ mod oracle_tests {
 
             // Rust port. `f` is caller-initialized to 0/0 (StringToFilter leaves it
             // untouched on the qfalse path; the oracle wrapper inits identically).
-            let mut f = ipFilter_t { mask: 0, compare: 0 };
+            let mut f = ipFilter_t {
+                mask: 0,
+                compare: 0,
+            };
             let r_ret = unsafe { StringToFilter(c.as_ptr(), &mut f) };
 
             // Oracle.

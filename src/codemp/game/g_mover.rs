@@ -25,13 +25,12 @@ use core::ptr::{addr_of, addr_of_mut, null_mut};
 
 use crate::codemp::game::bg_misc::BG_EvaluateTrajectory;
 use crate::codemp::game::bg_public::{
-    DEFAULT_MAXS_2, DEFAULT_MINS_2, ET_BODY, ET_MOVER, ET_NPC, ET_PLAYER, EF2_HYPERSPACE,
-    EF_MISSILE_STICK, EF_NODRAW, EF_PERMANENT, EF_RADAROBJECT, EF_SHADER_ANIM, EV_BMODEL_SOUND,
+    DEFAULT_MAXS_2, DEFAULT_MINS_2, EF2_HYPERSPACE, EF_MISSILE_STICK, EF_NODRAW, EF_PERMANENT,
+    EF_RADAROBJECT, EF_SHADER_ANIM, ET_BODY, ET_MOVER, ET_NPC, ET_PLAYER, EV_BMODEL_SOUND,
     EV_DEBRIS, EV_GENERAL_SOUND, EV_GLASS_SHATTER, EV_MISC_MODEL_EXP, EV_PLAYDOORSOUND, GT_SIEGE,
     MASK_SOLID, MOD_CRUSH, MOD_UNKNOWN, STAT_HEALTH, TEAM_SPECTATOR,
 };
 use crate::codemp::game::g_combat::{G_Damage, G_RadiusDamage};
-use crate::codemp::game::g_misc::TeleportPlayer;
 use crate::codemp::game::g_local::{
     gentity_t, moverState_t, DAMAGE_NO_KNOCKBACK, FL_BBRUSH, FL_DMG_BY_HEAVY_WEAP_ONLY,
     FL_DMG_BY_SABER_ONLY, FL_INACTIVE, FL_TEAMSLAVE, FRAMETIME, MOVER_1TO2, MOVER_2TO1, MOVER_POS1,
@@ -40,24 +39,25 @@ use crate::codemp::game::g_local::{
 use crate::codemp::game::g_main::{
     g_entities, g_gametype, g_gravity, level, Com_Printf, G_Error, G_Printf, G_RunThink,
 };
+use crate::codemp::game::g_misc::TeleportPlayer;
 use crate::codemp::game::g_public_h::{
     BSET_PAIN, BSET_USE, SVF_BROADCAST, SVF_GLASS_BRUSH, SVF_NOCLIENT, SVF_PLAYER_USABLE,
     SVF_USE_CURRENT_ORIGIN,
 };
 use crate::codemp::game::g_spawn::{G_SpawnFloat, G_SpawnInt, G_SpawnString, G_SpawnVector};
 use crate::codemp::game::g_utils::{
-    G_AddEvent, G_EffectIndex, G_Find, G_FreeEntity, G_ModelIndex, G_PlayEffectID, G_ScaleNetHealth,
-    G_SetAngles, G_SetMovedir, G_SetOrigin, G_SoundIndex, G_SoundSetIndex, G_Spawn, G_TempEntity,
-    G_UseTargets, G_UseTargets2, GlobalUse, vtos,
+    vtos, G_AddEvent, G_EffectIndex, G_Find, G_FreeEntity, G_ModelIndex, G_PlayEffectID,
+    G_ScaleNetHealth, G_SetAngles, G_SetMovedir, G_SetOrigin, G_SoundIndex, G_SoundSetIndex,
+    G_Spawn, G_TempEntity, G_UseTargets, G_UseTargets2, GlobalUse,
 };
 use crate::codemp::game::npc_utils::G_ActivateBehavior;
+use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_math::{
     vec3_origin, vectoangles, AddPointToBounds, AngleVectors, Distance, DotProduct,
     RadiusFromBounds, VectorAdd, VectorClear, VectorCompare, VectorCopy, VectorInverse,
     VectorLength, VectorMA, VectorNormalize, VectorScale, VectorSet, VectorSubtract,
 };
 use crate::codemp::game::q_shared::{random, Q_stricmp};
-use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_shared_h::{
     material_t, trace_t, vec3_t, ANGLE2SHORT, ENTITYNUM_NONE, ENTITYNUM_WORLD, MAT_CRATE1,
     MAT_CRATE2, MAT_DRK_STONE, MAT_ELECTRICAL, MAT_ELEC_METAL, MAT_GLASS, MAT_GLASS_METAL,
@@ -192,7 +192,8 @@ pub unsafe fn G_TestEntityPosition(ent: *mut gentity_t) -> *mut gentity_t {
     };
 
     if tr.startsolid != 0 {
-        return (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(tr.entityNum as usize);
+        return (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add(tr.entityNum as usize);
     }
 
     null_mut()
@@ -293,7 +294,11 @@ pub unsafe fn G_TryPushingEntity(
     G_CreateRotationMatrix(amove, &mut transpose);
     G_TransposeMatrix(&transpose, &mut matrix);
     if !(*check).client.is_null() {
-        VectorSubtract(&(*(*check).client).ps.origin, &(*pusher).r.currentOrigin, &mut org);
+        VectorSubtract(
+            &(*(*check).client).ps.origin,
+            &(*pusher).r.currentOrigin,
+            &mut org,
+        );
     } else {
         VectorSubtract(&(*check).s.pos.trBase, &(*pusher).r.currentOrigin, &mut org);
     }
@@ -356,7 +361,10 @@ pub unsafe fn G_TryPushingEntity(
     // Sliding trapdoors can cause this.
     VectorCopy(&(*pushed_p.sub(1)).origin, &mut (*check).s.pos.trBase);
     if !(*check).client.is_null() {
-        VectorCopy(&(*pushed_p.sub(1)).origin, &mut (*(*check).client).ps.origin);
+        VectorCopy(
+            &(*pushed_p.sub(1)).origin,
+            &mut (*(*check).client).ps.origin,
+        );
     }
     VectorCopy(&(*pushed_p.sub(1)).angles, &mut (*check).s.apos.trBase);
     block = G_TestEntityPosition(check);
@@ -441,10 +449,13 @@ pub unsafe fn G_MoverPush(
 
     // see if any solid entities are inside the final position
     for e in 0..listedEntities {
-        let check = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entityList[e as usize] as usize);
+        let check = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add(entityList[e as usize] as usize);
 
         // only push items and players
-        if /*check->s.eType != ET_ITEM &&*/ (*check).s.eType != ET_PLAYER
+        if
+        /*check->s.eType != ET_ITEM &&*/
+        (*check).s.eType != ET_PLAYER
             && (*check).s.eType != ET_NPC
             && (*check).physicsObject == QFALSE
         {
@@ -476,15 +487,31 @@ pub unsafe fn G_MoverPush(
         }
 
         if (*pusher).damage != 0 && !(*check).client.is_null() && ((*pusher).spawnflags & 32) != 0 {
-            G_Damage(check, pusher, pusher, null_mut(), null_mut(), (*pusher).damage, 0, MOD_CRUSH);
+            G_Damage(
+                check,
+                pusher,
+                pusher,
+                null_mut(),
+                null_mut(),
+                (*pusher).damage,
+                0,
+                MOD_CRUSH,
+            );
             continue;
         }
 
-        if (*check).s.eType == ET_BODY
-            || ((*check).s.eType == ET_PLAYER && (*check).health < 1)
-        {
+        if (*check).s.eType == ET_BODY || ((*check).s.eType == ET_PLAYER && (*check).health < 1) {
             // whatever, just crush it
-            G_Damage(check, pusher, pusher, null_mut(), null_mut(), 999, 0, MOD_CRUSH);
+            G_Damage(
+                check,
+                pusher,
+                pusher,
+                null_mut(),
+                null_mut(),
+                999,
+                0,
+                MOD_CRUSH,
+            );
             continue;
         }
 
@@ -492,7 +519,16 @@ pub unsafe fn G_MoverPush(
 
         // bobbing entities are instant-kill and never get blocked
         if (*pusher).s.pos.trType == TR_SINE || (*pusher).s.apos.trType == TR_SINE {
-            G_Damage(check, pusher, pusher, null_mut(), null_mut(), 99999, 0, MOD_CRUSH);
+            G_Damage(
+                check,
+                pusher,
+                pusher,
+                null_mut(),
+                null_mut(),
+                99999,
+                0,
+                MOD_CRUSH,
+            );
             continue;
         }
 
@@ -561,8 +597,16 @@ pub unsafe fn G_MoverTeam(ent: *mut gentity_t) {
         while !part.is_null() {
             (*part).s.pos.trTime += (*addr_of!(level)).time - (*addr_of!(level)).previousTime;
             (*part).s.apos.trTime += (*addr_of!(level)).time - (*addr_of!(level)).previousTime;
-            BG_EvaluateTrajectory(&(*part).s.pos, (*addr_of!(level)).time, &mut (*part).r.currentOrigin);
-            BG_EvaluateTrajectory(&(*part).s.apos, (*addr_of!(level)).time, &mut (*part).r.currentAngles);
+            BG_EvaluateTrajectory(
+                &(*part).s.pos,
+                (*addr_of!(level)).time,
+                &mut (*part).r.currentOrigin,
+            );
+            BG_EvaluateTrajectory(
+                &(*part).s.apos,
+                (*addr_of!(level)).time,
+                &mut (*part).r.currentAngles,
+            );
             trap::LinkEntity(part);
             part = (*part).teamchain;
         }
@@ -699,7 +743,11 @@ pub unsafe fn SetMoverState(ent: *mut gentity_t, moverState: moverState_t, time:
         }
         _ => {}
     }
-    BG_EvaluateTrajectory(&(*ent).s.pos, (*addr_of!(level)).time, &mut (*ent).r.currentOrigin);
+    BG_EvaluateTrajectory(
+        &(*ent).s.pos,
+        (*addr_of!(level)).time,
+        &mut (*ent).r.currentOrigin,
+    );
     trap::LinkEntity(ent);
 }
 
@@ -1049,7 +1097,10 @@ pub unsafe fn InitMover(ent: *mut gentity_t) {
     // if the "model2" key is set, use a seperate model
     // for drawing, but clip against the brushes
     if !(*ent).model2.is_null() {
-        if CStr::from_ptr((*ent).model2).to_string_lossy().contains(".glm") {
+        if CStr::from_ptr((*ent).model2)
+            .to_string_lossy()
+            .contains(".glm")
+        {
             //for now, not supported in MP.
             (*ent).s.modelindex2 = 0;
         } else {
@@ -1404,7 +1455,11 @@ pub unsafe fn G_FindDoorTrigger(ent: *mut gentity_t) -> *mut gentity_t {
 
     owner = null_mut();
     loop {
-        owner = G_Find(owner, offset_of!(gentity_t, classname), c"trigger_door".as_ptr());
+        owner = G_Find(
+            owner,
+            offset_of!(gentity_t, classname),
+            c"trigger_door".as_ptr(),
+        );
         if owner.is_null() {
             break;
         }
@@ -1429,7 +1484,8 @@ pub unsafe fn G_EntIsUnlockedDoor(entityNum: c_int) -> qboolean {
     }
 
     if G_EntIsDoor(entityNum) != QFALSE {
-        let mut ent = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entityNum as usize);
+        let mut ent =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entityNum as usize);
         let mut owner: *mut gentity_t;
         if (*ent).flags & FL_TEAMSLAVE != 0 {
             // not the master door, get the master door
@@ -2004,8 +2060,9 @@ pub unsafe fn SP_func_pendulum(ent: *mut gentity_t) {
         length = 8.0;
     }
 
-    let freq: f32 =
-        (1.0_f64 / (M_PI as f64 * 2.0) * (((*addr_of!(g_gravity)).value / (3.0 * length)) as f64).sqrt()) as f32;
+    let freq: f32 = (1.0_f64 / (M_PI as f64 * 2.0)
+        * (((*addr_of!(g_gravity)).value / (3.0 * length)) as f64).sqrt())
+        as f32;
 
     (*ent).s.pos.trDuration = (1000.0 / freq) as c_int;
 
@@ -2213,7 +2270,8 @@ pub unsafe fn SP_func_usable(self_: *mut gentity_t) {
             //for now, not supported in MP.
             (*self_).s.modelindex2 = 0;
         } else {
-            (*self_).s.modelindex2 = G_ModelIndex(&CStr::from_ptr((*self_).model2).to_string_lossy());
+            (*self_).s.modelindex2 =
+                G_ModelIndex(&CStr::from_ptr((*self_).model2).to_string_lossy());
         }
     }
 
@@ -2608,7 +2666,12 @@ pub unsafe fn SP_func_rotating(ent: *mut gentity_t) {
 ///
 /// # Safety
 /// `g_entities`/`level` must be initialised so [`G_TempEntity`] can allocate.
-pub unsafe fn G_MiscModelExplosion(mins: &vec3_t, maxs: &vec3_t, size: c_int, chunkType: material_t) {
+pub unsafe fn G_MiscModelExplosion(
+    mins: &vec3_t,
+    maxs: &vec3_t,
+    size: c_int,
+    chunkType: material_t,
+) {
     let mut mid: vec3_t = [0.0; 3];
 
     VectorAdd(mins, maxs, &mut mid);
@@ -2681,10 +2744,18 @@ pub unsafe extern "C" fn funcBBrushDieGo(self_: *mut gentity_t) {
     // if a missile is stuck to us, blow it up so we don't look dumb
     for i in 0..MAX_GENTITIES {
         let ent = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
-        if (*ent).s.groundEntityNum == (*self_).s.number
-            && (*ent).s.eFlags & EF_MISSILE_STICK != 0
+        if (*ent).s.groundEntityNum == (*self_).s.number && (*ent).s.eFlags & EF_MISSILE_STICK != 0
         {
-            G_Damage(ent, self_, self_, null_mut(), null_mut(), 99999, 0, MOD_CRUSH); //?? MOD?
+            G_Damage(
+                ent,
+                self_,
+                self_,
+                null_mut(),
+                null_mut(),
+                99999,
+                0,
+                MOD_CRUSH,
+            ); //?? MOD?
         }
     }
 
@@ -2845,7 +2916,11 @@ pub unsafe extern "C" fn funcBBrushUse(
 ///
 /// # Safety
 /// `self_`/`attacker` must point to valid `gentity_t`s; `level` must be initialised.
-pub unsafe extern "C" fn funcBBrushPain(self_: *mut gentity_t, attacker: *mut gentity_t, _damage: c_int) {
+pub unsafe extern "C" fn funcBBrushPain(
+    self_: *mut gentity_t,
+    attacker: *mut gentity_t,
+    _damage: c_int,
+) {
     if (*self_).painDebounceTime > (*addr_of!(level)).time {
         return;
     }
@@ -2872,8 +2947,8 @@ pub unsafe extern "C" fn funcBBrushPain(self_: *mut gentity_t, attacker: *mut ge
         let scale: f32;
         let mut numChunks: c_int;
         VectorSubtract(&(*self_).r.absmax, &(*self_).r.absmin, &mut org); // size
-        // This formula really has no logical basis other than the fact that it seemed to be the closest to yielding the results that I wanted.
-        // Volume is length * width * height...then break that volume down based on how many chunks we have
+                                                                          // This formula really has no logical basis other than the fact that it seemed to be the closest to yielding the results that I wanted.
+                                                                          // Volume is length * width * height...then break that volume down based on how many chunks we have
         scale = VectorLength(&org) / 100.0;
         let org_ma = org;
         VectorMA(&(*self_).r.absmin, 0.5, &org_ma, &mut org);
@@ -3368,9 +3443,15 @@ mod oracle_tests {
             unsafe { jka_G_CreateRotationMatrix(angles.as_ptr(), want.as_mut_ptr()) };
 
             let got: [f32; 9] = [
-                matrix[0][0], matrix[0][1], matrix[0][2],
-                matrix[1][0], matrix[1][1], matrix[1][2],
-                matrix[2][0], matrix[2][1], matrix[2][2],
+                matrix[0][0],
+                matrix[0][1],
+                matrix[0][2],
+                matrix[1][0],
+                matrix[1][1],
+                matrix[1][2],
+                matrix[2][0],
+                matrix[2][1],
+                matrix[2][2],
             ];
             assert_eq!(got, want, "case {i}: angles {angles:?}");
         }
@@ -3389,17 +3470,29 @@ mod oracle_tests {
             G_TransposeMatrix(matrix, &mut transpose);
 
             let flat_in: [f32; 9] = [
-                matrix[0][0], matrix[0][1], matrix[0][2],
-                matrix[1][0], matrix[1][1], matrix[1][2],
-                matrix[2][0], matrix[2][1], matrix[2][2],
+                matrix[0][0],
+                matrix[0][1],
+                matrix[0][2],
+                matrix[1][0],
+                matrix[1][1],
+                matrix[1][2],
+                matrix[2][0],
+                matrix[2][1],
+                matrix[2][2],
             ];
             let mut want = [0f32; 9];
             unsafe { jka_G_TransposeMatrix(flat_in.as_ptr(), want.as_mut_ptr()) };
 
             let got: [f32; 9] = [
-                transpose[0][0], transpose[0][1], transpose[0][2],
-                transpose[1][0], transpose[1][1], transpose[1][2],
-                transpose[2][0], transpose[2][1], transpose[2][2],
+                transpose[0][0],
+                transpose[0][1],
+                transpose[0][2],
+                transpose[1][0],
+                transpose[1][1],
+                transpose[1][2],
+                transpose[2][0],
+                transpose[2][1],
+                transpose[2][2],
             ];
             assert_eq!(got, want, "case {i}");
         }
@@ -3422,9 +3515,15 @@ mod oracle_tests {
             G_RotatePoint(&mut p, &matrix);
 
             let flat_m: [f32; 9] = [
-                matrix[0][0], matrix[0][1], matrix[0][2],
-                matrix[1][0], matrix[1][1], matrix[1][2],
-                matrix[2][0], matrix[2][1], matrix[2][2],
+                matrix[0][0],
+                matrix[0][1],
+                matrix[0][2],
+                matrix[1][0],
+                matrix[1][1],
+                matrix[1][2],
+                matrix[2][0],
+                matrix[2][1],
+                matrix[2][2],
             ];
             let mut want = [0f32; 3];
             unsafe { jka_G_RotatePoint(point.as_ptr(), flat_m.as_ptr(), want.as_mut_ptr()) };

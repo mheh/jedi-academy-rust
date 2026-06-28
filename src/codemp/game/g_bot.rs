@@ -26,33 +26,33 @@
 use core::ffi::{c_char, c_int, CStr};
 use core::ptr::{addr_of, addr_of_mut, null_mut};
 
+use crate::codemp::game::ai_main::BotAISetupClient;
+use crate::codemp::game::ai_wpnav::LoadPath_ThisLevel;
 use crate::codemp::game::bg_public::{
     DUELTEAM_DOUBLE, DUELTEAM_LONE, GT_CTF, GT_CTY, GT_DUEL, GT_FFA, GT_HOLOCRON, GT_JEDIMASTER,
     GT_POWERDUEL, GT_SIEGE, GT_TEAM, MAX_ARENAS, MAX_ARENAS_TEXT, MAX_BOTS, MAX_BOTS_TEXT,
     PERS_TEAM, TEAM_BLUE, TEAM_RED, TEAM_SPECTATOR,
 };
-use crate::codemp::game::ai_wpnav::LoadPath_ThisLevel;
 use crate::codemp::game::g_client::{ClientBegin, ClientConnect, ClientUserinfoChanged, PickTeam};
 use crate::codemp::game::g_cmds::SetTeam;
+use crate::codemp::game::g_local::bot_settings_t;
 use crate::codemp::game::g_local::{gclient_t, gentity_t, CON_CONNECTED};
 use crate::codemp::game::g_main::{
     g_autoMapCycle, g_entities, g_gametype, g_maxclients, level, Com_Printf, G_GetStringEdString,
     G_PowerDuelCount, G_Printf,
 };
-use crate::codemp::game::g_public_h::SVF_BOT;
 use crate::codemp::game::g_mem::G_Alloc;
+use crate::codemp::game::g_public_h::SVF_BOT;
 use crate::codemp::game::g_session::G_ReadSessionData;
 use crate::codemp::game::q_shared::{
-    random, va, Info_SetValueForKey, Info_ValueForKey, Q_CleanStr, Q_stricmp, Q_strncpyz, Sz,
-    COM_Parse, COM_ParseExt,
+    random, va, COM_Parse, COM_ParseExt, Info_SetValueForKey, Info_ValueForKey, Q_CleanStr,
+    Q_stricmp, Q_strncpyz, Sz,
 };
 use crate::codemp::game::q_shared_h::{
     CVAR_INIT, CVAR_ROM, CVAR_SERVERINFO, FS_READ, MAX_INFO_STRING, MAX_TOKEN_CHARS,
 };
 use crate::ffi::types::{fileHandle_t, qboolean, vmCvar_t, QFALSE, QTRUE};
 use crate::trap;
-use crate::codemp::game::ai_main::BotAISetupClient;
-use crate::codemp::game::g_local::bot_settings_t;
 
 const S_COLOR_RED: &str = "^1";
 const S_COLOR_YELLOW: &str = "^3";
@@ -247,7 +247,10 @@ pub unsafe fn G_DoesMapSupportGametype(mapname: *const c_char, gametype: c_int) 
         return QFALSE;
     }
 
-    type_ = Info_ValueForKey((*addr_of!(g_arenaInfos))[thisLevel as usize], c"type".as_ptr());
+    type_ = Info_ValueForKey(
+        (*addr_of!(g_arenaInfos))[thisLevel as usize],
+        c"type".as_ptr(),
+    );
 
     typeBits = G_GetMapTypeBits(type_);
     if typeBits & (1 << gametype) != 0 {
@@ -303,7 +306,11 @@ pub unsafe fn G_ParseInfos(buf: *mut c_char, max: c_int, infos: *mut *mut c_char
             if strcmp(token, c"}".as_ptr()) == 0 {
                 break;
             }
-            Q_strncpyz(key.as_mut_ptr(), token, core::mem::size_of_val(&key) as c_int);
+            Q_strncpyz(
+                key.as_mut_ptr(),
+                token,
+                core::mem::size_of_val(&key) as c_int,
+            );
 
             token = COM_ParseExt(&mut buf_p, QFALSE);
             if *token == 0 {
@@ -479,14 +486,20 @@ pub unsafe fn G_RefreshNextMap(gametype: c_int, forced: qboolean) -> *const c_ch
         trap::Cvar_Set("nextmap", "map_restart 0");
     } else {
         //otherwise we have a valid nextmap to cycle to, so use it.
-        type_ = Info_ValueForKey((*addr_of!(g_arenaInfos))[desiredMap as usize], c"map".as_ptr());
+        type_ = Info_ValueForKey(
+            (*addr_of!(g_arenaInfos))[desiredMap as usize],
+            c"map".as_ptr(),
+        );
         trap::Cvar_Set(
             "nextmap",
             &CStr::from_ptr(va(format_args!("map {}", Sz(type_)))).to_string_lossy(),
         );
     }
 
-    Info_ValueForKey((*addr_of!(g_arenaInfos))[desiredMap as usize], c"map".as_ptr())
+    Info_ValueForKey(
+        (*addr_of!(g_arenaInfos))[desiredMap as usize],
+        c"map".as_ptr(),
+    )
 }
 
 /// `static void G_LoadArenas( void )` (g_bot.c:292). Resets the arena roster, then
@@ -602,7 +615,13 @@ pub unsafe fn G_CountHumanPlayers(team: c_int) -> c_int {
             i += 1;
             continue;
         }
-        if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*cl).ps.clientNum as usize)).r.svFlags & SVF_BOT != 0 {
+        if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*cl).ps.clientNum as usize))
+        .r
+        .svFlags
+            & SVF_BOT
+            != 0
+        {
             i += 1;
             continue;
         }
@@ -635,7 +654,13 @@ pub unsafe fn G_CountBotPlayers(team: c_int) -> c_int {
             i += 1;
             continue;
         }
-        if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*cl).ps.clientNum as usize)).r.svFlags & SVF_BOT == 0 {
+        if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*cl).ps.clientNum as usize))
+        .r
+        .svFlags
+            & SVF_BOT
+            == 0
+        {
             i += 1;
             continue;
         }
@@ -762,7 +787,13 @@ pub unsafe fn G_RemoveRandomBot(team: c_int) -> c_int {
             i += 1;
             continue;
         }
-        if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*cl).ps.clientNum as usize)).r.svFlags & SVF_BOT == 0 {
+        if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*cl).ps.clientNum as usize))
+        .r
+        .svFlags
+            & SVF_BOT
+            == 0
+        {
             i += 1;
             continue;
         }
@@ -779,7 +810,8 @@ pub unsafe fn G_RemoveRandomBot(team: c_int) -> c_int {
         Q_CleanStr(netname.as_mut_ptr());
         trap::SendConsoleCommand(
             EXEC_INSERT,
-            &CStr::from_ptr(va(format_args!("kick \"{}\"\n", Sz(netname.as_ptr())))).to_string_lossy(),
+            &CStr::from_ptr(va(format_args!("kick \"{}\"\n", Sz(netname.as_ptr()))))
+                .to_string_lossy(),
         );
         return QTRUE;
     }
@@ -815,7 +847,13 @@ pub unsafe fn G_AddRandomBot(team: c_int) {
                 i += 1;
                 continue;
             }
-            if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*cl).ps.clientNum as usize)).r.svFlags & SVF_BOT == 0 {
+            if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*cl).ps.clientNum as usize))
+            .r
+            .svFlags
+                & SVF_BOT
+                == 0
+            {
                 i += 1;
                 continue;
             }
@@ -850,7 +888,13 @@ pub unsafe fn G_AddRandomBot(team: c_int) {
                 i += 1;
                 continue;
             }
-            if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*cl).ps.clientNum as usize)).r.svFlags & SVF_BOT == 0 {
+            if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*cl).ps.clientNum as usize))
+            .r
+            .svFlags
+                & SVF_BOT
+                == 0
+            {
                 i += 1;
                 continue;
             }
@@ -1045,7 +1089,13 @@ pub unsafe fn Svcmd_BotList_f() {
 ///
 /// SAFETY: reads/writes the entity array and client state; issues client +
 /// userinfo traps.
-unsafe fn G_AddBot(name: *const c_char, skill: f32, mut team: *const c_char, delay: c_int, altname: *mut c_char) {
+unsafe fn G_AddBot(
+    name: *const c_char,
+    skill: f32,
+    mut team: *const c_char,
+    delay: c_int,
+    altname: *mut c_char,
+) {
     let clientNum: c_int;
     let botinfo: *mut c_char;
     let bot: *mut gentity_t;
@@ -1060,7 +1110,10 @@ unsafe fn G_AddBot(name: *const c_char, skill: f32, mut team: *const c_char, del
     // get the botinfo from bots.txt
     botinfo = G_GetBotInfoByName(name);
     if botinfo.is_null() {
-        G_Printf(&format!("{S_COLOR_RED}Error: Bot '{}' not defined\n", Sz(name)));
+        G_Printf(&format!(
+            "{S_COLOR_RED}Error: Bot '{}' not defined\n",
+            Sz(name)
+        ));
         return;
     }
 
@@ -1351,7 +1404,13 @@ pub unsafe fn Svcmd_AddBot_f() {
     // alternative name
     argv(5, &mut altname);
 
-    G_AddBot(name.as_ptr(), skill, team.as_ptr(), delay, altname.as_mut_ptr());
+    G_AddBot(
+        name.as_ptr(),
+        skill,
+        team.as_ptr(),
+        delay,
+        altname.as_mut_ptr(),
+    );
 
     // if this was issued during gameplay and we are playing locally,
     // go ahead and load the bot's media immediately

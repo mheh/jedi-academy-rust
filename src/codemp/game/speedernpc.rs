@@ -31,13 +31,14 @@ use crate::codemp::game::anims::{
     BOTH_VS_ATR_TO_L_S, BOTH_VS_IDLE, BOTH_VS_IDLE_G, BOTH_VS_IDLE_SL, BOTH_VS_IDLE_SR,
     BOTH_VS_LAND, BOTH_VS_LAND_G, BOTH_VS_LAND_SL, BOTH_VS_LAND_SR, BOTH_VS_LEANL, BOTH_VS_LEANL_G,
     BOTH_VS_LEANL_SL, BOTH_VS_LEANL_SR, BOTH_VS_LEANR, BOTH_VS_LEANR_G, BOTH_VS_LEANR_SL,
-    BOTH_VS_LEANR_SR, BOTH_VS_LOOKLEFT, BOTH_VS_LOOKRIGHT, BOTH_VS_MOUNTJUMP_L, BOTH_VS_MOUNT_L,
-    BOTH_VS_MOUNT_R, BOTH_VS_MOUNTTHROW_L, BOTH_VS_MOUNTTHROW_R, BOTH_VS_REV, BOTH_VS_TURBO,
+    BOTH_VS_LEANR_SR, BOTH_VS_LOOKLEFT, BOTH_VS_LOOKRIGHT, BOTH_VS_MOUNTJUMP_L,
+    BOTH_VS_MOUNTTHROW_L, BOTH_VS_MOUNTTHROW_R, BOTH_VS_MOUNT_L, BOTH_VS_MOUNT_R, BOTH_VS_REV,
+    BOTH_VS_TURBO,
 };
 use crate::codemp::game::bg_panimate::{bgAllAnims, BG_AnimLength, BG_SetAnim};
 use crate::codemp::game::bg_pmove::{pm, BG_SabersOff};
-use crate::codemp::game::bg_public::EF_JETPACK_ACTIVE;
 use crate::codemp::game::bg_public::BG_GiveMeVectorFromMatrix;
+use crate::codemp::game::bg_public::EF_JETPACK_ACTIVE;
 use crate::codemp::game::bg_public::{
     SETANIM_BOTH, SETANIM_FLAG_HOLD, SETANIM_FLAG_HOLDLESS, SETANIM_FLAG_NORMAL,
     SETANIM_FLAG_OVERRIDE, SETANIM_FLAG_RESTART,
@@ -45,8 +46,8 @@ use crate::codemp::game::bg_public::{
 use crate::codemp::game::bg_vehicleLoad::{g_vehicleInfo, BG_VehicleGetIndex};
 use crate::codemp::game::bg_vehicles_h::{
     vehicleInfo_t, EWeaponPose, Vehicle_t, MAX_VEHICLE_EXHAUSTS, VEHICLE_BASE, VEH_CRASHING,
-    VEH_FLYING, VEH_MOUNT_THROW_LEFT, VEH_MOUNT_THROW_RIGHT, VEH_SABERINLEFTHAND, VEH_SLIDEBREAKING,
-    WPOSE_BLASTER, WPOSE_NONE, WPOSE_SABERLEFT, WPOSE_SABERRIGHT,
+    VEH_FLYING, VEH_MOUNT_THROW_LEFT, VEH_MOUNT_THROW_RIGHT, VEH_SABERINLEFTHAND,
+    VEH_SLIDEBREAKING, WPOSE_BLASTER, WPOSE_NONE, WPOSE_SABERLEFT, WPOSE_SABERRIGHT,
 };
 use crate::codemp::game::bg_weapons_h::{WP_BLASTER, WP_MELEE, WP_NONE, WP_SABER};
 use crate::codemp::game::g_main::{level, BG_GetTime};
@@ -105,8 +106,8 @@ pub unsafe extern "C" fn ProcessMoveCommands(pVeh: *mut Vehicle_t) {
 
     if !(*pVeh).m_pPilot.is_null() /*&& (pilotPS->weapon == WP_NONE || pilotPS->weapon == WP_MELEE )*/ &&
         ((*pVeh).m_ucmd.buttons & BUTTON_ALT_ATTACK) != 0 && (*(*pVeh).m_pVehicleInfo).turboSpeed != 0.0
-        /*||
-        (parentPS && parentPS->electrifyTime > curTime && pVeh->m_pVehicleInfo->turboSpeed)*/
+    /*||
+    (parentPS && parentPS->electrifyTime > curTime && pVeh->m_pVehicleInfo->turboSpeed)*/
     //make them go!
     {
         if (!parentPS.is_null() && (*parentPS).electrifyTime > curTime)
@@ -288,8 +289,9 @@ pub unsafe extern "C" fn ProcessOrientCommands(pVeh: *mut Vehicle_t) {
 
         if (*parentPS).electrifyTime > (*pm).cmd.serverTime {
             //do some crazy stuff
-            *(*pVeh).m_vOrientation.add(YAW) +=
-                (((*pm).cmd.serverTime as f32 / 1000.0f32).sin() * 3.0f32) * (*pVeh).m_fTimeModifier;
+            *(*pVeh).m_vOrientation.add(YAW) += (((*pm).cmd.serverTime as f32 / 1000.0f32).sin()
+                * 3.0f32)
+                * (*pVeh).m_fTimeModifier;
         }
     }
 
@@ -316,7 +318,11 @@ pub unsafe fn VEH_StartStrafeRam(
 // Like a think or move command, this updates various vehicle properties.
 /// `Update` (SpeederNPC.c:149, `#ifdef QAGAME`).
 pub unsafe extern "C" fn Update(pVeh: *mut Vehicle_t, pUcmd: *const usercmd_t) -> qboolean {
-    if ((*addr_of!(g_vehicleInfo))[VEHICLE_BASE as usize].Update.unwrap())(pVeh, pUcmd) == QFALSE {
+    if ((*addr_of!(g_vehicleInfo))[VEHICLE_BASE as usize]
+        .Update
+        .unwrap())(pVeh, pUcmd)
+        == QFALSE
+    {
         return QFALSE;
     }
 
@@ -378,7 +384,8 @@ pub unsafe extern "C" fn AnimateRiders(pVeh: *mut Vehicle_t) {
             // Set the delay time (which happens to be the time it takes for the animation to complete).
             // NOTE: Here I made it so the delay is actually 40% (0.4f) of the animation time.
             //#ifdef _JK2MP
-            iAnimLen = (BG_AnimLength((*(*pVeh).m_pPilot).localAnimIndex, Anim) as f32 * 0.4) as c_int;
+            iAnimLen =
+                (BG_AnimLength((*(*pVeh).m_pPilot).localAnimIndex, Anim) as f32 * 0.4) as c_int;
             (*pVeh).m_iBoarding = BG_GetTime() + iAnimLen;
 
             // Set the animation, which won't be interrupted until it's completed.
@@ -647,7 +654,6 @@ pub unsafe extern "C" fn G_SetSpeederVehicleFunctions(pVehInfo: *mut vehicleInfo
     //	pVehInfo->Inhabited					=		Inhabited;
 }
 
-
 // Create/Allocate a new Animal Vehicle (initializing it as well).
 //
 // No-oracle: allocates from the module-static vehicle pool via
@@ -660,6 +666,6 @@ pub unsafe extern "C" fn G_CreateSpeederNPC(pVeh: *mut *mut Vehicle_t, strType: 
     //memset to 0, so this memory would be lost..
     G_AllocateVehicleObject(pVeh);
     write_bytes(*pVeh, 0, 1); // memset(*pVeh, 0, sizeof(Vehicle_t))
-    (**pVeh).m_pVehicleInfo =
-        (addr_of_mut!(g_vehicleInfo) as *mut vehicleInfo_t).add(BG_VehicleGetIndex(strType) as usize);
+    (**pVeh).m_pVehicleInfo = (addr_of_mut!(g_vehicleInfo) as *mut vehicleInfo_t)
+        .add(BG_VehicleGetIndex(strType) as usize);
 }

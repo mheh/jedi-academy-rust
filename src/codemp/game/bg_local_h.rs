@@ -160,7 +160,10 @@ mod tests {
             assert_eq!(size_of::<pml_t>(), jka_bl_sizeof_pml_t());
             assert_eq!(align_of::<pml_t>(), jka_bl_alignof_pml_t());
             assert_eq!(core::mem::offset_of!(pml_t, forward), jka_bl_off_forward());
-            assert_eq!(core::mem::offset_of!(pml_t, frametime), jka_bl_off_frametime());
+            assert_eq!(
+                core::mem::offset_of!(pml_t, frametime),
+                jka_bl_off_frametime()
+            );
             assert_eq!(core::mem::offset_of!(pml_t, msec), jka_bl_off_msec());
             assert_eq!(core::mem::offset_of!(pml_t, walking), jka_bl_off_walking());
             assert_eq!(

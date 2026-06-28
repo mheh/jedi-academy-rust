@@ -106,12 +106,7 @@ pub unsafe fn NPC_ClearGoal() {
 ///
 /// Axis-aligned bounding-box overlap test. NOTE: flush up against counts as
 /// overlapping. Pure float comparisons — oracle-tested.
-pub fn G_BoundsOverlap(
-    mins1: &vec3_t,
-    maxs1: &vec3_t,
-    mins2: &vec3_t,
-    maxs2: &vec3_t,
-) -> qboolean {
+pub fn G_BoundsOverlap(mins1: &vec3_t, maxs1: &vec3_t, mins2: &vec3_t, maxs2: &vec3_t) -> qboolean {
     //NOTE: flush up against counts as overlapping
     if mins1[0] > maxs2[0] {
         return QFALSE;
@@ -227,23 +222,68 @@ mod oracle_tests {
     fn g_boundsoverlap_matches_oracle() {
         let cases: &[(vec3_t, vec3_t, vec3_t, vec3_t)] = &[
             // clearly overlapping
-            ([-10.0, -10.0, -10.0], [10.0, 10.0, 10.0], [0.0, 0.0, 0.0], [5.0, 5.0, 5.0]),
+            (
+                [-10.0, -10.0, -10.0],
+                [10.0, 10.0, 10.0],
+                [0.0, 0.0, 0.0],
+                [5.0, 5.0, 5.0],
+            ),
             // disjoint in x
-            ([0.0, 0.0, 0.0], [10.0, 10.0, 10.0], [20.0, 0.0, 0.0], [30.0, 10.0, 10.0]),
+            (
+                [0.0, 0.0, 0.0],
+                [10.0, 10.0, 10.0],
+                [20.0, 0.0, 0.0],
+                [30.0, 10.0, 10.0],
+            ),
             // disjoint in y
-            ([0.0, 0.0, 0.0], [10.0, 10.0, 10.0], [0.0, 20.0, 0.0], [10.0, 30.0, 10.0]),
+            (
+                [0.0, 0.0, 0.0],
+                [10.0, 10.0, 10.0],
+                [0.0, 20.0, 0.0],
+                [10.0, 30.0, 10.0],
+            ),
             // disjoint in z
-            ([0.0, 0.0, 0.0], [10.0, 10.0, 10.0], [0.0, 0.0, 20.0], [10.0, 10.0, 30.0]),
+            (
+                [0.0, 0.0, 0.0],
+                [10.0, 10.0, 10.0],
+                [0.0, 0.0, 20.0],
+                [10.0, 10.0, 30.0],
+            ),
             // flush up against in x (counts as overlapping)
-            ([0.0, 0.0, 0.0], [10.0, 10.0, 10.0], [10.0, 0.0, 0.0], [20.0, 10.0, 10.0]),
+            (
+                [0.0, 0.0, 0.0],
+                [10.0, 10.0, 10.0],
+                [10.0, 0.0, 0.0],
+                [20.0, 10.0, 10.0],
+            ),
             // flush up against in y
-            ([0.0, 0.0, 0.0], [10.0, 10.0, 10.0], [0.0, 10.0, 0.0], [10.0, 20.0, 10.0]),
+            (
+                [0.0, 0.0, 0.0],
+                [10.0, 10.0, 10.0],
+                [0.0, 10.0, 0.0],
+                [10.0, 20.0, 10.0],
+            ),
             // flush up against in z
-            ([0.0, 0.0, 0.0], [10.0, 10.0, 10.0], [0.0, 0.0, 10.0], [10.0, 10.0, 20.0]),
+            (
+                [0.0, 0.0, 0.0],
+                [10.0, 10.0, 10.0],
+                [0.0, 0.0, 10.0],
+                [10.0, 10.0, 20.0],
+            ),
             // one fully inside the other
-            ([-5.0, -5.0, -5.0], [5.0, 5.0, 5.0], [-1.0, -1.0, -1.0], [1.0, 1.0, 1.0]),
+            (
+                [-5.0, -5.0, -5.0],
+                [5.0, 5.0, 5.0],
+                [-1.0, -1.0, -1.0],
+                [1.0, 1.0, 1.0],
+            ),
             // touching only at a single corner
-            ([0.0, 0.0, 0.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [2.0, 2.0, 2.0]),
+            (
+                [0.0, 0.0, 0.0],
+                [1.0, 1.0, 1.0],
+                [1.0, 1.0, 1.0],
+                [2.0, 2.0, 2.0],
+            ),
         ];
         for (mins1, maxs1, mins2, maxs2) in cases {
             let got = G_BoundsOverlap(mins1, maxs1, mins2, maxs2);
@@ -255,7 +295,10 @@ mod oracle_tests {
                     maxs2.as_ptr(),
                 )
             };
-            assert_eq!(got as c_int, want, "G_BoundsOverlap mismatch for {mins1:?} {maxs1:?} {mins2:?} {maxs2:?}");
+            assert_eq!(
+                got as c_int, want,
+                "G_BoundsOverlap mismatch for {mins1:?} {maxs1:?} {mins2:?} {maxs2:?}"
+            );
         }
     }
 }

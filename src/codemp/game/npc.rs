@@ -19,81 +19,84 @@ use core::ptr::{addr_of, addr_of_mut};
 
 use crate::trap;
 
-use crate::codemp::game::b_public_h::{
-    BS_ADVANCE_FIGHT, BS_CINEMATIC, BS_DEFAULT, BS_FLEE, BS_FOLLOW_LEADER, BS_HUNT_AND_KILL,
-    BS_INVESTIGATE, BS_JUMP, BS_NOCLIP, BS_PATROL, BS_REMOVE, BS_SEARCH, BS_SLEEP,
-    BS_STAND_AND_SHOOT, BS_STAND_GUARD, BS_WAIT, BS_WANDER, NPCAI_LOST, SCF_ALT_FIRE, SCF_CROUCHED,
-    SCF_FORCED_MARCH, SCF_LEAN_LEFT, SCF_LEAN_RIGHT, SCF_RUNNING, SCF_WALKING, gNPC_t,
-};
 use crate::codemp::game::anims::{TORSO_WEAPONIDLE3, TORSO_WEAPONREADY1, TORSO_WEAPONREADY3};
+use crate::codemp::game::b_public_h::RANK_LT_JG;
+use crate::codemp::game::b_public_h::{
+    gNPC_t, BS_ADVANCE_FIGHT, BS_CINEMATIC, BS_DEFAULT, BS_FLEE, BS_FOLLOW_LEADER,
+    BS_HUNT_AND_KILL, BS_INVESTIGATE, BS_JUMP, BS_NOCLIP, BS_PATROL, BS_REMOVE, BS_SEARCH,
+    BS_SLEEP, BS_STAND_AND_SHOOT, BS_STAND_GUARD, BS_WAIT, BS_WANDER, NPCAI_LOST, SCF_ALT_FIRE,
+    SCF_CROUCHED, SCF_FORCED_MARCH, SCF_LEAN_LEFT, SCF_LEAN_RIGHT, SCF_RUNNING, SCF_WALKING,
+};
 use crate::codemp::game::bg_public::{
-    EF2_HELD_BY_MONSTER, EF_DISINTEGRATION, EF_NODRAW, ET_NPC, EV_VICTORY1, EV_VICTORY3, MASK_SOLID,
-    PMF_FOLLOW, SETANIM_FLAG_NORMAL, SETANIM_TORSO, TEAM_SPECTATOR, WEAPON_IDLE, WEAPON_READY,
+    EF2_HELD_BY_MONSTER, EF_DISINTEGRATION, EF_NODRAW, ET_NPC, EV_VICTORY1, EV_VICTORY3,
+    MASK_SOLID, PMF_FOLLOW, SETANIM_FLAG_NORMAL, SETANIM_TORSO, TEAM_SPECTATOR, WEAPON_IDLE,
+    WEAPON_READY,
 };
 use crate::codemp::game::bg_weapons_h::{
     WP_BRYAR_PISTOL, WP_DISRUPTOR, WP_EMPLACED_GUN, WP_NONE, WP_SABER, WP_STUN_BATON, WP_THERMAL,
 };
 use crate::codemp::game::g_active::ClientThink;
 use crate::codemp::game::g_local::{
-    AEL_DANGER_GREAT, AEL_DISCOVERED, FL_DONT_SHOOT, FRAMETIME, gclient_t, gentity_t,
+    gclient_t, gentity_t, AEL_DANGER_GREAT, AEL_DISCOVERED, FL_DONT_SHOOT, FRAMETIME,
 };
 use crate::codemp::game::g_main::{
     d_patched, debugNPCFreeze, g_dismember, g_entities, g_saberRealisticCombat, g_spskill, level,
 };
-use crate::codemp::game::g_timer::{TIMER_Done, TIMER_Set};
-use crate::codemp::game::g_utils::{G_Find, G_FreeEntity, G_SetAnim, G_SetOrigin, G_SoundOnEnt};
 use crate::codemp::game::g_nav::G_Cube;
 use crate::codemp::game::g_public_h::{BSET_ATTACK, BSET_DELAYED, SVF_ICARUS_FREEZE, TID_MOVE_NAV};
-use crate::codemp::game::npc_senses::{AddSightEvent, eventClearTime};
-use crate::codemp::game::npc_move::NPC_ApplyRoff;
-use crate::codemp::game::npc_utils::{
-    G_ActivateBehavior, NPC_CheckCharmed, NPC_CheckLookTarget, NPC_SetLookTarget, NPC_UpdateAngles,
+use crate::codemp::game::g_timer::{TIMER_Done, TIMER_Set};
+use crate::codemp::game::g_utils::{G_Find, G_FreeEntity, G_SetAnim, G_SetOrigin, G_SoundOnEnt};
+use crate::codemp::game::npc_ai_atst::NPC_BSATST_Default;
+use crate::codemp::game::npc_ai_droid::NPC_BSDroid_Default;
+use crate::codemp::game::npc_ai_galakmech::{GM_Dying, NPC_BSGM_Default};
+use crate::codemp::game::npc_ai_grenadier::NPC_BSGrenadier_Default;
+use crate::codemp::game::npc_ai_howler::NPC_BSHowler_Default;
+use crate::codemp::game::npc_ai_imperialprobe::NPC_BSImperialProbe_Default;
+use crate::codemp::game::npc_ai_interrogator::NPC_BSInterrogator_Default;
+use crate::codemp::game::npc_ai_jedi::{NPC_BSJedi_Default, NPC_BSJedi_FollowLeader};
+use crate::codemp::game::npc_ai_mark1::{Mark1_dying, NPC_BSMark1_Default};
+use crate::codemp::game::npc_ai_mark2::NPC_BSMark2_Default;
+use crate::codemp::game::npc_ai_minemonster::NPC_BSMineMonster_Default;
+use crate::codemp::game::npc_ai_rancor::NPC_BSRancor_Default;
+use crate::codemp::game::npc_ai_remote::NPC_BSRemote_Default;
+use crate::codemp::game::npc_ai_seeker::NPC_BSSeeker_Default;
+use crate::codemp::game::npc_ai_sentry::NPC_BSSentry_Default;
+use crate::codemp::game::npc_ai_sniper::NPC_BSSniper_Default;
+use crate::codemp::game::npc_ai_stormtrooper::{
+    NPC_BSST_Default, NPC_BSST_Investigate, NPC_BSST_Sleep,
 };
-use crate::codemp::game::npc_reactions::{NPC_CheckAllClear, NPC_CheckPlayerAim};
-use crate::codemp::game::q_math::Q_irand;
+use crate::codemp::game::npc_ai_wampa::NPC_BSWampa_Default;
 use crate::codemp::game::npc_behavior::{
     NPC_BSAdvanceFight, NPC_BSCinematic, NPC_BSEmplaced, NPC_BSFlee, NPC_BSFollowLeader,
     NPC_BSRemove, NPC_BSSearch, NPC_BSSleep, NPC_BSWait, NPC_BSWander, NPC_CheckSurrender,
     NPC_StartFlee,
 };
-use crate::codemp::game::npc_ai_droid::NPC_BSDroid_Default;
-use crate::codemp::game::npc_ai_rancor::NPC_BSRancor_Default;
-use crate::codemp::game::npc_ai_mark2::NPC_BSMark2_Default;
-use crate::codemp::game::npc_ai_atst::NPC_BSATST_Default;
-use crate::codemp::game::npc_ai_sentry::NPC_BSSentry_Default;
-use crate::codemp::game::npc_ai_imperialprobe::NPC_BSImperialProbe_Default;
-use crate::codemp::game::npc_ai_remote::NPC_BSRemote_Default;
-use crate::codemp::game::npc_ai_grenadier::NPC_BSGrenadier_Default;
-use crate::codemp::game::npc_ai_minemonster::NPC_BSMineMonster_Default;
-use crate::codemp::game::npc_ai_howler::NPC_BSHowler_Default;
-use crate::codemp::game::npc_ai_stormtrooper::{NPC_BSST_Default, NPC_BSST_Investigate, NPC_BSST_Sleep};
-use crate::codemp::game::npc_ai_seeker::NPC_BSSeeker_Default;
-use crate::codemp::game::npc_ai_sniper::NPC_BSSniper_Default;
-use crate::codemp::game::npc_ai_jedi::{NPC_BSJedi_Default, NPC_BSJedi_FollowLeader};
-use crate::codemp::game::npc_ai_wampa::NPC_BSWampa_Default;
-use crate::codemp::game::npc_ai_galakmech::{GM_Dying, NPC_BSGM_Default};
-use crate::codemp::game::npc_ai_mark1::{Mark1_dying, NPC_BSMark1_Default};
-use crate::codemp::game::npc_ai_interrogator::NPC_BSInterrogator_Default;
+use crate::codemp::game::npc_combat::{G_AddVoiceEvent, G_ClearEnemy, NPC_MaxDistSquaredForWeapon};
+use crate::codemp::game::npc_move::NPC_ApplyRoff;
+use crate::codemp::game::npc_reactions::{NPC_CheckAllClear, NPC_CheckPlayerAim};
+use crate::codemp::game::npc_senses::{eventClearTime, AddSightEvent};
+use crate::codemp::game::npc_stats::NPC_LoadParms;
+use crate::codemp::game::npc_utils::{
+    G_ActivateBehavior, NPC_CheckCharmed, NPC_CheckLookTarget, NPC_SetLookTarget, NPC_UpdateAngles,
+};
+use crate::codemp::game::q_math::Q_irand;
+use crate::codemp::game::q_math::{
+    vec3_origin, vectoangles, AngleVectors, DotProduct, Q_fabs, VectorAdd, VectorCompare,
+    VectorCopy, VectorLengthSquared, VectorSubtract,
+};
 use crate::codemp::game::q_shared_h::{
-    ENTITYNUM_NONE, ENTITYNUM_WORLD, MAX_CLIENTS, QFALSE, QTRUE, qboolean, trace_t,
+    qboolean, trace_t, ENTITYNUM_NONE, ENTITYNUM_WORLD, MAX_CLIENTS, QFALSE, QTRUE,
+};
+use crate::codemp::game::q_shared_h::{
+    usercmd_t, vec3_t, ANGLE2SHORT, BUTTON_ALT_ATTACK, BUTTON_ATTACK, BUTTON_USE, BUTTON_WALKING,
+    CHAN_AUTO, PITCH, ROLL, YAW,
 };
 use crate::codemp::game::surfaceflags_h::{CONTENTS_CORPSE, CONTENTS_NODROP, CONTENTS_TRIGGER};
-use crate::codemp::game::npc_combat::{G_AddVoiceEvent, G_ClearEnemy, NPC_MaxDistSquaredForWeapon};
-use crate::codemp::game::npc_stats::NPC_LoadParms;
-use crate::codemp::game::b_public_h::RANK_LT_JG;
-use crate::codemp::game::q_math::{
-    AngleVectors, DotProduct, Q_fabs, VectorAdd, VectorCompare, VectorCopy, VectorLengthSquared,
-    VectorSubtract, vec3_origin, vectoangles,
-};
-use crate::codemp::game::q_shared_h::{
-    ANGLE2SHORT, BUTTON_ALT_ATTACK, BUTTON_ATTACK, BUTTON_USE, BUTTON_WALKING, CHAN_AUTO, PITCH,
-    ROLL, YAW, usercmd_t, vec3_t,
-};
 use crate::codemp::game::teams_h::{
-    CLASS_ATST, CLASS_BOBAFETT, CLASS_GALAKMECH, CLASS_GONK, CLASS_HOWLER, CLASS_INTERROGATOR,
-    CLASS_JAWA, CLASS_MARK1, CLASS_MARK2, CLASS_MINEMONSTER, CLASS_MOUSE, CLASS_PROBE,
-    CLASS_PROTOCOL, CLASS_R2D2, CLASS_R5D2, CLASS_RANCOR, CLASS_REMOTE, CLASS_SEEKER, CLASS_SENTRY,
-    CLASS_UGNAUGHT, CLASS_VEHICLE, CLASS_WAMPA, NPCTEAM_ENEMY, NPCTEAM_NEUTRAL, class_t,
+    class_t, CLASS_ATST, CLASS_BOBAFETT, CLASS_GALAKMECH, CLASS_GONK, CLASS_HOWLER,
+    CLASS_INTERROGATOR, CLASS_JAWA, CLASS_MARK1, CLASS_MARK2, CLASS_MINEMONSTER, CLASS_MOUSE,
+    CLASS_PROBE, CLASS_PROTOCOL, CLASS_R2D2, CLASS_R5D2, CLASS_RANCOR, CLASS_REMOTE, CLASS_SEEKER,
+    CLASS_SENTRY, CLASS_UGNAUGHT, CLASS_VEHICLE, CLASS_WAMPA, NPCTEAM_ENEMY, NPCTEAM_NEUTRAL,
 };
 
 /// `gentity_t *NPC;` (NPC.c:34) — the entity currently running NPC AI this think.
@@ -429,7 +432,8 @@ Fills in a default ucmd to keep current angles facing
 */
 pub unsafe fn NPC_KeepCurrentFacing() {
     if ucmd.angles[YAW] == 0 {
-        ucmd.angles[YAW] = ANGLE2SHORT((*client).ps.viewangles[YAW]) - (*client).ps.delta_angles[YAW];
+        ucmd.angles[YAW] =
+            ANGLE2SHORT((*client).ps.viewangles[YAW]) - (*client).ps.delta_angles[YAW];
     }
 
     if ucmd.angles[PITCH] == 0 {
@@ -497,7 +501,12 @@ pub unsafe fn pitch_roll_for_slope(forwhom: *mut gentity_t, pass_slope: *const v
         VectorCopy(&*pass_slope, &mut slope);
     }
 
-    AngleVectors(&(*forwhom).r.currentAngles, Some(&mut ovf), Some(&mut ovr), None);
+    AngleVectors(
+        &(*forwhom).r.currentAngles,
+        Some(&mut ovf),
+        Some(&mut ovr),
+        None,
+    );
 
     vectoangles(&slope, &mut new_angles);
     pitch = new_angles[PITCH] + 90.0;
@@ -564,17 +573,14 @@ pub unsafe fn NPC_ShowDebugInfo() {
 
             if trap::InPVS(
                 &(*found).r.currentOrigin,
-                &(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(0)).r.currentOrigin,
+                &(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(0))
+                    .r
+                    .currentOrigin,
             ) != QFALSE
             {
                 VectorAdd(&(*found).r.currentOrigin, &(*found).r.mins, &mut mins);
                 VectorAdd(&(*found).r.currentOrigin, &(*found).r.maxs, &mut maxs);
-                G_Cube(
-                    &mins,
-                    &maxs,
-                    &*addr_of!(NPCDEBUG_RED),
-                    0.25,
-                );
+                G_Cube(&mins, &maxs, &*addr_of!(NPCDEBUG_RED), 0.25);
             }
         }
     }
@@ -636,43 +642,48 @@ pub unsafe fn NPC_CheckAttackHold() {
     }
 
     /*	if ( ( NPC->client->ps.weapon == WP_BORG_ASSIMILATOR ) || ( NPC->client->ps.weapon == WP_BORG_DRILL ) )
-        {//FIXME: don't keep holding this if can't hit enemy?
+    {//FIXME: don't keep holding this if can't hit enemy?
 
-            // If they don't have shields ( been disabled) they shouldn't hold their attack anim.
-            if ( !(NPC->NPC->aiFlags & NPCAI_SHIELDS) )
-            {
-                NPCInfo->attackHoldTime = 0;
-                return;
-            }
-
-            VectorSubtract(NPC->enemy->r.currentOrigin, NPC->r.currentOrigin, vec);
-            if( VectorLengthSquared(vec) > NPC_MaxDistSquaredForWeapon() )
-            {
-                NPCInfo->attackHoldTime = 0;
-                PM_SetTorsoAnimTimer(NPC, &NPC->client->ps.torsoAnimTimer, 0);
-            }
-            else if( NPCInfo->attackHoldTime && NPCInfo->attackHoldTime > level.time )
-            {
-                ucmd.buttons |= BUTTON_ATTACK;
-            }
-            else if ( ( NPCInfo->attackHold ) && ( ucmd.buttons & BUTTON_ATTACK ) )
-            {
-                NPCInfo->attackHoldTime = level.time + NPCInfo->attackHold;
-                PM_SetTorsoAnimTimer(NPC, &NPC->client->ps.torsoAnimTimer, NPCInfo->attackHold);
-            }
-            else
-            {
-                NPCInfo->attackHoldTime = 0;
-                PM_SetTorsoAnimTimer(NPC, &NPC->client->ps.torsoAnimTimer, 0);
-            }
+        // If they don't have shields ( been disabled) they shouldn't hold their attack anim.
+        if ( !(NPC->NPC->aiFlags & NPCAI_SHIELDS) )
+        {
+            NPCInfo->attackHoldTime = 0;
+            return;
         }
-        else*/
+
+        VectorSubtract(NPC->enemy->r.currentOrigin, NPC->r.currentOrigin, vec);
+        if( VectorLengthSquared(vec) > NPC_MaxDistSquaredForWeapon() )
+        {
+            NPCInfo->attackHoldTime = 0;
+            PM_SetTorsoAnimTimer(NPC, &NPC->client->ps.torsoAnimTimer, 0);
+        }
+        else if( NPCInfo->attackHoldTime && NPCInfo->attackHoldTime > level.time )
+        {
+            ucmd.buttons |= BUTTON_ATTACK;
+        }
+        else if ( ( NPCInfo->attackHold ) && ( ucmd.buttons & BUTTON_ATTACK ) )
+        {
+            NPCInfo->attackHoldTime = level.time + NPCInfo->attackHold;
+            PM_SetTorsoAnimTimer(NPC, &NPC->client->ps.torsoAnimTimer, NPCInfo->attackHold);
+        }
+        else
+        {
+            NPCInfo->attackHoldTime = 0;
+            PM_SetTorsoAnimTimer(NPC, &NPC->client->ps.torsoAnimTimer, 0);
+        }
+    }
+    else*/
     {
         //everyone else...?  FIXME: need to tie this into AI somehow?
-        VectorSubtract(&(*(*NPC).enemy).r.currentOrigin, &(*NPC).r.currentOrigin, &mut vec);
+        VectorSubtract(
+            &(*(*NPC).enemy).r.currentOrigin,
+            &(*NPC).r.currentOrigin,
+            &mut vec,
+        );
         if VectorLengthSquared(&vec) > NPC_MaxDistSquaredForWeapon() {
             (*NPCInfo).attackHoldTime = 0;
-        } else if (*NPCInfo).attackHoldTime != 0 && (*NPCInfo).attackHoldTime > (*addr_of!(level)).time
+        } else if (*NPCInfo).attackHoldTime != 0
+            && (*NPCInfo).attackHoldTime > (*addr_of!(level)).time
         {
             ucmd.buttons |= BUTTON_ATTACK;
         } else if (*NPCInfo).attackHold != 0 && ucmd.buttons & BUTTON_ATTACK != 0 {
@@ -770,58 +781,70 @@ pub unsafe fn G_DroidSounds(self_: *mut gentity_t) {
     }
 }
 
-pub unsafe fn NPC_SetAnim(ent: *mut gentity_t, setAnimParts: c_int, anim: c_int, setAnimFlags: c_int) {
+pub unsafe fn NPC_SetAnim(
+    ent: *mut gentity_t,
+    setAnimParts: c_int,
+    anim: c_int,
+    setAnimFlags: c_int,
+) {
     // FIXME : once torsoAnim and legsAnim are in the same structure for NCP and Players
     // rename PM_SETAnimFinal to PM_SetAnim and have both NCP and Players call PM_SetAnim
-    G_SetAnim(ent, core::ptr::null_mut(), setAnimParts, anim, setAnimFlags, 0);
+    G_SetAnim(
+        ent,
+        core::ptr::null_mut(),
+        setAnimParts,
+        anim,
+        setAnimFlags,
+        0,
+    );
     /*
-        if(ent->client)
-        {//Players, NPCs
-            if (setAnimFlags&SETANIM_FLAG_OVERRIDE)
+    if(ent->client)
+    {//Players, NPCs
+        if (setAnimFlags&SETANIM_FLAG_OVERRIDE)
+        {
+            if (setAnimParts & SETANIM_TORSO)
             {
-                if (setAnimParts & SETANIM_TORSO)
+                if( (setAnimFlags & SETANIM_FLAG_RESTART) || ent->client->ps.torsoAnim != anim )
                 {
-                    if( (setAnimFlags & SETANIM_FLAG_RESTART) || ent->client->ps.torsoAnim != anim )
-                    {
-                        PM_SetTorsoAnimTimer( ent, &ent->client->ps.torsoTimer, 0 );
-                    }
-                }
-                if (setAnimParts & SETANIM_LEGS)
-                {
-                    if( (setAnimFlags & SETANIM_FLAG_RESTART) || ent->client->ps.legsAnim != anim )
-                    {
-                        PM_SetLegsAnimTimer( ent, &ent->client->ps.legsAnimTimer, 0 );
-                    }
+                    PM_SetTorsoAnimTimer( ent, &ent->client->ps.torsoTimer, 0 );
                 }
             }
-
-            PM_SetAnimFinal(&ent->client->ps.torsoAnim,&ent->client->ps.legsAnim,setAnimParts,anim,setAnimFlags,
-                &ent->client->ps.torsoAnimTimer,&ent->client->ps.legsAnimTimer,ent);
-        }
-        else
-        {//bodies, etc.
-            if (setAnimFlags&SETANIM_FLAG_OVERRIDE)
+            if (setAnimParts & SETANIM_LEGS)
             {
-                if (setAnimParts & SETANIM_TORSO)
+                if( (setAnimFlags & SETANIM_FLAG_RESTART) || ent->client->ps.legsAnim != anim )
                 {
-                    if( (setAnimFlags & SETANIM_FLAG_RESTART) || ent->s.torsoAnim != anim )
-                    {
-                        PM_SetTorsoAnimTimer( ent, &ent->s.torsoAnimTimer, 0 );
-                    }
-                }
-                if (setAnimParts & SETANIM_LEGS)
-                {
-                    if( (setAnimFlags & SETANIM_FLAG_RESTART) || ent->s.legsAnim != anim )
-                    {
-                        PM_SetLegsAnimTimer( ent, &ent->s.legsAnimTimer, 0 );
-                    }
+                    PM_SetLegsAnimTimer( ent, &ent->client->ps.legsAnimTimer, 0 );
                 }
             }
-
-            PM_SetAnimFinal(&ent->s.torsoAnim,&ent->s.legsAnim,setAnimParts,anim,setAnimFlags,
-                &ent->s.torsoAnimTimer,&ent->s.legsAnimTimer,ent);
         }
-        */
+
+        PM_SetAnimFinal(&ent->client->ps.torsoAnim,&ent->client->ps.legsAnim,setAnimParts,anim,setAnimFlags,
+            &ent->client->ps.torsoAnimTimer,&ent->client->ps.legsAnimTimer,ent);
+    }
+    else
+    {//bodies, etc.
+        if (setAnimFlags&SETANIM_FLAG_OVERRIDE)
+        {
+            if (setAnimParts & SETANIM_TORSO)
+            {
+                if( (setAnimFlags & SETANIM_FLAG_RESTART) || ent->s.torsoAnim != anim )
+                {
+                    PM_SetTorsoAnimTimer( ent, &ent->s.torsoAnimTimer, 0 );
+                }
+            }
+            if (setAnimParts & SETANIM_LEGS)
+            {
+                if( (setAnimFlags & SETANIM_FLAG_RESTART) || ent->s.legsAnim != anim )
+                {
+                    PM_SetLegsAnimTimer( ent, &ent->s.legsAnimTimer, 0 );
+                }
+            }
+        }
+
+        PM_SetAnimFinal(&ent->s.torsoAnim,&ent->s.legsAnim,setAnimParts,anim,setAnimFlags,
+            &ent->s.torsoAnimTimer,&ent->s.legsAnimTimer,ent);
+    }
+    */
 }
 
 /// `void NPC_RemoveBody( gentity_t *self )` (NPC.c:116) — the corpse's per-frame
@@ -921,8 +944,9 @@ pub unsafe extern "C" fn NPC_RemoveBody(self_: *mut gentity_t) {
                     && (*(*self_).client).ps.saberEntityNum > 0
                     && (*(*self_).client).ps.saberEntityNum < ENTITYNUM_WORLD
                 {
-                    let saberent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
-                        .offset((*(*self_).client).ps.saberEntityNum as isize);
+                    let saberent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities)
+                        .cast::<gentity_t>())
+                    .offset((*(*self_).client).ps.saberEntityNum as isize);
                     if !saberent.is_null() {
                         G_FreeEntity(saberent);
                     }
@@ -1138,13 +1162,10 @@ pub unsafe fn NPC_HandleAIFlags() {
     // (the NPCAI_GREET_ALLIES greeting block is commented out in the original)
 
     //been told to play a victory sound after a delay
-    if (*NPCInfo).greetingDebounceTime != 0 && (*NPCInfo).greetingDebounceTime < (*addr_of!(level)).time
+    if (*NPCInfo).greetingDebounceTime != 0
+        && (*NPCInfo).greetingDebounceTime < (*addr_of!(level)).time
     {
-        G_AddVoiceEvent(
-            NPC,
-            Q_irand(EV_VICTORY1, EV_VICTORY3),
-            Q_irand(2000, 4000),
-        );
+        G_AddVoiceEvent(NPC, Q_irand(EV_VICTORY1, EV_VICTORY3), Q_irand(2000, 4000));
         (*NPCInfo).greetingDebounceTime = 0;
     }
 
@@ -1570,7 +1591,11 @@ pub unsafe fn NPC_ExecuteBState(self_: *mut gentity_t) {
     }
 
     if (*client).ps.saberLockTime != 0 && (*client).ps.saberLockEnemy != ENTITYNUM_NONE {
-        NPC_SetLookTarget(NPC, (*client).ps.saberLockEnemy, (*addr_of!(level)).time + 1000);
+        NPC_SetLookTarget(
+            NPC,
+            (*client).ps.saberLockEnemy,
+            (*addr_of!(level)).time + 1000,
+        );
     } else if NPC_CheckLookTarget(NPC) == QFALSE {
         if !(*NPC).enemy.is_null() {
             NPC_SetLookTarget(NPC, (*(*NPC).enemy).s.number, 0);
@@ -1700,7 +1725,8 @@ pub unsafe extern "C" fn NPC_Think(self_: *mut gentity_t) {
     (*self_).nextthink = (*addr_of!(level)).time + FRAMETIME / 2;
 
     while i < MAX_CLIENTS as c_int {
-        let player: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(i as isize);
+        let player: *mut gentity_t =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(i as isize);
 
         if (*player).inuse != QFALSE
             && !(*player).client.is_null()

@@ -19,24 +19,26 @@ use crate::codemp::game::anims::{
     BOTH_ATTACK1, BOTH_ATTACK2, BOTH_ATTACK3, BOTH_MELEE1, BOTH_MELEE2, TORSO_SURRENDER_START,
 };
 use crate::codemp::game::b_public_h::{
-    BS_DEFAULT, BS_HUNT_AND_KILL, BS_SEARCH, BS_STAND_AND_SHOOT, BS_STAND_GUARD,
-    SCF_FACE_MOVE_DIR, SCF_FIRE_WEAPON, SCF_FORCED_MARCH, SCF_IGNORE_ALERTS,
-    SCF_LOOK_FOR_ENEMIES, SCF_RUNNING, SCF_WALKING, SPOT_HEAD, SPOT_WEAPON, VIS_PVS, VIS_SHOOT,
+    BS_DEFAULT, BS_HUNT_AND_KILL, BS_SEARCH, BS_STAND_AND_SHOOT, BS_STAND_GUARD, SCF_FACE_MOVE_DIR,
+    SCF_FIRE_WEAPON, SCF_FORCED_MARCH, SCF_IGNORE_ALERTS, SCF_LOOK_FOR_ENEMIES, SCF_RUNNING,
+    SCF_WALKING, SPOT_HEAD, SPOT_WEAPON, VIS_PVS, VIS_SHOOT,
 };
-use crate::codemp::game::g_local::AEL_DISCOVERED;
-use crate::codemp::game::bg_public::{SETANIM_FLAG_HOLD, SETANIM_TORSO, WEAPON_FIRING, WEAPON_READY};
+use crate::codemp::game::bg_public::{
+    SETANIM_FLAG_HOLD, SETANIM_TORSO, WEAPON_FIRING, WEAPON_READY,
+};
 use crate::codemp::game::bg_weapons_h::{WP_NONE, WP_SABER, WP_STUN_BATON};
 use crate::codemp::game::g_local::gentity_t;
-use crate::codemp::game::g_nav::WAYPOINT_NONE;
-use crate::codemp::game::teams_h::NPCTEAM_PLAYER;
+use crate::codemp::game::g_local::AEL_DISCOVERED;
 use crate::codemp::game::g_main::level;
-use crate::codemp::game::npc::{client, ucmd, NPC_SetAnim, NPC, NPCInfo};
+use crate::codemp::game::g_nav::WAYPOINT_NONE;
+use crate::codemp::game::g_public_h::{TID_BSTATE, TID_MOVE_NAV};
+use crate::codemp::game::npc::{client, ucmd, NPCInfo, NPC_SetAnim, NPC};
 use crate::codemp::game::npc_ai_stormtrooper::NPC_BSST_Attack;
 use crate::codemp::game::npc_behavior::{NPC_BSFollowLeader, NPC_BSSearchStart};
 use crate::codemp::game::npc_combat::{
-    enemyVisibility, G_ClearEnemy, G_SetEnemy, IdealDistance, NPC_CheckCanAttack,
-    NPC_CheckDefend, NPC_CheckEnemy, NPC_CheckGetNewWeapon, NPC_EnemyTooFar,
-    NPC_MaxDistSquaredForWeapon, NPC_PickEnemy, WeaponThink,
+    enemyVisibility, G_ClearEnemy, G_SetEnemy, IdealDistance, NPC_CheckCanAttack, NPC_CheckDefend,
+    NPC_CheckEnemy, NPC_CheckGetNewWeapon, NPC_EnemyTooFar, NPC_MaxDistSquaredForWeapon,
+    NPC_PickEnemy, WeaponThink,
 };
 use crate::codemp::game::npc_goal::{NPC_ClearGoal, UpdateGoal};
 use crate::codemp::game::npc_move::{NPC_MoveToGoal, NPC_SlideMoveToGoal};
@@ -45,10 +47,8 @@ use crate::codemp::game::npc_utils::{CalcEntitySpot, NPC_SomeoneLookingAtMe, NPC
 use crate::codemp::game::q_math::{
     vectoangles, AngleDelta, AngleNormalize360, VectorLength, VectorScale, VectorSubtract,
 };
-use crate::codemp::game::q_shared_h::{
-    vec3_t, BUTTON_ATTACK, BUTTON_WALKING, DEG2RAD, PITCH, YAW,
-};
-use crate::codemp::game::g_public_h::{TID_BSTATE, TID_MOVE_NAV};
+use crate::codemp::game::q_shared_h::{vec3_t, BUTTON_ATTACK, BUTTON_WALKING, DEG2RAD, PITCH, YAW};
+use crate::codemp::game::teams_h::NPCTEAM_PLAYER;
 use crate::ffi::types::{qboolean, QFALSE, QTRUE};
 use crate::trap;
 
@@ -387,7 +387,8 @@ pub unsafe fn NPC_BSStandAndShoot() {
 
     NPC_CheckEnemy(QTRUE, QFALSE, QTRUE);
 
-    if (*NPCInfo).duckDebounceTime > (*addr_of!(level)).time && (*(*NPC).client).ps.weapon != WP_SABER
+    if (*NPCInfo).duckDebounceTime > (*addr_of!(level)).time
+        && (*(*NPC).client).ps.weapon != WP_SABER
     {
         ucmd.upmove = -127;
         if !(*NPC).enemy.is_null() {
@@ -613,8 +614,10 @@ pub unsafe fn NPC_BSPointShoot(shoot: qboolean) {
                 pitchMissAllow = 8.0;
             }
 
-            yawMiss = (DEG2RAD(AngleDelta((*(*NPC).client).ps.viewangles[YAW], (*NPCInfo).desiredYaw))
-                as f64)
+            yawMiss = (DEG2RAD(AngleDelta(
+                (*(*NPC).client).ps.viewangles[YAW],
+                (*NPCInfo).desiredYaw,
+            )) as f64)
                 .tan() as f32
                 * dist;
             pitchMiss = (DEG2RAD(AngleDelta(
@@ -726,7 +729,7 @@ pub unsafe fn NPC_BSPatrol() {
 
 /*
 void NPC_BSDefault(void)
-	uses various scriptflags to determine how an npc should behave
+    uses various scriptflags to determine how an npc should behave
 */
 pub unsafe fn NPC_BSDefault() {
     //	vec3_t		enemyDir;
@@ -807,107 +810,107 @@ pub unsafe fn NPC_BSDefault() {
         NPC_BSST_Attack();
         return;
         /*
-                //have an enemy
-                //FIXME: if one of these fails, meaning we can't shoot, do we really need to do the rest?
-                VectorSubtract( NPC->enemy->r.currentOrigin, NPC->r.currentOrigin, enemyDir );
-                enemyDist = VectorNormalize( enemyDir );
-                enemyDist *= enemyDist;
-                shootDist = NPC_MaxDistSquaredForWeapon();
+        //have an enemy
+        //FIXME: if one of these fails, meaning we can't shoot, do we really need to do the rest?
+        VectorSubtract( NPC->enemy->r.currentOrigin, NPC->r.currentOrigin, enemyDir );
+        enemyDist = VectorNormalize( enemyDir );
+        enemyDist *= enemyDist;
+        shootDist = NPC_MaxDistSquaredForWeapon();
 
-                enemyFOV = InFOV( NPC->enemy, NPC, NPCInfo->stats.hfov, NPCInfo->stats.vfov );
-                enemyShotFOV = InFOV( NPC->enemy, NPC, 20, 20 );
-                enemyPVS = gi.inPVS( NPC->enemy->r.currentOrigin, NPC->r.currentOrigin );
+        enemyFOV = InFOV( NPC->enemy, NPC, NPCInfo->stats.hfov, NPCInfo->stats.vfov );
+        enemyShotFOV = InFOV( NPC->enemy, NPC, 20, 20 );
+        enemyPVS = gi.inPVS( NPC->enemy->r.currentOrigin, NPC->r.currentOrigin );
 
-                if ( enemyPVS )
-                {//in the pvs
-                    trace_t	tr;
+        if ( enemyPVS )
+        {//in the pvs
+            trace_t	tr;
 
-                    CalcEntitySpot( NPC->enemy, SPOT_HEAD, enemyHead );
-                    enemyHead[2] -= Q_flrand( 0.0f, NPC->enemy->maxs[2]*0.5f );
-                    CalcEntitySpot( NPC, SPOT_WEAPON, muzzle );
-                    enemyLOS = NPC_ClearLOS( muzzle, enemyHead );
+            CalcEntitySpot( NPC->enemy, SPOT_HEAD, enemyHead );
+            enemyHead[2] -= Q_flrand( 0.0f, NPC->enemy->maxs[2]*0.5f );
+            CalcEntitySpot( NPC, SPOT_WEAPON, muzzle );
+            enemyLOS = NPC_ClearLOS( muzzle, enemyHead );
 
-                    gi.trace ( &tr, muzzle, vec3_origin, vec3_origin, enemyHead, NPC->s.number, MASK_SHOT );
-                    enemyCS = NPC_EvaluateShot( tr.entityNum, qtrue );
-                }
-                else
-                {//skip thr 2 traces since they would have to fail
-                    enemyLOS = qfalse;
-                    enemyCS = qfalse;
-                }
+            gi.trace ( &tr, muzzle, vec3_origin, vec3_origin, enemyHead, NPC->s.number, MASK_SHOT );
+            enemyCS = NPC_EvaluateShot( tr.entityNum, qtrue );
+        }
+        else
+        {//skip thr 2 traces since they would have to fail
+            enemyLOS = qfalse;
+            enemyCS = qfalse;
+        }
 
-                if ( enemyCS && enemyShotFOV )
-                {//can hit enemy if we want
-                    NPC->cantHitEnemyCounter = 0;
-                }
-                else
-                {//can't hit
-                    NPC->cantHitEnemyCounter++;
-                }
+        if ( enemyCS && enemyShotFOV )
+        {//can hit enemy if we want
+            NPC->cantHitEnemyCounter = 0;
+        }
+        else
+        {//can't hit
+            NPC->cantHitEnemyCounter++;
+        }
 
-                if ( enemyCS && enemyShotFOV && enemyDist < shootDist )
-                {//can shoot
-                    shoot = qtrue;
-                    if ( NPCInfo->goalEntity == NPC->enemy )
-                    {//my goal is my enemy and I have a clear shot, no need to chase right now
-                        move = qfalse;
-                    }
-                }
-                else
-                {//don't shoot yet, keep chasing
-                    shoot = qfalse;
-                    move = qtrue;
-                }
+        if ( enemyCS && enemyShotFOV && enemyDist < shootDist )
+        {//can shoot
+            shoot = qtrue;
+            if ( NPCInfo->goalEntity == NPC->enemy )
+            {//my goal is my enemy and I have a clear shot, no need to chase right now
+                move = qfalse;
+            }
+        }
+        else
+        {//don't shoot yet, keep chasing
+            shoot = qfalse;
+            move = qtrue;
+        }
 
-                //shoot decision
-                if ( !(NPCInfo->scriptFlags&SCF_DONT_FIRE) )
-                {//try to shoot
-                    if ( NPC->enemy )
+        //shoot decision
+        if ( !(NPCInfo->scriptFlags&SCF_DONT_FIRE) )
+        {//try to shoot
+            if ( NPC->enemy )
+            {
+                if ( shoot )
+                {
+                    if( !(NPCInfo->scriptFlags & SCF_FIRE_WEAPON) ) // we've already fired, no need to do it again here
                     {
-                        if ( shoot )
-                        {
-                            if( !(NPCInfo->scriptFlags & SCF_FIRE_WEAPON) ) // we've already fired, no need to do it again here
-                            {
-                                WeaponThink( qtrue );
-                            }
-                        }
+                        WeaponThink( qtrue );
                     }
                 }
+            }
+        }
 
-                //chase decision
-                if ( NPCInfo->scriptFlags & SCF_CHASE_ENEMIES )
-                {//go after him
-                    NPCInfo->goalEntity = NPC->enemy;
-                    //FIXME: don't need to chase when have a clear shot and in range?
-                    if ( !enemyCS && NPC->cantHitEnemyCounter > 60 )
-                    {//haven't been able to shoot enemy for about 6 seconds, need to do something
-                        //FIXME: combat points?  Just chase?
-                        if ( enemyPVS )
-                        {//in my PVS, just pick a combat point
-                            //FIXME: implement
-                        }
-                        else
-                        {//just chase him
-                        }
-                    }
-                    //FIXME: in normal behavior, should we use combat Points?  Do we care?  Is anyone actually going to ever use this AI?
+        //chase decision
+        if ( NPCInfo->scriptFlags & SCF_CHASE_ENEMIES )
+        {//go after him
+            NPCInfo->goalEntity = NPC->enemy;
+            //FIXME: don't need to chase when have a clear shot and in range?
+            if ( !enemyCS && NPC->cantHitEnemyCounter > 60 )
+            {//haven't been able to shoot enemy for about 6 seconds, need to do something
+                //FIXME: combat points?  Just chase?
+                if ( enemyPVS )
+                {//in my PVS, just pick a combat point
+                    //FIXME: implement
                 }
-                else if ( NPC->cantHitEnemyCounter > 60 )
-                {//pick a new one
-                    NPC_CheckEnemy( qtrue, qfalse, qtrue );
+                else
+                {//just chase him
                 }
+            }
+            //FIXME: in normal behavior, should we use combat Points?  Do we care?  Is anyone actually going to ever use this AI?
+        }
+        else if ( NPC->cantHitEnemyCounter > 60 )
+        {//pick a new one
+            NPC_CheckEnemy( qtrue, qfalse, qtrue );
+        }
 
-                if ( enemyPVS && enemyLOS )//&& !enemyShotFOV )
-                {//have a clear LOS to him//, but not looking at him
-                    //Find the desired angles
-                    vec3_t	angles;
+        if ( enemyPVS && enemyLOS )//&& !enemyShotFOV )
+        {//have a clear LOS to him//, but not looking at him
+            //Find the desired angles
+            vec3_t	angles;
 
-                    GetAnglesForDirection( muzzle, enemyHead, angles );
+            GetAnglesForDirection( muzzle, enemyHead, angles );
 
-                    NPCInfo->desiredYaw		= AngleNormalize180( angles[YAW] );
-                    NPCInfo->desiredPitch	= AngleNormalize180( angles[PITCH] );
-                }
-                */
+            NPCInfo->desiredYaw		= AngleNormalize180( angles[YAW] );
+            NPCInfo->desiredPitch	= AngleNormalize180( angles[PITCH] );
+        }
+        */
     }
 
     if UpdateGoal() != core::ptr::null_mut() {

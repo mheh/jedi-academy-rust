@@ -194,7 +194,15 @@ pub fn Nav_RouteBlocked(
     end_id: i32,
     reject_rank: i32,
 ) -> qboolean {
-    unsafe { syscall!(G_NAV_ROUTEBLOCKED, start_id, test_edge_id, end_id, reject_rank) as qboolean }
+    unsafe {
+        syscall!(
+            G_NAV_ROUTEBLOCKED,
+            start_id,
+            test_edge_id,
+            end_id,
+            reject_rank
+        ) as qboolean
+    }
 }
 
 /// `trap_Nav_GetBestNodeAltRoute` (`rejectID = NODE_NONE`).

@@ -34,6 +34,10 @@ use core::ffi::c_int;
 use core::ptr::{addr_of, addr_of_mut};
 
 use crate::codemp::game::ai_h::{SQUAD_IDLE, SQUAD_RETREAT};
+use crate::codemp::game::anims::{
+    BOTH_ATTACK1, BOTH_ATTACK2, BOTH_ATTACK3, BOTH_CROUCH1, BOTH_GUARD_IDLE1,
+    BOTH_GUARD_LOOKAROUND1, BOTH_INAIR1, BOTH_LAND1, BOTH_MELEE1, BOTH_MELEE2,
+};
 use crate::codemp::game::b_local_h::{CP_AVOID, CP_COVER, CP_HAS_ROUTE, CP_NO_PVS};
 use crate::codemp::game::b_public_h::{
     BS_DEFAULT, BS_FLEE, BS_FOLLOW_LEADER, BS_HUNT_AND_KILL, BS_INVESTIGATE, BS_SEARCH,
@@ -41,10 +45,7 @@ use crate::codemp::game::b_public_h::{
     NPCAI_ENROUTE_TO_HOMEWP, NPCAI_MOVING, SCF_DONT_FIRE, SCF_FIRE_WEAPON, SCF_IGNORE_ALERTS,
     SCF_LOOK_FOR_ENEMIES, SPOT_HEAD, SPOT_HEAD_LEAN, SPOT_WEAPON, VIS_FOV, VIS_PVS, VIS_SHOOT,
 };
-use crate::codemp::game::anims::{
-    BOTH_ATTACK1, BOTH_ATTACK2, BOTH_ATTACK3, BOTH_CROUCH1, BOTH_GUARD_IDLE1,
-    BOTH_GUARD_LOOKAROUND1, BOTH_INAIR1, BOTH_LAND1, BOTH_MELEE1, BOTH_MELEE2,
-};
+use crate::codemp::game::bg_misc::vectoyaw;
 use crate::codemp::game::bg_panimate::PM_InKnockDown;
 use crate::codemp::game::bg_public::{
     EF_NODRAW, ET_INVISIBLE, ET_NPC, ET_PLAYER, EV_PUSHED1, EV_PUSHED3, MASK_SHOT, SETANIM_BOTH,
@@ -57,25 +58,25 @@ use crate::codemp::game::g_local::{
     gentity_t, AEL_DANGER, AEL_MINOR, AEL_SUSPICIOUS, FL_NOTARGET, FL_NO_KNOCKBACK, FRAMETIME,
 };
 use crate::codemp::game::g_main::{g_entities, level};
-use crate::codemp::game::g_public_h::{
-    BSET_AWAKE, BSET_FLEE, BSET_LOSTENEMY, TID_BSTATE, TID_MOVE_NAV,
-};
-use crate::codemp::game::g_utils::{G_FreeEntity, G_UseTargets2};
-use crate::codemp::game::g_timer::{TIMER_Done, TIMER_Set};
-use crate::codemp::game::bg_misc::vectoyaw;
 use crate::codemp::game::g_nav::{
     G_Cube, NAV_FindClosestWaypointForEnt, NAV_GetNearestNode, NPC_SetMoveGoal, WAYPOINT_NONE,
 };
-use crate::codemp::game::npc::{
-    ucmd, RestoreNPCGlobals, SaveNPCGlobals, SetNPCGlobals, NPC, NPCInfo,
+use crate::codemp::game::g_public_h::{
+    BSET_AWAKE, BSET_FLEE, BSET_LOSTENEMY, TID_BSTATE, TID_MOVE_NAV,
 };
-use crate::codemp::game::npc_combat::{
-    enemyVisibility, G_AddVoiceEvent, G_ClearEnemy, G_SetEnemy, NPC_AimAdjust, NPC_CheckAttack,
-    NPC_CheckEnemy, NPC_CheckGetNewWeapon, NPC_EnemyTooFar, NPC_FindCombatPoint, NPC_SetCombatPoint,
-    NPC_ShotEntity, ValidEnemy, WeaponThink,
+use crate::codemp::game::g_timer::{TIMER_Done, TIMER_Set};
+use crate::codemp::game::g_utils::{G_FreeEntity, G_UseTargets2};
+use crate::codemp::game::npc::NPC_SetAnim;
+use crate::codemp::game::npc::{
+    ucmd, NPCInfo, RestoreNPCGlobals, SaveNPCGlobals, SetNPCGlobals, NPC,
 };
 use crate::codemp::game::npc_ai_default::{NPC_BSRunAndShoot, NPC_BSStandGuard};
 use crate::codemp::game::npc_ai_jedi::NPC_MoveDirClear;
+use crate::codemp::game::npc_combat::{
+    enemyVisibility, G_AddVoiceEvent, G_ClearEnemy, G_SetEnemy, NPC_AimAdjust, NPC_CheckAttack,
+    NPC_CheckEnemy, NPC_CheckGetNewWeapon, NPC_EnemyTooFar, NPC_FindCombatPoint,
+    NPC_SetCombatPoint, NPC_ShotEntity, ValidEnemy, WeaponThink,
+};
 use crate::codemp::game::npc_goal::{NPC_ClearGoal, UpdateGoal};
 use crate::codemp::game::npc_move::{NPC_MoveToGoal, NPC_SlideMoveToGoal};
 use crate::codemp::game::npc_senses::{
@@ -86,14 +87,13 @@ use crate::codemp::game::npc_utils::{
     NPC_FaceEnemy, NPC_SomeoneLookingAtMe, NPC_UpdateAngles, NPC_UpdateFiringAngles,
     NPC_UpdateShootAngles,
 };
-use crate::codemp::game::npc::NPC_SetAnim;
+use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_math::{
     flrand, vec3_origin, vectoangles, AngleDelta, AngleNormalize360, AngleVectors, DistanceSquared,
     DotProduct, VectorAdd, VectorClear, VectorCompare, VectorCopy, VectorLength,
     VectorLengthSquared, VectorMA, VectorNormalize, VectorScale, VectorSubtract,
 };
-use crate::codemp::game::q_shared::{random};
-use crate::codemp::game::q_math::Q_irand;
+use crate::codemp::game::q_shared::random;
 use crate::codemp::game::q_shared_h::{
     vec3_t, BUTTON_WALKING, ENTITYNUM_NONE, FP_SABER_DEFENSE, PITCH, YAW,
 };
@@ -328,8 +328,9 @@ pub unsafe fn NPC_BSAdvanceFight() {
                         (*NPC).s.number,
                         MASK_SHOT,
                     );
-                    let mut traceEnt: *mut gentity_t =
-                        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(tr.entityNum as isize);
+                    let mut traceEnt: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities)
+                        .cast::<gentity_t>())
+                    .offset(tr.entityNum as isize);
                     if traceEnt != (*NPC).enemy
                         && (traceEnt.is_null()
                             || (*traceEnt).client.is_null()
@@ -346,7 +347,8 @@ pub unsafe fn NPC_BSAdvanceFight() {
                             (*NPC).s.number,
                             MASK_SHOT,
                         );
-                        traceEnt = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(tr.entityNum as isize);
+                        traceEnt = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                            .offset(tr.entityNum as isize);
                     }
 
                     VectorCopy(&tr.endpos, &mut hitspot);
@@ -506,9 +508,7 @@ pub unsafe fn NPC_CheckInvestigate(alertEventNum: c_int) -> qboolean {
         return QFALSE;
     }
 
-    if (*owner).s.eType != ET_PLAYER
-        && (*owner).s.eType != ET_NPC
-        && owner == (*NPCInfo).goalEntity
+    if (*owner).s.eType != ET_PLAYER && (*owner).s.eType != ET_NPC && owner == (*NPCInfo).goalEntity
     {
         return QFALSE;
     }
@@ -829,7 +829,9 @@ pub unsafe fn NPC_BSRemove() {
     NPC_UpdateAngles(QTRUE, QTRUE);
     if trap::InPVS(
         &(*NPC).r.currentOrigin,
-        &(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(0)).r.currentOrigin,
+        &(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(0))
+            .r
+            .currentOrigin,
     ) == QFALSE
     //FIXME: use cg.vieworg?
     {
@@ -905,7 +907,12 @@ pub unsafe fn NPC_BSWander() {
             (*NPC).waypoint = NAV_FindClosestWaypointForEnt(NPC, WAYPOINT_NONE);
 
             if Q_irand(0, 1) == 0 {
-                NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_GUARD_LOOKAROUND1, SETANIM_FLAG_NORMAL);
+                NPC_SetAnim(
+                    NPC,
+                    SETANIM_BOTH,
+                    BOTH_GUARD_LOOKAROUND1,
+                    SETANIM_FLAG_NORMAL,
+                );
             } else {
                 NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_GUARD_IDLE1, SETANIM_FLAG_NORMAL);
             }
@@ -922,7 +929,8 @@ pub unsafe fn NPC_BSWander() {
             //Turn angles every now and then to look around
             if (*(*NPCInfo).tempGoal).waypoint != WAYPOINT_NONE {
                 if Q_irand(0, 30) == 0 {
-                    let numEdges: c_int = trap::Nav_GetNodeNumEdges((*(*NPCInfo).tempGoal).waypoint);
+                    let numEdges: c_int =
+                        trap::Nav_GetNodeNumEdges((*(*NPCInfo).tempGoal).waypoint);
 
                     if numEdges != WAYPOINT_NONE {
                         let branchNum: c_int = Q_irand(0, numEdges - 1);
@@ -1025,8 +1033,10 @@ pub unsafe fn NPC_CheckSurrender() -> qboolean {
                     if InFOV((*NPC).enemy, NPC, 60, 30) == QFALSE {
                         //I'm not looking at them
                         return QFALSE;
-                    } else if DistanceSquared(&(*NPC).r.currentOrigin, &(*(*NPC).enemy).r.currentOrigin)
-                        < 65536.0
+                    } else if DistanceSquared(
+                        &(*NPC).r.currentOrigin,
+                        &(*(*NPC).enemy).r.currentOrigin,
+                    ) < 65536.0
                     /*256*256*/
                     {
                         //they're not close
@@ -1411,7 +1421,9 @@ pub(crate) unsafe fn NPC_BSFollowLeader() {
                     && (*NPCInfo).scriptFlags & SCF_LOOK_FOR_ENEMIES != 0
                 {
                     (*NPCInfo).lastAlertID = (*addr_of!(level)).alertEvents[eventID as usize].ID;
-                    if (*addr_of!(level)).alertEvents[eventID as usize].owner.is_null()
+                    if (*addr_of!(level)).alertEvents[eventID as usize]
+                        .owner
+                        .is_null()
                         || (*(*addr_of!(level)).alertEvents[eventID as usize].owner)
                             .client
                             .is_null()
@@ -1710,7 +1722,12 @@ pub(crate) unsafe fn NPC_BSSearch() {
             //Com_Printf("Got there.\n");
             //Com_Printf("Looking...");
             if Q_irand(0, 1) == 0 {
-                NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_GUARD_LOOKAROUND1, SETANIM_FLAG_NORMAL);
+                NPC_SetAnim(
+                    NPC,
+                    SETANIM_BOTH,
+                    BOTH_GUARD_LOOKAROUND1,
+                    SETANIM_FLAG_NORMAL,
+                );
             } else {
                 NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_GUARD_IDLE1, SETANIM_FLAG_NORMAL);
             }
@@ -1725,7 +1742,8 @@ pub(crate) unsafe fn NPC_BSSearch() {
             //Turn angles every now and then to look around
             if (*(*NPCInfo).tempGoal).waypoint != WAYPOINT_NONE {
                 if Q_irand(0, 30) == 0 {
-                    let numEdges: c_int = trap::Nav_GetNodeNumEdges((*(*NPCInfo).tempGoal).waypoint);
+                    let numEdges: c_int =
+                        trap::Nav_GetNodeNumEdges((*(*NPCInfo).tempGoal).waypoint);
 
                     if numEdges != WAYPOINT_NONE {
                         let branchNum: c_int = Q_irand(0, numEdges - 1);
@@ -1853,7 +1871,8 @@ pub unsafe fn NPC_BSEmplaced() {
         hit = NPC_ShotEntity((*NPC).enemy, &mut impactPos);
         hitEnt = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(hit as isize);
 
-        if hit == (*(*NPC).enemy).s.number || (!hitEnt.is_null() && (*hitEnt).takedamage != QFALSE) {
+        if hit == (*(*NPC).enemy).s.number || (!hitEnt.is_null() && (*hitEnt).takedamage != QFALSE)
+        {
             //can hit enemy or will hit glass or other minor breakable (or in emplaced gun), so shoot anyway
             enemyCS = QTRUE;
             NPC_AimAdjust(2); //adjust aim better longer we have clear shot at enemy

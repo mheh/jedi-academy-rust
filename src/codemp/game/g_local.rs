@@ -18,7 +18,9 @@
 
 use crate::codemp::game::ai_h::{AIGroupInfo_t, MAX_FRAME_GROUPS};
 use crate::codemp::game::b_public_h::{gNPC_t, lookMode_t};
-use crate::codemp::game::bg_public::{gitem_t, MAX_SPAWN_VARS, MAX_SPAWN_VARS_CHARS, TEAM_NUM_TEAMS};
+use crate::codemp::game::bg_public::{
+    gitem_t, MAX_SPAWN_VARS, MAX_SPAWN_VARS_CHARS, TEAM_NUM_TEAMS,
+};
 use crate::codemp::game::g_public_h::{
     entityShared_t, parms_t, Vehicle_t, MAX_FAILED_NODES, NUM_BSETS, NUM_TIDS,
 };
@@ -130,12 +132,12 @@ pub const HL_MAX: c_int = 23;
 #[derive(Clone, Copy)]
 pub struct gentity_s {
     //rww - entstate must be first, to correspond with the bg shared entity structure
-    pub s: entityState_t,            // communicated by server to clients
+    pub s: entityState_t,                // communicated by server to clients
     pub playerState: *mut playerState_t, //ptr to playerstate if applicable (for bg ents)
-    pub m_pVehicle: *mut Vehicle_t,  //vehicle data
-    pub ghoul2: *mut c_void,         //g2 instance
-    pub localAnimIndex: c_int,       //index locally (game/cgame) to anim data for this skel
-    pub modelScale: vec3_t,          //needed for g2 collision
+    pub m_pVehicle: *mut Vehicle_t,      //vehicle data
+    pub ghoul2: *mut c_void,             //g2 instance
+    pub localAnimIndex: c_int,           //index locally (game/cgame) to anim data for this skel
+    pub modelScale: vec3_t,              //needed for g2 collision
 
     //From here up must be the same as centity_t/bgEntity_t
     pub r: entityShared_t, // shared by both the server system and game
@@ -153,8 +155,8 @@ pub struct gentity_s {
     pub classname: *mut c_char, // set in QuakeEd
 
     //rww - and yet more things to share. This is because the nav code is in the exe because it's all C++.
-    pub waypoint: c_int,          //Set once per frame, if you've moved, and if someone asks
-    pub lastWaypoint: c_int,      //To make sure you don't double-back
+    pub waypoint: c_int, //Set once per frame, if you've moved, and if someone asks
+    pub lastWaypoint: c_int, //To make sure you don't double-back
     pub lastValidWaypoint: c_int, //ALWAYS valid -used for tracking someone you lost
     pub noWaypointTime: c_int, //Debouncer - so don't keep checking every waypoint in existance every frame that you can't find one
     pub combatPoint: c_int,
@@ -168,7 +170,7 @@ pub struct gentity_s {
     //================================
     pub client: *mut gclient_s, // NULL if not a client
 
-    pub NPC: *mut gNPC_t, //Only allocated if the entity becomes an NPC
+    pub NPC: *mut gNPC_t,           //Only allocated if the entity becomes an NPC
     pub cantHitEnemyCounter: c_int, //HACK - Makes them look for another enemy on the same team if the one they're after can't be hit
 
     pub noLumbar: qboolean, //see note in cg_local.h
@@ -218,7 +220,7 @@ pub struct gentity_s {
     pub physicsObject: qboolean, // if true, it can be pushed by movers and fall off edges
     // all game items are physicsObjects,
     pub physicsBounce: f32, // 1.0 = continuous bounce, 0.0 = no bounce
-    pub clipmask: c_int, // brushes with this content value will be collided against
+    pub clipmask: c_int,    // brushes with this content value will be collided against
     // when moving.  items and corpses do not collide against
     // players, for instance
 
@@ -284,7 +286,8 @@ pub struct gentity_s {
     pub touch: Option<unsafe extern "C" fn(*mut gentity_s, *mut gentity_s, *mut trace_t)>,
     pub r#use: Option<unsafe extern "C" fn(*mut gentity_s, *mut gentity_s, *mut gentity_s)>,
     pub pain: Option<unsafe extern "C" fn(*mut gentity_s, *mut gentity_s, c_int)>,
-    pub die: Option<unsafe extern "C" fn(*mut gentity_s, *mut gentity_s, *mut gentity_s, c_int, c_int)>,
+    pub die:
+        Option<unsafe extern "C" fn(*mut gentity_s, *mut gentity_s, *mut gentity_s, c_int, c_int)>,
 
     pub pain_debounce_time: c_int,
     pub fly_sound_debounce_time: c_int, // wind tunnel
@@ -434,11 +437,11 @@ pub const FOLLOW_ACTIVE2: c_int = -2;
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct clientSession_t {
-    pub sessionTeam: c_int,             // team_t
-    pub spectatorTime: c_int,           // for determining next-in-line to play
+    pub sessionTeam: c_int,   // team_t
+    pub spectatorTime: c_int, // for determining next-in-line to play
     pub spectatorState: spectatorState_t,
-    pub spectatorClient: c_int,         // for chasecam and follow mode
-    pub wins: c_int,                    // tournament stats
+    pub spectatorClient: c_int, // for chasecam and follow mode
+    pub wins: c_int,            // tournament stats
     pub losses: c_int,
     pub selectedFP: c_int, // check against this, if doesn't match value in playerstate then update userinfo
     pub saberLevel: c_int, // similar to above method, but for current saber attack level
@@ -470,19 +473,19 @@ pub const MAX_VOTE_COUNT: c_int = 3;
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct clientPersistant_t {
     pub connected: clientConnected_t,
-    pub cmd: usercmd_t,           // we would lose angles if not persistant
-    pub localClient: qboolean,    // true if "ip" info key is "localhost"
-    pub initialSpawn: qboolean,   // the first spawn should be at a cool location
+    pub cmd: usercmd_t,              // we would lose angles if not persistant
+    pub localClient: qboolean,       // true if "ip" info key is "localhost"
+    pub initialSpawn: qboolean,      // the first spawn should be at a cool location
     pub predictItemPickup: qboolean, // based on cg_predictItems userinfo
-    pub pmoveFixed: qboolean,     //
+    pub pmoveFixed: qboolean,        //
     pub netname: [c_char; MAX_NETNAME],
-    pub netnameTime: c_int,       // Last time the name was changed
-    pub maxHealth: c_int,         // for handicapping
-    pub enterTime: c_int,         // level.time the client entered the game
+    pub netnameTime: c_int,           // Last time the name was changed
+    pub maxHealth: c_int,             // for handicapping
+    pub enterTime: c_int,             // level.time the client entered the game
     pub teamState: playerTeamState_t, // status in teamplay games
-    pub voteCount: c_int,         // to prevent people from constantly calling votes
-    pub teamVoteCount: c_int,     // to prevent people from constantly calling votes
-    pub teamInfo: qboolean,       // send team overlay updates?
+    pub voteCount: c_int,             // to prevent people from constantly calling votes
+    pub teamVoteCount: c_int,         // to prevent people from constantly calling votes
+    pub teamInfo: qboolean,           // send team overlay updates?
 }
 const _: () = assert!(core::mem::size_of::<clientPersistant_t>() == 156);
 const _: () = assert!(core::mem::offset_of!(clientPersistant_t, netname) == 48);
@@ -531,18 +534,18 @@ pub struct renderInfo_t {
     pub lockYaw: f32, //
 
     //
-    pub headPoint: vec3_t,           //Where your tag_head is
-    pub headAngles: vec3_t,          //where the tag_head in the torso is pointing
-    pub handRPoint: vec3_t,          //where your right hand is
-    pub handLPoint: vec3_t,          //where your left hand is
-    pub crotchPoint: vec3_t,         //Where your crotch is
-    pub footRPoint: vec3_t,          //where your right hand is
-    pub footLPoint: vec3_t,          //where your left hand is
-    pub torsoPoint: vec3_t,          //Where your chest is
-    pub torsoAngles: vec3_t,         //Where the chest is pointing
-    pub eyePoint: vec3_t,            //Where your eyes are
-    pub eyeAngles: vec3_t,           //Where your eyes face
-    pub lookTarget: c_int,           //Which ent to look at with lookAngles
+    pub headPoint: vec3_t,   //Where your tag_head is
+    pub headAngles: vec3_t,  //where the tag_head in the torso is pointing
+    pub handRPoint: vec3_t,  //where your right hand is
+    pub handLPoint: vec3_t,  //where your left hand is
+    pub crotchPoint: vec3_t, //Where your crotch is
+    pub footRPoint: vec3_t,  //where your right hand is
+    pub footLPoint: vec3_t,  //where your left hand is
+    pub torsoPoint: vec3_t,  //Where your chest is
+    pub torsoAngles: vec3_t, //Where the chest is pointing
+    pub eyePoint: vec3_t,    //Where your eyes are
+    pub eyeAngles: vec3_t,   //Where your eyes face
+    pub lookTarget: c_int,   //Which ent to look at with lookAngles
     pub lookMode: lookMode_t,
     pub lookTargetClearTime: c_int,  //Time to clear the lookTarget
     pub lastVoiceVolume: c_int,      //Last frame's voice volume
@@ -620,10 +623,10 @@ pub struct gclient_s {
 
     // sum up damage over an entire frame, so
     // shotgun blasts give a single big kick
-    pub damage_armor: c_int,     // damage absorbed by armor
-    pub damage_blood: c_int,     // damage taken out of health
-    pub damage_knockback: c_int, // impact damage
-    pub damage_from: vec3_t,     // origin for vector calculation
+    pub damage_armor: c_int,        // damage absorbed by armor
+    pub damage_blood: c_int,        // damage taken out of health
+    pub damage_knockback: c_int,    // impact damage
+    pub damage_from: vec3_t,        // origin for vector calculation
     pub damage_fromWorld: qboolean, // if true, don't use the damage_from vector
 
     pub damageBoxHandle_Head: c_int, //entity number of head damage box
@@ -641,16 +644,16 @@ pub struct gclient_s {
     pub lasthurt_mod: c_int,      // type of damage the client did
 
     // timers
-    pub respawnTime: c_int,       // can respawn when time > this, force after g_forcerespwan
-    pub inactivityTime: c_int,    // kick players when time > this
+    pub respawnTime: c_int, // can respawn when time > this, force after g_forcerespwan
+    pub inactivityTime: c_int, // kick players when time > this
     pub inactivityWarning: qboolean, // qtrue if the five seoond warning has been given
-    pub rewardTime: c_int,        // clear the EF_AWARD_IMPRESSIVE, etc when time > this
+    pub rewardTime: c_int,  // clear the EF_AWARD_IMPRESSIVE, etc when time > this
 
     pub airOutTime: c_int,
 
     pub lastKillTime: c_int, // for multiple kill rewards
 
-    pub fireHeld: qboolean,  // used for hook
+    pub fireHeld: qboolean,   // used for hook
     pub hook: *mut gentity_s, // grapple hook if out
 
     pub switchTeamTime: c_int, // time the player switched teams
@@ -987,9 +990,9 @@ pub struct level_locals_t {
     pub intermission_origin: vec3_t, // also used for spectator spawns
     pub intermission_angle: vec3_t,
 
-    pub locationLinked: qboolean,    // target_locations get linked
+    pub locationLinked: qboolean,     // target_locations get linked
     pub locationHead: *mut gentity_s, // head of the location list
-    pub bodyQueIndex: c_int,         // dead bodies
+    pub bodyQueIndex: c_int,          // dead bodies
     pub bodyQue: [*mut gentity_s; BODY_QUEUE_SIZE],
     pub portalSequence: c_int,
 
@@ -1112,7 +1115,10 @@ mod tests {
                 size_of::<playerTeamState_t>(),
                 jka_gl_sizeof_playerTeamState_t()
             );
-            assert_eq!(size_of::<clientSession_t>(), jka_gl_sizeof_clientSession_t());
+            assert_eq!(
+                size_of::<clientSession_t>(),
+                jka_gl_sizeof_clientSession_t()
+            );
             assert_eq!(
                 size_of::<clientPersistant_t>(),
                 jka_gl_sizeof_clientPersistant_t()
@@ -1144,7 +1150,10 @@ mod tests {
             assert_eq!(offset_of!(gentity_t, r), jka_gl_off_ent_r());
             assert_eq!(offset_of!(gentity_t, taskID), jka_gl_off_ent_taskID());
             assert_eq!(offset_of!(gentity_t, client), jka_gl_off_ent_client());
-            assert_eq!(offset_of!(gentity_t, moverState), jka_gl_off_ent_moverState());
+            assert_eq!(
+                offset_of!(gentity_t, moverState),
+                jka_gl_off_ent_moverState()
+            );
             assert_eq!(offset_of!(gentity_t, think), jka_gl_off_ent_think());
             assert_eq!(offset_of!(gentity_t, material), jka_gl_off_ent_material());
             assert_eq!(
@@ -1157,7 +1166,10 @@ mod tests {
             assert_eq!(offset_of!(gclient_t, pers), jka_gl_off_cl_pers());
             assert_eq!(offset_of!(gclient_t, sess), jka_gl_off_cl_sess());
             assert_eq!(offset_of!(gclient_t, saber), jka_gl_off_cl_saber());
-            assert_eq!(offset_of!(gclient_t, renderInfo), jka_gl_off_cl_renderInfo());
+            assert_eq!(
+                offset_of!(gclient_t, renderInfo),
+                jka_gl_off_cl_renderInfo()
+            );
             assert_eq!(offset_of!(gclient_t, NPC_class), jka_gl_off_cl_NPC_class());
             assert_eq!(
                 offset_of!(gclient_t, lastGenCmdTime),
@@ -1173,7 +1185,10 @@ mod tests {
         unsafe {
             assert_eq!(size_of::<combatPoint_t>(), jka_gl_sizeof_combatPoint_t());
             assert_eq!(size_of::<waypointData_t>(), jka_gl_sizeof_waypointData_t());
-            assert_eq!(size_of::<reference_tag_t>(), jka_gl_sizeof_reference_tag_t());
+            assert_eq!(
+                size_of::<reference_tag_t>(),
+                jka_gl_sizeof_reference_tag_t()
+            );
             assert_eq!(size_of::<bot_settings_t>(), jka_gl_sizeof_bot_settings_t());
         }
     }
@@ -1184,7 +1199,10 @@ mod tests {
     #[test]
     fn level_locals_layout_matches_c() {
         unsafe {
-            assert_eq!(size_of::<interestPoint_t>(), jka_gl_sizeof_interestPoint_t());
+            assert_eq!(
+                size_of::<interestPoint_t>(),
+                jka_gl_sizeof_interestPoint_t()
+            );
             assert_eq!(size_of::<alertEvent_t>(), jka_gl_sizeof_alertEvent_t());
             assert_eq!(offset_of!(alertEvent_t, owner), jka_gl_off_ae_owner());
 

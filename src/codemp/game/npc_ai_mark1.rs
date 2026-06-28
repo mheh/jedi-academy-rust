@@ -43,7 +43,7 @@ use crate::codemp::game::g_missile::CreateMissile;
 use crate::codemp::game::g_timer::{TIMER_Done, TIMER_Set};
 use crate::codemp::game::g_utils::{G_EffectIndex, G_PlayEffectID, G_Sound, G_SoundIndex};
 use crate::codemp::game::npc::{
-    ucmd, NPC_SetAnim, RestoreNPCGlobals, SaveNPCGlobals, SetNPCGlobals, NPC, NPCInfo,
+    ucmd, NPCInfo, NPC_SetAnim, RestoreNPCGlobals, SaveNPCGlobals, SetNPCGlobals, NPC,
 };
 use crate::codemp::game::npc_ai_default::NPC_BSIdle;
 use crate::codemp::game::npc_ai_stormtrooper::NPC_CheckPlayerTeamStealth;
@@ -55,8 +55,8 @@ use crate::codemp::game::npc_utils::{
     NPC_UpdateAngles,
 };
 use crate::codemp::game::q_math::{
-    AngleVectors, DistanceHorizontalSquared, Q_irand, VectorScale, VectorSet, VectorSubtract,
-    vectoangles,
+    vectoangles, AngleVectors, DistanceHorizontalSquared, Q_irand, VectorScale, VectorSet,
+    VectorSubtract,
 };
 use crate::codemp::game::q_shared::va;
 use crate::codemp::game::q_shared_h::{
@@ -202,14 +202,30 @@ pub unsafe fn Mark1Dead_FireRocket() {
 
     G_PlayEffectID(G_EffectIndex("bryar/muzzle_flash"), &muzzle1, &muzzle_dir);
 
-    G_Sound(NPC, CHAN_AUTO, G_SoundIndex("sound/chars/mark1/misc/mark1_fire"));
+    G_Sound(
+        NPC,
+        CHAN_AUTO,
+        G_SoundIndex("sound/chars/mark1/misc/mark1_fire"),
+    );
 
-    missile = CreateMissile(&mut muzzle1, &muzzle_dir, BOWCASTER_VELOCITY, 10000, NPC, QFALSE);
+    missile = CreateMissile(
+        &mut muzzle1,
+        &muzzle_dir,
+        BOWCASTER_VELOCITY,
+        10000,
+        NPC,
+        QFALSE,
+    );
 
     (*missile).classname = c"bowcaster_proj".as_ptr() as *mut c_char;
     (*missile).s.weapon = WP_BOWCASTER;
 
-    VectorSet(&mut (*missile).r.maxs, BOWCASTER_SIZE, BOWCASTER_SIZE, BOWCASTER_SIZE);
+    VectorSet(
+        &mut (*missile).r.maxs,
+        BOWCASTER_SIZE,
+        BOWCASTER_SIZE,
+        BOWCASTER_SIZE,
+    );
     let maxs = (*missile).r.maxs;
     VectorScale(&maxs, -1.0, &mut (*missile).r.mins);
 
@@ -259,7 +275,11 @@ pub unsafe fn Mark1Dead_FireBlaster() {
 
     missile = CreateMissile(&mut muzzle1, &muzzle_dir, 1600.0, 10000, NPC, QFALSE);
 
-    G_Sound(NPC, CHAN_AUTO, G_SoundIndex("sound/chars/mark1/misc/mark1_fire"));
+    G_Sound(
+        NPC,
+        CHAN_AUTO,
+        G_SoundIndex("sound/chars/mark1/misc/mark1_fire"),
+    );
 
     (*missile).classname = c"bryar_proj".as_ptr() as *mut c_char;
     (*missile).s.weapon = WP_BRYAR_PISTOL;
@@ -355,8 +375,7 @@ pub unsafe fn Mark1_dying(self_: *mut gentity_t) {
                 NPC_Mark1_Part_Explode(self_, newBolt);
             } else {
                 num = Q_irand(1, 6);
-                newBolt =
-                    trap::G2API_AddBolt((*self_).ghoul2, 0, &format!("*torso_tube{}", num));
+                newBolt = trap::G2API_AddBolt((*self_).ghoul2, 0, &format!("*torso_tube{}", num));
                 NPC_Mark1_Part_Explode(self_, newBolt);
                 NPC_SetSurfaceOnOff(self_, va(format_args!("torso_tube{}", num)), TURN_OFF);
             }
@@ -473,11 +492,7 @@ pub unsafe extern "C" fn NPC_Mark1_Pain(
                     if newBolt != -1 {
                         NPC_Mark1_Part_Explode(self_, newBolt);
                     }
-                    NPC_SetSurfaceOnOff(
-                        self_,
-                        va(format_args!("torso_tube{}", i + 1)),
-                        TURN_OFF,
-                    );
+                    NPC_SetSurfaceOnOff(self_, va(format_args!("torso_tube{}", i + 1)), TURN_OFF);
                     NPC_SetAnim(
                         self_,
                         SETANIM_BOTH,
@@ -595,7 +610,11 @@ pub unsafe fn Mark1_FireBlaster() {
 
     G_PlayEffectID(G_EffectIndex("bryar/muzzle_flash"), &muzzle1, &forward);
 
-    G_Sound(NPC, CHAN_AUTO, G_SoundIndex("sound/chars/mark1/misc/mark1_fire"));
+    G_Sound(
+        NPC,
+        CHAN_AUTO,
+        G_SoundIndex("sound/chars/mark1/misc/mark1_fire"),
+    );
 
     missile = CreateMissile(&mut muzzle1, &forward, 1600.0, 10000, NPC, QFALSE);
 
@@ -710,14 +729,30 @@ pub unsafe fn Mark1_FireRocket() {
         Some(&mut up),
     );
 
-    G_Sound(NPC, CHAN_AUTO, G_SoundIndex("sound/chars/mark1/misc/mark1_fire"));
+    G_Sound(
+        NPC,
+        CHAN_AUTO,
+        G_SoundIndex("sound/chars/mark1/misc/mark1_fire"),
+    );
 
-    missile = CreateMissile(&mut muzzle1, &forward, BOWCASTER_VELOCITY, 10000, NPC, QFALSE);
+    missile = CreateMissile(
+        &mut muzzle1,
+        &forward,
+        BOWCASTER_VELOCITY,
+        10000,
+        NPC,
+        QFALSE,
+    );
 
     (*missile).classname = c"bowcaster_proj".as_ptr() as *mut c_char;
     (*missile).s.weapon = WP_BOWCASTER;
 
-    VectorSet(&mut (*missile).r.maxs, BOWCASTER_SIZE, BOWCASTER_SIZE, BOWCASTER_SIZE);
+    VectorSet(
+        &mut (*missile).r.maxs,
+        BOWCASTER_SIZE,
+        BOWCASTER_SIZE,
+        BOWCASTER_SIZE,
+    );
     let maxs = (*missile).r.maxs;
     VectorScale(&maxs, -1.0, &mut (*missile).r.mins);
 

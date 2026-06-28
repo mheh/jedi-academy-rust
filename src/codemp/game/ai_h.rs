@@ -97,7 +97,10 @@ mod tests {
     fn ai_layout_matches_c() {
         unsafe {
             assert_eq!(NUM_SQUAD_STATES, jka_ai_NUM_SQUAD_STATES());
-            assert_eq!(size_of::<AIGroupMember_t>(), jka_ai_sizeof_AIGroupMember_t());
+            assert_eq!(
+                size_of::<AIGroupMember_t>(),
+                jka_ai_sizeof_AIGroupMember_t()
+            );
 
             #[cfg(target_pointer_width = "64")]
             {

@@ -9,6 +9,7 @@
 use core::ffi::{c_char, c_int, CStr};
 use core::ptr::{addr_of, addr_of_mut, null_mut};
 
+use crate::codemp::game::animalnpc::G_CreateAnimalNPC;
 use crate::codemp::game::anims::BOTH_STAND1;
 use crate::codemp::game::b_public_h::{
     gNPC_t, BS_CINEMATIC, BS_DEFAULT, BS_WAIT, NPCAI_CUSTOM_GRAVITY, NPCAI_MATCHPLAYERWEAPON,
@@ -18,8 +19,8 @@ use crate::codemp::game::b_public_h::{
 use crate::codemp::game::bg_misc::BG_Alloc;
 use crate::codemp::game::bg_panimate::BG_ParseAnimationFile;
 use crate::codemp::game::bg_public::{
-    bgEntity_t, EF2_FLYING, EF_NODRAW, ET_NPC, GT_SIEGE, MASK_NPCSOLID, MASK_SOLID, MOD_UNKNOWN, PERS_SCORE,
-    PERS_SPAWN_COUNT, PERS_TEAM, PMF_RESPAWNED, PMF_TIME_KNOCKBACK, SETANIM_BOTH,
+    bgEntity_t, EF2_FLYING, EF_NODRAW, ET_NPC, GT_SIEGE, MASK_NPCSOLID, MASK_SOLID, MOD_UNKNOWN,
+    PERS_SCORE, PERS_SPAWN_COUNT, PERS_TEAM, PMF_RESPAWNED, PMF_TIME_KNOCKBACK, SETANIM_BOTH,
     SETANIM_FLAG_NORMAL, STAT_HEALTH, STAT_MAX_HEALTH, STAT_WEAPONS, TEAM_FREE, TEAM_NUM_TEAMS,
     WEAPON_IDLE,
 };
@@ -28,89 +29,88 @@ use crate::codemp::game::bg_vehicleLoad::{g_vehicleInfo, BG_VehicleGetIndex};
 use crate::codemp::game::bg_vehicles_h::{
     VEHICLE_NONE, VH_ANIMAL, VH_FIGHTER, VH_SPEEDER, VH_WALKER,
 };
-use crate::codemp::game::animalnpc::G_CreateAnimalNPC;
-use crate::codemp::game::speedernpc::G_CreateSpeederNPC;
-use crate::codemp::game::fighternpc::G_CreateFighterNPC;
-use crate::codemp::game::walkernpc::G_CreateWalkerNPC;
 use crate::codemp::game::bg_weapons::weaponData;
 use crate::codemp::game::bg_weapons_h::{
     WP_BLASTER, WP_BOWCASTER, WP_BRYAR_PISTOL, WP_DEMP2, WP_DISRUPTOR, WP_FLECHETTE, WP_NONE,
     WP_NUM_WEAPONS, WP_REPEATER, WP_ROCKET_LAUNCHER, WP_SABER, WP_STUN_BATON, WP_THERMAL,
 };
+use crate::codemp::game::fighternpc::G_CreateFighterNPC;
+use crate::codemp::game::g_ICARUScb::{G_DebugPrint, WL_DEBUG};
+use crate::codemp::game::g_active::ClientThink;
+use crate::codemp::game::g_client::SetClientViewAngle;
+use crate::codemp::game::g_combat::player_die;
 use crate::codemp::game::g_local::{
     gclient_t, gentity_t, FL_DMG_BY_HEAVY_WEAP_ONLY, FL_NOTARGET, FL_NO_KNOCKBACK, FL_SHIELDED,
-    FL_UNDYING, FRAMETIME,
-    START_TIME_REMOVE_ENTS,
+    FL_UNDYING, FRAMETIME, START_TIME_REMOVE_ENTS,
 };
 use crate::codemp::game::g_main::{
     g_allowNPC, g_entities, g_gametype, g_gravity, g_inactivity, g_spskill, level, Com_Printf,
 };
+use crate::codemp::game::g_nav::WAYPOINT_NONE;
 use crate::codemp::game::g_public_h::{
     BSET_FIRST, BSET_SPAWN, NUM_BSETS, SVF_NOCLIENT, SVF_PLAYER_USABLE,
 };
-use crate::codemp::game::npc_utils::G_ActivateBehavior;
 use crate::codemp::game::g_spawn::{G_NewString, G_SpawnFloat, G_SpawnInt};
 use crate::codemp::game::g_utils::{
     G_CheckInSolid, G_CreateFakeClient, G_Find, G_FreeEntity, G_KillBox, G_ModelIndex,
     G_ScaleNetHealth, G_SetAngles, G_SetOrigin, G_Spawn, G_UseTargets, G_UseTargets2,
 };
 use crate::codemp::game::g_vehicles::G_VehicleSpawn;
-use crate::codemp::game::g_active::ClientThink;
-use crate::codemp::game::g_client::SetClientViewAngle;
-use crate::codemp::game::g_combat::player_die;
-use crate::codemp::game::g_ICARUScb::{G_DebugPrint, WL_DEBUG};
-use crate::codemp::game::g_nav::WAYPOINT_NONE;
 use crate::codemp::game::npc::{NPCInfo, NPC_SetAnim, NPC_Think, SetNPCGlobals};
 use crate::codemp::game::npc_combat::{ChangeWeapon, NPC_ChangeWeapon};
 use crate::codemp::game::npc_goal::NPC_ClearGoal;
 use crate::codemp::game::npc_reactions::NPC_Use;
-use crate::codemp::game::surfaceflags_h::CONTENTS_BODY;
 use crate::codemp::game::npc_senses::InFOV;
 use crate::codemp::game::npc_stats::{
     NPC_ParseParms, NPC_Precache, NPC_PrecacheAnimationCFG, TeamTable,
 };
+use crate::codemp::game::npc_utils::G_ActivateBehavior;
+use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_math::{
     AngleVectors, DistanceSquared, VectorAdd, VectorClear, VectorCopy, VectorMA, VectorNormalize,
 };
-use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_shared::{
     va, GetIDForString, Q_stricmp, Q_strlwr, Q_strncmp, Q_strrchr, Sz,
 };
 use crate::codemp::game::q_shared_h::{
     stringID_table_t, trace_t, usercmd_t, vec3_t, ENTITYNUM_MAX_NORMAL, ENTITYNUM_NONE,
-    ENTITYNUM_WORLD, FORCE_LEVEL_3, FP_LEVITATION,
-    MAX_GENTITIES, MIN_WORLD_COORD, PITCH, ROLL, TR_INTERPOLATE, YAW,
+    ENTITYNUM_WORLD, FORCE_LEVEL_3, FP_LEVITATION, MAX_GENTITIES, MIN_WORLD_COORD, PITCH, ROLL,
+    TR_INTERPOLATE, YAW,
 };
+use crate::codemp::game::speedernpc::G_CreateSpeederNPC;
+use crate::codemp::game::surfaceflags_h::CONTENTS_BODY;
 use crate::codemp::game::teams_h::{
     class_t, npcteam_t, CLASS_ATST, CLASS_BOBAFETT, CLASS_DESANN, CLASS_GALAKMECH, CLASS_GONK,
     CLASS_HOWLER, CLASS_IMPWORKER, CLASS_INTERROGATOR, CLASS_JEDI, CLASS_KYLE, CLASS_LUKE,
-    CLASS_MARK1, CLASS_MARK2,
-    CLASS_MINEMONSTER, CLASS_MOUSE, CLASS_PROBE, CLASS_PROTOCOL, CLASS_R2D2, CLASS_R5D2,
-    CLASS_RANCOR, CLASS_REBORN, CLASS_REMOTE, CLASS_SEEKER, CLASS_SENTRY, CLASS_SHADOWTROOPER,
-    CLASS_STORMTROOPER, CLASS_SWAMPTROOPER, CLASS_TAVION, CLASS_VEHICLE, CLASS_WAMPA,
-    NPCTEAM_ENEMY, NPCTEAM_NEUTRAL, NPCTEAM_PLAYER,
+    CLASS_MARK1, CLASS_MARK2, CLASS_MINEMONSTER, CLASS_MOUSE, CLASS_PROBE, CLASS_PROTOCOL,
+    CLASS_R2D2, CLASS_R5D2, CLASS_RANCOR, CLASS_REBORN, CLASS_REMOTE, CLASS_SEEKER, CLASS_SENTRY,
+    CLASS_SHADOWTROOPER, CLASS_STORMTROOPER, CLASS_SWAMPTROOPER, CLASS_TAVION, CLASS_VEHICLE,
+    CLASS_WAMPA, NPCTEAM_ENEMY, NPCTEAM_NEUTRAL, NPCTEAM_PLAYER,
 };
 use crate::codemp::game::w_saber::WP_SaberInitBladeData;
 use crate::codemp::game::w_saber_h::JSF_AMBUSH;
+use crate::codemp::game::walkernpc::G_CreateWalkerNPC;
 use crate::ffi::types::{qboolean, QFALSE, QTRUE};
 use crate::trap;
 
 // NPC-AI pain handlers — installed by `NPC_PainFunc` as the spawned NPC's `pain`
 // fn-ptr. Each lives in its per-class AI file; all are ported.
+use crate::codemp::game::npc_ai_atst::{NPC_ATST_Pain, NPC_ATST_Precache};
 use crate::codemp::game::npc_ai_droid::{
     NPC_Droid_Pain, NPC_Gonk_Precache, NPC_Mouse_Precache, NPC_Protocol_Precache,
     NPC_R2D2_Precache, NPC_R5D2_Precache,
 };
-use crate::codemp::game::npc_ai_atst::{NPC_ATST_Pain, NPC_ATST_Precache};
-use crate::codemp::game::npc_ai_mark1::{NPC_Mark1_Pain, NPC_Mark1_Precache};
-use crate::codemp::game::npc_ai_mark2::{NPC_Mark2_Pain, NPC_Mark2_Precache};
-use crate::codemp::game::npc_ai_galakmech::{NPC_GalakMech_Init, NPC_GalakMech_Precache, NPC_GM_Pain};
-use crate::codemp::game::npc_ai_interrogator::NPC_Interrogator_Precache;
+use crate::codemp::game::npc_ai_galakmech::{
+    NPC_GM_Pain, NPC_GalakMech_Init, NPC_GalakMech_Precache,
+};
 use crate::codemp::game::npc_ai_howler::{NPC_Howler_Pain, NPC_Howler_Precache};
 use crate::codemp::game::npc_ai_imperialprobe::{NPC_Probe_Pain, NPC_Probe_Precache};
+use crate::codemp::game::npc_ai_interrogator::NPC_Interrogator_Precache;
 use crate::codemp::game::npc_ai_jedi::{
     Boba_Precache, Jedi_ClearTimers, Jedi_Cloak, NPC_Jedi_Pain, NPC_ShadowTrooper_Precache,
 };
+use crate::codemp::game::npc_ai_mark1::{NPC_Mark1_Pain, NPC_Mark1_Precache};
+use crate::codemp::game::npc_ai_mark2::{NPC_Mark2_Pain, NPC_Mark2_Precache};
 use crate::codemp::game::npc_ai_minemonster::{NPC_MineMonster_Pain, NPC_MineMonster_Precache};
 use crate::codemp::game::npc_ai_rancor::{NPC_Rancor_Pain, Rancor_SetBolts};
 use crate::codemp::game::npc_ai_remote::{NPC_Remote_Pain, NPC_Remote_Precache};
@@ -175,9 +175,7 @@ static TeamNames: [&str; 4] = [
     //	"forge",
     //	"disguise",
     //	"player (not valid)"
-    "player",
-    "enemy",
-    "neutral",
+    "player", "enemy", "neutral",
 ];
 
 /// `qboolean showBBoxes = qfalse;` (NPC_spawn.c:4211) — debug toggle for drawing exact NPC
@@ -1127,7 +1125,9 @@ pub unsafe fn NPC_Spawn_Do(ent: *mut gentity_t) -> *mut gentity_t {
 
             // Setup the vehicle.
             (*(*newent).m_pVehicle).m_pParentEntity = newent as *mut bgEntity_t;
-            ((*(*(*newent).m_pVehicle).m_pVehicleInfo).Initialize.unwrap())((*newent).m_pVehicle);
+            ((*(*(*newent).m_pVehicle).m_pVehicleInfo)
+                .Initialize
+                .unwrap())((*newent).m_pVehicle);
 
             //cache all the assets
             ((*(*(*newent).m_pVehicle).m_pVehicleInfo)
@@ -1379,7 +1379,7 @@ pub unsafe extern "C" fn NPC_Begin(ent: *mut gentity_t) {
                     WL_DEBUG,
                     &format!(
                         "NPC {} could not spawn, firing target3 ({}) and removing self\n",
-                        cstr_or(( *ent).targetname),
+                        cstr_or((*ent).targetname),
                         cstr_or((*ent).target3)
                     ),
                 );
@@ -1584,7 +1584,12 @@ pub unsafe extern "C" fn NPC_Begin(ent: *mut gentity_t) {
 
     // set default animations
     if (*(*ent).client).NPC_class != CLASS_VEHICLE {
-        NPC_SetAnim(ent, SETANIM_BOTH as c_int, BOTH_STAND1, SETANIM_FLAG_NORMAL as c_int);
+        NPC_SetAnim(
+            ent,
+            SETANIM_BOTH as c_int,
+            BOTH_STAND1,
+            SETANIM_FLAG_NORMAL as c_int,
+        );
     }
 
     if !spawnPoint.is_null() {
@@ -1675,7 +1680,10 @@ pub unsafe extern "C" fn NPC_Begin(ent: *mut gentity_t) {
         //valid enemy spawned
         if (*ent).spawnflags & SFB_CINEMATIC == 0 && (*(*ent).NPC).behaviorState != BS_CINEMATIC {
             //not a cinematic enemy
-            if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())).client.is_null() {
+            if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()))
+                .client
+                .is_null()
+            {
                 //missionStats.enemiesSpawned++  rwwFIXMEFIXME (SP-only)
             }
         }
@@ -1726,7 +1734,10 @@ pub unsafe extern "C" fn NPC_Begin(ent: *mut gentity_t) {
                             (*(*ent).client).ps.persistant[PERS_TEAM as usize];
                         //position
                         VectorCopy(&(*ent).r.currentOrigin, &mut (*droidEnt).s.origin);
-                        VectorCopy(&(*ent).r.currentOrigin, &mut (*(*droidEnt).client).ps.origin);
+                        VectorCopy(
+                            &(*ent).r.currentOrigin,
+                            &mut (*(*droidEnt).client).ps.origin,
+                        );
                         G_SetOrigin(droidEnt, &(*droidEnt).s.origin);
                         trap::LinkEntity(droidEnt);
                         VectorCopy(&(*ent).r.currentAngles, &mut (*droidEnt).s.angles);
@@ -3245,7 +3256,10 @@ pub unsafe fn NPC_Kill_f() {
         if Q_stricmp(c"nonally".as_ptr(), name.as_ptr()) == 0 {
             kill_non_sf = QTRUE as qboolean;
         } else {
-            kill_team = GetIDForString(addr_of!(TeamTable) as *const stringID_table_t, name.as_ptr());
+            kill_team = GetIDForString(
+                addr_of!(TeamTable) as *const stringID_table_t,
+                name.as_ptr(),
+            );
 
             if kill_team == TEAM_FREE {
                 Com_Printf(&format!(

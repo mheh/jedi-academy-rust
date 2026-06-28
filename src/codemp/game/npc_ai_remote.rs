@@ -24,7 +24,9 @@ use crate::codemp::game::g_main::{g_spskill, level};
 use crate::codemp::game::g_missile::CreateMissile;
 use crate::codemp::game::g_timer::{TIMER_Done, TIMER_Set};
 use crate::codemp::game::g_utils::{G_EffectIndex, G_PlayEffectID, G_Sound, G_SoundIndex};
-use crate::codemp::game::npc::{ucmd, RestoreNPCGlobals, SaveNPCGlobals, SetNPCGlobals, NPC, NPCInfo};
+use crate::codemp::game::npc::{
+    ucmd, NPCInfo, RestoreNPCGlobals, SaveNPCGlobals, SetNPCGlobals, NPC,
+};
 use crate::codemp::game::npc_ai_default::NPC_BSIdle;
 use crate::codemp::game::npc_goal::UpdateGoal;
 use crate::codemp::game::npc_move::{NPC_GetMoveDirection, NPC_MoveToGoal};
@@ -32,12 +34,12 @@ use crate::codemp::game::npc_reactions::NPC_Pain;
 use crate::codemp::game::npc_utils::{
     CalcEntitySpot, NPC_CheckEnemyExt, NPC_ClearLOS4, NPC_UpdateAngles,
 };
+use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_math::{
     flrand, vec3_origin, vectoangles, AngleVectors, DistanceHorizontalSquared, VectorCopy,
     VectorMA, VectorNormalize, VectorSubtract,
 };
-use crate::codemp::game::q_shared::{random};
-use crate::codemp::game::q_math::Q_irand;
+use crate::codemp::game::q_shared::random;
 use crate::codemp::game::q_shared_h::{trace_t, vec3_t, BUTTON_WALKING, CHAN_AUTO};
 use crate::codemp::game::surfaceflags_h::CONTENTS_LIGHTSABER;
 use crate::ffi::types::{qboolean, QFALSE, QTRUE};
@@ -62,7 +64,11 @@ pub fn NPC_Remote_Precache() {
 NPC_Remote_Pain
 -------------------------
 */
-pub unsafe extern "C" fn NPC_Remote_Pain(self_: *mut gentity_t, attacker: *mut gentity_t, damage: c_int) {
+pub unsafe extern "C" fn NPC_Remote_Pain(
+    self_: *mut gentity_t,
+    attacker: *mut gentity_t,
+    damage: c_int,
+) {
     SaveNPCGlobals();
     SetNPCGlobals(self_);
     Remote_Strafe();
@@ -107,7 +113,11 @@ pub unsafe fn Remote_MaintainHeight() {
                 dif *= 10.0;
                 (*(*NPC).client).ps.velocity[2] = ((*(*NPC).client).ps.velocity[2] + dif) / 2.0;
                 //	NPC->fx_time = level.time;
-                G_Sound(NPC, CHAN_AUTO, G_SoundIndex("sound/chars/remote/misc/hiss.wav"));
+                G_Sound(
+                    NPC,
+                    CHAN_AUTO,
+                    G_SoundIndex("sound/chars/remote/misc/hiss.wav"),
+                );
             }
         }
     } else {
@@ -199,7 +209,11 @@ pub unsafe fn Remote_Strafe() {
             &mut (*(*NPC).client).ps.velocity,
         );
 
-        G_Sound(NPC, CHAN_AUTO, G_SoundIndex("sound/chars/remote/misc/hiss.wav"));
+        G_Sound(
+            NPC,
+            CHAN_AUTO,
+            G_SoundIndex("sound/chars/remote/misc/hiss.wav"),
+        );
 
         // Add a slight upward push
         (*(*NPC).client).ps.velocity[2] += REMOTE_UPWARD_PUSH;
@@ -248,7 +262,11 @@ pub unsafe fn Remote_Hunt(visible: qboolean, advance: qboolean, retreat: qboolea
             return;
         }
     } else {
-        VectorSubtract(&(*(*NPC).enemy).r.currentOrigin, &(*NPC).r.currentOrigin, &mut forward);
+        VectorSubtract(
+            &(*(*NPC).enemy).r.currentOrigin,
+            &(*NPC).r.currentOrigin,
+            &mut forward,
+        );
         distance = VectorNormalize(&mut forward);
     }
     let _ = distance;

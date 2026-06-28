@@ -19,7 +19,7 @@ use crate::codemp::game::bg_public::{
 };
 use crate::codemp::game::bg_vehicles_h::VH_WALKER;
 use crate::codemp::game::bg_weapons_h::{WP_DEMP2, WP_EMPLACED_GUN};
-use crate::codemp::game::g_combat::{ObjectDie, G_RadiusDamage};
+use crate::codemp::game::g_combat::{G_RadiusDamage, ObjectDie};
 use crate::codemp::game::g_items::RegisterItem;
 use crate::codemp::game::g_local::{gentity_t, FL_NOTARGET, FRAMETIME};
 use crate::codemp::game::g_main::{g_entities, level};
@@ -30,12 +30,12 @@ use crate::codemp::game::g_utils::{
     G_UseTargets2,
 };
 use crate::codemp::game::npc_combat::G_SetEnemy;
+use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_math::{
-    flrand, vec3_origin, AngleNormalize180, AngleSubtract, AngleVectors, VectorClear, VectorCopy,
-    VectorLengthSquared, VectorMA, VectorScale, VectorSet, VectorSubtract, vectoangles,
+    flrand, vec3_origin, vectoangles, AngleNormalize180, AngleSubtract, AngleVectors, VectorClear,
+    VectorCopy, VectorLengthSquared, VectorMA, VectorScale, VectorSet, VectorSubtract,
 };
 use crate::codemp::game::q_shared::{random, Q_stricmp};
-use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_shared_h::{
     vec3_t, MAT_METAL, MAX_GENTITIES, PITCH, TR_LINEAR, TR_LINEAR_STOP, TR_STATIONARY, YAW,
 };
@@ -71,8 +71,7 @@ pub unsafe extern "C" fn TurretPain(
     }
 
     if !(*attacker).client.is_null() && (*(*attacker).client).ps.weapon == WP_DEMP2 {
-        (*self_).attackDebounceTime =
-            (*addr_of!(level)).time + 800 + (random() * 500.0) as c_int;
+        (*self_).attackDebounceTime = (*addr_of!(level)).time + 800 + (random() * 500.0) as c_int;
         (*self_).painDebounceTime = (*self_).attackDebounceTime;
     }
     if (*self_).enemy.is_null() {
@@ -120,8 +119,14 @@ pub unsafe extern "C" fn auto_turret_die(
     let mut pos: vec3_t = [0.0; 3];
 
     // Turn off the thinking of the base & use it's targets
-    (*core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add((*self_).r.ownerNum as usize)).think = None;
-    (*core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add((*self_).r.ownerNum as usize)).r#use = None;
+    (*core::ptr::addr_of_mut!(g_entities)
+        .cast::<gentity_t>()
+        .add((*self_).r.ownerNum as usize))
+    .think = None;
+    (*core::ptr::addr_of_mut!(g_entities)
+        .cast::<gentity_t>()
+        .add((*self_).r.ownerNum as usize))
+    .r#use = None;
 
     // clear my data
     (*self_).die = None;
@@ -248,7 +253,9 @@ unsafe fn turret_aim(self_: *mut gentity_t) {
     let mut diffPitch: f32;
     let mut turnSpeed: f32;
     let pitchCap: f32 = 40.0;
-    let top = core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add((*self_).r.ownerNum as usize);
+    let top = core::ptr::addr_of_mut!(g_entities)
+        .cast::<gentity_t>()
+        .add((*self_).r.ownerNum as usize);
     if top.is_null() {
         return;
     }
@@ -332,20 +339,32 @@ unsafe fn turret_aim(self_: *mut gentity_t) {
     if diffYaw != 0.0 {
         // cap max speed....
         if diffYaw.abs() > turnSpeed {
-            diffYaw = if diffYaw >= 0.0 { turnSpeed } else { -turnSpeed };
+            diffYaw = if diffYaw >= 0.0 {
+                turnSpeed
+            } else {
+                -turnSpeed
+            };
         }
     }
     if diffPitch != 0.0 {
         if diffPitch.abs() > turnSpeed {
             // cap max speed
-            diffPitch = if diffPitch > 0.0 { turnSpeed } else { -turnSpeed };
+            diffPitch = if diffPitch > 0.0 {
+                turnSpeed
+            } else {
+                -turnSpeed
+            };
         }
     }
     // ...then set up our desired yaw
     VectorSet(&mut setAngle, diffPitch, diffYaw, 0.0);
 
     VectorCopy(&(*top).r.currentAngles, &mut (*top).s.apos.trBase);
-    VectorScale(&setAngle, (1000 / FRAMETIME) as f32, &mut (*top).s.apos.trDelta);
+    VectorScale(
+        &setAngle,
+        (1000 / FRAMETIME) as f32,
+        &mut (*top).s.apos.trDelta,
+    );
     (*top).s.apos.trTime = (*addr_of!(level)).time;
     (*top).s.apos.trType = TR_LINEAR_STOP;
     (*top).s.apos.trDuration = FRAMETIME;
@@ -425,7 +444,9 @@ unsafe fn turret_fire(ent: *mut gentity_t, start: &vec3_t, dir: &vec3_t) {
 //-----------------------------------------------------
 #[allow(dead_code)] // installed/called via turret_base_think (g_turret.c:588), not yet ported
 pub unsafe extern "C" fn turret_head_think(self_: *mut gentity_t) {
-    let top = core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add((*self_).r.ownerNum as usize);
+    let top = core::ptr::addr_of_mut!(g_entities)
+        .cast::<gentity_t>()
+        .add((*self_).r.ownerNum as usize);
     if top.is_null() {
         return;
     }
@@ -479,7 +500,9 @@ pub unsafe extern "C" fn turret_head_think(self_: *mut gentity_t) {
 //-----------------------------------------------------
 #[allow(dead_code)] // only caller is turret_base_think (g_turret.c:519), not yet ported
 unsafe fn turret_turnoff(self_: *mut gentity_t) {
-    let top = core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add((*self_).r.ownerNum as usize);
+    let top = core::ptr::addr_of_mut!(g_entities)
+        .cast::<gentity_t>()
+        .add((*self_).r.ownerNum as usize);
     if !top.is_null() {
         //still have a top
         //stop it from rotating
@@ -535,7 +558,9 @@ unsafe fn turret_find_enemies(self_: *mut gentity_t) -> qboolean {
     let mut entity_list: [*mut gentity_t; MAX_GENTITIES] = [core::ptr::null_mut(); MAX_GENTITIES];
     let mut target: *mut gentity_t;
     let mut bestTarget: *mut gentity_t = core::ptr::null_mut();
-    let top = core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add((*self_).r.ownerNum as usize);
+    let top = core::ptr::addr_of_mut!(g_entities)
+        .cast::<gentity_t>()
+        .add((*self_).r.ownerNum as usize);
     if top.is_null() {
         return QFALSE;
     }
@@ -857,16 +882,15 @@ pub unsafe extern "C" fn turret_base_think(self_: *mut gentity_t) {
 
             if enemyDist < ((*self_).radius * (*self_).radius) {
                 // was in valid radius
-                if trap::InPVS(&(*self_).r.currentOrigin, &(*(*self_).enemy).r.currentOrigin)
-                    != QFALSE
+                if trap::InPVS(
+                    &(*self_).r.currentOrigin,
+                    &(*(*self_).enemy).r.currentOrigin,
+                ) != QFALSE
                 {
                     // Every now and again, check to see if we can even trace to the enemy
 
                     if !(*(*self_).enemy).client.is_null() {
-                        VectorCopy(
-                            &(*(*(*self_).enemy).client).renderInfo.eyePoint,
-                            &mut org,
-                        );
+                        VectorCopy(&(*(*(*self_).enemy).client).renderInfo.eyePoint, &mut org);
                     } else {
                         VectorCopy(&(*(*self_).enemy).r.currentOrigin, &mut org);
                     }
@@ -935,19 +959,19 @@ Large 2-piece turbolaser turret
   showhealth - set to 1 to show health bar on this entity when crosshair is over it
 
   teamowner - crosshair shows green for this team, red for opposite team
-	0 - none
-	1 - red
-	2 - blue
+    0 - none
+    1 - red
+    2 - blue
 
   alliedTeam - team that this turret won't target
-	0 - none
-	1 - red
-	2 - blue
+    0 - none
+    1 - red
+    2 - blue
 
   teamnodmg - team that turret does not take damage from
-	0 - none
-	1 - red
-	2 - blue
+    0 - none
+    1 - red
+    2 - blue
 
 "icon" - icon that represents the objective on the radar
 */

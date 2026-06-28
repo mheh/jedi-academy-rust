@@ -26,7 +26,7 @@ use crate::codemp::game::b_public_h::{
 };
 use crate::codemp::game::bg_public::MASK_OPAQUE;
 use crate::codemp::game::g_local::{
-    alertEvent_t, alertEventLevel_e, gentity_t, AEL_DANGER, AET_SIGHT, AET_SOUND, MAX_ALERT_EVENTS,
+    alertEventLevel_e, alertEvent_t, gentity_t, AEL_DANGER, AET_SIGHT, AET_SOUND, MAX_ALERT_EVENTS,
     MAX_INTEREST_POINTS,
 };
 use crate::codemp::game::g_main::{g_entities, level, Com_Printf};
@@ -38,8 +38,8 @@ use crate::codemp::game::npc_behavior::NPC_StartFlee;
 use crate::codemp::game::npc_combat::{CanShoot, EntIsGlass, ShotThroughGlass};
 use crate::codemp::game::npc_utils::CalcEntitySpot;
 use crate::codemp::game::q_math::{
-    vec3_origin, AngleDelta, AngleVectors, DistanceSquared, DotProduct, VectorCompare, VectorCopy,
-    VectorLengthSquared, VectorNormalize, VectorSubtract, vectoangles,
+    vec3_origin, vectoangles, AngleDelta, AngleVectors, DistanceSquared, DotProduct, VectorCompare,
+    VectorCopy, VectorLengthSquared, VectorNormalize, VectorSubtract,
 };
 use crate::codemp::game::q_shared_h::{
     trace_t, vec3_t, ENTITYNUM_NONE, ENTITYNUM_WORLD, PITCH, YAW,
@@ -142,21 +142,42 @@ pub unsafe fn CanSee(ent: *mut gentity_t) -> qboolean {
     CalcEntitySpot(NPC, SPOT_HEAD_LEAN, &mut eyes);
 
     CalcEntitySpot(ent, SPOT_ORIGIN, &mut spot);
-    tr = trap::Trace(&eyes, &vec3_origin, &vec3_origin, &spot, (*NPC).s.number, MASK_OPAQUE);
+    tr = trap::Trace(
+        &eyes,
+        &vec3_origin,
+        &vec3_origin,
+        &spot,
+        (*NPC).s.number,
+        MASK_OPAQUE,
+    );
     ShotThroughGlass(&mut tr, ent, &spot, MASK_OPAQUE);
     if tr.fraction == 1.0 {
         return QTRUE;
     }
 
     CalcEntitySpot(ent, SPOT_HEAD, &mut spot);
-    tr = trap::Trace(&eyes, &vec3_origin, &vec3_origin, &spot, (*NPC).s.number, MASK_OPAQUE);
+    tr = trap::Trace(
+        &eyes,
+        &vec3_origin,
+        &vec3_origin,
+        &spot,
+        (*NPC).s.number,
+        MASK_OPAQUE,
+    );
     ShotThroughGlass(&mut tr, ent, &spot, MASK_OPAQUE);
     if tr.fraction == 1.0 {
         return QTRUE;
     }
 
     CalcEntitySpot(ent, SPOT_LEGS, &mut spot);
-    tr = trap::Trace(&eyes, &vec3_origin, &vec3_origin, &spot, (*NPC).s.number, MASK_OPAQUE);
+    tr = trap::Trace(
+        &eyes,
+        &vec3_origin,
+        &vec3_origin,
+        &spot,
+        (*NPC).s.number,
+        MASK_OPAQUE,
+    );
     ShotThroughGlass(&mut tr, ent, &spot, MASK_OPAQUE);
     if tr.fraction == 1.0 {
         return QTRUE;
@@ -198,7 +219,7 @@ pub fn InFront(spot: &vec3_t, from: &vec3_t, fromAngles: &vec3_t, threshHold: f3
 InFOV
 
 IDEA: further off to side of FOV range, higher chance of failing even if technically in FOV,
-	keep core of 50% to sides as always succeeding
+    keep core of 50% to sides as always succeeding
 */
 
 //Position compares
@@ -691,8 +712,13 @@ pub unsafe fn G_CheckAlertEvents(
     }
 
     //get sound event
-    bestSoundEvent =
-        G_CheckSoundEvents(self_, maxHearDist, ignoreAlert, mustHaveOwner, minAlertLevel);
+    bestSoundEvent = G_CheckSoundEvents(
+        self_,
+        maxHearDist,
+        ignoreAlert,
+        mustHaveOwner,
+        minAlertLevel,
+    );
     //get sound event alert level
     if bestSoundEvent >= 0 {
         bestSoundAlert = level.alertEvents[bestSoundEvent as usize].level;
@@ -740,10 +766,12 @@ pub unsafe fn G_CheckAlertEvents(
             &eyePoint,
             &mut sightDir,
         );
-        level.alertEvents[bestSightEvent as usize].light = level.alertEvents
-            [bestSightEvent as usize]
-            .addLight
-            + G_GetLightLevel(&level.alertEvents[bestSightEvent as usize].position, &sightDir);
+        level.alertEvents[bestSightEvent as usize].light =
+            level.alertEvents[bestSightEvent as usize].addLight
+                + G_GetLightLevel(
+                    &level.alertEvents[bestSightEvent as usize].position,
+                    &sightDir,
+                );
         //return the sight event
         return bestSightEvent;
     }
@@ -798,8 +826,7 @@ pub unsafe fn G_CheckForDanger(self_: *mut gentity_t, alertEvent: c_int) -> qboo
         let owner = level.alertEvents[alertEvent as usize].owner;
         if owner.is_null()
             || (*owner).client.is_null()
-            || (owner != self_
-                && (*(*owner).client).playerTeam != (*(*self_).client).playerTeam)
+            || (owner != self_ && (*(*owner).client).playerTeam != (*(*self_).client).playerTeam)
         {
             if !(*self_).NPC.is_null() {
                 if (*(*self_).NPC).scriptFlags & SCF_DONT_FLEE != 0 {
@@ -979,7 +1006,11 @@ pub unsafe fn ClearPlayerAlertEvents() {
                 }
             } else {
                 //just clear this one... or should we clear the whole array?
-                core::ptr::write_bytes(&mut level.alertEvents[i as usize] as *mut alertEvent_t, 0, 1);
+                core::ptr::write_bytes(
+                    &mut level.alertEvents[i as usize] as *mut alertEvent_t,
+                    0,
+                    1,
+                );
             }
         }
         i += 1;
@@ -1071,7 +1102,8 @@ pub unsafe fn G_ClearLOS(_self_: *mut gentity_t, start: &vec3_t, end: &vec3_t) -
     while tr.fraction < 1.0 && traceCount < 3 {
         //can see through 3 panes of glass
         if (tr.entityNum as c_int) < ENTITYNUM_WORLD {
-            let ent = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(tr.entityNum as isize);
+            let ent = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .offset(tr.entityNum as isize);
             if !ent.is_null() && ((*ent).r.svFlags & SVF_GLASS_BRUSH) != 0 {
                 //can see through glass, trace again, ignoring me
                 tr = trap::Trace(
@@ -1248,7 +1280,11 @@ pub unsafe fn G_FindLocalInterestPoint(self_: *mut gentity_t) -> c_int {
     while i < level.numInterestPoints {
         //Don't ignore portals?  If through a portal, need to look at portal!
         if trap::InPVS(&level.interestPoints[i as usize].origin, &eyes) == QTRUE {
-            VectorSubtract(&level.interestPoints[i as usize].origin, &eyes, &mut diffVec);
+            VectorSubtract(
+                &level.interestPoints[i as usize].origin,
+                &eyes,
+                &mut diffVec,
+            );
             if (diffVec[0].abs() + diffVec[1].abs()) / 2.0 < 48.0
                 && diffVec[2].abs() > (diffVec[0].abs() + diffVec[1].abs()) / 2.0
             {
@@ -1275,7 +1311,11 @@ pub unsafe fn G_FindLocalInterestPoint(self_: *mut gentity_t) -> c_int {
         i += 1;
     }
     if bestPoint != ENTITYNUM_NONE && !level.interestPoints[bestPoint as usize].target.is_null() {
-        G_UseTargets2(self_, self_, level.interestPoints[bestPoint as usize].target);
+        G_UseTargets2(
+            self_,
+            self_,
+            level.interestPoints[bestPoint as usize].target,
+        );
     }
     bestPoint
 }
@@ -1361,7 +1401,11 @@ mod oracle_tests {
         ([0.0, 0.0, 100.0], [0.0, 0.0, 0.0], [-90.0, 0.0, 0.0]),
         ([-30.0, 70.0, -20.0], [5.0, 5.0, 5.0], [30.0, 200.0, 10.0]),
         ([0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]),
-        ([123.5, -456.25, 78.0], [-12.0, 34.0, -56.0], [12.5, -170.0, 3.0]),
+        (
+            [123.5, -456.25, 78.0],
+            [-12.0, 34.0, -56.0],
+            [12.5, -170.0, 3.0],
+        ),
     ];
 
     #[test]
@@ -1393,9 +1437,18 @@ mod oracle_tests {
             for (spot, from, facing) in CASES {
                 let rust = NPC_GetHFOVPercentage(spot, from, facing, hfov);
                 let c = unsafe {
-                    oracle_NPC_GetHFOVPercentage(spot.as_ptr(), from.as_ptr(), facing.as_ptr(), hfov)
+                    oracle_NPC_GetHFOVPercentage(
+                        spot.as_ptr(),
+                        from.as_ptr(),
+                        facing.as_ptr(),
+                        hfov,
+                    )
                 };
-                assert_eq!(rust.to_bits(), c.to_bits(), "HFOV {spot:?} {facing:?} hfov={hfov}");
+                assert_eq!(
+                    rust.to_bits(),
+                    c.to_bits(),
+                    "HFOV {spot:?} {facing:?} hfov={hfov}"
+                );
             }
         }
     }
@@ -1406,9 +1459,18 @@ mod oracle_tests {
             for (spot, from, facing) in CASES {
                 let rust = NPC_GetVFOVPercentage(spot, from, facing, vfov);
                 let c = unsafe {
-                    oracle_NPC_GetVFOVPercentage(spot.as_ptr(), from.as_ptr(), facing.as_ptr(), vfov)
+                    oracle_NPC_GetVFOVPercentage(
+                        spot.as_ptr(),
+                        from.as_ptr(),
+                        facing.as_ptr(),
+                        vfov,
+                    )
                 };
-                assert_eq!(rust.to_bits(), c.to_bits(), "VFOV {spot:?} {facing:?} vfov={vfov}");
+                assert_eq!(
+                    rust.to_bits(),
+                    c.to_bits(),
+                    "VFOV {spot:?} {facing:?} vfov={vfov}"
+                );
             }
         }
     }

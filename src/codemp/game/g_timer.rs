@@ -294,7 +294,11 @@ pub unsafe fn TIMER_Remove(ent: *mut gentity_t, identifier: *const c_char) {
 TIMER_Start
 -------------------------
 */
-pub unsafe fn TIMER_Start(self_: *mut gentity_t, identifier: *const c_char, duration: c_int) -> qboolean {
+pub unsafe fn TIMER_Start(
+    self_: *mut gentity_t,
+    identifier: *const c_char,
+    duration: c_int,
+) -> qboolean {
     if TIMER_Done(self_, identifier) != QFALSE {
         TIMER_Set(self_, identifier, duration);
         return QTRUE;
@@ -328,13 +332,13 @@ mod oracle_tests {
             // (set_time, num, key, duration, query_time) scenarios spanning expired/pending/
             // exact-boundary, distinct keys colliding on the same entity, and a never-set key.
             let cases: &[(c_int, c_int, &core::ffi::CStr, c_int, c_int)] = &[
-                (1000, 7, c"saberBlock", 500, 1400),  // pending (1500 not < 1400)
-                (1000, 7, c"saberBlock", 500, 1600),  // expired (1500 < 1600)
-                (1000, 7, c"saberBlock", 500, 1500),  // exact boundary (1500 < 1500 false)
-                (0, 3, c"attackDelay", 0, 0),         // zero duration at t=0
-                (0, 3, c"attackDelay", 0, 1),         // expired by 1ms
-                (10000, 42, c"DASH", 250, 9000),      // query before set -> pending
-                (-500, 5, c"mixedCase", 100, 0),      // negative base time
+                (1000, 7, c"saberBlock", 500, 1400), // pending (1500 not < 1400)
+                (1000, 7, c"saberBlock", 500, 1600), // expired (1500 < 1600)
+                (1000, 7, c"saberBlock", 500, 1500), // exact boundary (1500 < 1500 false)
+                (0, 3, c"attackDelay", 0, 0),        // zero duration at t=0
+                (0, 3, c"attackDelay", 0, 1),        // expired by 1ms
+                (10000, 42, c"DASH", 250, 9000),     // query before set -> pending
+                (-500, 5, c"mixedCase", 100, 0),     // negative base time
             ];
 
             for &(set_time, num, key, duration, query_time) in cases {

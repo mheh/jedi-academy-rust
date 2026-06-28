@@ -30,7 +30,10 @@ use core::ffi::CStr;
 /// (`#arg,arg`): the stringized enumerator name paired with its value. (The same
 /// helper as `bg_vehicleLoad.rs`'s `VehicleTable`, specialized to `animNumber_t`.)
 const fn enum2string(name: &'static CStr, id: animNumber_t) -> stringID_table_t {
-    stringID_table_t { name: name.as_ptr(), id }
+    stringID_table_t {
+        name: name.as_ptr(),
+        id,
+    }
 }
 
 /// `stringID_table_t animTable[MAX_ANIMATIONS+1]` (`cgame/animtable.h:9`). Non-const
@@ -49,8 +52,7 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"FACE_ALERT", FACE_ALERT), // #
     enum2string(c"FACE_SMILE", FACE_SMILE), // #
     enum2string(c"FACE_FROWN", FACE_FROWN), // #
-    enum2string(c"FACE_DEAD", FACE_DEAD), // #
-
+    enum2string(c"FACE_DEAD", FACE_DEAD),   // #
     //=================================================
     //ANIMS IN WHICH UPPER AND LOWER OBJECTS ARE IN MD3
     //=================================================
@@ -80,21 +82,19 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_DEATH23", BOTH_DEATH23), // #
     enum2string(c"BOTH_DEATH24", BOTH_DEATH24), // #
     enum2string(c"BOTH_DEATH25", BOTH_DEATH25), // #
-
     enum2string(c"BOTH_DEATHFORWARD1", BOTH_DEATHFORWARD1), // # First Death in which they get thrown forward
     enum2string(c"BOTH_DEATHFORWARD2", BOTH_DEATHFORWARD2), // # Second Death in which they get thrown forward
     enum2string(c"BOTH_DEATHFORWARD3", BOTH_DEATHFORWARD3), // # Tavion's falling in cin# 23
     enum2string(c"BOTH_DEATHBACKWARD1", BOTH_DEATHBACKWARD1), // # First Death in which they get thrown backward
     enum2string(c"BOTH_DEATHBACKWARD2", BOTH_DEATHBACKWARD2), // # Second Death in which they get thrown backward
-
-    enum2string(c"BOTH_DEATH1IDLE", BOTH_DEATH1IDLE), // # Idle while close to death
+    enum2string(c"BOTH_DEATH1IDLE", BOTH_DEATH1IDLE),         // # Idle while close to death
     enum2string(c"BOTH_LYINGDEATH1", BOTH_LYINGDEATH1), // # Death to play when killed lying down
     enum2string(c"BOTH_STUMBLEDEATH1", BOTH_STUMBLEDEATH1), // # Stumble forward and fall face first death
     enum2string(c"BOTH_FALLDEATH1", BOTH_FALLDEATH1), // # Fall forward off a high cliff and splat death - start
     enum2string(c"BOTH_FALLDEATH1INAIR", BOTH_FALLDEATH1INAIR), // # Fall forward off a high cliff and splat death - loop
     enum2string(c"BOTH_FALLDEATH1LAND", BOTH_FALLDEATH1LAND), // # Fall forward off a high cliff and splat death - hit bottom
-    enum2string(c"BOTH_DEATH_ROLL", BOTH_DEATH_ROLL), // # Death anim from a roll
-    enum2string(c"BOTH_DEATH_FLIP", BOTH_DEATH_FLIP), // # Death anim from a flip
+    enum2string(c"BOTH_DEATH_ROLL", BOTH_DEATH_ROLL),         // # Death anim from a roll
+    enum2string(c"BOTH_DEATH_FLIP", BOTH_DEATH_FLIP),         // # Death anim from a flip
     enum2string(c"BOTH_DEATH_SPIN_90_R", BOTH_DEATH_SPIN_90_R), // # Death anim when facing 90 degrees right
     enum2string(c"BOTH_DEATH_SPIN_90_L", BOTH_DEATH_SPIN_90_L), // # Death anim when facing 90 degrees left
     enum2string(c"BOTH_DEATH_SPIN_180", BOTH_DEATH_SPIN_180), // # Death anim when facing backwards
@@ -102,7 +102,7 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_DEATH_LYING_DN", BOTH_DEATH_LYING_DN), // # Death anim when lying on front
     enum2string(c"BOTH_DEATH_FALLING_DN", BOTH_DEATH_FALLING_DN), // # Death anim when falling on face
     enum2string(c"BOTH_DEATH_FALLING_UP", BOTH_DEATH_FALLING_UP), // # Death anim when falling on back
-    enum2string(c"BOTH_DEATH_CROUCHED", BOTH_DEATH_CROUCHED), // # Death anim when crouched
+    enum2string(c"BOTH_DEATH_CROUCHED", BOTH_DEATH_CROUCHED),     // # Death anim when crouched
     //# #sep ENUM2STRING(BOTH_ DEAD POSES # Should be last frame of corresponding previous anims
     enum2string(c"BOTH_DEAD1", BOTH_DEAD1), // # First Death finished pose
     enum2string(c"BOTH_DEAD2", BOTH_DEAD2), // # Second Death finished pose
@@ -164,7 +164,6 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_PAIN16", BOTH_PAIN16), // #
     enum2string(c"BOTH_PAIN17", BOTH_PAIN17), // #
     enum2string(c"BOTH_PAIN18", BOTH_PAIN18), // #
-
     //# #sep ENUM2STRING(BOTH_ ATTACKS
     enum2string(c"BOTH_ATTACK1", BOTH_ATTACK1), // # Attack with stun baton
     enum2string(c"BOTH_ATTACK2", BOTH_ATTACK2), // # Attack with one-handed pistol
@@ -175,8 +174,8 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_ATTACK7", BOTH_ATTACK7), // # Yet Another Rancor Attack
     enum2string(c"BOTH_ATTACK10", BOTH_ATTACK10), // # Attack with thermal det
     enum2string(c"BOTH_ATTACK11", BOTH_ATTACK11), // # "Attack" with tripmine and detpack
-    enum2string(c"BOTH_MELEE1", BOTH_MELEE1), // # First melee attack
-    enum2string(c"BOTH_MELEE2", BOTH_MELEE2), // # Second melee attack
+    enum2string(c"BOTH_MELEE1", BOTH_MELEE1),   // # First melee attack
+    enum2string(c"BOTH_MELEE2", BOTH_MELEE2),   // # Second melee attack
     enum2string(c"BOTH_THERMAL_READY", BOTH_THERMAL_READY), // # pull back with thermal
     enum2string(c"BOTH_THERMAL_THROW", BOTH_THERMAL_THROW), // # throw thermal
     //* #sep ENUM2STRING(BOTH_ SABER ANIMS
@@ -987,11 +986,11 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_LK_ST_ST_T_L_2", BOTH_LK_ST_ST_T_L_2), // lock if I'm using staff vs. a staff and other initiated
     //===End Saber locks==================================================================
     enum2string(c"BOTH_BF2RETURN", BOTH_BF2RETURN), // #
-    enum2string(c"BOTH_BF2BREAK", BOTH_BF2BREAK), // #
-    enum2string(c"BOTH_BF2LOCK", BOTH_BF2LOCK), // #
+    enum2string(c"BOTH_BF2BREAK", BOTH_BF2BREAK),   // #
+    enum2string(c"BOTH_BF2LOCK", BOTH_BF2LOCK),     // #
     enum2string(c"BOTH_BF1RETURN", BOTH_BF1RETURN), // #
-    enum2string(c"BOTH_BF1BREAK", BOTH_BF1BREAK), // #
-    enum2string(c"BOTH_BF1LOCK", BOTH_BF1LOCK), // #
+    enum2string(c"BOTH_BF1BREAK", BOTH_BF1BREAK),   // #
+    enum2string(c"BOTH_BF1LOCK", BOTH_BF1LOCK),     // #
     enum2string(c"BOTH_CWCIRCLE_R2__R_S1", BOTH_CWCIRCLE_R2__R_S1), // #
     enum2string(c"BOTH_CCWCIRCLE_R2__L_S1", BOTH_CCWCIRCLE_R2__L_S1), // #
     enum2string(c"BOTH_CWCIRCLE_A2__L__R", BOTH_CWCIRCLE_A2__L__R), // #
@@ -1006,7 +1005,7 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_SABERDUAL_STANCE", BOTH_SABERDUAL_STANCE),
     enum2string(c"BOTH_SABERSTAFF_STANCE", BOTH_SABERSTAFF_STANCE),
     enum2string(c"BOTH_A2_STABBACK1", BOTH_A2_STABBACK1), // # Stab saber backward
-    enum2string(c"BOTH_ATTACK_BACK", BOTH_ATTACK_BACK), // # Swing around backwards and attack
+    enum2string(c"BOTH_ATTACK_BACK", BOTH_ATTACK_BACK),   // # Swing around backwards and attack
     enum2string(c"BOTH_JUMPFLIPSLASHDOWN1", BOTH_JUMPFLIPSLASHDOWN1), // #
     enum2string(c"BOTH_JUMPFLIPSTABDOWN", BOTH_JUMPFLIPSTABDOWN), // #
     enum2string(c"BOTH_FORCELEAP2_T__B_", BOTH_FORCELEAP2_T__B_), // #
@@ -1027,7 +1026,10 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_FORCEWALLRUNFLIP_START", BOTH_FORCEWALLRUNFLIP_START),
     enum2string(c"BOTH_FORCEWALLRUNFLIP_END", BOTH_FORCEWALLRUNFLIP_END),
     enum2string(c"BOTH_FORCEWALLRUNFLIP_ALT", BOTH_FORCEWALLRUNFLIP_ALT),
-    enum2string(c"BOTH_FORCEWALLREBOUND_FORWARD", BOTH_FORCEWALLREBOUND_FORWARD),
+    enum2string(
+        c"BOTH_FORCEWALLREBOUND_FORWARD",
+        BOTH_FORCEWALLREBOUND_FORWARD,
+    ),
     enum2string(c"BOTH_FORCEWALLREBOUND_LEFT", BOTH_FORCEWALLREBOUND_LEFT),
     enum2string(c"BOTH_FORCEWALLREBOUND_BACK", BOTH_FORCEWALLREBOUND_BACK),
     enum2string(c"BOTH_FORCEWALLREBOUND_RIGHT", BOTH_FORCEWALLREBOUND_RIGHT),
@@ -1035,7 +1037,10 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_FORCEWALLHOLD_LEFT", BOTH_FORCEWALLHOLD_LEFT),
     enum2string(c"BOTH_FORCEWALLHOLD_BACK", BOTH_FORCEWALLHOLD_BACK),
     enum2string(c"BOTH_FORCEWALLHOLD_RIGHT", BOTH_FORCEWALLHOLD_RIGHT),
-    enum2string(c"BOTH_FORCEWALLRELEASE_FORWARD", BOTH_FORCEWALLRELEASE_FORWARD),
+    enum2string(
+        c"BOTH_FORCEWALLRELEASE_FORWARD",
+        BOTH_FORCEWALLRELEASE_FORWARD,
+    ),
     enum2string(c"BOTH_FORCEWALLRELEASE_LEFT", BOTH_FORCEWALLRELEASE_LEFT),
     enum2string(c"BOTH_FORCEWALLRELEASE_BACK", BOTH_FORCEWALLRELEASE_BACK),
     enum2string(c"BOTH_FORCEWALLRELEASE_RIGHT", BOTH_FORCEWALLRELEASE_RIGHT),
@@ -1067,7 +1072,6 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_A2_SPECIAL", BOTH_A2_SPECIAL),
     enum2string(c"BOTH_A3_SPECIAL", BOTH_A3_SPECIAL),
     enum2string(c"BOTH_ROLL_STAB", BOTH_ROLL_STAB),
-
     //# #sep ENUM2STRING(BOTH_ STANDING
     enum2string(c"BOTH_STAND1", BOTH_STAND1), // # Standing idle, no weapon, hands down
     enum2string(c"BOTH_STAND1IDLE1", BOTH_STAND1IDLE1), // # Random standing idle
@@ -1092,7 +1096,10 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_STAND5TOSTAND1", BOTH_STAND5TOSTAND1), // # Transition from stand5 to stand1
     enum2string(c"BOTH_STAND5TOAIM", BOTH_STAND5TOAIM), // # Transition of Kye aiming his gun at Desann (cin #9)
     enum2string(c"BOTH_STAND5STARTLEDLOOKLEFT", BOTH_STAND5STARTLEDLOOKLEFT), // # Kyle turning to watch the bridge drop (cin #9)
-    enum2string(c"BOTH_STARTLEDLOOKLEFTTOSTAND5", BOTH_STARTLEDLOOKLEFTTOSTAND5), // # Kyle returning to stand 5 from watching the bridge drop (cin #9)
+    enum2string(
+        c"BOTH_STARTLEDLOOKLEFTTOSTAND5",
+        BOTH_STARTLEDLOOKLEFTTOSTAND5,
+    ), // # Kyle returning to stand 5 from watching the bridge drop (cin #9)
     enum2string(c"BOTH_STAND5TOSTAND8", BOTH_STAND5TOSTAND8), // # Transition from stand5 to stand8
     enum2string(c"BOTH_STAND7TOSTAND8", BOTH_STAND7TOSTAND8), // # Tavion putting hands on back of chair (cin #11)
     enum2string(c"BOTH_STAND8TOSTAND5", BOTH_STAND8TOSTAND5), // # Transition from stand8 to stand5
@@ -1107,135 +1114,112 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_STAND5TURNRIGHTSTOP", BOTH_STAND5TURNRIGHTSTOP), // # Stop turning right from stand5
     enum2string(c"BOTH_STAND5LOOK180LEFTSTART", BOTH_STAND5LOOK180LEFTSTART), // # Start looking over left shoulder (cin #17)
     enum2string(c"BOTH_STAND5LOOK180LEFTSTOP", BOTH_STAND5LOOK180LEFTSTOP), // # Stop looking over left shoulder (cin #17)
-
-    enum2string(c"BOTH_CONSOLE1START", BOTH_CONSOLE1START), // # typing at a console
-    enum2string(c"BOTH_CONSOLE1", BOTH_CONSOLE1), // # typing at a console
-    enum2string(c"BOTH_CONSOLE1STOP", BOTH_CONSOLE1STOP), // # typing at a console
+    enum2string(c"BOTH_CONSOLE1START", BOTH_CONSOLE1START),                 // # typing at a console
+    enum2string(c"BOTH_CONSOLE1", BOTH_CONSOLE1),                           // # typing at a console
+    enum2string(c"BOTH_CONSOLE1STOP", BOTH_CONSOLE1STOP),                   // # typing at a console
     enum2string(c"BOTH_CONSOLE2START", BOTH_CONSOLE2START), // # typing at a console with comm link in hand (cin #5)
     enum2string(c"BOTH_CONSOLE2", BOTH_CONSOLE2), // # typing at a console with comm link in hand (cin #5)
     enum2string(c"BOTH_CONSOLE2STOP", BOTH_CONSOLE2STOP), // # typing at a console with comm link in hand (cin #5)
     enum2string(c"BOTH_CONSOLE2HOLDCOMSTART", BOTH_CONSOLE2HOLDCOMSTART), // # lean in to type at console while holding comm link in hand (cin #5)
     enum2string(c"BOTH_CONSOLE2HOLDCOMSTOP", BOTH_CONSOLE2HOLDCOMSTOP), // # lean away after typing at console while holding comm link in hand (cin #5)
-
     enum2string(c"BOTH_GUARD_LOOKAROUND1", BOTH_GUARD_LOOKAROUND1), // # Cradling weapon and looking around
     enum2string(c"BOTH_GUARD_IDLE1", BOTH_GUARD_IDLE1), // # Cradling weapon and standing
-    enum2string(c"BOTH_GESTURE1", BOTH_GESTURE1), // # Generic gesture), non-specific
-    enum2string(c"BOTH_GESTURE2", BOTH_GESTURE2), // # Generic gesture), non-specific
+    enum2string(c"BOTH_GESTURE1", BOTH_GESTURE1),       // # Generic gesture), non-specific
+    enum2string(c"BOTH_GESTURE2", BOTH_GESTURE2),       // # Generic gesture), non-specific
     enum2string(c"BOTH_WALK1TALKCOMM1", BOTH_WALK1TALKCOMM1), // # Talking into coom link while walking
-    enum2string(c"BOTH_TALK1", BOTH_TALK1), // # Generic talk anim
-    enum2string(c"BOTH_TALK2", BOTH_TALK2), // # Generic talk anim
+    enum2string(c"BOTH_TALK1", BOTH_TALK1),                   // # Generic talk anim
+    enum2string(c"BOTH_TALK2", BOTH_TALK2),                   // # Generic talk anim
     enum2string(c"BOTH_TALKCOMM1START", BOTH_TALKCOMM1START), // # Start talking into a comm link
-    enum2string(c"BOTH_TALKCOMM1", BOTH_TALKCOMM1), // # Talking into a comm link
-    enum2string(c"BOTH_TALKCOMM1STOP", BOTH_TALKCOMM1STOP), // # Stop talking into a comm link
-    enum2string(c"BOTH_TALKGESTURE1", BOTH_TALKGESTURE1), // # Generic talk anim
-
+    enum2string(c"BOTH_TALKCOMM1", BOTH_TALKCOMM1),           // # Talking into a comm link
+    enum2string(c"BOTH_TALKCOMM1STOP", BOTH_TALKCOMM1STOP),   // # Stop talking into a comm link
+    enum2string(c"BOTH_TALKGESTURE1", BOTH_TALKGESTURE1),     // # Generic talk anim
     enum2string(c"BOTH_HEADTILTLSTART", BOTH_HEADTILTLSTART), // # Head tilt to left
-    enum2string(c"BOTH_HEADTILTLSTOP", BOTH_HEADTILTLSTOP), // # Head tilt to left
+    enum2string(c"BOTH_HEADTILTLSTOP", BOTH_HEADTILTLSTOP),   // # Head tilt to left
     enum2string(c"BOTH_HEADTILTRSTART", BOTH_HEADTILTRSTART), // # Head tilt to right
-    enum2string(c"BOTH_HEADTILTRSTOP", BOTH_HEADTILTRSTOP), // # Head tilt to right
-    enum2string(c"BOTH_HEADNOD", BOTH_HEADNOD), // # Head shake YES
-    enum2string(c"BOTH_HEADSHAKE", BOTH_HEADSHAKE), // # Head shake NO
+    enum2string(c"BOTH_HEADTILTRSTOP", BOTH_HEADTILTRSTOP),   // # Head tilt to right
+    enum2string(c"BOTH_HEADNOD", BOTH_HEADNOD),               // # Head shake YES
+    enum2string(c"BOTH_HEADSHAKE", BOTH_HEADSHAKE),           // # Head shake NO
     enum2string(c"BOTH_SIT2HEADTILTLSTART", BOTH_SIT2HEADTILTLSTART), // # Head tilt to left from seated position 2
     enum2string(c"BOTH_SIT2HEADTILTLSTOP", BOTH_SIT2HEADTILTLSTOP), // # Head tilt to left from seated position 2
-
     enum2string(c"BOTH_REACH1START", BOTH_REACH1START), // # Monmothma reaching for crystal
-    enum2string(c"BOTH_REACH1STOP", BOTH_REACH1STOP), // # Monmothma reaching for crystal
-
-    enum2string(c"BOTH_COME_ON1", BOTH_COME_ON1), // # Jan gesturing to Kyle (cin #32a)
+    enum2string(c"BOTH_REACH1STOP", BOTH_REACH1STOP),   // # Monmothma reaching for crystal
+    enum2string(c"BOTH_COME_ON1", BOTH_COME_ON1),       // # Jan gesturing to Kyle (cin #32a)
     enum2string(c"BOTH_STEADYSELF1", BOTH_STEADYSELF1), // # Jan trying to keep footing (cin #32a) Kyle (cin#5)
     enum2string(c"BOTH_STEADYSELF1END", BOTH_STEADYSELF1END), // # Return hands to side from STEADSELF1 Kyle (cin#5)
     enum2string(c"BOTH_SILENCEGESTURE1", BOTH_SILENCEGESTURE1), // # Luke silencing Kyle with a raised hand (cin #37)
     enum2string(c"BOTH_REACHFORSABER1", BOTH_REACHFORSABER1), // # Luke holding hand out for Kyle's saber (cin #37)
     enum2string(c"BOTH_SABERKILLER1", BOTH_SABERKILLER1), // # Tavion about to strike Jan with saber (cin #9)
     enum2string(c"BOTH_SABERKILLEE1", BOTH_SABERKILLEE1), // # Jan about to be struck by Tavion with saber (cin #9)
-    enum2string(c"BOTH_HUGGER1", BOTH_HUGGER1), // # Kyle hugging Jan (cin #29)
+    enum2string(c"BOTH_HUGGER1", BOTH_HUGGER1),           // # Kyle hugging Jan (cin #29)
     enum2string(c"BOTH_HUGGERSTOP1", BOTH_HUGGERSTOP1), // # Kyle stop hugging Jan but don't let her go (cin #29)
-    enum2string(c"BOTH_HUGGEE1", BOTH_HUGGEE1), // # Jan being hugged (cin #29)
+    enum2string(c"BOTH_HUGGEE1", BOTH_HUGGEE1),         // # Jan being hugged (cin #29)
     enum2string(c"BOTH_HUGGEESTOP1", BOTH_HUGGEESTOP1), // # Jan stop being hugged but don't let go (cin #29)
-
     enum2string(c"BOTH_SABERTHROW1START", BOTH_SABERTHROW1START), // # Desann throwing his light saber (cin #26)
     enum2string(c"BOTH_SABERTHROW1STOP", BOTH_SABERTHROW1STOP), // # Desann throwing his light saber (cin #26)
     enum2string(c"BOTH_SABERTHROW2START", BOTH_SABERTHROW2START), // # Kyle throwing his light saber (cin #32)
     enum2string(c"BOTH_SABERTHROW2STOP", BOTH_SABERTHROW2STOP), // # Kyle throwing his light saber (cin #32)
-
     //# #sep ENUM2STRING(BOTH_ SITTING/CROUCHING
     enum2string(c"BOTH_SIT1", BOTH_SIT1), // # Normal chair sit.
     enum2string(c"BOTH_SIT2", BOTH_SIT2), // # Lotus position.
     enum2string(c"BOTH_SIT3", BOTH_SIT3), // # Sitting in tired position), elbows on knees
-
     enum2string(c"BOTH_SIT2TOSTAND5", BOTH_SIT2TOSTAND5), // # Transition from sit 2 to stand 5
     enum2string(c"BOTH_STAND5TOSIT2", BOTH_STAND5TOSIT2), // # Transition from stand 5 to sit 2
     enum2string(c"BOTH_SIT2TOSIT4", BOTH_SIT2TOSIT4), // # Trans from sit2 to sit4 (cin #12) Luke leaning back from lotus position.
     enum2string(c"BOTH_SIT3TOSTAND5", BOTH_SIT3TOSTAND5), // # transition from sit 3 to stand 5
-
-    enum2string(c"BOTH_CROUCH1", BOTH_CROUCH1), // # Transition from standing to crouch
+    enum2string(c"BOTH_CROUCH1", BOTH_CROUCH1),       // # Transition from standing to crouch
     enum2string(c"BOTH_CROUCH1IDLE", BOTH_CROUCH1IDLE), // # Crouching idle
     enum2string(c"BOTH_CROUCH1WALK", BOTH_CROUCH1WALK), // # Walking while crouched
     enum2string(c"BOTH_CROUCH1WALKBACK", BOTH_CROUCH1WALKBACK), // # Walking while crouched
-    enum2string(c"BOTH_UNCROUCH1", BOTH_UNCROUCH1), // # Transition from crouch to standing
+    enum2string(c"BOTH_UNCROUCH1", BOTH_UNCROUCH1),   // # Transition from crouch to standing
     enum2string(c"BOTH_CROUCH2TOSTAND1", BOTH_CROUCH2TOSTAND1), // # going from crouch2 to stand1
-    enum2string(c"BOTH_CROUCH3", BOTH_CROUCH3), // # Desann crouching down to Kyle (cin 9)
-    enum2string(c"BOTH_UNCROUCH3", BOTH_UNCROUCH3), // # Desann uncrouching down to Kyle (cin 9)
-    enum2string(c"BOTH_CROUCH4", BOTH_CROUCH4), // # Slower version of crouch1 for cinematics
+    enum2string(c"BOTH_CROUCH3", BOTH_CROUCH3),       // # Desann crouching down to Kyle (cin 9)
+    enum2string(c"BOTH_UNCROUCH3", BOTH_UNCROUCH3),   // # Desann uncrouching down to Kyle (cin 9)
+    enum2string(c"BOTH_CROUCH4", BOTH_CROUCH4),       // # Slower version of crouch1 for cinematics
     enum2string(c"BOTH_UNCROUCH4", BOTH_UNCROUCH4), // # Slower version of uncrouch1 for cinematics
-
-    enum2string(c"BOTH_GUNSIT1", BOTH_GUNSIT1), // # sitting on an emplaced gun.
-
+    enum2string(c"BOTH_GUNSIT1", BOTH_GUNSIT1),     // # sitting on an emplaced gun.
     // Swoop Vehicle animations.
     //* #sep BOTH_ SWOOP ANIMS
     enum2string(c"BOTH_VS_MOUNT_L", BOTH_VS_MOUNT_L), // # Mount from left
     enum2string(c"BOTH_VS_DISMOUNT_L", BOTH_VS_DISMOUNT_L), // # Dismount to left
     enum2string(c"BOTH_VS_MOUNT_R", BOTH_VS_MOUNT_R), // # Mount from  right (symmetry)
     enum2string(c"BOTH_VS_DISMOUNT_R", BOTH_VS_DISMOUNT_R), // # Dismount to  right (symmetry)
-
     enum2string(c"BOTH_VS_MOUNTJUMP_L", BOTH_VS_MOUNTJUMP_L), // #
     enum2string(c"BOTH_VS_MOUNTTHROW", BOTH_VS_MOUNTTHROW), // # Land on an occupied vehicle & throw off current pilot
     enum2string(c"BOTH_VS_MOUNTTHROW_L", BOTH_VS_MOUNTTHROW_L), // # Land on an occupied vehicle & throw off current pilot
     enum2string(c"BOTH_VS_MOUNTTHROW_R", BOTH_VS_MOUNTTHROW_R), // # Land on an occupied vehicle & throw off current pilot
     enum2string(c"BOTH_VS_MOUNTTHROWEE", BOTH_VS_MOUNTTHROWEE), // # Current pilot getting thrown off by another guy
-
     enum2string(c"BOTH_VS_LOOKLEFT", BOTH_VS_LOOKLEFT), // # Turn & Look behind and to the left (no weapon)
     enum2string(c"BOTH_VS_LOOKRIGHT", BOTH_VS_LOOKRIGHT), // # Turn & Look behind and to the right (no weapon)
-
-    enum2string(c"BOTH_VS_TURBO", BOTH_VS_TURBO), // # Hit The Turbo Button
-
-    enum2string(c"BOTH_VS_REV", BOTH_VS_REV), // # Player looks back as swoop reverses
-
+    enum2string(c"BOTH_VS_TURBO", BOTH_VS_TURBO),         // # Hit The Turbo Button
+    enum2string(c"BOTH_VS_REV", BOTH_VS_REV),             // # Player looks back as swoop reverses
     enum2string(c"BOTH_VS_AIR", BOTH_VS_AIR), // # Player stands up when swoop is airborn
     enum2string(c"BOTH_VS_AIR_G", BOTH_VS_AIR_G), // # "" with Gun
     enum2string(c"BOTH_VS_AIR_SL", BOTH_VS_AIR_SL), // # "" with Saber Left
     enum2string(c"BOTH_VS_AIR_SR", BOTH_VS_AIR_SR), // # "" with Saber Right
-
     enum2string(c"BOTH_VS_LAND", BOTH_VS_LAND), // # Player bounces down when swoop lands
     enum2string(c"BOTH_VS_LAND_G", BOTH_VS_LAND_G), // #  "" with Gun
     enum2string(c"BOTH_VS_LAND_SL", BOTH_VS_LAND_SL), // #  "" with Saber Left
     enum2string(c"BOTH_VS_LAND_SR", BOTH_VS_LAND_SR), // #  "" with Saber Right
-
     enum2string(c"BOTH_VS_IDLE", BOTH_VS_IDLE), // # Sit
     enum2string(c"BOTH_VS_IDLE_G", BOTH_VS_IDLE_G), // # Sit (gun)
     enum2string(c"BOTH_VS_IDLE_SL", BOTH_VS_IDLE_SL), // # Sit (saber left)
     enum2string(c"BOTH_VS_IDLE_SR", BOTH_VS_IDLE_SR), // # Sit (saber right)
-
     enum2string(c"BOTH_VS_LEANL", BOTH_VS_LEANL), // # Lean left
     enum2string(c"BOTH_VS_LEANL_G", BOTH_VS_LEANL_G), // # Lean left (gun)
     enum2string(c"BOTH_VS_LEANL_SL", BOTH_VS_LEANL_SL), // # Lean left (saber left)
     enum2string(c"BOTH_VS_LEANL_SR", BOTH_VS_LEANL_SR), // # Lean left (saber right)
-
     enum2string(c"BOTH_VS_LEANR", BOTH_VS_LEANR), // # Lean right
     enum2string(c"BOTH_VS_LEANR_G", BOTH_VS_LEANR_G), // # Lean right (gun)
     enum2string(c"BOTH_VS_LEANR_SL", BOTH_VS_LEANR_SL), // # Lean right (saber left)
     enum2string(c"BOTH_VS_LEANR_SR", BOTH_VS_LEANR_SR), // # Lean right (saber right)
-
     enum2string(c"BOTH_VS_ATL_S", BOTH_VS_ATL_S), // # Attack left with saber
     enum2string(c"BOTH_VS_ATR_S", BOTH_VS_ATR_S), // # Attack right with saber
     enum2string(c"BOTH_VS_ATR_TO_L_S", BOTH_VS_ATR_TO_L_S), // # Attack toss saber from right to left hand
     enum2string(c"BOTH_VS_ATL_TO_R_S", BOTH_VS_ATL_TO_R_S), // # Attack toss saber from left to right hand
-    enum2string(c"BOTH_VS_ATR_G", BOTH_VS_ATR_G), // # Attack right with gun (90)
-    enum2string(c"BOTH_VS_ATL_G", BOTH_VS_ATL_G), // # Attack left with gun (90)
-    enum2string(c"BOTH_VS_ATF_G", BOTH_VS_ATF_G), // # Attack forward with gun
-
-    enum2string(c"BOTH_VS_PAIN1", BOTH_VS_PAIN1), // # Pain
-
+    enum2string(c"BOTH_VS_ATR_G", BOTH_VS_ATR_G),           // # Attack right with gun (90)
+    enum2string(c"BOTH_VS_ATL_G", BOTH_VS_ATL_G),           // # Attack left with gun (90)
+    enum2string(c"BOTH_VS_ATF_G", BOTH_VS_ATF_G),           // # Attack forward with gun
+    enum2string(c"BOTH_VS_PAIN1", BOTH_VS_PAIN1),           // # Pain
     // Added 12/04/02 by Aurelio.
     //* #sep BOTH_ TAUNTAUN ANIMS
     enum2string(c"BOTH_VT_MOUNT_L", BOTH_VT_MOUNT_L), // # Mount from left
@@ -1244,127 +1228,109 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_VT_DISMOUNT", BOTH_VT_DISMOUNT), // # Dismount for tauntaun
     enum2string(c"BOTH_VT_DISMOUNT_L", BOTH_VT_DISMOUNT_L), // # Dismount to tauntauns left
     enum2string(c"BOTH_VT_DISMOUNT_R", BOTH_VT_DISMOUNT_R), // # Dismount to tauntauns right (symmetry)
-
-    enum2string(c"BOTH_VT_WALK_FWD", BOTH_VT_WALK_FWD), // # Walk forward
-    enum2string(c"BOTH_VT_WALK_REV", BOTH_VT_WALK_REV), // # Walk backward
+    enum2string(c"BOTH_VT_WALK_FWD", BOTH_VT_WALK_FWD),     // # Walk forward
+    enum2string(c"BOTH_VT_WALK_REV", BOTH_VT_WALK_REV),     // # Walk backward
     enum2string(c"BOTH_VT_WALK_FWD_L", BOTH_VT_WALK_FWD_L), // # walk lean left
     enum2string(c"BOTH_VT_WALK_FWD_R", BOTH_VT_WALK_FWD_R), // # walk lean right
-    enum2string(c"BOTH_VT_RUN_FWD", BOTH_VT_RUN_FWD), // # Run forward
+    enum2string(c"BOTH_VT_RUN_FWD", BOTH_VT_RUN_FWD),       // # Run forward
     enum2string(c"BOTH_VT_RUN_REV", BOTH_VT_RUN_REV), // # Look backwards while running (not weapon specific)
     enum2string(c"BOTH_VT_RUN_FWD_L", BOTH_VT_RUN_FWD_L), // # run lean left
     enum2string(c"BOTH_VT_RUN_FWD_R", BOTH_VT_RUN_FWD_R), // # run lean right
-
-    enum2string(c"BOTH_VT_SLIDEF", BOTH_VT_SLIDEF), // # Tauntaun slides forward with abrupt stop
-    enum2string(c"BOTH_VT_AIR", BOTH_VT_AIR), // # Tauntaun jump
-    enum2string(c"BOTH_VT_ATB", BOTH_VT_ATB), // # Tauntaun tail swipe
-    enum2string(c"BOTH_VT_PAIN1", BOTH_VT_PAIN1), // # Pain
-    enum2string(c"BOTH_VT_DEATH1", BOTH_VT_DEATH1), // # Die
-    enum2string(c"BOTH_VT_STAND", BOTH_VT_STAND), // # Stand still and breath
-    enum2string(c"BOTH_VT_BUCK", BOTH_VT_BUCK), // # Tauntaun bucking loop animation
-
-    enum2string(c"BOTH_VT_LAND", BOTH_VT_LAND), // # Player bounces down when tauntaun lands
-    enum2string(c"BOTH_VT_TURBO", BOTH_VT_TURBO), // # Hit The Turbo Button
+    enum2string(c"BOTH_VT_SLIDEF", BOTH_VT_SLIDEF),   // # Tauntaun slides forward with abrupt stop
+    enum2string(c"BOTH_VT_AIR", BOTH_VT_AIR),         // # Tauntaun jump
+    enum2string(c"BOTH_VT_ATB", BOTH_VT_ATB),         // # Tauntaun tail swipe
+    enum2string(c"BOTH_VT_PAIN1", BOTH_VT_PAIN1),     // # Pain
+    enum2string(c"BOTH_VT_DEATH1", BOTH_VT_DEATH1),   // # Die
+    enum2string(c"BOTH_VT_STAND", BOTH_VT_STAND),     // # Stand still and breath
+    enum2string(c"BOTH_VT_BUCK", BOTH_VT_BUCK),       // # Tauntaun bucking loop animation
+    enum2string(c"BOTH_VT_LAND", BOTH_VT_LAND),       // # Player bounces down when tauntaun lands
+    enum2string(c"BOTH_VT_TURBO", BOTH_VT_TURBO),     // # Hit The Turbo Button
     enum2string(c"BOTH_VT_IDLE_SL", BOTH_VT_IDLE_SL), // # Sit (saber left)
     enum2string(c"BOTH_VT_IDLE_SR", BOTH_VT_IDLE_SR), // # Sit (saber right)
-    enum2string(c"BOTH_VT_IDLE", BOTH_VT_IDLE), // # Sit with no weapon selected
-    enum2string(c"BOTH_VT_IDLE1", BOTH_VT_IDLE1), // # Sit with no weapon selected
-    enum2string(c"BOTH_VT_IDLE_S", BOTH_VT_IDLE_S), // # Sit with saber selected
-    enum2string(c"BOTH_VT_IDLE_G", BOTH_VT_IDLE_G), // # Sit with gun selected
-    enum2string(c"BOTH_VT_IDLE_T", BOTH_VT_IDLE_T), // # Sit with thermal grenade selected
-
-    enum2string(c"BOTH_VT_ATL_S", BOTH_VT_ATL_S), // # Attack left with saber
-    enum2string(c"BOTH_VT_ATR_S", BOTH_VT_ATR_S), // # Attack right with saber
+    enum2string(c"BOTH_VT_IDLE", BOTH_VT_IDLE),       // # Sit with no weapon selected
+    enum2string(c"BOTH_VT_IDLE1", BOTH_VT_IDLE1),     // # Sit with no weapon selected
+    enum2string(c"BOTH_VT_IDLE_S", BOTH_VT_IDLE_S),   // # Sit with saber selected
+    enum2string(c"BOTH_VT_IDLE_G", BOTH_VT_IDLE_G),   // # Sit with gun selected
+    enum2string(c"BOTH_VT_IDLE_T", BOTH_VT_IDLE_T),   // # Sit with thermal grenade selected
+    enum2string(c"BOTH_VT_ATL_S", BOTH_VT_ATL_S),     // # Attack left with saber
+    enum2string(c"BOTH_VT_ATR_S", BOTH_VT_ATR_S),     // # Attack right with saber
     enum2string(c"BOTH_VT_ATR_TO_L_S", BOTH_VT_ATR_TO_L_S), // # Attack toss saber from right to left hand
     enum2string(c"BOTH_VT_ATL_TO_R_S", BOTH_VT_ATL_TO_R_S), // # Attack toss saber from left to right hand
-    enum2string(c"BOTH_VT_ATR_G", BOTH_VT_ATR_G), // # Attack right with gun (90)
-    enum2string(c"BOTH_VT_ATL_G", BOTH_VT_ATL_G), // # Attack left with gun (90)
-    enum2string(c"BOTH_VT_ATF_G", BOTH_VT_ATF_G), // # Attack forward with gun
-
-
+    enum2string(c"BOTH_VT_ATR_G", BOTH_VT_ATR_G),           // # Attack right with gun (90)
+    enum2string(c"BOTH_VT_ATL_G", BOTH_VT_ATL_G),           // # Attack left with gun (90)
+    enum2string(c"BOTH_VT_ATF_G", BOTH_VT_ATF_G),           // # Attack forward with gun
     // Added 2/26/02 by Aurelio.
     //* #sep BOTH_ FIGHTER ANIMS
     enum2string(c"BOTH_GEARS_OPEN", BOTH_GEARS_OPEN),
     enum2string(c"BOTH_GEARS_CLOSE", BOTH_GEARS_CLOSE),
     enum2string(c"BOTH_WINGS_OPEN", BOTH_WINGS_OPEN),
     enum2string(c"BOTH_WINGS_CLOSE", BOTH_WINGS_CLOSE),
-
     ///////////////////////////////////
-
     enum2string(c"BOTH_DEATH14_UNGRIP", BOTH_DEATH14_UNGRIP), // # Desann's end death (cin #35)
     enum2string(c"BOTH_DEATH14_SITUP", BOTH_DEATH14_SITUP), // # Tavion sitting up after having been thrown (cin #23)
-    enum2string(c"BOTH_KNEES1", BOTH_KNEES1), // # Tavion on her knees
-    enum2string(c"BOTH_KNEES2", BOTH_KNEES2), // # Tavion on her knees looking down
-    enum2string(c"BOTH_KNEES2TO1", BOTH_KNEES2TO1), // # Transition of KNEES2 to KNEES1
-
+    enum2string(c"BOTH_KNEES1", BOTH_KNEES1),               // # Tavion on her knees
+    enum2string(c"BOTH_KNEES2", BOTH_KNEES2),               // # Tavion on her knees looking down
+    enum2string(c"BOTH_KNEES2TO1", BOTH_KNEES2TO1),         // # Transition of KNEES2 to KNEES1
     //# #sep ENUM2STRING(BOTH_ MOVING
     enum2string(c"BOTH_WALK1", BOTH_WALK1), // # Normal walk
     enum2string(c"BOTH_WALK2", BOTH_WALK2), // # Normal walk
     enum2string(c"BOTH_WALK_STAFF", BOTH_WALK_STAFF), // # Walk with saberstaff turned on
     enum2string(c"BOTH_WALKBACK_STAFF", BOTH_WALKBACK_STAFF), // # Walk backwards with saberstaff turned on
-    enum2string(c"BOTH_WALK_DUAL", BOTH_WALK_DUAL), // # Walk with dual turned on
+    enum2string(c"BOTH_WALK_DUAL", BOTH_WALK_DUAL),           // # Walk with dual turned on
     enum2string(c"BOTH_WALKBACK_DUAL", BOTH_WALKBACK_DUAL), // # Walk backwards with dual turned on
-    enum2string(c"BOTH_WALK5", BOTH_WALK5), // # Tavion taunting Kyle (cin 22)
-    enum2string(c"BOTH_WALK6", BOTH_WALK6), // # Slow walk for Luke (cin 12)
-    enum2string(c"BOTH_WALK7", BOTH_WALK7), // # Fast walk
-    enum2string(c"BOTH_RUN1", BOTH_RUN1), // # Full run
-    enum2string(c"BOTH_RUN1START", BOTH_RUN1START), // # Start into full run1
-    enum2string(c"BOTH_RUN1STOP", BOTH_RUN1STOP), // # Stop from full run1
-    enum2string(c"BOTH_RUN2", BOTH_RUN2), // # Full run
-    enum2string(c"BOTH_RUN1TORUN2", BOTH_RUN1TORUN2), // # Wampa run anim transition
-    enum2string(c"BOTH_RUN2TORUN1", BOTH_RUN2TORUN1), // # Wampa run anim transition
-    enum2string(c"BOTH_RUN4", BOTH_RUN4), // # Jawa run
-    enum2string(c"BOTH_RUN_STAFF", BOTH_RUN_STAFF), // # Run with saberstaff turned on
+    enum2string(c"BOTH_WALK5", BOTH_WALK5),                 // # Tavion taunting Kyle (cin 22)
+    enum2string(c"BOTH_WALK6", BOTH_WALK6),                 // # Slow walk for Luke (cin 12)
+    enum2string(c"BOTH_WALK7", BOTH_WALK7),                 // # Fast walk
+    enum2string(c"BOTH_RUN1", BOTH_RUN1),                   // # Full run
+    enum2string(c"BOTH_RUN1START", BOTH_RUN1START),         // # Start into full run1
+    enum2string(c"BOTH_RUN1STOP", BOTH_RUN1STOP),           // # Stop from full run1
+    enum2string(c"BOTH_RUN2", BOTH_RUN2),                   // # Full run
+    enum2string(c"BOTH_RUN1TORUN2", BOTH_RUN1TORUN2),       // # Wampa run anim transition
+    enum2string(c"BOTH_RUN2TORUN1", BOTH_RUN2TORUN1),       // # Wampa run anim transition
+    enum2string(c"BOTH_RUN4", BOTH_RUN4),                   // # Jawa run
+    enum2string(c"BOTH_RUN_STAFF", BOTH_RUN_STAFF),         // # Run with saberstaff turned on
     enum2string(c"BOTH_RUNBACK_STAFF", BOTH_RUNBACK_STAFF), // # Run backwards with saberstaff turned on
-    enum2string(c"BOTH_RUN_DUAL", BOTH_RUN_DUAL), // # Run with dual turned on
-    enum2string(c"BOTH_RUNBACK_DUAL", BOTH_RUNBACK_DUAL), // # Run backwards with dual turned on
-    enum2string(c"BOTH_STRAFE_LEFT1", BOTH_STRAFE_LEFT1), // # Sidestep left), should loop
+    enum2string(c"BOTH_RUN_DUAL", BOTH_RUN_DUAL),           // # Run with dual turned on
+    enum2string(c"BOTH_RUNBACK_DUAL", BOTH_RUNBACK_DUAL),   // # Run backwards with dual turned on
+    enum2string(c"BOTH_STRAFE_LEFT1", BOTH_STRAFE_LEFT1),   // # Sidestep left), should loop
     enum2string(c"BOTH_STRAFE_RIGHT1", BOTH_STRAFE_RIGHT1), // # Sidestep right), should loop
     enum2string(c"BOTH_RUNSTRAFE_LEFT1", BOTH_RUNSTRAFE_LEFT1), // # Sidestep left), should loop
     enum2string(c"BOTH_RUNSTRAFE_RIGHT1", BOTH_RUNSTRAFE_RIGHT1), // # Sidestep right), should loop
-    enum2string(c"BOTH_TURN_LEFT1", BOTH_TURN_LEFT1), // # Turn left), should loop
-    enum2string(c"BOTH_TURN_RIGHT1", BOTH_TURN_RIGHT1), // # Turn right), should loop
-    enum2string(c"BOTH_TURNSTAND1", BOTH_TURNSTAND1), // # Turn from STAND1 position
-    enum2string(c"BOTH_TURNSTAND2", BOTH_TURNSTAND2), // # Turn from STAND2 position
-    enum2string(c"BOTH_TURNSTAND3", BOTH_TURNSTAND3), // # Turn from STAND3 position
-    enum2string(c"BOTH_TURNSTAND4", BOTH_TURNSTAND4), // # Turn from STAND4 position
-    enum2string(c"BOTH_TURNSTAND5", BOTH_TURNSTAND5), // # Turn from STAND5 position
-    enum2string(c"BOTH_TURNCROUCH1", BOTH_TURNCROUCH1), // # Turn from CROUCH1 position
-
-    enum2string(c"BOTH_WALKBACK1", BOTH_WALKBACK1), // # Walk1 backwards
-    enum2string(c"BOTH_WALKBACK2", BOTH_WALKBACK2), // # Walk2 backwards
-    enum2string(c"BOTH_RUNBACK1", BOTH_RUNBACK1), // # Run1 backwards
-    enum2string(c"BOTH_RUNBACK2", BOTH_RUNBACK2), // # Run1 backwards
-
+    enum2string(c"BOTH_TURN_LEFT1", BOTH_TURN_LEFT1),       // # Turn left), should loop
+    enum2string(c"BOTH_TURN_RIGHT1", BOTH_TURN_RIGHT1),     // # Turn right), should loop
+    enum2string(c"BOTH_TURNSTAND1", BOTH_TURNSTAND1),       // # Turn from STAND1 position
+    enum2string(c"BOTH_TURNSTAND2", BOTH_TURNSTAND2),       // # Turn from STAND2 position
+    enum2string(c"BOTH_TURNSTAND3", BOTH_TURNSTAND3),       // # Turn from STAND3 position
+    enum2string(c"BOTH_TURNSTAND4", BOTH_TURNSTAND4),       // # Turn from STAND4 position
+    enum2string(c"BOTH_TURNSTAND5", BOTH_TURNSTAND5),       // # Turn from STAND5 position
+    enum2string(c"BOTH_TURNCROUCH1", BOTH_TURNCROUCH1),     // # Turn from CROUCH1 position
+    enum2string(c"BOTH_WALKBACK1", BOTH_WALKBACK1),         // # Walk1 backwards
+    enum2string(c"BOTH_WALKBACK2", BOTH_WALKBACK2),         // # Walk2 backwards
+    enum2string(c"BOTH_RUNBACK1", BOTH_RUNBACK1),           // # Run1 backwards
+    enum2string(c"BOTH_RUNBACK2", BOTH_RUNBACK2),           // # Run1 backwards
     //# #sep BOTH_ JUMPING
     enum2string(c"BOTH_JUMP1", BOTH_JUMP1), // # Jump - wind-up and leave ground
     enum2string(c"BOTH_INAIR1", BOTH_INAIR1), // # In air loop (from jump)
     enum2string(c"BOTH_LAND1", BOTH_LAND1), // # Landing (from in air loop)
     enum2string(c"BOTH_LAND2", BOTH_LAND2), // # Landing Hard (from a great height)
-
     enum2string(c"BOTH_JUMPBACK1", BOTH_JUMPBACK1), // # Jump backwards - wind-up and leave ground
     enum2string(c"BOTH_INAIRBACK1", BOTH_INAIRBACK1), // # In air loop (from jump back)
     enum2string(c"BOTH_LANDBACK1", BOTH_LANDBACK1), // # Landing backwards(from in air loop)
-
     enum2string(c"BOTH_JUMPLEFT1", BOTH_JUMPLEFT1), // # Jump left - wind-up and leave ground
     enum2string(c"BOTH_INAIRLEFT1", BOTH_INAIRLEFT1), // # In air loop (from jump left)
     enum2string(c"BOTH_LANDLEFT1", BOTH_LANDLEFT1), // # Landing left(from in air loop)
-
     enum2string(c"BOTH_JUMPRIGHT1", BOTH_JUMPRIGHT1), // # Jump right - wind-up and leave ground
     enum2string(c"BOTH_INAIRRIGHT1", BOTH_INAIRRIGHT1), // # In air loop (from jump right)
     enum2string(c"BOTH_LANDRIGHT1", BOTH_LANDRIGHT1), // # Landing right(from in air loop)
-
     enum2string(c"BOTH_FORCEJUMP1", BOTH_FORCEJUMP1), // # Jump - wind-up and leave ground
     enum2string(c"BOTH_FORCEINAIR1", BOTH_FORCEINAIR1), // # In air loop (from jump)
     enum2string(c"BOTH_FORCELAND1", BOTH_FORCELAND1), // # Landing (from in air loop)
-
     enum2string(c"BOTH_FORCEJUMPBACK1", BOTH_FORCEJUMPBACK1), // # Jump backwards - wind-up and leave ground
     enum2string(c"BOTH_FORCEINAIRBACK1", BOTH_FORCEINAIRBACK1), // # In air loop (from jump back)
     enum2string(c"BOTH_FORCELANDBACK1", BOTH_FORCELANDBACK1), // # Landing backwards(from in air loop)
-
     enum2string(c"BOTH_FORCEJUMPLEFT1", BOTH_FORCEJUMPLEFT1), // # Jump left - wind-up and leave ground
     enum2string(c"BOTH_FORCEINAIRLEFT1", BOTH_FORCEINAIRLEFT1), // # In air loop (from jump left)
     enum2string(c"BOTH_FORCELANDLEFT1", BOTH_FORCELANDLEFT1), // # Landing left(from in air loop)
-
     enum2string(c"BOTH_FORCEJUMPRIGHT1", BOTH_FORCEJUMPRIGHT1), // # Jump right - wind-up and leave ground
     enum2string(c"BOTH_FORCEINAIRRIGHT1", BOTH_FORCEINAIRRIGHT1), // # In air loop (from jump right)
     enum2string(c"BOTH_FORCELANDRIGHT1", BOTH_FORCELANDRIGHT1), // # Landing right(from in air loop)
@@ -1373,17 +1339,14 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_FLIP_B", BOTH_FLIP_B), // # Flip backwards
     enum2string(c"BOTH_FLIP_L", BOTH_FLIP_L), // # Flip left
     enum2string(c"BOTH_FLIP_R", BOTH_FLIP_R), // # Flip right
-
     enum2string(c"BOTH_ROLL_F", BOTH_ROLL_F), // # Roll forward
     enum2string(c"BOTH_ROLL_B", BOTH_ROLL_B), // # Roll backward
     enum2string(c"BOTH_ROLL_L", BOTH_ROLL_L), // # Roll left
     enum2string(c"BOTH_ROLL_R", BOTH_ROLL_R), // # Roll right
-
-    enum2string(c"BOTH_HOP_F", BOTH_HOP_F), // # quickstep forward
-    enum2string(c"BOTH_HOP_B", BOTH_HOP_B), // # quickstep backwards
-    enum2string(c"BOTH_HOP_L", BOTH_HOP_L), // # quickstep left
-    enum2string(c"BOTH_HOP_R", BOTH_HOP_R), // # quickstep right
-
+    enum2string(c"BOTH_HOP_F", BOTH_HOP_F),   // # quickstep forward
+    enum2string(c"BOTH_HOP_B", BOTH_HOP_B),   // # quickstep backwards
+    enum2string(c"BOTH_HOP_L", BOTH_HOP_L),   // # quickstep left
+    enum2string(c"BOTH_HOP_R", BOTH_HOP_R),   // # quickstep right
     enum2string(c"BOTH_DODGE_FL", BOTH_DODGE_FL), // # lean-dodge forward left
     enum2string(c"BOTH_DODGE_FR", BOTH_DODGE_FR), // # lean-dodge forward right
     enum2string(c"BOTH_DODGE_BL", BOTH_DODGE_BL), // # lean-dodge backwards left
@@ -1396,7 +1359,6 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_DODGE_HOLD_BR", BOTH_DODGE_HOLD_BR), // # lean-dodge pose backwards right
     enum2string(c"BOTH_DODGE_HOLD_L", BOTH_DODGE_HOLD_L), // # lean-dodge pose left
     enum2string(c"BOTH_DODGE_HOLD_R", BOTH_DODGE_HOLD_R), // # lean-dodge pose right
-
     //MP taunt anims
     enum2string(c"BOTH_ENGAGETAUNT", BOTH_ENGAGETAUNT),
     enum2string(c"BOTH_BOW", BOTH_BOW),
@@ -1417,7 +1379,7 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_ARIAL_RIGHT", BOTH_ARIAL_RIGHT), // #
     enum2string(c"BOTH_CARTWHEEL_LEFT", BOTH_CARTWHEEL_LEFT), // #
     enum2string(c"BOTH_CARTWHEEL_RIGHT", BOTH_CARTWHEEL_RIGHT), // #
-    enum2string(c"BOTH_FLIP_LEFT", BOTH_FLIP_LEFT), // #
+    enum2string(c"BOTH_FLIP_LEFT", BOTH_FLIP_LEFT),   // #
     enum2string(c"BOTH_FLIP_BACK1", BOTH_FLIP_BACK1), // #
     enum2string(c"BOTH_FLIP_BACK2", BOTH_FLIP_BACK2), // #
     enum2string(c"BOTH_FLIP_BACK3", BOTH_FLIP_BACK3), // #
@@ -1436,11 +1398,11 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_KNOCKDOWN3", BOTH_KNOCKDOWN3), // #	knocked forwards
     enum2string(c"BOTH_KNOCKDOWN4", BOTH_KNOCKDOWN4), // # knocked backwards from crouch
     enum2string(c"BOTH_KNOCKDOWN5", BOTH_KNOCKDOWN5), // # dupe of 3 - will be removed
-    enum2string(c"BOTH_GETUP1", BOTH_GETUP1), // #
-    enum2string(c"BOTH_GETUP2", BOTH_GETUP2), // #
-    enum2string(c"BOTH_GETUP3", BOTH_GETUP3), // #
-    enum2string(c"BOTH_GETUP4", BOTH_GETUP4), // #
-    enum2string(c"BOTH_GETUP5", BOTH_GETUP5), // #
+    enum2string(c"BOTH_GETUP1", BOTH_GETUP1),         // #
+    enum2string(c"BOTH_GETUP2", BOTH_GETUP2),         // #
+    enum2string(c"BOTH_GETUP3", BOTH_GETUP3),         // #
+    enum2string(c"BOTH_GETUP4", BOTH_GETUP4),         // #
+    enum2string(c"BOTH_GETUP5", BOTH_GETUP5),         // #
     enum2string(c"BOTH_GETUP_CROUCH_F1", BOTH_GETUP_CROUCH_F1), // #
     enum2string(c"BOTH_GETUP_CROUCH_B1", BOTH_GETUP_CROUCH_B1), // #
     enum2string(c"BOTH_FORCE_GETUP_F1", BOTH_FORCE_GETUP_F1), // #
@@ -1461,28 +1423,26 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_GETUP_FROLL_R", BOTH_GETUP_FROLL_R), // #
     enum2string(c"BOTH_WALL_FLIP_BACK1", BOTH_WALL_FLIP_BACK1), // #
     enum2string(c"BOTH_WALL_FLIP_BACK2", BOTH_WALL_FLIP_BACK2), // #
-    enum2string(c"BOTH_SPIN1", BOTH_SPIN1), // #
+    enum2string(c"BOTH_SPIN1", BOTH_SPIN1),           // #
     enum2string(c"BOTH_CEILING_CLING", BOTH_CEILING_CLING), // # clinging to ceiling
     enum2string(c"BOTH_CEILING_DROP", BOTH_CEILING_DROP), // # dropping from ceiling cling
-
     //TESTING
     enum2string(c"BOTH_FJSS_TR_BL", BOTH_FJSS_TR_BL), // # jump spin slash tr to bl
     enum2string(c"BOTH_FJSS_TL_BR", BOTH_FJSS_TL_BR), // # jump spin slash bl to tr
     enum2string(c"BOTH_RIGHTHANDCHOPPEDOFF", BOTH_RIGHTHANDCHOPPEDOFF), // #
     enum2string(c"BOTH_DEFLECTSLASH__R__L_FIN", BOTH_DEFLECTSLASH__R__L_FIN), // #
-    enum2string(c"BOTH_BASHED1", BOTH_BASHED1), // #
-    enum2string(c"BOTH_ARIAL_F1", BOTH_ARIAL_F1), // #
+    enum2string(c"BOTH_BASHED1", BOTH_BASHED1),       // #
+    enum2string(c"BOTH_ARIAL_F1", BOTH_ARIAL_F1),     // #
     enum2string(c"BOTH_BUTTERFLY_FR1", BOTH_BUTTERFLY_FR1), // #
     enum2string(c"BOTH_BUTTERFLY_FL1", BOTH_BUTTERFLY_FL1), // #
-
     //NEW SABER/JEDI/FORCE ANIMS
     enum2string(c"BOTH_BACK_FLIP_UP", BOTH_BACK_FLIP_UP), // # back flip up Bonus Animation!!!!
     enum2string(c"BOTH_LOSE_SABER", BOTH_LOSE_SABER), // # player losing saber (pulled from hand by force pull 4 - Kyle?)
     enum2string(c"BOTH_STAFF_TAUNT", BOTH_STAFF_TAUNT), // # taunt saberstaff
     enum2string(c"BOTH_DUAL_TAUNT", BOTH_DUAL_TAUNT), // # taunt dual
-    enum2string(c"BOTH_A6_FB", BOTH_A6_FB), // # dual attack front/back
-    enum2string(c"BOTH_A6_LR", BOTH_A6_LR), // # dual attack left/right
-    enum2string(c"BOTH_A7_HILT", BOTH_A7_HILT), // # saber knock (alt + stand still)
+    enum2string(c"BOTH_A6_FB", BOTH_A6_FB),           // # dual attack front/back
+    enum2string(c"BOTH_A6_LR", BOTH_A6_LR),           // # dual attack left/right
+    enum2string(c"BOTH_A7_HILT", BOTH_A7_HILT),       // # saber knock (alt + stand still)
     //Alora
     enum2string(c"BOTH_ALORA_SPIN", BOTH_ALORA_SPIN), // #jump spin attack	death ballet
     enum2string(c"BOTH_ALORA_FLIP_1", BOTH_ALORA_FLIP_1), // # gymnast move 1
@@ -1491,7 +1451,7 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_ALORA_FLIP_B", BOTH_ALORA_FLIP_B), // # gymnast move back
     enum2string(c"BOTH_ALORA_SPIN_THROW", BOTH_ALORA_SPIN_THROW), // # dual saber throw
     enum2string(c"BOTH_ALORA_SPIN_SLASH", BOTH_ALORA_SPIN_SLASH), // # spin slash	special bonus animation!! :)
-    enum2string(c"BOTH_ALORA_TAUNT", BOTH_ALORA_TAUNT), // # special taunt
+    enum2string(c"BOTH_ALORA_TAUNT", BOTH_ALORA_TAUNT),           // # special taunt
     //Rosh (Kothos battle)
     enum2string(c"BOTH_ROSH_PAIN", BOTH_ROSH_PAIN), // # hurt animation (exhausted)
     enum2string(c"BOTH_ROSH_HEAL", BOTH_ROSH_HEAL), // # healed/rejuvenated
@@ -1499,8 +1459,8 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_TAVION_SCEPTERGROUND", BOTH_TAVION_SCEPTERGROUND), // # stabbing ground with sith sword shoots electricity everywhere
     enum2string(c"BOTH_TAVION_SWORDPOWER", BOTH_TAVION_SWORDPOWER), // # Tavion doing the He-Man(tm) thing
     enum2string(c"BOTH_SCEPTER_START", BOTH_SCEPTER_START), // #Point scepter and attack start
-    enum2string(c"BOTH_SCEPTER_HOLD", BOTH_SCEPTER_HOLD), // #Point scepter and attack hold
-    enum2string(c"BOTH_SCEPTER_STOP", BOTH_SCEPTER_STOP), // #Point scepter and attack stop
+    enum2string(c"BOTH_SCEPTER_HOLD", BOTH_SCEPTER_HOLD),   // #Point scepter and attack hold
+    enum2string(c"BOTH_SCEPTER_STOP", BOTH_SCEPTER_STOP),   // #Point scepter and attack stop
     //Kyle Boss
     enum2string(c"BOTH_KYLE_GRAB", BOTH_KYLE_GRAB), // # grab
     enum2string(c"BOTH_KYLE_MISS", BOTH_KYLE_MISS), // # miss
@@ -1509,69 +1469,60 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_KYLE_PA_2", BOTH_KYLE_PA_2), // # hold 2
     enum2string(c"BOTH_PLAYER_PA_2", BOTH_PLAYER_PA_2), // # player getting held 2
     enum2string(c"BOTH_PLAYER_PA_FLY", BOTH_PLAYER_PA_FLY), // # player getting knocked back from punch at end of hold 1
-    enum2string(c"BOTH_KYLE_PA_3", BOTH_KYLE_PA_3), // # hold 3
-    enum2string(c"BOTH_PLAYER_PA_3", BOTH_PLAYER_PA_3), // # player getting held 3
+    enum2string(c"BOTH_KYLE_PA_3", BOTH_KYLE_PA_3),         // # hold 3
+    enum2string(c"BOTH_PLAYER_PA_3", BOTH_PLAYER_PA_3),     // # player getting held 3
     enum2string(c"BOTH_PLAYER_PA_3_FLY", BOTH_PLAYER_PA_3_FLY), // # player getting thrown at end of hold 3
     //Rancor
     enum2string(c"BOTH_BUCK_RIDER", BOTH_BUCK_RIDER), // # Rancor bucks when someone is on him
     //WAMPA Grabbing enemy
     enum2string(c"BOTH_HOLD_START", BOTH_HOLD_START), // #
-    enum2string(c"BOTH_HOLD_MISS", BOTH_HOLD_MISS), // #
-    enum2string(c"BOTH_HOLD_IDLE", BOTH_HOLD_IDLE), // #
-    enum2string(c"BOTH_HOLD_END", BOTH_HOLD_END), // #
+    enum2string(c"BOTH_HOLD_MISS", BOTH_HOLD_MISS),   // #
+    enum2string(c"BOTH_HOLD_IDLE", BOTH_HOLD_IDLE),   // #
+    enum2string(c"BOTH_HOLD_END", BOTH_HOLD_END),     // #
     enum2string(c"BOTH_HOLD_ATTACK", BOTH_HOLD_ATTACK), // #
     enum2string(c"BOTH_HOLD_SNIFF", BOTH_HOLD_SNIFF), // # Sniff the guy you're holding
-    enum2string(c"BOTH_HOLD_DROP", BOTH_HOLD_DROP), // # just drop 'em
+    enum2string(c"BOTH_HOLD_DROP", BOTH_HOLD_DROP),   // # just drop 'em
     //BEING GRABBED BY WAMPA
-    enum2string(c"BOTH_GRABBED", BOTH_GRABBED), // #
-    enum2string(c"BOTH_RELEASED", BOTH_RELEASED), // #
+    enum2string(c"BOTH_GRABBED", BOTH_GRABBED),     // #
+    enum2string(c"BOTH_RELEASED", BOTH_RELEASED),   // #
     enum2string(c"BOTH_HANG_IDLE", BOTH_HANG_IDLE), // #
     enum2string(c"BOTH_HANG_ATTACK", BOTH_HANG_ATTACK), // #
     enum2string(c"BOTH_HANG_PAIN", BOTH_HANG_PAIN), // #
-
     //# #sep BOTH_ MISC MOVEMENT
     enum2string(c"BOTH_HIT1", BOTH_HIT1), // # Kyle hit by crate in cin #9
     enum2string(c"BOTH_LADDER_UP1", BOTH_LADDER_UP1), // # Climbing up a ladder with rungs at 16 unit intervals
     enum2string(c"BOTH_LADDER_DWN1", BOTH_LADDER_DWN1), // # Climbing down a ladder with rungs at 16 unit intervals
     enum2string(c"BOTH_LADDER_IDLE", BOTH_LADDER_IDLE), // #	Just sitting on the ladder
-
     //# #sep ENUM2STRING(BOTH_ FLYING IDLE
     enum2string(c"BOTH_FLY_SHIELDED", BOTH_FLY_SHIELDED), // # For sentry droid, shields in
-
     //# #sep BOTH_ SWIMMING
     enum2string(c"BOTH_SWIM_IDLE1", BOTH_SWIM_IDLE1), // # Swimming Idle 1
     enum2string(c"BOTH_SWIMFORWARD", BOTH_SWIMFORWARD), // # Swim forward loop
     enum2string(c"BOTH_SWIMBACKWARD", BOTH_SWIMBACKWARD), // # Swim backward loop
-
     //# #sep ENUM2STRING(BOTH_ LYING
     enum2string(c"BOTH_SLEEP1", BOTH_SLEEP1), // # laying on back-rknee up-rhand on torso
     enum2string(c"BOTH_SLEEP6START", BOTH_SLEEP6START), // # Kyle leaning back to sleep (cin 20)
     enum2string(c"BOTH_SLEEP6STOP", BOTH_SLEEP6STOP), // # Kyle waking up and shaking his head (cin 21)
     enum2string(c"BOTH_SLEEP1GETUP", BOTH_SLEEP1GETUP), // # alarmed and getting up out of sleep1 pose to stand
     enum2string(c"BOTH_SLEEP1GETUP2", BOTH_SLEEP1GETUP2), // #
-
     enum2string(c"BOTH_CHOKE1START", BOTH_CHOKE1START), // # tavion in force grip choke
     enum2string(c"BOTH_CHOKE1STARTHOLD", BOTH_CHOKE1STARTHOLD), // # loop of tavion in force grip choke
-    enum2string(c"BOTH_CHOKE1", BOTH_CHOKE1), // # tavion in force grip choke
-
+    enum2string(c"BOTH_CHOKE1", BOTH_CHOKE1),                   // # tavion in force grip choke
     enum2string(c"BOTH_CHOKE2", BOTH_CHOKE2), // # tavion recovering from force grip choke
     enum2string(c"BOTH_CHOKE3", BOTH_CHOKE3), // # left-handed choke (for people still holding a weapon)
-
     //# #sep ENUM2STRING(BOTH_ HUNTER-SEEKER BOT-SPECIFIC
     enum2string(c"BOTH_POWERUP1", BOTH_POWERUP1), // # Wakes up
-
-    enum2string(c"BOTH_TURNON", BOTH_TURNON), // # Protocol Droid wakes up
-    enum2string(c"BOTH_TURNOFF", BOTH_TURNOFF), // # Protocol Droid shuts off
-    enum2string(c"BOTH_BUTTON1", BOTH_BUTTON1), // # Single button push with right hand
-    enum2string(c"BOTH_BUTTON2", BOTH_BUTTON2), // # Single button push with left finger
+    enum2string(c"BOTH_TURNON", BOTH_TURNON),     // # Protocol Droid wakes up
+    enum2string(c"BOTH_TURNOFF", BOTH_TURNOFF),   // # Protocol Droid shuts off
+    enum2string(c"BOTH_BUTTON1", BOTH_BUTTON1),   // # Single button push with right hand
+    enum2string(c"BOTH_BUTTON2", BOTH_BUTTON2),   // # Single button push with left finger
     enum2string(c"BOTH_BUTTON_HOLD", BOTH_BUTTON_HOLD), // # Single button hold with left hand
     enum2string(c"BOTH_BUTTON_RELEASE", BOTH_BUTTON_RELEASE), // # Single button release with left hand
-
     //# JEDI-SPECIFIC
     //# #sep BOTH_ FORCE ANIMS
     enum2string(c"BOTH_RESISTPUSH", BOTH_RESISTPUSH), // # plant yourself to resist force push/pulls.
-    enum2string(c"BOTH_FORCEPUSH", BOTH_FORCEPUSH), // # Use off-hand to do force power.
-    enum2string(c"BOTH_FORCEPULL", BOTH_FORCEPULL), // # Use off-hand to do force power.
+    enum2string(c"BOTH_FORCEPUSH", BOTH_FORCEPUSH),   // # Use off-hand to do force power.
+    enum2string(c"BOTH_FORCEPULL", BOTH_FORCEPULL),   // # Use off-hand to do force power.
     enum2string(c"BOTH_MINDTRICK1", BOTH_MINDTRICK1), // # Use off-hand to do mind trick
     enum2string(c"BOTH_MINDTRICK2", BOTH_MINDTRICK2), // # Use off-hand to do distraction
     enum2string(c"BOTH_FORCELIGHTNING", BOTH_FORCELIGHTNING), // # Use off-hand to do lightning
@@ -1579,22 +1530,31 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_FORCELIGHTNING_HOLD", BOTH_FORCELIGHTNING_HOLD), // # Use off-hand to do lightning - hold
     enum2string(c"BOTH_FORCELIGHTNING_RELEASE", BOTH_FORCELIGHTNING_RELEASE), // # Use off-hand to do lightning - release
     enum2string(c"BOTH_FORCEHEAL_START", BOTH_FORCEHEAL_START), // # Healing meditation pose start
-    enum2string(c"BOTH_FORCEHEAL_STOP", BOTH_FORCEHEAL_STOP), // # Healing meditation pose end
+    enum2string(c"BOTH_FORCEHEAL_STOP", BOTH_FORCEHEAL_STOP),   // # Healing meditation pose end
     enum2string(c"BOTH_FORCEHEAL_QUICK", BOTH_FORCEHEAL_QUICK), // # Healing meditation gesture
-    enum2string(c"BOTH_SABERPULL", BOTH_SABERPULL), // # Use off-hand to do force power.
-    enum2string(c"BOTH_FORCEGRIP1", BOTH_FORCEGRIP1), // # force-gripping (no anim?)
-    enum2string(c"BOTH_FORCEGRIP3", BOTH_FORCEGRIP3), // # force-gripping (right-hand)
+    enum2string(c"BOTH_SABERPULL", BOTH_SABERPULL),             // # Use off-hand to do force power.
+    enum2string(c"BOTH_FORCEGRIP1", BOTH_FORCEGRIP1),           // # force-gripping (no anim?)
+    enum2string(c"BOTH_FORCEGRIP3", BOTH_FORCEGRIP3),           // # force-gripping (right-hand)
     enum2string(c"BOTH_FORCEGRIP3THROW", BOTH_FORCEGRIP3THROW), // # throwing while force-gripping (right hand)
-    enum2string(c"BOTH_FORCEGRIP_HOLD", BOTH_FORCEGRIP_HOLD), // # Use off-hand to do grip - hold
+    enum2string(c"BOTH_FORCEGRIP_HOLD", BOTH_FORCEGRIP_HOLD),   // # Use off-hand to do grip - hold
     enum2string(c"BOTH_FORCEGRIP_RELEASE", BOTH_FORCEGRIP_RELEASE), // # Use off-hand to do grip - release
     enum2string(c"BOTH_TOSS1", BOTH_TOSS1), // # throwing to left after force gripping
     enum2string(c"BOTH_TOSS2", BOTH_TOSS2), // # throwing to right after force gripping
     //NEW force anims for JKA:
     enum2string(c"BOTH_FORCE_RAGE", BOTH_FORCE_RAGE),
     enum2string(c"BOTH_FORCE_2HANDEDLIGHTNING", BOTH_FORCE_2HANDEDLIGHTNING),
-    enum2string(c"BOTH_FORCE_2HANDEDLIGHTNING_START", BOTH_FORCE_2HANDEDLIGHTNING_START),
-    enum2string(c"BOTH_FORCE_2HANDEDLIGHTNING_HOLD", BOTH_FORCE_2HANDEDLIGHTNING_HOLD),
-    enum2string(c"BOTH_FORCE_2HANDEDLIGHTNING_RELEASE", BOTH_FORCE_2HANDEDLIGHTNING_RELEASE),
+    enum2string(
+        c"BOTH_FORCE_2HANDEDLIGHTNING_START",
+        BOTH_FORCE_2HANDEDLIGHTNING_START,
+    ),
+    enum2string(
+        c"BOTH_FORCE_2HANDEDLIGHTNING_HOLD",
+        BOTH_FORCE_2HANDEDLIGHTNING_HOLD,
+    ),
+    enum2string(
+        c"BOTH_FORCE_2HANDEDLIGHTNING_RELEASE",
+        BOTH_FORCE_2HANDEDLIGHTNING_RELEASE,
+    ),
     enum2string(c"BOTH_FORCE_DRAIN", BOTH_FORCE_DRAIN),
     enum2string(c"BOTH_FORCE_DRAIN_START", BOTH_FORCE_DRAIN_START),
     enum2string(c"BOTH_FORCE_DRAIN_HOLD", BOTH_FORCE_DRAIN_HOLD),
@@ -1608,41 +1568,33 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_FORCE_ABSORB_END", BOTH_FORCE_ABSORB_END),
     enum2string(c"BOTH_FORCE_PROTECT", BOTH_FORCE_PROTECT),
     enum2string(c"BOTH_FORCE_PROTECT_FAST", BOTH_FORCE_PROTECT_FAST),
-
     enum2string(c"BOTH_WIND", BOTH_WIND),
-
     enum2string(c"BOTH_STAND_TO_KNEEL", BOTH_STAND_TO_KNEEL),
     enum2string(c"BOTH_KNEEL_TO_STAND", BOTH_KNEEL_TO_STAND),
-
     enum2string(c"BOTH_TUSKENATTACK1", BOTH_TUSKENATTACK1),
     enum2string(c"BOTH_TUSKENATTACK2", BOTH_TUSKENATTACK2),
     enum2string(c"BOTH_TUSKENATTACK3", BOTH_TUSKENATTACK3),
     enum2string(c"BOTH_TUSKENLUNGE1", BOTH_TUSKENLUNGE1),
     enum2string(c"BOTH_TUSKENTAUNT1", BOTH_TUSKENTAUNT1),
-
     enum2string(c"BOTH_COWER1_START", BOTH_COWER1_START), // # cower start
-    enum2string(c"BOTH_COWER1", BOTH_COWER1), // # cower loop
-    enum2string(c"BOTH_COWER1_STOP", BOTH_COWER1_STOP), // # cower stop
+    enum2string(c"BOTH_COWER1", BOTH_COWER1),             // # cower loop
+    enum2string(c"BOTH_COWER1_STOP", BOTH_COWER1_STOP),   // # cower stop
     enum2string(c"BOTH_SONICPAIN_START", BOTH_SONICPAIN_START),
     enum2string(c"BOTH_SONICPAIN_HOLD", BOTH_SONICPAIN_HOLD),
     enum2string(c"BOTH_SONICPAIN_END", BOTH_SONICPAIN_END),
-
     //new anim slots per Jarrod's request
     enum2string(c"BOTH_STAND10", BOTH_STAND10),
     enum2string(c"BOTH_STAND10_TALK1", BOTH_STAND10_TALK1),
     enum2string(c"BOTH_STAND10_TALK2", BOTH_STAND10_TALK2),
     enum2string(c"BOTH_STAND10TOSTAND1", BOTH_STAND10TOSTAND1),
-
     enum2string(c"BOTH_STAND1_TALK1", BOTH_STAND1_TALK1),
     enum2string(c"BOTH_STAND1_TALK2", BOTH_STAND1_TALK2),
     enum2string(c"BOTH_STAND1_TALK3", BOTH_STAND1_TALK3),
-
     enum2string(c"BOTH_SIT4", BOTH_SIT4),
     enum2string(c"BOTH_SIT5", BOTH_SIT5),
     enum2string(c"BOTH_SIT5_TALK1", BOTH_SIT5_TALK1),
     enum2string(c"BOTH_SIT5_TALK2", BOTH_SIT5_TALK2),
     enum2string(c"BOTH_SIT5_TALK3", BOTH_SIT5_TALK3),
-
     enum2string(c"BOTH_SIT6", BOTH_SIT6),
     enum2string(c"BOTH_SIT7", BOTH_SIT7),
     //=================================================
@@ -1658,24 +1610,21 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"TORSO_WEAPONREADY3", TORSO_WEAPONREADY3), // # Ready to fire blaster rifle
     enum2string(c"TORSO_WEAPONREADY4", TORSO_WEAPONREADY4), // # Ready to fire sniper rifle
     enum2string(c"TORSO_WEAPONREADY10", TORSO_WEAPONREADY10), // # Ready to fire thermal det
-    enum2string(c"TORSO_WEAPONIDLE2", TORSO_WEAPONIDLE2), // # Holding one-handed blaster
-    enum2string(c"TORSO_WEAPONIDLE3", TORSO_WEAPONIDLE3), // # Holding blaster rifle
-    enum2string(c"TORSO_WEAPONIDLE4", TORSO_WEAPONIDLE4), // # Holding sniper rifle
+    enum2string(c"TORSO_WEAPONIDLE2", TORSO_WEAPONIDLE2),   // # Holding one-handed blaster
+    enum2string(c"TORSO_WEAPONIDLE3", TORSO_WEAPONIDLE3),   // # Holding blaster rifle
+    enum2string(c"TORSO_WEAPONIDLE4", TORSO_WEAPONIDLE4),   // # Holding sniper rifle
     enum2string(c"TORSO_WEAPONIDLE10", TORSO_WEAPONIDLE10), // # Holding thermal det
-
     //# #sep ENUM2STRING(TORSO_ USING NON-WEAPON OBJECTS
 
     //# #sep ENUM2STRING(TORSO_ MISC
     enum2string(c"TORSO_SURRENDER_START", TORSO_SURRENDER_START), // # arms up
-    enum2string(c"TORSO_SURRENDER_STOP", TORSO_SURRENDER_STOP), // # arms back down
-    enum2string(c"TORSO_CHOKING1", TORSO_CHOKING1), // # TEMP
-
+    enum2string(c"TORSO_SURRENDER_STOP", TORSO_SURRENDER_STOP),   // # arms back down
+    enum2string(c"TORSO_CHOKING1", TORSO_CHOKING1),               // # TEMP
     enum2string(c"TORSO_HANDSIGNAL1", TORSO_HANDSIGNAL1),
     enum2string(c"TORSO_HANDSIGNAL2", TORSO_HANDSIGNAL2),
     enum2string(c"TORSO_HANDSIGNAL3", TORSO_HANDSIGNAL3),
     enum2string(c"TORSO_HANDSIGNAL4", TORSO_HANDSIGNAL4),
     enum2string(c"TORSO_HANDSIGNAL5", TORSO_HANDSIGNAL5),
-
     //=================================================
     //ANIMS IN WHICH ONLY THE LOWER OBJECTS ARE IN MD3
     //=================================================
@@ -1755,10 +1704,8 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"LEGS_S7_RUP3", LEGS_S7_RUP3),
     enum2string(c"LEGS_S7_RUP4", LEGS_S7_RUP4),
     enum2string(c"LEGS_S7_RUP5", LEGS_S7_RUP5),
-
     //New anim as per Jarrod's request
     enum2string(c"LEGS_TURN180", LEGS_TURN180),
-
     //======================================================
     //cinematic anims
     //======================================================
@@ -1788,7 +1735,6 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_CIN_23", BOTH_CIN_23), // # Level specific cinematic 23
     enum2string(c"BOTH_CIN_24", BOTH_CIN_24), // # Level specific cinematic 24
     enum2string(c"BOTH_CIN_25", BOTH_CIN_25), // # Level specific cinematic 25
-
     enum2string(c"BOTH_CIN_26", BOTH_CIN_26), // # Level specific cinematic
     enum2string(c"BOTH_CIN_27", BOTH_CIN_27), // # Level specific cinematic
     enum2string(c"BOTH_CIN_28", BOTH_CIN_28), // # Level specific cinematic
@@ -1814,9 +1760,11 @@ pub static mut animTable: [stringID_table_t; (MAX_ANIMATIONS + 1) as usize] = [
     enum2string(c"BOTH_CIN_48", BOTH_CIN_48), // # Level specific cinematic
     enum2string(c"BOTH_CIN_49", BOTH_CIN_49), // # Level specific cinematic
     enum2string(c"BOTH_CIN_50", BOTH_CIN_50), // # Level specific cinematic
-
     //must be terminated
-    stringID_table_t { name: core::ptr::null(), id: -1 }, // must be terminated
+    stringID_table_t {
+        name: core::ptr::null(),
+        id: -1,
+    }, // must be terminated
 ];
 
 #[cfg(all(test, feature = "oracle"))]

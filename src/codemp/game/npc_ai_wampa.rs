@@ -20,7 +20,9 @@ use crate::codemp::game::anims::{
     BOTH_ATTACK1, BOTH_ATTACK2, BOTH_ATTACK3, BOTH_DEATH17, BOTH_DEATHBACKWARD2, BOTH_GESTURE1,
     BOTH_GESTURE2, BOTH_PAIN1, BOTH_PAIN2,
 };
+use crate::codemp::game::b_public_h::{BS_DEFAULT, BS_SEARCH, BS_WANDER, SCF_LOOK_FOR_ENEMIES};
 use crate::codemp::game::bg_pmove::BG_KnockDownable;
+use crate::codemp::game::bg_public::EF2_USE_ALT_ANIM;
 use crate::codemp::game::bg_public::{
     G2_MODELPART_HEAD, G2_MODELPART_RLEG, G2_MODELPART_WAIST, HANDEXTEND_KNOCKDOWN, MOD_MELEE,
     SETANIM_BOTH, SETANIM_FLAG_HOLD, SETANIM_FLAG_OVERRIDE,
@@ -28,28 +30,28 @@ use crate::codemp::game::bg_public::{
 use crate::codemp::game::g_combat::{G_Damage, G_Dismember, G_Knockdown};
 use crate::codemp::game::g_local::{gentity_t, DAMAGE_NO_ARMOR, DAMAGE_NO_KNOCKBACK, FL_NOTARGET};
 use crate::codemp::game::g_main::{g_entities, level};
-use crate::codemp::game::bg_public::EF2_USE_ALT_ANIM;
-use crate::codemp::game::b_public_h::{BS_DEFAULT, BS_SEARCH, BS_WANDER, SCF_LOOK_FOR_ENEMIES};
 use crate::codemp::game::g_nav::WAYPOINT_NONE;
-use crate::codemp::game::npc_behavior::{NPC_BSSearch, NPC_BSSearchStart, NPC_BSWander};
-use crate::codemp::game::npc_combat::{NPC_CheckEnemy, ValidEnemy};
-use crate::codemp::game::npc_utils::NPC_UpdateAngles;
-use crate::codemp::game::g_timer::{TIMER_Done, TIMER_Done2, TIMER_Exists, TIMER_Remove, TIMER_Set};
+use crate::codemp::game::g_timer::{
+    TIMER_Done, TIMER_Done2, TIMER_Exists, TIMER_Remove, TIMER_Set,
+};
 use crate::codemp::game::g_utils::{G_Sound, G_SoundIndex, G_Throw};
-use crate::codemp::game::npc::{ucmd, NPC_SetAnim, NPC, NPCInfo};
+use crate::codemp::game::npc::{ucmd, NPCInfo, NPC_SetAnim, NPC};
+use crate::codemp::game::npc_behavior::{NPC_BSSearch, NPC_BSSearchStart, NPC_BSWander};
 use crate::codemp::game::npc_combat::G_SetEnemy;
+use crate::codemp::game::npc_combat::{NPC_CheckEnemy, ValidEnemy};
 use crate::codemp::game::npc_goal::UpdateGoal;
 use crate::codemp::game::npc_move::NPC_MoveToGoal;
 use crate::codemp::game::npc_senses::InFOV3;
+use crate::codemp::game::npc_utils::NPC_UpdateAngles;
 use crate::codemp::game::npc_utils::{
     NPC_CheckEnemyExt, NPC_ClearLOS, NPC_FaceEnemy, NPC_GetEntsNearBolt,
 };
+use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_math::{
     flrand, vec3_origin, AngleVectors, Distance, DistanceSquared, VectorCopy, VectorScale,
     VectorSet,
 };
 use crate::codemp::game::q_shared::{crandom, random};
-use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_shared_h::{
     vec3_t, BUTTON_WALKING, CHAN_AUTO, CHAN_VOICE, CHAN_WEAPON, ENTITYNUM_NONE, PITCH, YAW,
 };
@@ -238,7 +240,9 @@ pub unsafe fn Wampa_Slash(boltIndex: c_int, backhand: qboolean) {
 
     i = 0;
     while i < numEnts {
-        let radiusEnt: *mut gentity_t = &mut *core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add(radiusEntNums[i as usize] as usize);
+        let radiusEnt: *mut gentity_t = &mut *core::ptr::addr_of_mut!(g_entities)
+            .cast::<gentity_t>()
+            .add(radiusEntNums[i as usize] as usize);
         if (*radiusEnt).inuse == QFALSE {
             i += 1;
             continue;
@@ -353,7 +357,11 @@ NPC_Wampa_Pain
 -------------------------
 */
 //void NPC_Wampa_Pain( gentity_t *self, gentity_t *inflictor, gentity_t *other, const vec3_t point, int damage, int mod,int hitLoc )
-pub unsafe extern "C" fn NPC_Wampa_Pain(self_: *mut gentity_t, attacker: *mut gentity_t, damage: c_int) {
+pub unsafe extern "C" fn NPC_Wampa_Pain(
+    self_: *mut gentity_t,
+    attacker: *mut gentity_t,
+    damage: c_int,
+) {
     let mut hitByWampa = QFALSE;
     if !attacker.is_null()
         && !(*attacker).client.is_null()
@@ -455,7 +463,12 @@ pub unsafe fn Wampa_Attack(distance: f32, doCharge: qboolean) {
             //leap
             let mut fwd: vec3_t = [0.0; 3];
             let mut yawAng: vec3_t = [0.0; 3];
-            VectorSet(&mut yawAng, 0.0, (*(*NPC).client).ps.viewangles[YAW as usize], 0.0);
+            VectorSet(
+                &mut yawAng,
+                0.0,
+                (*(*NPC).client).ps.viewangles[YAW as usize],
+                0.0,
+            );
             NPC_SetAnim(
                 NPC,
                 SETANIM_BOTH,

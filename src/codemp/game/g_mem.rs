@@ -39,7 +39,10 @@ pub fn G_Alloc(size: c_int) -> *mut c_void {
 
         if *addr_of!(allocPoint) + size > POOLSIZE {
             // bk010103 - was %u, but is signed
-            G_Error(&format!("G_Alloc: failed on allocation of {} bytes\n", size));
+            G_Error(&format!(
+                "G_Alloc: failed on allocation of {} bytes\n",
+                size
+            ));
             // return NULL;  -- unreachable: G_Error (-> !) does not return.
         }
 

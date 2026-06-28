@@ -14,37 +14,39 @@ use crate::codemp::game::b_public_h::{
     bState_t, BS_ADVANCE_FIGHT, BS_DEFAULT, BS_JUMP, BS_NOCLIP, BS_SEARCH, BS_WANDER, JS_FACING,
     NPCAI_CUSTOM_GRAVITY, NPCAI_NO_COLL_AVOID, NPCAI_TOUCHED_GOAL, SCF_WALKING,
 };
+use crate::codemp::game::bg_pmove::BG_SabersOff;
 use crate::codemp::game::bg_public::{
-    EF_NODRAW, EF_TELEPORT_BIT, ET_ITEM, ET_MOVER, ET_NPC, EV_GLOBAL_SOUND, MOD_CRUSH,
-    MOD_FALLING, MOD_UNKNOWN, PMF_TIME_KNOCKBACK, SETANIM_FLAG_HOLD, SETANIM_FLAG_OVERRIDE,
+    EF_NODRAW, EF_TELEPORT_BIT, ET_ITEM, ET_MOVER, ET_NPC, EV_GLOBAL_SOUND, MOD_CRUSH, MOD_FALLING,
+    MOD_UNKNOWN, PMF_TIME_KNOCKBACK, SETANIM_FLAG_HOLD, SETANIM_FLAG_OVERRIDE,
     SETANIM_FLAG_RESTART, SETANIM_LEGS, SETANIM_TORSO, STAT_ARMOR, STAT_HEALTH, STAT_MAX_HEALTH,
     STAT_WEAPONS, TEAM_SPECTATOR,
 };
 use crate::codemp::game::bg_saga::WPTable;
-use crate::codemp::game::g_misc::{TAG_GetAngles, TAG_GetOrigin, TAG_GetOrigin2, TAG_GetRadius};
-use crate::codemp::game::npc_combat::{ChangeWeapon, G_ClearEnemy, G_SetEnemy};
 use crate::codemp::game::g_client::{SetClientViewAngle, SpotWouldTelefrag2};
 use crate::codemp::game::g_combat::{player_die, G_Damage};
-use crate::codemp::game::g_mover::{
-    G_PlayDoorLoopSound, G_PlayDoorSound, InitMoverTrData, LockDoors, MatchTeam, UnLockDoors,
-    BMS_END, BMS_START,
-};
 use crate::codemp::game::g_local::{
     gentity_s, gentity_t, FL_GODMODE, FL_INACTIVE, FL_NOTARGET, FL_NO_KNOCKBACK, FRAMETIME,
     MOVER_1TO2, MOVER_2TO1, MOVER_POS1, MOVER_POS2,
 };
-use crate::codemp::game::g_main::{g_developer, g_entities, g_gravity, level as g_level, Com_Printf};
+use crate::codemp::game::g_main::{
+    g_developer, g_entities, g_gravity, level as g_level, Com_Printf,
+};
 use crate::codemp::game::g_mem::G_Alloc;
+use crate::codemp::game::g_misc::{TAG_GetAngles, TAG_GetOrigin, TAG_GetOrigin2, TAG_GetRadius};
+use crate::codemp::game::g_mover::{
+    G_PlayDoorLoopSound, G_PlayDoorSound, InitMoverTrData, LockDoors, MatchTeam, UnLockDoors,
+    BMS_END, BMS_START,
+};
 use crate::codemp::game::g_nav::{NAV_FindClosestWaypointForEnt, NPC_SetMoveGoal, WAYPOINT_NONE};
 use crate::codemp::game::g_public_h::{
     bSet_t, parms_t, BSET_ANGER, BSET_ATTACK, BSET_AWAKE, BSET_BLOCKED, BSET_DEATH, BSET_DELAYED,
     BSET_FFDEATH, BSET_FFIRE, BSET_FLEE, BSET_INVALID, BSET_LOSTENEMY, BSET_MINDTRICK, BSET_PAIN,
     BSET_SPAWN, BSET_USE, BSET_VICTORY, MAX_PARMS, NUM_BSETS, SVF_BROADCAST, SVF_ICARUS_FREEZE,
-    SVF_NOCLIENT, SVF_PLAYER_USABLE, TID_ANGLE_FACE, TID_ANIM_BOTH, TID_ANIM_LOWER,
-    TID_ANIM_UPPER, TID_BSTATE, TID_CHAN_VOICE, TID_LOCATION, TID_MOVE_NAV, TID_RESIZE,
+    SVF_NOCLIENT, SVF_PLAYER_USABLE, TID_ANGLE_FACE, TID_ANIM_BOTH, TID_ANIM_LOWER, TID_ANIM_UPPER,
+    TID_BSTATE, TID_CHAN_VOICE, TID_LOCATION, TID_MOVE_NAV, TID_RESIZE,
 };
-use crate::codemp::game::bg_pmove::BG_SabersOff;
 use crate::codemp::game::npc_behavior::NPC_BSSearchStart;
+use crate::codemp::game::npc_combat::{ChangeWeapon, G_ClearEnemy, G_SetEnemy};
 use crate::codemp::game::npc_stats::BSTable;
 
 // Native libc `atoi`/`atof` (the C uses both directly: `atoi((char*)data)`,
@@ -63,7 +65,7 @@ use crate::codemp::game::g_utils::{
 };
 use crate::codemp::game::q_math::{AngleDelta, AngleSubtract, VectorClear, VectorCopy, VectorMA};
 use crate::codemp::game::q_shared::{
-    Com_sprintf, GetIDForString, Q_stricmp, Q_strncmp, Q_strncpyz, Q_strupr, COM_StripExtension,
+    COM_StripExtension, Com_sprintf, GetIDForString, Q_stricmp, Q_strncmp, Q_strncpyz, Q_strupr,
 };
 use crate::codemp::game::q_shared_h::{
     qboolean, stringID_table_t, vec3_t, vec4_t, CHAN_AUTO, CHAN_VOICE, MAX_GENTITIES, MAX_QPATH,
@@ -143,8 +145,9 @@ pub unsafe fn G_DebugPrint(level: c_int, text: &str) {
                 entNum = 0;
             }
 
-            let script_targetname =
-                (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entNum as usize)).script_targetname;
+            let script_targetname = (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add(entNum as usize))
+            .script_targetname;
             // glibc printf renders a NULL `%s` as "(null)"; reproduce that for the C's
             // unconditional `printf("%s", ...script_targetname)`.
             let name = if script_targetname.is_null() {
@@ -154,7 +157,9 @@ pub unsafe fn G_DebugPrint(level: c_int, text: &str) {
                     .to_string_lossy()
                     .into_owned()
             };
-            Com_Printf(&format!("{S_COLOR_BLUE}DEBUG: {name}({entNum}): {buffer}\n"));
+            Com_Printf(&format!(
+                "{S_COLOR_BLUE}DEBUG: {name}({entNum}): {buffer}\n"
+            ));
         }
 
         // default / WL_VERBOSE
@@ -225,12 +230,18 @@ pub unsafe fn Q3_GetAnimBoth(ent: *mut gentity_t) -> *mut c_char {
     let upperName: *mut c_char = Q3_GetAnimUpper(ent);
 
     if lowerName.is_null() || *lowerName == 0 {
-        G_DebugPrint(WL_WARNING, "Q3_GetAnimBoth: NULL legs animation string found!\n");
+        G_DebugPrint(
+            WL_WARNING,
+            "Q3_GetAnimBoth: NULL legs animation string found!\n",
+        );
         return null_mut();
     }
 
     if upperName.is_null() || *upperName == 0 {
-        G_DebugPrint(WL_WARNING, "Q3_GetAnimBoth: NULL torso animation string found!\n");
+        G_DebugPrint(
+            WL_WARNING,
+            "Q3_GetAnimBoth: NULL torso animation string found!\n",
+        );
         return null_mut();
     }
 
@@ -261,7 +272,8 @@ pub unsafe fn Q3_PlaySound(
     name: *const c_char,
     channel: *const c_char,
 ) -> qboolean {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
     let mut finalName = [0 as c_char; MAX_QPATH];
     // set a default so the compiler doesn't bitch
     let mut voice_chan: c_int = CHAN_VOICE;
@@ -344,7 +356,8 @@ pub unsafe fn Q3_PlaySound(
 /// # Safety
 /// `g_entities` must be initialised; `type`/`name` must be valid C strings.
 pub unsafe fn Q3_Play(taskID: c_int, entID: c_int, type_: *const c_char, name: *const c_char) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if Q_stricmp(type_, c"PLAY_ROFF".as_ptr()) == 0 {
         // Try to load the requested ROFF
@@ -375,7 +388,6 @@ pub unsafe fn Q3_Play(taskID: c_int, entID: c_int, type_: *const c_char, name: *
     }
 }
 
-
 // =====================================================================================
 // "NOT SUPPORTED IN MP" stub family
 //
@@ -389,67 +401,93 @@ pub unsafe fn Q3_Play(taskID: c_int, entID: c_int, type_: *const c_char, name: *
 
 /// `void Q3_SetDPitch( int entID, float data )` (g_ICARUScb.c:2607) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetDPitch(_entID: c_int, _data: f32) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetDPitch: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetDPitch: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetDYaw( int entID, float data )` (g_ICARUScb.c:2623) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetDYaw(_entID: c_int, _data: f32) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetDYaw: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetDYaw: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetShootDist( int entID, float data )` (g_ICARUScb.c:2639) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetShootDist(_entID: c_int, _data: f32) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetShootDist: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetShootDist: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetVisrange( int entID, float data )` (g_ICARUScb.c:2655) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetVisrange(_entID: c_int, _data: f32) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetVisrange: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetVisrange: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetEarshot( int entID, float data )` (g_ICARUScb.c:2671) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetEarshot(_entID: c_int, _data: f32) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetEarshot: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetEarshot: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetVigilance( int entID, float data )` (g_ICARUScb.c:2687) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetVigilance(_entID: c_int, _data: f32) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetVigilance: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetVigilance: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetVFOV( int entID, int data )` (g_ICARUScb.c:2703) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetVFOV(_entID: c_int, _data: c_int) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetVFOV: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetVFOV: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetHFOV( int entID, int data )` (g_ICARUScb.c:2719) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetHFOV(_entID: c_int, _data: c_int) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetHFOV: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetHFOV: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetWidth( int entID, int data )` (g_ICARUScb.c:2735) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetWidth(_entID: c_int, _data: c_int) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetWidth: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetWidth: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetVampire( int entID, qboolean vampire )` (g_ICARUScb.c:2803) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetVampire(_entID: c_int, _vampire: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetVampire: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetVampire: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetGreetAllies( int entID, qboolean greet )` (g_ICARUScb.c:2817) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetGreetAllies(_entID: c_int, _greet: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetGreetAllies: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetGreetAllies: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetViewTarget (int entID, const char *name)` (g_ICARUScb.c:2833) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetViewTarget(_entID: c_int, _name: *const c_char) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetViewTarget: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetViewTarget: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetWatchTarget (int entID, const char *name)` (g_ICARUScb.c:2849) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetWatchTarget(_entID: c_int, _name: *const c_char) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetWatchTarget: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetWatchTarget: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `static void Q3_SetWalkSpeed (int entID, int int_data)` (g_ICARUScb.c:3139) — sets the NPC's
@@ -459,17 +497,24 @@ pub fn Q3_SetWatchTarget(_entID: c_int, _name: *const c_char) {
 /// # Safety
 /// `g_entities` must be initialised; an NPC entity has a non-null `client`.
 pub unsafe fn Q3_SetWalkSpeed(entID: c_int, int_data: c_int) {
-    let self_: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let self_: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if self_.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetWalkSpeed: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetWalkSpeed: invalid entID {entID}\n"),
+        );
         return;
     }
 
     if (*self_).NPC.is_null() {
         G_DebugPrint(
             WL_ERROR,
-            &format!("Q3_SetWalkSpeed: '{}' is not an NPC!\n", cstr_or_null((*self_).targetname)),
+            &format!(
+                "Q3_SetWalkSpeed: '{}' is not an NPC!\n",
+                cstr_or_null((*self_).targetname)
+            ),
         );
         return;
     }
@@ -490,17 +535,24 @@ pub unsafe fn Q3_SetWalkSpeed(entID: c_int, int_data: c_int) {
 /// # Safety
 /// `g_entities` must be initialised; an NPC entity has a non-null `client`.
 pub unsafe fn Q3_SetRunSpeed(entID: c_int, int_data: c_int) {
-    let self_: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let self_: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if self_.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetRunSpeed: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetRunSpeed: invalid entID {entID}\n"),
+        );
         return;
     }
 
     if (*self_).NPC.is_null() {
         G_DebugPrint(
             WL_ERROR,
-            &format!("Q3_SetRunSpeed: '{}' is not an NPC!\n", cstr_or_null((*self_).targetname)),
+            &format!(
+                "Q3_SetRunSpeed: '{}' is not an NPC!\n",
+                cstr_or_null((*self_).targetname)
+            ),
         );
         return;
     }
@@ -516,97 +568,138 @@ pub unsafe fn Q3_SetRunSpeed(entID: c_int, int_data: c_int) {
 
 /// `void Q3_SetYawSpeed (int entID, float float_data)` (g_ICARUScb.c:2990) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetYawSpeed(_entID: c_int, _float_data: f32) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetYawSpeed: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetYawSpeed: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetAggression(int entID, int int_data)` (g_ICARUScb.c:3006) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetAggression(_entID: c_int, _int_data: c_int) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetAggression: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetAggression: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetAim(int entID, int int_data)` (g_ICARUScb.c:3022) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetAim(_entID: c_int, _int_data: c_int) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetAim: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetAim: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetShotSpacing(int entID, int int_data)` (g_ICARUScb.c:3116) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetShotSpacing(_entID: c_int, _int_data: c_int) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetShotSpacing: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetShotSpacing: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetFollowDist(int entID, float float_data)` (g_ICARUScb.c:3131) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetFollowDist(_entID: c_int, _float_data: f32) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetFollowDist: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetFollowDist: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetRemoveTarget (int entID, const char *target)` (g_ICARUScb.c:3331) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetRemoveTarget(_entID: c_int, _target: *const c_char) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetRemoveTarget: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetRemoveTarget: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetMusicState( const char *dms )` (g_ICARUScb.c:3399) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetMusicState(_dms: *const c_char) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetMusicState: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetMusicState: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetForcePowerLevel ( int entID, int forcePower, int forceLevel )` (g_ICARUScb.c:3405) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetForcePowerLevel(_entID: c_int, _forcePower: c_int, _forceLevel: c_int) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetForcePowerLevel: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetForcePowerLevel: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetCaptureGoal( int entID, const char *name )` (g_ICARUScb.c:3470) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetCaptureGoal(_entID: c_int, _name: *const c_char) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetCaptureGoal: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetCaptureGoal: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetIgnorePain( int entID, qboolean data)` (g_ICARUScb.c:3496) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetIgnorePain(_entID: c_int, _data: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetIgnorePain: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetIgnorePain: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetIgnoreEnemies( int entID, qboolean data)` (g_ICARUScb.c:3509) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetIgnoreEnemies(_entID: c_int, _data: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetIgnoreEnemies: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetIgnoreEnemies: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetIgnoreAlerts( int entID, qboolean data)` (g_ICARUScb.c:3522) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetIgnoreAlerts(_entID: c_int, _data: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetIgnoreAlerts: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetIgnoreAlerts: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetDontShoot( int entID, qboolean add)` (g_ICARUScb.c:3559) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetDontShoot(_entID: c_int, _add: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetDontShoot: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetDontShoot: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetDontFire( int entID, qboolean add)` (g_ICARUScb.c:3572) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetDontFire(_entID: c_int, _add: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetDontFire: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetDontFire: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetFireWeapon(int entID, qboolean add)` (g_ICARUScb.c:3585) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetFireWeapon(_entID: c_int, _add: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetFireWeapon: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetFireWeapon: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetLockedEnemy ( int entID, qboolean locked)` (g_ICARUScb.c:3658) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetLockedEnemy(_entID: c_int, _locked: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetLockedEnemy: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetLockedEnemy: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetCinematicSkipScript( char *scriptname )` (g_ICARUScb.c:3672) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetCinematicSkipScript(_scriptname: *mut c_char) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetCinematicSkipScript: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(
+            WL_WARNING,
+            "Q3_SetCinematicSkipScript: NOT SUPPORTED IN MP\n",
+        );
+    }
 }
 
 /// `void Q3_SetNoMindTrick( int entID, qboolean add)` (g_ICARUScb.c:3685) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetNoMindTrick(_entID: c_int, _add: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetNoMindTrick: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetNoMindTrick: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetCrouched( int entID, qboolean add)` (g_ICARUScb.c:3698) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetCrouched(_entID: c_int, _add: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetCrouched: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetCrouched: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `static void Q3_SetWalking( int entID, qboolean add)` (g_ICARUScb.c:3942) — toggles the
@@ -615,17 +708,24 @@ pub fn Q3_SetCrouched(_entID: c_int, _add: qboolean) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetWalking(entID: c_int, add: qboolean) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if ent.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetWalking: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetWalking: invalid entID {entID}\n"),
+        );
         return;
     }
 
     if (*ent).NPC.is_null() {
         G_DebugPrint(
             WL_ERROR,
-            &format!("Q3_SetWalking: '{}' is not an NPC!\n", cstr_or_null((*ent).targetname)),
+            &format!(
+                "Q3_SetWalking: '{}' is not an NPC!\n",
+                cstr_or_null((*ent).targetname)
+            ),
         );
         return;
     }
@@ -639,102 +739,142 @@ pub unsafe fn Q3_SetWalking(entID: c_int, add: qboolean) {
 
 /// `void Q3_SetRunning( int entID, qboolean add)` (g_ICARUScb.c:3724) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetRunning(_entID: c_int, _add: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetRunning: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetRunning: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetForcedMarch( int entID, qboolean add)` (g_ICARUScb.c:3737) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetForcedMarch(_entID: c_int, _add: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetForcedMarch: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetForcedMarch: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetChaseEnemies( int entID, qboolean add)` (g_ICARUScb.c:3749) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetChaseEnemies(_entID: c_int, _add: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetChaseEnemies: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetChaseEnemies: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetLookForEnemies( int entID, qboolean add)` (g_ICARUScb.c:3763) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetLookForEnemies(_entID: c_int, _add: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetLookForEnemies: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetLookForEnemies: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetFaceMoveDir( int entID, qboolean add)` (g_ICARUScb.c:3775) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetFaceMoveDir(_entID: c_int, _add: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetFaceMoveDir: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetFaceMoveDir: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetAltFire( int entID, qboolean add)` (g_ICARUScb.c:3788) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetAltFire(_entID: c_int, _add: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetAltFire: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetAltFire: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetDontFlee( int entID, qboolean add)` (g_ICARUScb.c:3801) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetDontFlee(_entID: c_int, _add: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetDontFlee: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetDontFlee: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetNoResponse( int entID, qboolean add)` (g_ICARUScb.c:3814) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetNoResponse(_entID: c_int, _add: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetNoResponse: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetNoResponse: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetCombatTalk( int entID, qboolean add)` (g_ICARUScb.c:3827) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetCombatTalk(_entID: c_int, _add: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetCombatTalk: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetCombatTalk: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetAlertTalk( int entID, qboolean add)` (g_ICARUScb.c:3840) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetAlertTalk(_entID: c_int, _add: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetAlertTalk: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetAlertTalk: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetUseCpNearest( int entID, qboolean add)` (g_ICARUScb.c:3853) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetUseCpNearest(_entID: c_int, _add: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetUseCpNearest: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetUseCpNearest: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetNoForce( int entID, qboolean add)` (g_ICARUScb.c:3866) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetNoForce(_entID: c_int, _add: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetNoForce: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetNoForce: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetNoAcrobatics( int entID, qboolean add)` (g_ICARUScb.c:3879) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetNoAcrobatics(_entID: c_int, _add: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetNoAcrobatics: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetNoAcrobatics: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetUseSubtitles( int entID, qboolean add)` (g_ICARUScb.c:3892) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetUseSubtitles(_entID: c_int, _add: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetUseSubtitles: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetUseSubtitles: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetNoFallToDeath( int entID, qboolean add)` (g_ICARUScb.c:3905) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetNoFallToDeath(_entID: c_int, _add: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetNoFallToDeath: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetNoFallToDeath: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetDismemberable( int entID, qboolean dismemberable)` (g_ICARUScb.c:3918) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetDismemberable(_entID: c_int, _dismemberable: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetDismemberable: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetDismemberable: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetMoreLight( int entID, qboolean add )` (g_ICARUScb.c:3932) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetMoreLight(_entID: c_int, _add: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetMoreLight: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetMoreLight: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetUndying( int entID, qboolean undying)` (g_ICARUScb.c:3945) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetUndying(_entID: c_int, _undying: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetUndying: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetUndying: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetInvincible( int entID, qboolean invincible)` (g_ICARUScb.c:3958) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetInvincible(_entID: c_int, _invincible: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetInvicible: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetInvicible: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetForceInvincible( int entID, qboolean forceInv )` (g_ICARUScb.c:3972) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetForceInvincible(_entID: c_int, _forceInv: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetForceInvicible: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetForceInvicible: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `static void Q3_SetNoAvoid( int entID, qboolean noAvoid)` (g_ICARUScb.c:4237) — toggles the
@@ -743,17 +883,24 @@ pub fn Q3_SetForceInvincible(_entID: c_int, _forceInv: qboolean) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetNoAvoid(entID: c_int, noAvoid: qboolean) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if ent.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetNoAvoid: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetNoAvoid: invalid entID {entID}\n"),
+        );
         return;
     }
 
     if (*ent).NPC.is_null() {
         G_DebugPrint(
             WL_ERROR,
-            &format!("Q3_SetNoAvoid: '{}' is not an NPC!\n", cstr_or_null((*ent).targetname)),
+            &format!(
+                "Q3_SetNoAvoid: '{}' is not an NPC!\n",
+                cstr_or_null((*ent).targetname)
+            ),
         );
         return;
     }
@@ -767,113 +914,160 @@ pub unsafe fn Q3_SetNoAvoid(entID: c_int, noAvoid: qboolean) {
 
 /// `void Q3_CameraGroup( int entID, char *camG)` (g_ICARUScb.c:4183) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_CameraGroup(_entID: c_int, _camG: *mut c_char) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_CameraGroup: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_CameraGroup: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_CameraGroupZOfs( float camGZOfs )` (g_ICARUScb.c:4196) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_CameraGroupZOfs(_camGZOfs: f32) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_CameraGroupZOfs: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_CameraGroupZOfs: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_CameraGroupTag( char *camGTag )` (g_ICARUScb.c:4208) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_CameraGroupTag(_camGTag: *mut c_char) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_CameraGroupTag: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_CameraGroupTag: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_RemoveRHandModel( int entID, char *addModel)` (g_ICARUScb.c:4219) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_RemoveRHandModel(_entID: c_int, _addModel: *mut c_char) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_RemoveRHandModel: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_RemoveRHandModel: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_AddRHandModel( int entID, char *addModel)` (g_ICARUScb.c:4229) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_AddRHandModel(_entID: c_int, _addModel: *mut c_char) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_AddRHandModel: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_AddRHandModel: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_AddLHandModel( int entID, char *addModel)` (g_ICARUScb.c:4239) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_AddLHandModel(_entID: c_int, _addModel: *mut c_char) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_AddLHandModel: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_AddLHandModel: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_RemoveLHandModel( int entID, char *addModel)` (g_ICARUScb.c:4249) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_RemoveLHandModel(_entID: c_int, _addModel: *mut c_char) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_RemoveLHandModel: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_RemoveLHandModel: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_LookTarget( int entID, char *targetName)` (g_ICARUScb.c:4261) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_LookTarget(_entID: c_int, _targetName: *mut c_char) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_LookTarget: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_LookTarget: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_Face( int entID,int expression, float holdtime)` (g_ICARUScb.c:4274) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_Face(_entID: c_int, _expression: c_int, _holdtime: f32) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_Face: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_Face: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `qboolean Q3_SetLocation( int entID, const char *location )` (g_ICARUScb.c:4288) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetLocation(_entID: c_int, _location: *const c_char) -> qboolean {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetLocation: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetLocation: NOT SUPPORTED IN MP\n");
+    }
     QTRUE
 }
 
 /// `void Q3_SetPlayerLocked( int entID, qboolean locked )` (g_ICARUScb.c:4304) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetPlayerLocked(_entID: c_int, _locked: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetPlayerLocked: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetPlayerLocked: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetLockPlayerWeapons( int entID, qboolean locked )` (g_ICARUScb.c:4318) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetLockPlayerWeapons(_entID: c_int, _locked: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetLockPlayerWeapons: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetLockPlayerWeapons: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetNoImpactDamage( int entID, qboolean noImp )` (g_ICARUScb.c:4333) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetNoImpactDamage(_entID: c_int, _noImp: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetNoImpactDamage: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetNoImpactDamage: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetDelayScriptTime(int entID, int delayTime)` (g_ICARUScb.c:4445) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetDelayScriptTime(_entID: c_int, _delayTime: c_int) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetDelayScriptTime: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetDelayScriptTime: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetDisableShaderAnims( int entID, int disabled )` (g_ICARUScb.c:4491) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetDisableShaderAnims(_entID: c_int, _disabled: c_int) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetDisableShaderAnims: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(
+            WL_WARNING,
+            "Q3_SetDisableShaderAnims: NOT SUPPORTED IN MP\n",
+        );
+    }
 }
 
 /// `void Q3_SetShaderAnim( int entID, int disabled )` (g_ICARUScb.c:4506) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetShaderAnim(_entID: c_int, _disabled: c_int) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetShaderAnim: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetShaderAnim: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetStartFrame( int entID, int startFrame )` (g_ICARUScb.c:4521) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetStartFrame(_entID: c_int, _startFrame: c_int) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetStartFrame: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetStartFrame: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetEndFrame( int entID, int endFrame )` (g_ICARUScb.c:4536) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetEndFrame(_entID: c_int, _endFrame: c_int) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetEndFrame: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetEndFrame: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetAnimFrame( int entID, int animFrame )` (g_ICARUScb.c:4550) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetAnimFrame(_entID: c_int, _animFrame: c_int) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetAnimFrame: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetAnimFrame: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetLoopAnim( int entID, qboolean loopAnim )` (g_ICARUScb.c:4564) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetLoopAnim(_entID: c_int, _loopAnim: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetLoopAnim: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetLoopAnim: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetShields( int entID, qboolean shields )` (g_ICARUScb.c:4579) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetShields(_entID: c_int, _shields: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetShields: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetShields: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetCleanDamagingEnts( void )` (g_ICARUScb.c:4655) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetCleanDamagingEnts() {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetCleanDamagingEnts: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetCleanDamagingEnts: NOT SUPPORTED IN MP\n");
+    }
 }
 
 // `vec4_t textcolor_caption; vec4_t textcolor_center; vec4_t textcolor_scroll;`
@@ -886,7 +1080,9 @@ static mut textcolor_scroll: vec4_t = [0.0; 4];
 
 /// `void SetTextColor ( vec4_t textcolor,const char *color)` (g_ICARUScb.c:4670) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn SetTextColor(_textcolor: vec4_t, _color: *const c_char) {
-    unsafe { G_DebugPrint(WL_WARNING, "SetTextColor: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "SetTextColor: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `static void Q3_SetCaptionTextColor ( const char *color)` (g_ICARUScb.c:4683) — change the
@@ -919,15 +1115,18 @@ pub unsafe fn Q3_SetScrollTextColor(color: *const c_char) {
 /// `void Q3_ScrollText ( const char *id)` (g_ICARUScb.c:4719) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_ScrollText(_id: *const c_char) {
     //trap_SendServerCommand( -1, va("st \"%s\"", id));
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_ScrollText: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_ScrollText: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_LCARSText ( const char *id)` (g_ICARUScb.c:4734) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_LCARSText(_id: *const c_char) {
     //trap_SendServerCommand( -1, va("lt \"%s\"", id));
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_ScrollText: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_ScrollText: NOT SUPPORTED IN MP\n");
+    }
 }
-
 
 // =====================================================================================
 // Entity-field setters / leaf callbacks — the portable vein of the ICARUS callback layer.
@@ -939,14 +1138,14 @@ pub fn Q3_LCARSText(_id: *const c_char) {
 // the ICARUS `setTable`/`SET_*` register enum and mover-trajectory state respectively).
 // =====================================================================================
 
-
 /// `void Q3_Use( int entID, const char *target )` (g_ICARUScb.c:984) — uses an entity by
 /// firing its targets.
 ///
 /// # Safety
 /// `g_entities` must be initialised; `target` may be NULL (handled).
 pub unsafe fn Q3_Use(entID: c_int, target: *const c_char) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     // C: if ( !ent ) — &g_entities[entID] is never NULL, but mirror the check faithfully.
     if ent.is_null() {
@@ -968,7 +1167,8 @@ pub unsafe fn Q3_Use(entID: c_int, target: *const c_char) {
 /// # Safety
 /// `g_entities` must be initialised; calls the target's `die` fn-pointer.
 pub unsafe fn Q3_Kill(entID: c_int, name: *const c_char) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
     let victim: *mut gentity_t;
 
     if Q_stricmp(name, c"self".as_ptr()) == 0 {
@@ -976,13 +1176,20 @@ pub unsafe fn Q3_Kill(entID: c_int, name: *const c_char) {
     } else if Q_stricmp(name, c"enemy".as_ptr()) == 0 {
         victim = (*ent).enemy;
     } else {
-        victim = G_Find(null_mut(), core::mem::offset_of!(gentity_t, targetname), name);
+        victim = G_Find(
+            null_mut(),
+            core::mem::offset_of!(gentity_t, targetname),
+            name,
+        );
     }
 
     if victim.is_null() {
         G_DebugPrint(
             WL_WARNING,
-            &format!("Q3_Kill: can't find {}\n", CStr::from_ptr(name).to_string_lossy()),
+            &format!(
+                "Q3_Kill: can't find {}\n",
+                CStr::from_ptr(name).to_string_lossy()
+            ),
         );
         return;
     }
@@ -1014,7 +1221,10 @@ pub unsafe fn Q3_Kill(entID: c_int, name: *const c_char) {
 pub unsafe fn Q3_RemoveEnt(victim: *mut gentity_t) {
     if !(*victim).client.is_null() {
         if (*victim).s.eType != ET_NPC {
-            G_DebugPrint(WL_WARNING, "Q3_RemoveEnt: You can't remove clients in MP!\n");
+            G_DebugPrint(
+                WL_WARNING,
+                "Q3_RemoveEnt: You can't remove clients in MP!\n",
+            );
             debug_assert!(false); //can't remove clients in MP
         } else {
             //remove the NPC
@@ -1046,7 +1256,8 @@ pub unsafe fn Q3_RemoveEnt(victim: *mut gentity_t) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_Remove(entID: c_int, name: *const c_char) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
     let mut victim: *mut gentity_t;
 
     if Q_stricmp(c"self".as_ptr(), name) == 0 {
@@ -1054,7 +1265,10 @@ pub unsafe fn Q3_Remove(entID: c_int, name: *const c_char) {
         if victim.is_null() {
             G_DebugPrint(
                 WL_WARNING,
-                &format!("Q3_Remove: can't find {}\n", CStr::from_ptr(name).to_string_lossy()),
+                &format!(
+                    "Q3_Remove: can't find {}\n",
+                    CStr::from_ptr(name).to_string_lossy()
+                ),
             );
             return;
         }
@@ -1064,17 +1278,27 @@ pub unsafe fn Q3_Remove(entID: c_int, name: *const c_char) {
         if victim.is_null() {
             G_DebugPrint(
                 WL_WARNING,
-                &format!("Q3_Remove: can't find {}\n", CStr::from_ptr(name).to_string_lossy()),
+                &format!(
+                    "Q3_Remove: can't find {}\n",
+                    CStr::from_ptr(name).to_string_lossy()
+                ),
             );
             return;
         }
         Q3_RemoveEnt(victim);
     } else {
-        victim = G_Find(null_mut(), core::mem::offset_of!(gentity_t, targetname), name);
+        victim = G_Find(
+            null_mut(),
+            core::mem::offset_of!(gentity_t, targetname),
+            name,
+        );
         if victim.is_null() {
             G_DebugPrint(
                 WL_WARNING,
-                &format!("Q3_Remove: can't find {}\n", CStr::from_ptr(name).to_string_lossy()),
+                &format!(
+                    "Q3_Remove: can't find {}\n",
+                    CStr::from_ptr(name).to_string_lossy()
+                ),
             );
             return;
         }
@@ -1093,7 +1317,8 @@ pub unsafe fn Q3_Remove(entID: c_int, name: *const c_char) {
 /// `g_entities` must be initialised; `name` must be a valid C string.
 pub unsafe fn Q3_SetLoopSound(entID: c_int, name: *const c_char) {
     let index: c_int;
-    let self_: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let self_: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if Q_stricmp(c"NULL".as_ptr(), name) == 0 || Q_stricmp(c"NONE".as_ptr(), name) == 0 {
         (*self_).s.loopSound = 0;
@@ -1123,11 +1348,18 @@ pub unsafe fn Q3_SetLoopSound(entID: c_int, name: *const c_char) {
 /// # Safety
 /// `g_entities` must be initialised; `name` must be a valid C string.
 pub unsafe fn Q3_SetICARUSFreeze(_entID: c_int, name: *const c_char, freeze: qboolean) {
-    let mut self_: *mut gentity_t =
-        G_Find(null_mut(), core::mem::offset_of!(gentity_t, targetname), name);
+    let mut self_: *mut gentity_t = G_Find(
+        null_mut(),
+        core::mem::offset_of!(gentity_t, targetname),
+        name,
+    );
     if self_.is_null() {
         //hmm, targetname failed, try script_targetname?
-        self_ = G_Find(null_mut(), core::mem::offset_of!(gentity_t, script_targetname), name);
+        self_ = G_Find(
+            null_mut(),
+            core::mem::offset_of!(gentity_t, script_targetname),
+            name,
+        );
     }
 
     if self_.is_null() {
@@ -1152,7 +1384,10 @@ pub unsafe fn Q3_SetICARUSFreeze(_entID: c_int, name: *const c_char, freeze: qbo
 /// unsupported in MP: warns and no-ops.
 pub fn Q3_SetViewEntity(_entID: c_int, _name: *const c_char) {
     unsafe {
-        G_DebugPrint(WL_WARNING, "Q3_SetViewEntity currently unsupported in MP, ask if you need it.\n");
+        G_DebugPrint(
+            WL_WARNING,
+            "Q3_SetViewEntity currently unsupported in MP, ask if you need it.\n",
+        );
     }
 }
 
@@ -1163,7 +1398,8 @@ pub fn Q3_SetViewEntity(_entID: c_int, _name: *const c_char) {
 /// # Safety
 /// `g_entities` must be initialised; the entity must be a client.
 pub unsafe fn Q3_SetWeapon(entID: c_int, wp_name: *const c_char) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
     let wp: c_int = GetIDForString(addr_of!(WPTable) as *const stringID_table_t, wp_name);
 
     (*(*ent).client).ps.stats[STAT_WEAPONS as usize] = 1 << wp;
@@ -1173,31 +1409,45 @@ pub unsafe fn Q3_SetWeapon(entID: c_int, wp_name: *const c_char) {
 /// `void Q3_SetItem (int entID, const char *item_name)` (g_ICARUScb.c:2941) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetItem(_entID: c_int, _item_name: *const c_char) {
     //rww - unused in mp
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetItem: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetItem: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetTarget2 (int entID, const char *target2)` (g_ICARUScb.c:3300) — does not exist in MP: warns and no-ops.
 pub fn Q3_SetTarget2(_entID: c_int, _target2: *const c_char) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetTarget2 does not exist in MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetTarget2 does not exist in MP\n");
+    }
 }
 
 /// `void Q3_SetPainTarget (int entID, const char *targetname)` (g_ICARUScb.c:3347) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetPainTarget(_entID: c_int, _targetname: *const c_char) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetPainTarget: NOT SUPPORTED IN MP\n"); }
+    unsafe {
+        G_DebugPrint(WL_WARNING, "Q3_SetPainTarget: NOT SUPPORTED IN MP\n");
+    }
 }
 
 /// `void Q3_SetEvent( int entID, const char *event_name )` (g_ICARUScb.c:3483) — NOT SUPPORTED IN MP: warns and no-ops.
 pub fn Q3_SetEvent(_entID: c_int, _event_name: *const c_char) {
     //rwwFIXMEFIXME: Use in MP?
     unsafe {
-        G_DebugPrint(WL_WARNING, "Q3_SetEvent: NOT SUPPORTED IN MP (may be in future, ask if needed)\n");
+        G_DebugPrint(
+            WL_WARNING,
+            "Q3_SetEvent: NOT SUPPORTED IN MP (may be in future, ask if needed)\n",
+        );
     }
 }
 
 /// `void Q3_SetAnimHoldTime( int entID, int int_data, qboolean lower )` (g_ICARUScb.c:2273) —
 /// not currently supported in MP: warns and no-ops (body `#if`'d out in the C).
 pub fn Q3_SetAnimHoldTime(_entID: c_int, _int_data: c_int, _lower: qboolean) {
-    unsafe { G_DebugPrint(WL_WARNING, "Q3_SetAnimHoldTime is not currently supported in MP\n"); }
+    unsafe {
+        G_DebugPrint(
+            WL_WARNING,
+            "Q3_SetAnimHoldTime is not currently supported in MP\n",
+        );
+    }
 }
 
 /// `static qboolean Q3_SetTeleportDest( int entID, vec3_t org )` (g_ICARUScb.c:1898) — copies
@@ -1208,7 +1458,8 @@ pub fn Q3_SetAnimHoldTime(_entID: c_int, _int_data: c_int, _lower: qboolean) {
 /// # Safety
 /// `g_entities`/`level` must be initialised; may spawn an entity.
 pub unsafe fn Q3_SetTeleportDest(entID: c_int, org: &vec3_t) -> qboolean {
-    let teleEnt: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let teleEnt: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if !teleEnt.is_null() {
         if SpotWouldTelefrag2(teleEnt, org) != QFALSE {
@@ -1235,7 +1486,8 @@ pub unsafe fn Q3_SetTeleportDest(entID: c_int, org: &vec3_t) -> qboolean {
 /// # Safety
 /// `g_entities` must be initialised; relinks the entity.
 pub unsafe fn Q3_SetOrigin(entID: c_int, origin: &vec3_t) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if ent.is_null() {
         G_DebugPrint(WL_WARNING, &format!("Q3_SetOrigin: bad ent {entID}\n"));
@@ -1269,12 +1521,18 @@ pub unsafe fn Q3_SetOrigin(entID: c_int, origin: &vec3_t) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetCopyOrigin(entID: c_int, name: *const c_char) {
-    let found: *mut gentity_t =
-        G_Find(null_mut(), core::mem::offset_of!(gentity_t, targetname), name);
+    let found: *mut gentity_t = G_Find(
+        null_mut(),
+        core::mem::offset_of!(gentity_t, targetname),
+        name,
+    );
 
     if !found.is_null() {
         Q3_SetOrigin(entID, &(*found).r.currentOrigin);
-        SetClientViewAngle((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize), &(*found).s.angles);
+        SetClientViewAngle(
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize),
+            &(*found).s.angles,
+        );
     } else {
         G_DebugPrint(
             WL_WARNING,
@@ -1292,15 +1550,22 @@ pub unsafe fn Q3_SetCopyOrigin(entID: c_int, name: *const c_char) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetVelocity(entID: c_int, axis: c_int, speed: f32) {
-    let found: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let found: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
     //FIXME: Not supported
     if found.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetVelocity invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetVelocity invalid entID {entID}\n"),
+        );
         return;
     }
 
     if (*found).client.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetVelocity: not a client {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetVelocity: not a client {entID}\n"),
+        );
         return;
     }
 
@@ -1317,7 +1582,8 @@ pub unsafe fn Q3_SetVelocity(entID: c_int, axis: c_int, speed: f32) {
 /// # Safety
 /// `g_entities` must be initialised; relinks the entity.
 pub unsafe fn Q3_SetAngles(entID: c_int, angles: &vec3_t) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if ent.is_null() {
         G_DebugPrint(WL_WARNING, &format!("Q3_SetAngles: bad ent {entID}\n"));
@@ -1339,19 +1605,25 @@ pub unsafe fn Q3_SetAngles(entID: c_int, angles: &vec3_t) {
 /// # Safety
 /// `g_entities`/`level` must be initialised.
 pub unsafe fn Q3_SetOriginOffset(entID: c_int, axis: c_int, offset: f32) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
     let mut origin: vec3_t = [0.0; 3];
     let mut duration: f32;
 
     if ent.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetOriginOffset: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetOriginOffset: invalid entID {entID}\n"),
+        );
         return;
     }
 
-    if !(*ent).client.is_null()
-        || Q_stricmp((*ent).classname, c"target_scriptrunner".as_ptr()) == 0
+    if !(*ent).client.is_null() || Q_stricmp((*ent).classname, c"target_scriptrunner".as_ptr()) == 0
     {
-        G_DebugPrint(WL_ERROR, &format!("Q3_SetOriginOffset: ent {entID} is NOT a mover!\n"));
+        G_DebugPrint(
+            WL_ERROR,
+            &format!("Q3_SetOriginOffset: ent {entID} is NOT a mover!\n"),
+        );
         return;
     }
 
@@ -1370,15 +1642,22 @@ pub unsafe fn Q3_SetOriginOffset(entID: c_int, axis: c_int, offset: f32) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn SetLowerAnim(entID: c_int, animID: c_int) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if ent.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("SetLowerAnim: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("SetLowerAnim: invalid entID {entID}\n"),
+        );
         return;
     }
 
     if (*ent).client.is_null() {
-        G_DebugPrint(WL_ERROR, &format!("SetLowerAnim: ent {entID} is NOT a player or NPC!\n"));
+        G_DebugPrint(
+            WL_ERROR,
+            &format!("SetLowerAnim: ent {entID} is NOT a player or NPC!\n"),
+        );
         return;
     }
 
@@ -1397,16 +1676,23 @@ pub unsafe fn SetLowerAnim(entID: c_int, animID: c_int) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn SetUpperAnim(entID: c_int, animID: c_int) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if ent.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("SetUpperAnim: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("SetUpperAnim: invalid entID {entID}\n"),
+        );
         return;
     }
 
     if (*ent).client.is_null() {
         // (C: the warning literal reads "SetLowerAnim" here — a copy-paste in the Raven source.)
-        G_DebugPrint(WL_ERROR, &format!("SetLowerAnim: ent {entID} is NOT a player or NPC!\n"));
+        G_DebugPrint(
+            WL_ERROR,
+            &format!("SetLowerAnim: ent {entID} is NOT a player or NPC!\n"),
+        );
         return;
     }
 
@@ -1488,10 +1774,14 @@ pub unsafe fn Q3_SetAnimLower(entID: c_int, anim_name: *const c_char) -> qboolea
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetHealth(entID: c_int, mut data: c_int) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if ent.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetHealth: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetHealth: invalid entID {entID}\n"),
+        );
         return;
     }
 
@@ -1534,7 +1824,8 @@ pub unsafe fn Q3_SetHealth(entID: c_int, mut data: c_int) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetArmor(entID: c_int, data: c_int) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if ent.is_null() {
         G_DebugPrint(WL_WARNING, &format!("Q3_SetArmor: invalid entID {entID}\n"));
@@ -1560,10 +1851,14 @@ pub unsafe fn Q3_SetArmor(entID: c_int, data: c_int) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetFriction(entID: c_int, _int_data: c_int) {
-    let self_: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let self_: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if self_.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetFriction: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetFriction: invalid entID {entID}\n"),
+        );
         return;
     }
 
@@ -1588,10 +1883,14 @@ pub unsafe fn Q3_SetFriction(entID: c_int, _int_data: c_int) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetGravity(entID: c_int, float_data: f32) {
-    let self_: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let self_: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if self_.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetGravity: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetGravity: invalid entID {entID}\n"),
+        );
         return;
     }
 
@@ -1618,7 +1917,8 @@ pub unsafe fn Q3_SetGravity(entID: c_int, float_data: f32) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetWait(entID: c_int, float_data: f32) {
-    let self_: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let self_: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if self_.is_null() {
         G_DebugPrint(WL_WARNING, &format!("Q3_SetWait: invalid entID {entID}\n"));
@@ -1635,7 +1935,8 @@ pub unsafe fn Q3_SetWait(entID: c_int, float_data: f32) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetScale(entID: c_int, float_data: f32) {
-    let self_: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let self_: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if self_.is_null() {
         G_DebugPrint(WL_WARNING, &format!("Q3_SetScale: invalid entID {entID}\n"));
@@ -1686,7 +1987,8 @@ pub unsafe fn Q3_GameSideCheckStringCounterIncrement(string: *const c_char) -> f
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetCount(entID: c_int, data: *const c_char) {
-    let self_: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let self_: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
     let val: f32;
 
     //FIXME: use FOFS() stuff here to make a generic entity field setting?
@@ -1709,10 +2011,14 @@ pub unsafe fn Q3_SetCount(entID: c_int, data: *const c_char) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetTargetName(entID: c_int, targetname: *const c_char) {
-    let self_: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let self_: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if self_.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetTargetName: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetTargetName: invalid entID {entID}\n"),
+        );
         return;
     }
 
@@ -1729,10 +2035,14 @@ pub unsafe fn Q3_SetTargetName(entID: c_int, targetname: *const c_char) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetTarget(entID: c_int, target: *const c_char) {
-    let self_: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let self_: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if self_.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetTarget: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetTarget: invalid entID {entID}\n"),
+        );
         return;
     }
 
@@ -1749,10 +2059,14 @@ pub unsafe fn Q3_SetTarget(entID: c_int, target: *const c_char) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetFullName(entID: c_int, fullName: *const c_char) {
-    let self_: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let self_: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if self_.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetFullName: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetFullName: invalid entID {entID}\n"),
+        );
         return;
     }
 
@@ -1769,7 +2083,8 @@ pub unsafe fn Q3_SetFullName(entID: c_int, fullName: *const c_char) {
 /// # Safety
 /// `g_entities` must be initialised; allocates via `G_Alloc`.
 pub unsafe fn Q3_SetParm(entID: c_int, parmNum: c_int, parmValue: *const c_char) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
     let val: f32;
 
     if ent.is_null() {
@@ -1778,7 +2093,10 @@ pub unsafe fn Q3_SetParm(entID: c_int, parmNum: c_int, parmValue: *const c_char)
     }
 
     if parmNum < 0 || parmNum >= MAX_PARMS as c_int {
-        G_DebugPrint(WL_WARNING, &format!("SET_PARM: parmNum {parmNum} out of range!\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("SET_PARM: parmNum {parmNum} out of range!\n"),
+        );
         return;
     }
 
@@ -1824,10 +2142,14 @@ pub unsafe fn Q3_SetParm(entID: c_int, parmNum: c_int, parmValue: *const c_char)
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetNoTarget(entID: c_int, data: qboolean) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if ent.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetNoTarget: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetNoTarget: invalid entID {entID}\n"),
+        );
         return;
     }
 
@@ -1844,10 +2166,14 @@ pub unsafe fn Q3_SetNoTarget(entID: c_int, data: qboolean) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetInactive(entID: c_int, add: qboolean) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if ent.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetInactive: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetInactive: invalid entID {entID}\n"),
+        );
         return;
     }
 
@@ -1864,10 +2190,14 @@ pub unsafe fn Q3_SetInactive(entID: c_int, add: qboolean) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetFuncUsableVisible(entID: c_int, visible: qboolean) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if ent.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetFuncUsableVisible: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetFuncUsableVisible: invalid entID {entID}\n"),
+        );
         return;
     }
 
@@ -1889,10 +2219,14 @@ pub unsafe fn Q3_SetFuncUsableVisible(entID: c_int, visible: qboolean) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetInvisible(entID: c_int, invisible: qboolean) {
-    let self_: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let self_: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if self_.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetInvisible: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetInvisible: invalid entID {entID}\n"),
+        );
         return;
     }
 
@@ -1916,10 +2250,14 @@ pub unsafe fn Q3_SetInvisible(entID: c_int, invisible: qboolean) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetForwardMove(entID: c_int, _fmoveVal: c_int) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if ent.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetForwardMove: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetForwardMove: invalid entID {entID}\n"),
+        );
         return;
     }
 
@@ -1944,10 +2282,14 @@ pub unsafe fn Q3_SetForwardMove(entID: c_int, _fmoveVal: c_int) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetRightMove(entID: c_int, _rmoveVal: c_int) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if ent.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetRightMove: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetRightMove: invalid entID {entID}\n"),
+        );
         return;
     }
 
@@ -1972,10 +2314,14 @@ pub unsafe fn Q3_SetRightMove(entID: c_int, _rmoveVal: c_int) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetLockAngle(entID: c_int, _lockAngle: *const c_char) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if ent.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetLockAngle: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetLockAngle: invalid entID {entID}\n"),
+        );
         return;
     }
 
@@ -2002,10 +2348,14 @@ pub unsafe fn Q3_SetLockAngle(entID: c_int, _lockAngle: *const c_char) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetPlayerUsable(entID: c_int, usable: qboolean) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if ent.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetPlayerUsable: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetPlayerUsable: invalid entID {entID}\n"),
+        );
         return;
     }
 
@@ -2022,10 +2372,14 @@ pub unsafe fn Q3_SetPlayerUsable(entID: c_int, usable: qboolean) {
 /// # Safety
 /// `g_entities` must be initialised.
 pub unsafe fn Q3_SetNoKnockback(entID: c_int, noKnockback: qboolean) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if ent.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetNoKnockback: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetNoKnockback: invalid entID {entID}\n"),
+        );
         return;
     }
 
@@ -2188,17 +2542,23 @@ pub unsafe extern "C" fn moveAndRotateCallback(ent: *mut gentity_t) {
 /// # Safety
 /// `g_entities`/`level` must be initialised.
 pub unsafe fn Q3_Lerp2Start(entID: c_int, taskID: c_int, duration: f32) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if ent.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_Lerp2Start: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_Lerp2Start: invalid entID {entID}\n"),
+        );
         return;
     }
 
-    if !(*ent).client.is_null()
-        || Q_stricmp((*ent).classname, c"target_scriptrunner".as_ptr()) == 0
+    if !(*ent).client.is_null() || Q_stricmp((*ent).classname, c"target_scriptrunner".as_ptr()) == 0
     {
-        G_DebugPrint(WL_ERROR, &format!("Q3_Lerp2Start: ent {entID} is NOT a mover!\n"));
+        G_DebugPrint(
+            WL_ERROR,
+            &format!("Q3_Lerp2Start: ent {entID} is NOT a mover!\n"),
+        );
         return;
     }
 
@@ -2232,17 +2592,20 @@ pub unsafe fn Q3_Lerp2Start(entID: c_int, taskID: c_int, duration: f32) {
 /// # Safety
 /// `g_entities`/`level` must be initialised.
 pub unsafe fn Q3_Lerp2End(entID: c_int, taskID: c_int, duration: f32) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if ent.is_null() {
         G_DebugPrint(WL_WARNING, &format!("Q3_Lerp2End: invalid entID {entID}\n"));
         return;
     }
 
-    if !(*ent).client.is_null()
-        || Q_stricmp((*ent).classname, c"target_scriptrunner".as_ptr()) == 0
+    if !(*ent).client.is_null() || Q_stricmp((*ent).classname, c"target_scriptrunner".as_ptr()) == 0
     {
-        G_DebugPrint(WL_ERROR, &format!("Q3_Lerp2End: ent {entID} is NOT a mover!\n"));
+        G_DebugPrint(
+            WL_ERROR,
+            &format!("Q3_Lerp2End: ent {entID} is NOT a mover!\n"),
+        );
         return;
     }
 
@@ -2282,7 +2645,8 @@ pub unsafe fn Q3_Lerp2Pos(
     angles: *const vec3_t,
     mut duration: f32,
 ) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
     let mut ang: vec3_t = [0.0; 3];
     let moverState;
 
@@ -2291,10 +2655,12 @@ pub unsafe fn Q3_Lerp2Pos(
         return;
     }
 
-    if !(*ent).client.is_null()
-        || Q_stricmp((*ent).classname, c"target_scriptrunner".as_ptr()) == 0
+    if !(*ent).client.is_null() || Q_stricmp((*ent).classname, c"target_scriptrunner".as_ptr()) == 0
     {
-        G_DebugPrint(WL_ERROR, &format!("Q3_Lerp2Pos: ent {entID} is NOT a mover!\n"));
+        G_DebugPrint(
+            WL_ERROR,
+            &format!("Q3_Lerp2Pos: ent {entID} is NOT a mover!\n"),
+        );
         return;
     }
 
@@ -2379,18 +2745,24 @@ pub unsafe fn Q3_Lerp2Pos(
 /// # Safety
 /// `g_entities`/`level` must be initialised.
 pub unsafe fn Q3_Lerp2Angles(taskID: c_int, entID: c_int, angles: &vec3_t, duration: f32) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
     let mut ang: vec3_t = [0.0; 3];
 
     if ent.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_Lerp2Angles: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_Lerp2Angles: invalid entID {entID}\n"),
+        );
         return;
     }
 
-    if !(*ent).client.is_null()
-        || Q_stricmp((*ent).classname, c"target_scriptrunner".as_ptr()) == 0
+    if !(*ent).client.is_null() || Q_stricmp((*ent).classname, c"target_scriptrunner".as_ptr()) == 0
     {
-        G_DebugPrint(WL_ERROR, &format!("Q3_Lerp2Angles: ent {entID} is NOT a mover!\n"));
+        G_DebugPrint(
+            WL_ERROR,
+            &format!("Q3_Lerp2Angles: ent {entID} is NOT a mover!\n"),
+        );
         return;
     }
 
@@ -2427,18 +2799,24 @@ pub unsafe fn Q3_Lerp2Angles(taskID: c_int, entID: c_int, angles: &vec3_t, durat
 /// # Safety
 /// `g_entities`/`level` must be initialised.
 pub unsafe fn Q3_Lerp2Origin(taskID: c_int, entID: c_int, origin: &vec3_t, duration: f32) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
     let moverState;
 
     if ent.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_Lerp2Origin: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_Lerp2Origin: invalid entID {entID}\n"),
+        );
         return;
     }
 
-    if !(*ent).client.is_null()
-        || Q_stricmp((*ent).classname, c"target_scriptrunner".as_ptr()) == 0
+    if !(*ent).client.is_null() || Q_stricmp((*ent).classname, c"target_scriptrunner".as_ptr()) == 0
     {
-        G_DebugPrint(WL_ERROR, &format!("Q3_Lerp2Origin: ent {entID} is NOT a mover!\n"));
+        G_DebugPrint(
+            WL_ERROR,
+            &format!("Q3_Lerp2Origin: ent {entID} is NOT a mover!\n"),
+        );
         return;
     }
 
@@ -2494,7 +2872,8 @@ pub unsafe fn Q3_Lerp2Origin(taskID: c_int, entID: c_int, origin: &vec3_t, durat
 /// # Safety
 /// `g_entities`/`level` must be initialised; `self` must be a valid entity pointer.
 pub unsafe extern "C" fn MoveOwner(self_: *mut gentity_t) {
-    let owner: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*self_).r.ownerNum as usize);
+    let owner: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*self_).r.ownerNum as usize);
 
     (*self_).nextthink = (*addr_of!(g_level)).time + FRAMETIME;
     (*self_).think = Some(G_FreeEntity);
@@ -2520,7 +2899,8 @@ pub unsafe extern "C" fn MoveOwner(self_: *mut gentity_t) {
 /// `g_entities`/`level` must be initialised; `self` must be a valid entity pointer.
 pub unsafe extern "C" fn SolidifyOwner(self_: *mut gentity_t) {
     let oldContents: c_int;
-    let owner: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*self_).r.ownerNum as usize);
+    let owner: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*self_).r.ownerNum as usize);
 
     (*self_).nextthink = (*addr_of!(g_level)).time + FRAMETIME;
     (*self_).think = Some(G_FreeEntity);
@@ -2548,7 +2928,8 @@ pub unsafe extern "C" fn SolidifyOwner(self_: *mut gentity_t) {
 /// # Safety
 /// `g_entities`/`level` must be initialised; may spawn an entity.
 pub unsafe fn Q3_SetSolid(entID: c_int, solid: qboolean) -> qboolean {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if ent.is_null() || (*ent).inuse == QFALSE {
         G_DebugPrint(WL_WARNING, &format!("Q3_SetSolid: invalid entID {entID}\n"));
@@ -2590,14 +2971,18 @@ pub unsafe fn Q3_SetSolid(entID: c_int, solid: qboolean) -> qboolean {
 /// # Safety
 /// `g_entities` must be initialised; `entID` must index a valid slot.
 pub unsafe fn Q3_SetSaberActive(entID: c_int, active: qboolean) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if ent.is_null() || (*ent).inuse == QFALSE {
         return;
     }
 
     if (*ent).client.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetSaberActive: {entID} is not a client\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetSaberActive: {entID} is not a client\n"),
+        );
     }
 
     //fixme: Take into account player being in state where saber won't toggle? For now we simply won't care.
@@ -2631,7 +3016,8 @@ unsafe fn sscanf_vec3(data: *const c_char, v: &mut vec3_t) {
 /// # Safety
 /// `g_entities` must be initialised; `name` must be a valid C string.
 pub unsafe fn Q3_SetEnemy(entID: c_int, name: *const c_char) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if ent.is_null() {
         G_DebugPrint(WL_WARNING, &format!("Q3_SetEnemy: invalid entID {entID}\n"));
@@ -2674,10 +3060,14 @@ pub unsafe fn Q3_SetEnemy(entID: c_int, name: *const c_char) {
 /// # Safety
 /// `g_entities` must be initialised; `name` must be a valid C string.
 pub unsafe fn Q3_SetLeader(entID: c_int, name: *const c_char) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if ent.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetLeader: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetLeader: invalid entID {entID}\n"),
+        );
         return;
     }
 
@@ -2714,7 +3104,8 @@ pub unsafe fn Q3_SetLeader(entID: c_int, name: *const c_char) {
 /// # Safety
 /// `g_entities` must be initialised; `name` must be a valid C string.
 pub unsafe fn Q3_SetNavGoal(entID: c_int, name: *const c_char) -> qboolean {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
     let mut goalPos: vec3_t = [0.0; 3];
 
     if (*ent).health == 0 {
@@ -2772,7 +3163,10 @@ pub unsafe fn Q3_SetNavGoal(entID: c_int, name: *const c_char) -> qboolean {
             if targ.is_null() {
                 G_DebugPrint(
                     WL_ERROR,
-                    &format!("Q3_SetNavGoal: can't find NAVGOAL \"{}\"\n", cstr_or_null(name)),
+                    &format!(
+                        "Q3_SetNavGoal: can't find NAVGOAL \"{}\"\n",
+                        cstr_or_null(name)
+                    ),
                 );
                 return QFALSE;
             } else {
@@ -2805,8 +3199,14 @@ pub unsafe fn Q3_SetNavGoal(entID: c_int, name: *const c_char) -> qboolean {
 ///
 /// # Safety
 /// `g_entities` must be initialised; `type_name`/`data` must be valid C strings.
-pub unsafe fn Q3_Set(taskID: c_int, entID: c_int, type_name: *const c_char, data: *const c_char) -> qboolean {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+pub unsafe fn Q3_Set(
+    taskID: c_int,
+    entID: c_int,
+    type_name: *const c_char,
+    data: *const c_char,
+) -> qboolean {
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
     let float_data: f32;
     let int_data: c_int;
     let toSet: c_int;
@@ -3248,7 +3648,10 @@ pub unsafe fn Q3_Set(taskID: c_int, entID: c_int, type_name: *const c_char, data
             if Q3_SetBehaviorSet(entID, toSet, data) == QFALSE {
                 G_DebugPrint(
                     WL_ERROR,
-                    &format!("Q3_SetBehaviorSet: Invalid bSet {}\n", cstr_or_null(type_name)),
+                    &format!(
+                        "Q3_SetBehaviorSet: Invalid bSet {}\n",
+                        cstr_or_null(type_name)
+                    ),
                 );
             }
         }
@@ -3651,7 +4054,10 @@ pub unsafe fn Q3_Set(taskID: c_int, entID: c_int, type_name: *const c_char, data
         }
 
         SET_DMG_BY_HEAVY_WEAP_ONLY => {
-            G_DebugPrint(WL_WARNING, "Q3_SetDmgByHeavyWeapOnly: NOT SUPPORTED IN MP\n");
+            G_DebugPrint(
+                WL_WARNING,
+                "Q3_SetDmgByHeavyWeapOnly: NOT SUPPORTED IN MP\n",
+            );
         }
 
         SET_SHIELDED => {
@@ -3676,9 +4082,13 @@ pub unsafe fn Q3_Set(taskID: c_int, entID: c_int, type_name: *const c_char, data
             } else if Q_stricmp(c"false".as_ptr(), data) == 0 {
                 Q3_SetInactive(entID, QFALSE);
             } else if Q_stricmp(c"unlocked".as_ptr(), data) == 0 {
-                UnLockDoors((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize));
+                UnLockDoors(
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize),
+                );
             } else if Q_stricmp(c"locked".as_ptr(), data) == 0 {
-                LockDoors((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize));
+                LockDoors(
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize),
+                );
             }
         }
         SET_END_SCREENDISSOLVE => {
@@ -3687,7 +4097,10 @@ pub unsafe fn Q3_Set(taskID: c_int, entID: c_int, type_name: *const c_char, data
 
         SET_MISSION_STATUS_SCREEN => {
             //Cvar_Set("cg_missionstatusscreen", "1");
-            G_DebugPrint(WL_WARNING, "SET_MISSION_STATUS_SCREEN: NOT SUPPORTED IN MP\n");
+            G_DebugPrint(
+                WL_WARNING,
+                "SET_MISSION_STATUS_SCREEN: NOT SUPPORTED IN MP\n",
+            );
         }
 
         SET_FUNC_USABLE_VISIBLE => {
@@ -3807,10 +4220,17 @@ pub unsafe fn Q3_Set(taskID: c_int, entID: c_int, type_name: *const c_char, data
             G_DebugPrint(WL_WARNING, "SET_HUD: NOT SUPPORTED IN MP\n");
         }
 
-        SET_FORCE_HEAL_LEVEL | SET_FORCE_JUMP_LEVEL | SET_FORCE_SPEED_LEVEL
-        | SET_FORCE_PUSH_LEVEL | SET_FORCE_PULL_LEVEL | SET_FORCE_MINDTRICK_LEVEL
-        | SET_FORCE_GRIP_LEVEL | SET_FORCE_LIGHTNING_LEVEL | SET_SABER_THROW
-        | SET_SABER_DEFENSE | SET_SABER_OFFENSE => {
+        SET_FORCE_HEAL_LEVEL
+        | SET_FORCE_JUMP_LEVEL
+        | SET_FORCE_SPEED_LEVEL
+        | SET_FORCE_PUSH_LEVEL
+        | SET_FORCE_PULL_LEVEL
+        | SET_FORCE_MINDTRICK_LEVEL
+        | SET_FORCE_GRIP_LEVEL
+        | SET_FORCE_LIGHTNING_LEVEL
+        | SET_SABER_THROW
+        | SET_SABER_DEFENSE
+        | SET_SABER_OFFENSE => {
             int_data = atoi(data);
             Q3_SetForcePowerLevel(entID, toSet - SET_FORCE_HEAL_LEVEL, int_data);
         }
@@ -3847,7 +4267,6 @@ unsafe fn strncpy_field(dst: *mut c_char, src: *const c_char, n: usize) {
         i += 1;
     }
 }
-
 
 // =====================================================================================
 // ICARUS register set/get layer — the `setType_t` enum, the `setTable[]` name→ID table,
@@ -4088,7 +4507,10 @@ pub const VTYPE_VECTOR: c_int = 3;
 // (note the duplicate `SET_BEHAVIOR_STATE` row, verbatim from the source) so
 // `GetIDForString` resolves identically. Terminated by `{ "", SET_ }`.
 const fn s(name: &'static CStr, id: c_int) -> stringID_table_t {
-    stringID_table_t { name: name.as_ptr(), id }
+    stringID_table_t {
+        name: name.as_ptr(),
+        id,
+    }
 }
 pub static mut setTable: [stringID_table_t; 212] = [
     s(c"SET_SPAWNSCRIPT", SET_SPAWNSCRIPT),
@@ -4318,8 +4740,14 @@ const TYPE_ORIGIN: c_int = 54;
 ///
 /// # Safety
 /// `g_entities` must be initialised.
-pub unsafe fn Q3_GetTag(entID: c_int, name: *const c_char, lookup: c_int, info: &mut vec3_t) -> c_int {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+pub unsafe fn Q3_GetTag(
+    entID: c_int,
+    name: *const c_char,
+    lookup: c_int,
+    info: &mut vec3_t,
+) -> c_int {
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
     if (*ent).inuse == QFALSE {
         debug_assert!(false); // assert(0);
@@ -4345,8 +4773,14 @@ pub unsafe fn Q3_GetTag(entID: c_int, name: *const c_char, lookup: c_int, info: 
 ///
 /// # Safety
 /// `g_entities` must be initialised; `name`/`value` must be valid.
-pub unsafe fn Q3_GetFloat(entID: c_int, _type: c_int, name: *const c_char, value: *mut f32) -> c_int {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+pub unsafe fn Q3_GetFloat(
+    entID: c_int,
+    _type: c_int,
+    name: *const c_char,
+    value: *mut f32,
+) -> c_int {
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
     let toGet: c_int;
 
     if ent.is_null() {
@@ -4354,7 +4788,7 @@ pub unsafe fn Q3_GetFloat(entID: c_int, _type: c_int, name: *const c_char, value
     }
 
     toGet = GetIDForString(addr_of!(setTable) as *const stringID_table_t, name); //FIXME: May want to make a "getTable" as well
-    //FIXME: I'm getting really sick of these huge switch statements!
+                                                                                 //FIXME: I'm getting really sick of these huge switch statements!
 
     //NOTENOTE: return true if the value was correctly obtained
     match toGet {
@@ -4392,7 +4826,10 @@ pub unsafe fn Q3_GetFloat(entID: c_int, _type: c_int, name: *const c_char, value
             if (*ent).client.is_null() {
                 G_DebugPrint(
                     WL_WARNING,
-                    &format!("Q3_GetFloat: SET_XVELOCITY, {} not a client\n", cstr_or_null((*ent).targetname)),
+                    &format!(
+                        "Q3_GetFloat: SET_XVELOCITY, {} not a client\n",
+                        cstr_or_null((*ent).targetname)
+                    ),
                 );
                 return 0;
             }
@@ -4404,7 +4841,10 @@ pub unsafe fn Q3_GetFloat(entID: c_int, _type: c_int, name: *const c_char, value
             if (*ent).client.is_null() {
                 G_DebugPrint(
                     WL_WARNING,
-                    &format!("Q3_GetFloat: SET_YVELOCITY, {} not a client\n", cstr_or_null((*ent).targetname)),
+                    &format!(
+                        "Q3_GetFloat: SET_YVELOCITY, {} not a client\n",
+                        cstr_or_null((*ent).targetname)
+                    ),
                 );
                 return 0;
             }
@@ -4416,7 +4856,10 @@ pub unsafe fn Q3_GetFloat(entID: c_int, _type: c_int, name: *const c_char, value
             if (*ent).client.is_null() {
                 G_DebugPrint(
                     WL_WARNING,
-                    &format!("Q3_GetFloat: SET_ZVELOCITY, {} not a client\n", cstr_or_null((*ent).targetname)),
+                    &format!(
+                        "Q3_GetFloat: SET_ZVELOCITY, {} not a client\n",
+                        cstr_or_null((*ent).targetname)
+                    ),
                 );
                 return 0;
             }
@@ -4489,7 +4932,10 @@ pub unsafe fn Q3_GetFloat(entID: c_int, _type: c_int, name: *const c_char, value
             if (*ent).client.is_null() {
                 G_DebugPrint(
                     WL_WARNING,
-                    &format!("Q3_GetFloat: SET_ANIM_HOLDTIME_LOWER, {} not a client\n", cstr_or_null((*ent).targetname)),
+                    &format!(
+                        "Q3_GetFloat: SET_ANIM_HOLDTIME_LOWER, {} not a client\n",
+                        cstr_or_null((*ent).targetname)
+                    ),
                 );
                 return 0;
             }
@@ -4500,7 +4946,10 @@ pub unsafe fn Q3_GetFloat(entID: c_int, _type: c_int, name: *const c_char, value
             if (*ent).client.is_null() {
                 G_DebugPrint(
                     WL_WARNING,
-                    &format!("Q3_GetFloat: SET_ANIM_HOLDTIME_UPPER, {} not a client\n", cstr_or_null((*ent).targetname)),
+                    &format!(
+                        "Q3_GetFloat: SET_ANIM_HOLDTIME_UPPER, {} not a client\n",
+                        cstr_or_null((*ent).targetname)
+                    ),
                 );
                 return 0;
             }
@@ -4508,7 +4957,10 @@ pub unsafe fn Q3_GetFloat(entID: c_int, _type: c_int, name: *const c_char, value
         }
         SET_ANIM_HOLDTIME_BOTH => {
             //## %d="0" # Hold lower and upper anims for number of milliseconds
-            G_DebugPrint(WL_WARNING, "Q3_GetFloat: SET_ANIM_HOLDTIME_BOTH not implemented\n");
+            G_DebugPrint(
+                WL_WARNING,
+                "Q3_GetFloat: SET_ANIM_HOLDTIME_BOTH not implemented\n",
+            );
             return 0;
         }
         SET_ARMOR => {
@@ -4516,51 +4968,54 @@ pub unsafe fn Q3_GetFloat(entID: c_int, _type: c_int, name: *const c_char, value
             if (*ent).client.is_null() {
                 G_DebugPrint(
                     WL_WARNING,
-                    &format!("Q3_GetFloat: SET_ARMOR, {} not a client\n", cstr_or_null((*ent).targetname)),
+                    &format!(
+                        "Q3_GetFloat: SET_ARMOR, {} not a client\n",
+                        cstr_or_null((*ent).targetname)
+                    ),
                 );
                 return 0;
             }
             *value = (*(*ent).client).ps.stats[STAT_ARMOR as usize] as f32;
         }
-        SET_WALKSPEED => return 0,  //## %d="0" # Change walkSpeed
-        SET_RUNSPEED => return 0,   //## %d="0" # Change runSpeed
-        SET_YAWSPEED => return 0,   //## %d="0" # Change yawSpeed
-        SET_AGGRESSION => return 0, //## %d="0" # Change aggression 1-5
-        SET_AIM => return 0,        //## %d="0" # Change aim 1-5
-        SET_FRICTION => return 0,   //## %d="0" # Change ent's friction - 6 default
-        SET_SHOOTDIST => return 0,  //## %d="0" # How far the ent can shoot - 0 uses weapon
-        SET_HFOV => return 0,       //## %d="0" # Horizontal field of view
-        SET_VFOV => return 0,       //## %d="0" # Vertical field of view
+        SET_WALKSPEED => return 0,       //## %d="0" # Change walkSpeed
+        SET_RUNSPEED => return 0,        //## %d="0" # Change runSpeed
+        SET_YAWSPEED => return 0,        //## %d="0" # Change yawSpeed
+        SET_AGGRESSION => return 0,      //## %d="0" # Change aggression 1-5
+        SET_AIM => return 0,             //## %d="0" # Change aim 1-5
+        SET_FRICTION => return 0,        //## %d="0" # Change ent's friction - 6 default
+        SET_SHOOTDIST => return 0,       //## %d="0" # How far the ent can shoot - 0 uses weapon
+        SET_HFOV => return 0,            //## %d="0" # Horizontal field of view
+        SET_VFOV => return 0,            //## %d="0" # Vertical field of view
         SET_DELAYSCRIPTTIME => return 0, //## %d="0" # How many seconds to wait before running delayscript
-        SET_FORWARDMOVE => return 0, //## %d="0" # NPC move forward -127(back) to 127
-        SET_RIGHTMOVE => return 0,  //## %d="0" # NPC move right -127(left) to 127
-        SET_STARTFRAME => return 0, //## %d="0" # frame to start animation sequence on
-        SET_ENDFRAME => return 0,   //## %d="0" # frame to end animation sequence on
-        SET_ANIMFRAME => return 0,  //## %d="0" # of current frame
+        SET_FORWARDMOVE => return 0,     //## %d="0" # NPC move forward -127(back) to 127
+        SET_RIGHTMOVE => return 0,       //## %d="0" # NPC move right -127(left) to 127
+        SET_STARTFRAME => return 0,      //## %d="0" # frame to start animation sequence on
+        SET_ENDFRAME => return 0,        //## %d="0" # frame to end animation sequence on
+        SET_ANIMFRAME => return 0,       //## %d="0" # of current frame
 
         SET_SHOT_SPACING => return 0, //## %d="1000" # Time between shots for an NPC - reset to defaults when changes weapon
         SET_MISSIONSTATUSTIME => return 0, //## %d="0" # Amount of time until Mission Status should be shown after death
         //# #sep booleans
-        SET_IGNOREPAIN => return 0,    //## %t="BOOL_TYPES" # Do not react to pain
+        SET_IGNOREPAIN => return 0, //## %t="BOOL_TYPES" # Do not react to pain
         SET_IGNOREENEMIES => return 0, //## %t="BOOL_TYPES" # Do not acquire enemies
-        SET_IGNOREALERTS => return 0,  //## Do not get enemy set by allies in area(ambush)
-        SET_DONTSHOOT => return 0,     //## %t="BOOL_TYPES" # Others won't shoot you
+        SET_IGNOREALERTS => return 0, //## Do not get enemy set by allies in area(ambush)
+        SET_DONTSHOOT => return 0,  //## %t="BOOL_TYPES" # Others won't shoot you
         SET_NOTARGET => {
             //## %t="BOOL_TYPES" # Others won't pick you as enemy
             *value = ((*ent).flags & FL_NOTARGET) as f32;
         }
         SET_DONTFIRE => return 0, //## %t="BOOL_TYPES" # Don't fire your weapon
 
-        SET_LOCKED_ENEMY => return 0,     //## %t="BOOL_TYPES" # Keep current enemy until dead
-        SET_CROUCHED => return 0,         //## %t="BOOL_TYPES" # Force NPC to crouch
-        SET_WALKING => return 0,          //## %t="BOOL_TYPES" # Force NPC to move at walkSpeed
-        SET_RUNNING => return 0,          //## %t="BOOL_TYPES" # Force NPC to move at runSpeed
-        SET_CHASE_ENEMIES => return 0,    //## %t="BOOL_TYPES" # NPC will chase after enemies
+        SET_LOCKED_ENEMY => return 0, //## %t="BOOL_TYPES" # Keep current enemy until dead
+        SET_CROUCHED => return 0,     //## %t="BOOL_TYPES" # Force NPC to crouch
+        SET_WALKING => return 0,      //## %t="BOOL_TYPES" # Force NPC to move at walkSpeed
+        SET_RUNNING => return 0,      //## %t="BOOL_TYPES" # Force NPC to move at runSpeed
+        SET_CHASE_ENEMIES => return 0, //## %t="BOOL_TYPES" # NPC will chase after enemies
         SET_LOOK_FOR_ENEMIES => return 0, //## %t="BOOL_TYPES" # NPC will be on the lookout for enemies
-        SET_FACE_MOVE_DIR => return 0,    //## %t="BOOL_TYPES" # NPC will face in the direction it's moving
-        SET_FORCED_MARCH => return 0,     //## %t="BOOL_TYPES" # Force NPC to move at runSpeed
-        SET_UNDYING => return 0,          //## %t="BOOL_TYPES" # Can take damage down to 1 but not die
-        SET_NOAVOID => return 0,          //## %t="BOOL_TYPES" # Will not avoid other NPCs or architecture
+        SET_FACE_MOVE_DIR => return 0, //## %t="BOOL_TYPES" # NPC will face in the direction it's moving
+        SET_FORCED_MARCH => return 0,  //## %t="BOOL_TYPES" # Force NPC to move at runSpeed
+        SET_UNDYING => return 0,       //## %t="BOOL_TYPES" # Can take damage down to 1 but not die
+        SET_NOAVOID => return 0, //## %t="BOOL_TYPES" # Will not avoid other NPCs or architecture
 
         SET_SOLID => {
             //## %t="BOOL_TYPES" # Make yourself notsolid or solid
@@ -4581,45 +5036,51 @@ pub unsafe fn Q3_GetFloat(entID: c_int, _type: c_int, name: *const c_char, value
             //## %t="BOOL_TYPES" # Makes an NPC not solid and not visible
             *value = ((*ent).s.eFlags & EF_NODRAW) as f32;
         }
-        SET_VAMPIRE => return 0,          //## %t="BOOL_TYPES" # Makes an NPC not solid and not visible
+        SET_VAMPIRE => return 0, //## %t="BOOL_TYPES" # Makes an NPC not solid and not visible
         SET_FORCE_INVINCIBLE => return 0, //## %t="BOOL_TYPES" # Makes an NPC not solid and not visible
         SET_GREET_ALLIES => return 0,     //## %t="BOOL_TYPES" # Makes an NPC greet teammates
         SET_VIDEO_FADE_IN => {
             //## %t="BOOL_TYPES" # Makes video playback fade in
-            G_DebugPrint(WL_WARNING, "Q3_GetFloat: SET_VIDEO_FADE_IN not implemented\n");
+            G_DebugPrint(
+                WL_WARNING,
+                "Q3_GetFloat: SET_VIDEO_FADE_IN not implemented\n",
+            );
             return 0;
         }
         SET_VIDEO_FADE_OUT => {
             //## %t="BOOL_TYPES" # Makes video playback fade out
-            G_DebugPrint(WL_WARNING, "Q3_GetFloat: SET_VIDEO_FADE_OUT not implemented\n");
+            G_DebugPrint(
+                WL_WARNING,
+                "Q3_GetFloat: SET_VIDEO_FADE_OUT not implemented\n",
+            );
             return 0;
         }
-        SET_PLAYER_LOCKED => return 0,       //## %t="BOOL_TYPES" # Makes it so player cannot move
+        SET_PLAYER_LOCKED => return 0, //## %t="BOOL_TYPES" # Makes it so player cannot move
         SET_LOCK_PLAYER_WEAPONS => return 0, //## %t="BOOL_TYPES" # Makes it so player cannot switch weapons
-        SET_NO_IMPACT_DAMAGE => return 0,    //## %t="BOOL_TYPES" # Makes it so player cannot switch weapons
+        SET_NO_IMPACT_DAMAGE => return 0, //## %t="BOOL_TYPES" # Makes it so player cannot switch weapons
         SET_NO_KNOCKBACK => {
             //## %t="BOOL_TYPES" # Stops this ent from taking knockback from weapons
             *value = ((*ent).flags & FL_NO_KNOCKBACK) as f32;
         }
-        SET_ALT_FIRE => return 0,    //## %t="BOOL_TYPES" # Force NPC to use altfire when shooting
+        SET_ALT_FIRE => return 0, //## %t="BOOL_TYPES" # Force NPC to use altfire when shooting
         SET_NO_RESPONSE => return 0, //## %t="BOOL_TYPES" # NPCs will do generic responses when this is on (usescripts override generic responses as well)
         SET_INVINCIBLE => {
             //## %t="BOOL_TYPES" # Completely unkillable
             *value = ((*ent).flags & FL_GODMODE) as f32;
         }
         SET_MISSIONSTATUSACTIVE => return 0, //# Turns on Mission Status Screen
-        SET_NO_COMBAT_TALK => return 0,  //## %t="BOOL_TYPES" # NPCs will not do their combat talking noises when this is on
-        SET_NO_ALERT_TALK => return 0,   //## %t="BOOL_TYPES" # NPCs will not do their combat talking noises when this is on
-        SET_USE_CP_NEAREST => return 0,  //## %t="BOOL_TYPES" # NPCs will use their closest combat points, not try and find ones next to the player, or flank player
-        SET_DISMEMBERABLE => return 0,   //## %t="BOOL_TYPES" # NPC will not be affected by force powers
+        SET_NO_COMBAT_TALK => return 0, //## %t="BOOL_TYPES" # NPCs will not do their combat talking noises when this is on
+        SET_NO_ALERT_TALK => return 0, //## %t="BOOL_TYPES" # NPCs will not do their combat talking noises when this is on
+        SET_USE_CP_NEAREST => return 0, //## %t="BOOL_TYPES" # NPCs will use their closest combat points, not try and find ones next to the player, or flank player
+        SET_DISMEMBERABLE => return 0, //## %t="BOOL_TYPES" # NPC will not be affected by force powers
         SET_NO_FORCE => return 0,
         SET_NO_ACROBATICS => return 0,
         SET_USE_SUBTITLES => return 0,
-        SET_NO_FALLTODEATH => return 0,  //## %t="BOOL_TYPES" # NPC will not be affected by force powers
-        SET_MORELIGHT => return 0,       //## %t="BOOL_TYPES" # NPCs will use their closest combat points, not try and find ones next to the player, or flank player
-        SET_TREASONED => return 0,       //## %t="BOOL_TYPES" # Player has turned on his own- scripts will stop: NPCs will turn on him and level changes load the brig
+        SET_NO_FALLTODEATH => return 0, //## %t="BOOL_TYPES" # NPC will not be affected by force powers
+        SET_MORELIGHT => return 0, //## %t="BOOL_TYPES" # NPCs will use their closest combat points, not try and find ones next to the player, or flank player
+        SET_TREASONED => return 0, //## %t="BOOL_TYPES" # Player has turned on his own- scripts will stop: NPCs will turn on him and level changes load the brig
         SET_DISABLE_SHADER_ANIM => return 0, //## %t="BOOL_TYPES" # Shaders won't animate
-        SET_SHADER_ANIM => return 0,     //## %t="BOOL_TYPES" # Shader will be under frame control
+        SET_SHADER_ANIM => return 0, //## %t="BOOL_TYPES" # Shader will be under frame control
 
         _ => {
             if trap::ICARUS_VariableDeclared(name) != VTYPE_FLOAT {
@@ -4640,15 +5101,21 @@ pub unsafe fn Q3_GetFloat(entID: c_int, _type: c_int, name: *const c_char, value
 ///
 /// # Safety
 /// `g_entities` must be initialised; `name`/`value` must be valid.
-pub unsafe fn Q3_GetVector(entID: c_int, _type: c_int, name: *const c_char, value: &mut vec3_t) -> c_int {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+pub unsafe fn Q3_GetVector(
+    entID: c_int,
+    _type: c_int,
+    name: *const c_char,
+    value: &mut vec3_t,
+) -> c_int {
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
     let toGet: c_int;
     if ent.is_null() {
         return 0;
     }
 
     toGet = GetIDForString(addr_of!(setTable) as *const stringID_table_t, name); //FIXME: May want to make a "getTable" as well
-    //FIXME: I'm getting really sick of these huge switch statements!
+                                                                                 //FIXME: I'm getting really sick of these huge switch statements!
 
     //NOTENOTE: return true if the value was correctly obtained
     match toGet {
@@ -4685,7 +5152,10 @@ pub unsafe fn Q3_GetVector(entID: c_int, _type: c_int, name: *const c_char, valu
 
         SET_TELEPORT_DEST => {
             //## %v="0.0 0.0 0.0" # Set origin here as soon as the area is clear
-            G_DebugPrint(WL_WARNING, "Q3_GetVector: SET_TELEPORT_DEST not implemented\n");
+            G_DebugPrint(
+                WL_WARNING,
+                "Q3_GetVector: SET_TELEPORT_DEST not implemented\n",
+            );
             return 0;
         }
 
@@ -4739,8 +5209,14 @@ fn parse_leading_f32(tok: &str) -> Result<f32, ()> {
 ///
 /// # Safety
 /// `g_entities` must be initialised; `name`/`value` must be valid.
-pub unsafe fn Q3_GetString(entID: c_int, _type: c_int, name: *const c_char, value: *mut *mut c_char) -> c_int {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+pub unsafe fn Q3_GetString(
+    entID: c_int,
+    _type: c_int,
+    name: *const c_char,
+    value: *mut *mut c_char,
+) -> c_int {
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
     let toGet: c_int;
     if ent.is_null() {
         return 0;
@@ -4767,7 +5243,10 @@ pub unsafe fn Q3_GetString(entID: c_int, _type: c_int, name: *const c_char, valu
             } else {
                 G_DebugPrint(
                     WL_WARNING,
-                    &format!("Q3_GetString: invalid ent {} has no parms!\n", cstr_or_null((*ent).targetname)),
+                    &format!(
+                        "Q3_GetString: invalid ent {} has no parms!\n",
+                        cstr_or_null((*ent).targetname)
+                    ),
                 );
                 return 0;
             }
@@ -4840,20 +5319,23 @@ pub unsafe fn Q3_GetString(entID: c_int, _type: c_int, name: *const c_char, valu
         }
 
         //# #sep Standard strings
-        SET_ENEMY => return 0,  //## %s="NULL" # Set enemy by targetname
-        SET_LEADER => return 0, //## %s="NULL" # Set for BS_FOLLOW_LEADER
+        SET_ENEMY => return 0,   //## %s="NULL" # Set enemy by targetname
+        SET_LEADER => return 0,  //## %s="NULL" # Set for BS_FOLLOW_LEADER
         SET_CAPTURE => return 0, //## %s="NULL" # Set captureGoal by targetname
 
         SET_TARGETNAME => {
             //## %s="NULL" # Set/change your targetname
             *value = (*ent).targetname;
         }
-        SET_PAINTARGET => return 0,       //## %s="NULL" # Set/change what to use when hit
-        SET_CAMERA_GROUP => return 0,     //## %s="NULL" # all ents with this cameraGroup will be focused on
+        SET_PAINTARGET => return 0, //## %s="NULL" # Set/change what to use when hit
+        SET_CAMERA_GROUP => return 0, //## %s="NULL" # all ents with this cameraGroup will be focused on
         SET_CAMERA_GROUP_TAG => return 0, //## %s="NULL" # all ents with this cameraGroup will be focused on
         SET_LOOK_TARGET => {
             //## %s="NULL" # object for NPC to look at
-            G_DebugPrint(WL_WARNING, "Q3_GetString: SET_LOOK_TARGET, NOT SUPPORTED IN MULTIPLAYER\n");
+            G_DebugPrint(
+                WL_WARNING,
+                "Q3_GetString: SET_LOOK_TARGET, NOT SUPPORTED IN MULTIPLAYER\n",
+            );
         }
         SET_TARGET2 => return 0, //## %s="NULL" # Set/change your target2: on NPC's: this fires when they're knocked out by the red hypo
 
@@ -4880,27 +5362,42 @@ pub unsafe fn Q3_GetString(entID: c_int, _type: c_int, name: *const c_char, valu
         }
         SET_CAPTIONTEXTCOLOR => {
             //## %s=""  # Color of text RED:WHITE:BLUE: YELLOW
-            G_DebugPrint(WL_WARNING, "Q3_GetString: SET_CAPTIONTEXTCOLOR not implemented\n");
+            G_DebugPrint(
+                WL_WARNING,
+                "Q3_GetString: SET_CAPTIONTEXTCOLOR not implemented\n",
+            );
             return 0;
         }
         SET_CENTERTEXTCOLOR => {
             //## %s=""  # Color of text RED:WHITE:BLUE: YELLOW
-            G_DebugPrint(WL_WARNING, "Q3_GetString: SET_CENTERTEXTCOLOR not implemented\n");
+            G_DebugPrint(
+                WL_WARNING,
+                "Q3_GetString: SET_CENTERTEXTCOLOR not implemented\n",
+            );
             return 0;
         }
         SET_SCROLLTEXTCOLOR => {
             //## %s=""  # Color of text RED:WHITE:BLUE: YELLOW
-            G_DebugPrint(WL_WARNING, "Q3_GetString: SET_SCROLLTEXTCOLOR not implemented\n");
+            G_DebugPrint(
+                WL_WARNING,
+                "Q3_GetString: SET_SCROLLTEXTCOLOR not implemented\n",
+            );
             return 0;
         }
         SET_COPY_ORIGIN => {
             //## %s="targetname"  # Copy the origin of the ent with targetname to your origin
-            G_DebugPrint(WL_WARNING, "Q3_GetString: SET_COPY_ORIGIN not implemented\n");
+            G_DebugPrint(
+                WL_WARNING,
+                "Q3_GetString: SET_COPY_ORIGIN not implemented\n",
+            );
             return 0;
         }
         SET_DEFEND_TARGET => {
             //## %s="targetname"  # This NPC will attack the target NPC's enemies
-            G_DebugPrint(WL_WARNING, "Q3_GetString: SET_COPY_ORIGIN not implemented\n");
+            G_DebugPrint(
+                WL_WARNING,
+                "Q3_GetString: SET_COPY_ORIGIN not implemented\n",
+            );
             return 0;
         }
         SET_VIDEO_PLAY => {
@@ -4954,16 +5451,26 @@ pub unsafe fn Q3_GetString(entID: c_int, _type: c_int, name: *const c_char, valu
 /// # Safety
 /// `g_entities` must be initialised; `ent->NPC`/`ent->client` are dereferenced when set.
 pub unsafe fn Q3_SetBState(entID: c_int, bs_name: *const c_char) -> qboolean {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
     let bSID: bState_t;
 
     if ent.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetBState: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetBState: invalid entID {entID}\n"),
+        );
         return QTRUE;
     }
 
     if (*ent).NPC.is_null() {
-        G_DebugPrint(WL_ERROR, &format!("Q3_SetBState: '{}' is not an NPC\n", cstr_or_null((*ent).targetname)));
+        G_DebugPrint(
+            WL_ERROR,
+            &format!(
+                "Q3_SetBState: '{}' is not an NPC\n",
+                cstr_or_null((*ent).targetname)
+            ),
+        );
         return QTRUE; //ok to complete
     }
 
@@ -4991,7 +5498,10 @@ pub unsafe fn Q3_SetBState(entID: c_int, bs_name: *const c_char) -> qboolean {
                 else {
                     G_DebugPrint(
                         WL_ERROR,
-                        &format!("Q3_SetBState: '{}' is not in a valid waypoint to search from!\n", cstr_or_null((*ent).targetname)),
+                        &format!(
+                            "Q3_SetBState: '{}' is not in a valid waypoint to search from!\n",
+                            cstr_or_null((*ent).targetname)
+                        ),
                     );
                     return QTRUE;
                 }
@@ -5062,16 +5572,26 @@ pub unsafe fn Q3_SetBState(entID: c_int, bs_name: *const c_char) -> qboolean {
 /// # Safety
 /// `g_entities` must be initialised; `ent->NPC` is dereferenced when set.
 pub unsafe fn Q3_SetTempBState(entID: c_int, bs_name: *const c_char) -> qboolean {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
     let bSID: bState_t;
 
     if ent.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetTempBState: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetTempBState: invalid entID {entID}\n"),
+        );
         return QTRUE;
     }
 
     if (*ent).NPC.is_null() {
-        G_DebugPrint(WL_ERROR, &format!("Q3_SetTempBState: '{}' is not an NPC\n", cstr_or_null((*ent).targetname)));
+        G_DebugPrint(
+            WL_ERROR,
+            &format!(
+                "Q3_SetTempBState: '{}' is not an NPC\n",
+                cstr_or_null((*ent).targetname)
+            ),
+        );
         return QTRUE; //ok to complete
     }
 
@@ -5103,16 +5623,26 @@ pub unsafe fn Q3_SetTempBState(entID: c_int, bs_name: *const c_char) -> qboolean
 /// # Safety
 /// `g_entities` must be initialised; `ent->NPC` is dereferenced when set.
 pub unsafe fn Q3_SetDefaultBState(entID: c_int, bs_name: *const c_char) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
     let bSID: bState_t;
 
     if ent.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetDefaultBState: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetDefaultBState: invalid entID {entID}\n"),
+        );
         return;
     }
 
     if (*ent).NPC.is_null() {
-        G_DebugPrint(WL_ERROR, &format!("Q3_SetDefaultBState: '{}' is not an NPC\n", cstr_or_null((*ent).targetname)));
+        G_DebugPrint(
+            WL_ERROR,
+            &format!(
+                "Q3_SetDefaultBState: '{}' is not an NPC\n",
+                cstr_or_null((*ent).targetname)
+            ),
+        );
         return;
     }
 
@@ -5131,11 +5661,15 @@ pub unsafe fn Q3_SetDefaultBState(entID: c_int, bs_name: *const c_char) {
 /// # Safety
 /// `g_entities` must be initialised; `scriptname` must be a valid C string.
 pub unsafe fn Q3_SetBehaviorSet(entID: c_int, toSet: c_int, scriptname: *const c_char) -> qboolean {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
     let mut bSet: bSet_t = BSET_INVALID;
 
     if ent.is_null() {
-        G_DebugPrint(WL_WARNING, &format!("Q3_SetBehaviorSet: invalid entID {entID}\n"));
+        G_DebugPrint(
+            WL_WARNING,
+            &format!("Q3_SetBehaviorSet: invalid entID {entID}\n"),
+        );
         return QFALSE;
     }
 

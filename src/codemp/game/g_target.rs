@@ -35,13 +35,15 @@ use crate::codemp::game::g_public_h::{BSET_USE, SVF_BROADCAST};
 use crate::codemp::game::g_spawn::{G_NewString, G_SpawnFloat, G_SpawnString};
 use crate::codemp::game::g_team::Team_ReturnFlag;
 use crate::codemp::game::g_utils::{
-    vtos, GlobalUse, G_AddEvent, G_Find, G_FreeEntity, G_PickTarget, G_SetMovedir, G_SetOrigin,
-    G_SoundIndex, G_SoundSetIndex, G_TeamCommand, G_UseTargets, G_UseTargets2,
+    vtos, G_AddEvent, G_Find, G_FreeEntity, G_PickTarget, G_SetMovedir, G_SetOrigin, G_SoundIndex,
+    G_SoundSetIndex, G_TeamCommand, G_UseTargets, G_UseTargets2, GlobalUse,
 };
 use crate::codemp::game::npc_utils::G_ActivateBehavior;
-use crate::codemp::game::q_math::{vec3_origin, VectorCopy, VectorMA, VectorNormalize, VectorSubtract};
-use crate::codemp::game::q_shared::{crandom, va, Sz, Q_stricmp, Q_strncpyz};
 use crate::codemp::game::q_math::Q_irand;
+use crate::codemp::game::q_math::{
+    vec3_origin, VectorCopy, VectorMA, VectorNormalize, VectorSubtract,
+};
+use crate::codemp::game::q_shared::{crandom, va, Q_stricmp, Q_strncpyz, Sz};
 use crate::codemp::game::q_shared_h::{trace_t, vec3_t, ERR_DROP, MAX_QPATH, Q3_SCRIPT_DIR};
 use crate::codemp::game::surfaceflags_h::{CONTENTS_BODY, CONTENTS_CORPSE, CONTENTS_SOLID};
 use crate::ffi::types::{qboolean, QFALSE, QTRUE};
@@ -338,7 +340,10 @@ pub unsafe extern "C" fn target_play_music_use(
     _activator: *mut gentity_t,
 ) {
     G_ActivateBehavior(self_, BSET_USE);
-    trap::SetConfigstring(CS_MUSIC, &CStr::from_ptr((*self_).message).to_string_lossy());
+    trap::SetConfigstring(
+        CS_MUSIC,
+        &CStr::from_ptr((*self_).message).to_string_lossy(),
+    );
 }
 
 /*QUAKED target_play_music (1 0 0) (-4 -4 -4) (4 4 4)
@@ -865,9 +870,7 @@ pub unsafe extern "C" fn Use_Target_Print(
 
     if (*ent).genericValue15 > (*addr_of!(level)).time {
         Com_Printf("TARGET PRINT ERRORS:\n");
-        if !activator.is_null()
-            && !(*activator).classname.is_null()
-            && *(*activator).classname != 0
+        if !activator.is_null() && !(*activator).classname.is_null() && *(*activator).classname != 0
         {
             Com_Printf(&format!(
                 "activator classname: {}\n",
@@ -921,7 +924,8 @@ pub unsafe extern "C" fn Use_Target_Print(
         if !activator.is_null() && !(*activator).client.is_null() {
             // make sure there's a valid client ent to send it to
             trap::SendServerCommand(
-                activator.offset_from(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()) as c_int,
+                activator.offset_from(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    as c_int,
                 &format!("{cmd} \"{msg}\""),
             );
         }
@@ -1292,7 +1296,11 @@ pub unsafe extern "C" fn target_laser_start(self_: *mut gentity_t) {
     (*self_).s.eType = ET_BEAM;
 
     if !(*self_).target.is_null() {
-        let ent = G_Find(null_mut(), offset_of!(gentity_s, targetname), (*self_).target);
+        let ent = G_Find(
+            null_mut(),
+            offset_of!(gentity_s, targetname),
+            (*self_).target,
+        );
         if ent.is_null() {
             Com_Printf(&format!(
                 "{} at {}: {} is a bad target\n",

@@ -15,9 +15,7 @@ use core::ptr::addr_of;
 use crate::codemp::game::bg_misc::{BG_EvaluateTrajectory, BG_EvaluateTrajectoryDelta};
 use crate::codemp::game::bg_weapons_h::WP_SABER;
 use crate::codemp::game::g_active::{DoImpact, G_MoverTouchPushTriggers};
-use crate::codemp::game::g_local::{
-    gentity_t, FL_BOUNCE, FL_BOUNCE_HALF, FRAMETIME,
-};
+use crate::codemp::game::g_local::{gentity_t, FL_BOUNCE, FL_BOUNCE_HALF, FRAMETIME};
 use crate::codemp::game::g_main::{g_entities, g_gravity, level};
 use crate::codemp::game::npc::pitch_roll_for_slope;
 use crate::codemp::game::q_math::{
@@ -25,7 +23,7 @@ use crate::codemp::game::q_math::{
     VectorScale,
 };
 use crate::codemp::game::q_shared_h::{
-    trace_t, trType_t, vec3_t, TR_GRAVITY, TR_LINEAR, TR_STATIONARY,
+    trType_t, trace_t, vec3_t, TR_GRAVITY, TR_LINEAR, TR_STATIONARY,
 };
 use crate::ffi::types::QTRUE;
 use crate::trap;
@@ -206,7 +204,8 @@ pub unsafe extern "C" fn G_RunObject(ent: *mut gentity_t) {
     //hit something
 
     //Do impact damage
-    let traceEnt = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(tr.entityNum as usize);
+    let traceEnt =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(tr.entityNum as usize);
     if tr.fraction != 0.0 || (!traceEnt.is_null() && (*traceEnt).takedamage != 0) {
         if VectorCompare(&(*ent).r.currentOrigin, &oldOrg) == 0 {
             //moved and impacted

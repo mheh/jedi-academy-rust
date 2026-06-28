@@ -20,12 +20,10 @@ use core::ffi::c_int;
 use core::ptr::{addr_of, addr_of_mut};
 
 use crate::codemp::game::ai_h::SQUAD_TRANSITION;
-use crate::codemp::game::g_combat::G_AlertTeam;
-use crate::codemp::game::npc_ai_jedi::NPC_Jedi_RateNewEnemy;
 use crate::codemp::game::b_local_h::{
-    CP_APPROACH_ENEMY, CP_AVOID, CP_AVOID_ENEMY, CP_CLEAR, CP_COVER, CP_DUCK, CP_FLANK, CP_FLEE,
-    CP_HAS_ROUTE, CP_HORZ_DIST_COLL, CP_INVESTIGATE, CP_NEAREST, CP_NO_PVS, CP_RETREAT, CP_SQUAD,
-    CPF_DUCK, CPF_FLEE, CPF_INVESTIGATE, CPF_SQUAD,
+    CPF_DUCK, CPF_FLEE, CPF_INVESTIGATE, CPF_SQUAD, CP_APPROACH_ENEMY, CP_AVOID, CP_AVOID_ENEMY,
+    CP_CLEAR, CP_COVER, CP_DUCK, CP_FLANK, CP_FLEE, CP_HAS_ROUTE, CP_HORZ_DIST_COLL,
+    CP_INVESTIGATE, CP_NEAREST, CP_NO_PVS, CP_RETREAT, CP_SQUAD,
 };
 use crate::codemp::game::b_public_h::{
     visibility_t, BS_DEFAULT, BS_HUNT_AND_KILL, BS_INVESTIGATE, BS_PATROL, BS_STAND_AND_SHOOT,
@@ -40,21 +38,24 @@ use crate::codemp::game::bg_public::{
 };
 use crate::codemp::game::bg_weapons::weaponData;
 use crate::codemp::game::bg_weapons_h::{
-    WP_BLASTER, WP_BOWCASTER, WP_BRYAR_PISTOL, WP_DEMP2, WP_DISRUPTOR, WP_EMPLACED_GUN, WP_FLECHETTE,
-    WP_NONE, WP_REPEATER, WP_ROCKET_LAUNCHER, WP_SABER, WP_STUN_BATON, WP_THERMAL, WP_TURRET,
+    WP_BLASTER, WP_BOWCASTER, WP_BRYAR_PISTOL, WP_DEMP2, WP_DISRUPTOR, WP_EMPLACED_GUN,
+    WP_FLECHETTE, WP_NONE, WP_REPEATER, WP_ROCKET_LAUNCHER, WP_SABER, WP_STUN_BATON, WP_THERMAL,
+    WP_TURRET,
 };
+use crate::codemp::game::g_combat::G_AlertTeam;
+use crate::codemp::game::g_items::{Add_Ammo, CheckItemCanBePickedUpByNPC};
 use crate::codemp::game::g_local::{gentity_t, FL_NOTARGET, MAX_COMBAT_POINTS};
 use crate::codemp::game::g_main::{debugNPCAI, g_entities, g_spskill, level, Com_Printf};
 use crate::codemp::game::g_nav::{
-    NAV_ClearPathToPoint, NAV_FindClosestWaypointForPoint2, NAV_GetNearestNode, NF_CLEAR_PATH,
-    NODE_NONE, NPC_SetMoveGoal, WAYPOINT_NONE,
+    NAV_ClearPathToPoint, NAV_FindClosestWaypointForPoint2, NAV_GetNearestNode, NPC_SetMoveGoal,
+    NF_CLEAR_PATH, NODE_NONE, WAYPOINT_NONE,
 };
 use crate::codemp::game::g_public_h::{BSET_ANGER, Q3_INFINITE, SVF_GLASS_BRUSH};
 use crate::codemp::game::g_timer::{TIMER_Done, TIMER_Exists, TIMER_Set};
 use crate::codemp::game::g_utils::{vtos, G_CheckInSolid, G_FreeEntity, G_SetOrigin, G_Sound};
-use crate::codemp::game::g_items::{Add_Ammo, CheckItemCanBePickedUpByNPC};
-use crate::codemp::game::npc::{client, ucmd, NPC, NPCInfo};
+use crate::codemp::game::npc::{client, ucmd, NPCInfo, NPC};
 use crate::codemp::game::npc_ai_default::NPC_LostEnemyDecideChase;
+use crate::codemp::game::npc_ai_jedi::NPC_Jedi_RateNewEnemy;
 use crate::codemp::game::npc_misc::{Debug_Printf, DEBUG_LEVEL_INFO};
 use crate::codemp::game::npc_senses::{InVisrange, NPC_CheckVisibility};
 // `G_AddVoiceEvent`'s canonical C home is NPC_sounds.c:23 → defined in `npc_sounds.rs`.
@@ -65,22 +66,22 @@ use crate::codemp::game::npc_utils::{
     CalcEntitySpot, G_ActivateBehavior, NPC_AimWiggle, NPC_CheckLookTarget, NPC_ClearLOS,
     NPC_ClearLOS3, NPC_ClearLookTarget, NPC_UpdateFiringAngles,
 };
+use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_math::{
     flrand, vec3_origin, vectoangles, AngleVectors, DistanceHorizontalSquared, DistanceSquared,
     DotProduct, VectorClear, VectorCopy, VectorLength, VectorLengthSquared, VectorMA,
     VectorNormalize, VectorSet, VectorSubtract,
 };
 use crate::codemp::game::q_shared::{random, Q_stricmp};
-use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_shared_h::{
     trace_t, vec3_t, BUTTON_ATTACK, CHAN_AUTO, ENTITYNUM_NONE, PITCH, WORLD_SIZE, YAW,
 };
 use crate::codemp::game::teams_h::{
     CLASS_ATST, CLASS_GALAKMECH, CLASS_IMPERIAL, CLASS_IMPWORKER, CLASS_INTERROGATOR, CLASS_JAN,
     CLASS_JAWA, CLASS_LANDO, CLASS_MARK1, CLASS_MARK2, CLASS_MINEMONSTER, CLASS_MURJJ,
-    CLASS_PRISONER, CLASS_PROBE, CLASS_REBEL, CLASS_REELO, CLASS_REMOTE, CLASS_SEEKER, CLASS_SENTRY,
-    CLASS_STORMTROOPER, CLASS_SWAMPTROOPER, CLASS_TRANDOSHAN, CLASS_UGNAUGHT, NPCTEAM_ENEMY,
-    NPCTEAM_FREE, NPCTEAM_NEUTRAL, NPCTEAM_PLAYER,
+    CLASS_PRISONER, CLASS_PROBE, CLASS_REBEL, CLASS_REELO, CLASS_REMOTE, CLASS_SEEKER,
+    CLASS_SENTRY, CLASS_STORMTROOPER, CLASS_SWAMPTROOPER, CLASS_TRANDOSHAN, CLASS_UGNAUGHT,
+    NPCTEAM_ENEMY, NPCTEAM_FREE, NPCTEAM_NEUTRAL, NPCTEAM_PLAYER,
 };
 use crate::ffi::types::{qboolean, QFALSE, QTRUE};
 use crate::trap;
@@ -117,7 +118,9 @@ pub unsafe fn G_TeamEnemy(self_: *mut gentity_t) -> qboolean {
     if (*self_).client.is_null() || (*(*self_).client).playerTeam == TEAM_FREE {
         return QFALSE;
     }
-    if !self_.is_null() && !(*self_).NPC.is_null() && ((*(*self_).NPC).scriptFlags & SCF_NO_GROUPS) != 0
+    if !self_.is_null()
+        && !(*self_).NPC.is_null()
+        && ((*(*self_).NPC).scriptFlags & SCF_NO_GROUPS) != 0
     {
         // I'm not a team playa...
         return QFALSE;
@@ -125,7 +128,8 @@ pub unsafe fn G_TeamEnemy(self_: *mut gentity_t) -> qboolean {
 
     let num_entities = (*addr_of!(level)).num_entities;
     for i in 1..num_entities {
-        let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(i as isize);
+        let ent: *mut gentity_t =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(i as isize);
 
         if ent == self_ {
             continue;
@@ -214,7 +218,9 @@ pub unsafe fn G_AttackDelay(self_: *mut gentity_t, enemy: *mut gentity_t) {
             // they panic, don't fire right away
             CLASS_IMPWORKER => attDelay += Q_irand(1000, 2500),
             CLASS_TRANDOSHAN => attDelay -= Q_irand(500, 1500),
-            CLASS_JAN | CLASS_LANDO | CLASS_PRISONER | CLASS_REBEL => attDelay -= Q_irand(500, 1500),
+            CLASS_JAN | CLASS_LANDO | CLASS_PRISONER | CLASS_REBEL => {
+                attDelay -= Q_irand(500, 1500)
+            }
             CLASS_GALAKMECH | CLASS_ATST => attDelay -= Q_irand(1000, 2000),
             CLASS_REELO | CLASS_UGNAUGHT | CLASS_JAWA => return,
             CLASS_MINEMONSTER | CLASS_MURJJ => return,
@@ -244,8 +250,8 @@ pub unsafe fn G_AttackDelay(self_: *mut gentity_t, enemy: *mut gentity_t) {
             }
             WP_FLECHETTE => attDelay += Q_irand(500, 1500),
             WP_ROCKET_LAUNCHER => attDelay += Q_irand(500, 1500),
-            WP_DISRUPTOR => return, // sniper's don't delay?
-            WP_THERMAL => return,   // grenade-throwing has a built-in delay
+            WP_DISRUPTOR => return,  // sniper's don't delay?
+            WP_THERMAL => return,    // grenade-throwing has a built-in delay
             WP_STUN_BATON => return, // Any ol' melee attack
             WP_EMPLACED_GUN => return,
             WP_TURRET => return, // turret guns
@@ -324,7 +330,11 @@ pub unsafe fn G_AimSet(self_: *mut gentity_t, aim: c_int) {
         (*(*self_).NPC).currentAim = aim;
 
         let debounce = 500 + (3 - (*addr_of!(g_spskill)).integer) * 100;
-        TIMER_Set(self_, c"aimDebounce".as_ptr(), Q_irand(debounce, debounce + 1000));
+        TIMER_Set(
+            self_,
+            c"aimDebounce".as_ptr(),
+            Q_irand(debounce, debounce + 1000),
+        );
     }
 }
 
@@ -537,8 +547,10 @@ pub unsafe fn G_SetEnemy(self_: *mut gentity_t, enemy: *mut gentity_t) {
                 G_AimSet(
                     self_,
                     Q_irand(
-                        (*(*self_).NPC).stats.aim - (max_err * (3 - (*addr_of!(g_spskill)).integer)),
-                        (*(*self_).NPC).stats.aim - (min_err * (3 - (*addr_of!(g_spskill)).integer)),
+                        (*(*self_).NPC).stats.aim
+                            - (max_err * (3 - (*addr_of!(g_spskill)).integer)),
+                        (*(*self_).NPC).stats.aim
+                            - (min_err * (3 - (*addr_of!(g_spskill)).integer)),
                     ),
                 );
             }
@@ -758,9 +770,11 @@ pub unsafe fn ChangeWeapon(ent: *mut gentity_t, newWeapon: c_int) {
                         (*(*ent).NPC).burstMin = 1;
                         (*(*ent).NPC).burstMax = 1; // two shots
                     } else if g_sp == 1 {
-                        (*(*ent).NPC).burstSpacing = ((*(*ent).parent).wait + 200.0) as c_int; // attack debounce
+                        (*(*ent).NPC).burstSpacing = ((*(*ent).parent).wait + 200.0) as c_int;
+                    // attack debounce
                     } else {
-                        (*(*ent).NPC).burstSpacing = (*(*ent).parent).wait as c_int; // attack debounce
+                        (*(*ent).NPC).burstSpacing = (*(*ent).parent).wait as c_int;
+                        // attack debounce
                     }
                 } else if g_sp == 0 {
                     (*(*ent).NPC).burstSpacing = 1200; // attack debounce
@@ -804,7 +818,8 @@ pub unsafe fn NPC_ChangeWeapon(_newWeapon: c_int) {
 pub unsafe fn NPC_ReserveCombatPoint(combatPointID: c_int) -> qboolean {
     //Make sure it's valid
     //if combatPointID > (*addr_of!(level)).numCombatPoints {
-    if combatPointID < 0 || combatPointID > (*addr_of!(level)).numCombatPoints { //RUST-FIX: C lacks `< 0` guard, relies on benign OOB read of combatPoints[-1] for the -1 sentinel
+    if combatPointID < 0 || combatPointID > (*addr_of!(level)).numCombatPoints {
+        //RUST-FIX: C lacks `< 0` guard, relies on benign OOB read of combatPoints[-1] for the -1 sentinel
         return QFALSE;
     }
 
@@ -837,7 +852,8 @@ pub unsafe fn NPC_FreeCombatPoint(combatPointID: c_int, failed: qboolean) -> qbo
     }
     //Make sure it's valid
     //if combatPointID > (*addr_of!(level)).numCombatPoints {
-    if combatPointID < 0 || combatPointID > (*addr_of!(level)).numCombatPoints { //RUST-FIX: C lacks `< 0` guard, relies on benign OOB read of combatPoints[-1] for the -1 sentinel
+    if combatPointID < 0 || combatPointID > (*addr_of!(level)).numCombatPoints {
+        //RUST-FIX: C lacks `< 0` guard, relies on benign OOB read of combatPoints[-1] for the -1 sentinel
         return QFALSE;
     }
 
@@ -1152,8 +1168,10 @@ pub unsafe fn NPC_FindCombatPoint(
 
         //Avoid this position?
         if (flags & CP_AVOID) != 0
-            && DistanceSquared(&(*addr_of!(level)).combatPoints[i as usize].origin, position)
-                < modified_avoid_dist
+            && DistanceSquared(
+                &(*addr_of!(level)).combatPoints[i as usize].origin,
+                position,
+            ) < modified_avoid_dist
         {
             //was using MIN_AVOID_DISTANCE_SQUARED, not passed in modifiedAvoidDist
             continue;
@@ -1224,7 +1242,10 @@ pub unsafe fn NPC_FindCombatPoint(
             else
             */
             {
-                VectorCopy(&(*addr_of!(level)).combatPoints[i as usize].origin, &mut wp_org);
+                VectorCopy(
+                    &(*addr_of!(level)).combatPoints[i as usize].origin,
+                    &mut wp_org,
+                );
             }
             VectorSubtract(position, &wp_org, &mut g_dir);
             VectorNormalize(&mut g_dir);
@@ -1343,7 +1364,6 @@ pub unsafe fn NPC_SetPickUpGoal(found_weap: *mut gentity_t) {
     (*(*addr_of!(NPCInfo))).tempBehavior = BS_DEFAULT;
     (*(*addr_of!(NPCInfo))).squadState = SQUAD_TRANSITION;
 }
-
 
 /// `float IdealDistance( gentity_t *self )` (NPC_combat.c:2474).
 ///
@@ -1513,7 +1533,7 @@ pub unsafe fn NPC_MaxDistSquaredForWeapon() -> f32 {
     }
 
     match (*(*addr_of!(NPC))).s.weapon {
-        WP_BLASTER => 1024.0 * 1024.0,    //scav rifle //should be shorter?
+        WP_BLASTER => 1024.0 * 1024.0,      //scav rifle //should be shorter?
         WP_BRYAR_PISTOL => 1024.0 * 1024.0, //prifle
 
         /*
@@ -1779,7 +1799,8 @@ pub unsafe fn ShotThroughGlass(
     spot: &vec3_t,
     mask: c_int,
 ) -> qboolean {
-    let hit: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset((*tr).entityNum as isize);
+    let hit: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset((*tr).entityNum as isize);
     if hit != target && EntIsGlass(hit) != QFALSE {
         //ok to shoot through breakable glass
         let skip = (*hit).s.number;
@@ -1830,7 +1851,8 @@ pub unsafe fn CanShoot(ent: *mut gentity_t, shooter: *mut gentity_t) -> qboolean
         (*shooter).s.number,
         MASK_SHOT,
     );
-    let mut trace_ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(tr.entityNum as isize);
+    let mut trace_ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(tr.entityNum as isize);
 
     // point blank, baby!
     if tr.startsolid != 0
@@ -1841,7 +1863,8 @@ pub unsafe fn CanShoot(ent: *mut gentity_t, shooter: *mut gentity_t) -> qboolean
     }
 
     if ShotThroughGlass(&mut tr, ent, &spot, MASK_SHOT) != QFALSE {
-        trace_ent = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(tr.entityNum as isize);
+        trace_ent =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(tr.entityNum as isize);
     }
 
     // shot is dead on
@@ -1860,7 +1883,8 @@ pub unsafe fn CanShoot(ent: *mut gentity_t, shooter: *mut gentity_t) -> qboolean
             (*shooter).s.number,
             MASK_SHOT,
         );
-        trace_ent = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(tr.entityNum as isize);
+        trace_ent =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(tr.entityNum as isize);
         if trace_ent == ent {
             return QTRUE;
         }
@@ -2076,7 +2100,11 @@ pub unsafe fn NPC_EvaluateShot(hit: c_int, _glassOK: qboolean) -> qboolean {
     }
 
     if hit == (*(*(*addr_of!(NPC))).enemy).s.number
-        || ((*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(hit as isize)).r.svFlags & SVF_GLASS_BRUSH) != 0
+        || ((*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(hit as isize))
+            .r
+            .svFlags
+            & SVF_GLASS_BRUSH)
+            != 0
     {
         //can hit enemy or will hit glass, so shoot anyway
         return QTRUE;
@@ -2264,8 +2292,9 @@ pub unsafe fn NPC_CheckCanAttack(mut attack_scale: f32, _stationary: qboolean) -
             ShotThroughGlass(&tr, NPC->enemy, enemy_org, MASK_SHOT);
             */
 
-            let trace_ent: *mut gentity_t =
-                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(tr.entityNum as isize);
+            let trace_ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities)
+                .cast::<gentity_t>())
+            .offset(tr.entityNum as isize);
 
             /*
             if( traceEnt != NPC->enemy &&//FIXME: if someone on our team is in the way, suggest that they duck if possible
@@ -2288,8 +2317,7 @@ pub unsafe fn NPC_CheckCanAttack(mut attack_scale: f32, _stationary: qboolean) -
             if trace_ent == (*(*addr_of!(NPC))).enemy
                 || (!(*trace_ent).client.is_null()
                     && (*(*(*addr_of!(NPC))).client).enemyTeam != 0
-                    && (*(*(*addr_of!(NPC))).client).enemyTeam
-                        == (*(*trace_ent).client).playerTeam)
+                    && (*(*(*addr_of!(NPC))).client).enemyTeam == (*(*trace_ent).client).playerTeam)
             {
                 dead_on = QTRUE;
             } else {
@@ -2298,8 +2326,7 @@ pub unsafe fn NPC_CheckCanAttack(mut attack_scale: f32, _stationary: qboolean) -
                     && !trace_ent.is_null()
                     && !(*trace_ent).client.is_null()
                     && (*(*trace_ent).client).playerTeam != 0
-                    && (*(*(*addr_of!(NPC))).client).playerTeam
-                        == (*(*trace_ent).client).playerTeam
+                    && (*(*(*addr_of!(NPC))).client).playerTeam == (*(*trace_ent).client).playerTeam
                 {
                     //Don't shoot our own team
                     attack_ok = QFALSE;
@@ -2437,8 +2464,10 @@ pub unsafe fn ShootThink() {
 
     if ((*(*addr_of!(NPCInfo))).aiFlags & NPCAI_BURST_WEAPON) != 0 {
         if (*(*addr_of!(NPCInfo))).burstCount == 0 {
-            (*(*addr_of!(NPCInfo))).burstCount =
-                Q_irand((*(*addr_of!(NPCInfo))).burstMin, (*(*addr_of!(NPCInfo))).burstMax);
+            (*(*addr_of!(NPCInfo))).burstCount = Q_irand(
+                (*(*addr_of!(NPCInfo))).burstMin,
+                (*(*addr_of!(NPCInfo))).burstMax,
+            );
             /*
             NPCInfo->burstCount = erandom( NPCInfo->burstMean );
             if ( NPCInfo->burstCount < NPCInfo->burstMin )
@@ -2486,7 +2515,8 @@ pub unsafe fn ShootThink() {
     }
 
     (*(*addr_of!(NPCInfo))).shotTime = (*addr_of!(level)).time + delay;
-    (*(*addr_of!(NPC))).attackDebounceTime = (*addr_of!(level)).time + NPC_AttackDebounceForWeapon();
+    (*(*addr_of!(NPC))).attackDebounceTime =
+        (*addr_of!(level)).time + NPC_AttackDebounceForWeapon();
 }
 
 /*
@@ -2783,19 +2813,28 @@ pub unsafe fn NPC_PickEnemy(
                                             failed = QTRUE;
                                         }
                                     } else {
-                                        Debug_Printf(addr_of!(debugNPCAI), DEBUG_LEVEL_INFO, format_args!(
-                                            "{} saw {} trying to hide - hiddenDist {}\n",
-                                            core::ffi::CStr::from_ptr((*(*addr_of!(NPC))).targetname).to_string_lossy(),
-                                            core::ffi::CStr::from_ptr((*newenemy).targetname).to_string_lossy(),
-                                            (*(*newenemy).client).hiddenDist,
-                                        ));
+                                        Debug_Printf(
+                                            addr_of!(debugNPCAI),
+                                            DEBUG_LEVEL_INFO,
+                                            format_args!(
+                                                "{} saw {} trying to hide - hiddenDist {}\n",
+                                                core::ffi::CStr::from_ptr(
+                                                    (*(*addr_of!(NPC))).targetname
+                                                )
+                                                .to_string_lossy(),
+                                                core::ffi::CStr::from_ptr((*newenemy).targetname)
+                                                    .to_string_lossy(),
+                                                (*(*newenemy).client).hiddenDist,
+                                            ),
+                                        );
                                     }
                                 }
 
                                 if failed == QFALSE {
                                     if findClosest != QFALSE {
                                         if relDist < bestDist {
-                                            if NPC_EnemyTooFar(newenemy, relDist, QFALSE) == QFALSE {
+                                            if NPC_EnemyTooFar(newenemy, relDist, QFALSE) == QFALSE
+                                            {
                                                 if checkVis != QFALSE {
                                                     if NPC_CheckVisibility(newenemy, visChecks)
                                                         == minVis
@@ -2838,7 +2877,8 @@ pub unsafe fn NPC_PickEnemy(
     }
 
     if num_choices != 0 {
-        return (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(choice[(rand() % num_choices) as usize] as isize);
+        return (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .offset(choice[(rand() % num_choices) as usize] as isize);
     }
 
     /*
@@ -2855,7 +2895,8 @@ pub unsafe fn NPC_PickEnemy(
 
     let mut entNum = 0;
     while entNum < (*addr_of!(level)).num_entities {
-        newenemy = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(entNum as isize);
+        newenemy =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(entNum as isize);
 
         if newenemy != *addr_of!(NPC)
             && !(*newenemy).client.is_null() /*|| newenemy->svFlags & SVF_NONNPC_ENEMY*/
@@ -2942,12 +2983,18 @@ pub unsafe fn NPC_PickEnemy(
                                     continue;
                                 }
                             } else {
-                                Debug_Printf(addr_of!(debugNPCAI), DEBUG_LEVEL_INFO, format_args!(
-                                    "{} saw {} trying to hide - hiddenDist {}\n",
-                                    core::ffi::CStr::from_ptr((*(*addr_of!(NPC))).targetname).to_string_lossy(),
-                                    core::ffi::CStr::from_ptr((*newenemy).targetname).to_string_lossy(),
-                                    (*(*newenemy).client).hiddenDist,
-                                ));
+                                Debug_Printf(
+                                    addr_of!(debugNPCAI),
+                                    DEBUG_LEVEL_INFO,
+                                    format_args!(
+                                        "{} saw {} trying to hide - hiddenDist {}\n",
+                                        core::ffi::CStr::from_ptr((*(*addr_of!(NPC))).targetname)
+                                            .to_string_lossy(),
+                                        core::ffi::CStr::from_ptr((*newenemy).targetname)
+                                            .to_string_lossy(),
+                                        (*(*newenemy).client).hiddenDist,
+                                    ),
+                                );
                             }
                         }
 
@@ -2998,7 +3045,8 @@ pub unsafe fn NPC_PickEnemy(
         return core::ptr::null_mut();
     }
 
-    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(choice[(rand() % num_choices) as usize] as isize)
+    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+        .offset(choice[(rand() % num_choices) as usize] as isize)
 }
 
 /*
@@ -3057,8 +3105,10 @@ pub unsafe fn NPC_PickAlly(
                         }
                     }
 
-                    if trap::InPVS(&(*ally).r.currentOrigin, &(*(*addr_of!(NPC))).r.currentOrigin)
-                        == QFALSE
+                    if trap::InPVS(
+                        &(*ally).r.currentOrigin,
+                        &(*(*addr_of!(NPC))).r.currentOrigin,
+                    ) == QFALSE
                     {
                         entNum += 1;
                         continue;
@@ -3315,7 +3365,13 @@ pub unsafe fn NPC_CheckEnemy(
             //			means they need to find one that in more than just PVS
             //newenemy = NPC_PickEnemy( closestTo, NPC->client->enemyTeam, (NPC->cantHitEnemyCounter > 10), qfalse, qtrue );//3rd parm was (NPC->enemyTeam == TEAM_STARFLEET)
             //For now, made it so you ALWAYS have to check VIS
-            newEnemy = NPC_PickEnemy(closestTo, (*(*addr_of!(client))).enemyTeam, QTRUE, QFALSE, QTRUE); //3rd parm was (NPC->enemyTeam == TEAM_STARFLEET)
+            newEnemy = NPC_PickEnemy(
+                closestTo,
+                (*(*addr_of!(client))).enemyTeam,
+                QTRUE,
+                QFALSE,
+                QTRUE,
+            ); //3rd parm was (NPC->enemyTeam == TEAM_STARFLEET)
             if !newEnemy.is_null() {
                 foundenemy = QTRUE;
                 if setEnemy != QFALSE {
@@ -3373,7 +3429,9 @@ pub unsafe fn NPC_SearchForWeapons() -> *mut gentity_t {
         //		{
         //			continue;
         //		}
-        if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(i as isize)).inuse == QFALSE {
+        if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(i as isize)).inuse
+            == QFALSE
+        {
             i += 1;
             continue;
         }

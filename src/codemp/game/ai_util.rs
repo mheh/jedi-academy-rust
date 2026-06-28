@@ -16,24 +16,25 @@
 //! No oracle — these are stateful engine-trap / file-I/O and pointer-walking
 //! string parsers; they are faithful ports verified by inspection against the C.
 
-#[allow(unused_imports)] // each import lands with the fn that first uses it (one commit per fn)
+#[allow(unused_imports)]
+// each import lands with the fn that first uses it (one commit per fn)
 use core::ffi::{c_char, c_int, c_void};
 
 use crate::codemp::game::ai_wpnav::gWPArray;
 use crate::codemp::game::bg_misc::{BG_Alloc, BG_TempAlloc, BG_TempFree};
 
 use crate::codemp::game::ai_main_h::{
-    bot_state_t, DEFAULT_FORCEPOWERS, MAX_CHAT_BUFFER_SIZE, MAX_CHAT_LINE_SIZE, MAX_FORCE_INFO_SIZE,
-    MAX_LOVED_ONES,
+    bot_state_t, DEFAULT_FORCEPOWERS, MAX_CHAT_BUFFER_SIZE, MAX_CHAT_LINE_SIZE,
+    MAX_FORCE_INFO_SIZE, MAX_LOVED_ONES,
 };
-use crate::codemp::game::g_local::gentity_t;
-use crate::codemp::game::g_main::level;
-use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::bg_weapons_h::{
     WP_BLASTER, WP_BOWCASTER, WP_BRYAR_PISTOL, WP_DEMP2, WP_DET_PACK, WP_DISRUPTOR, WP_FLECHETTE,
     WP_MELEE, WP_REPEATER, WP_ROCKET_LAUNCHER, WP_SABER, WP_STUN_BATON, WP_THERMAL, WP_TRIP_MINE,
 };
+use crate::codemp::game::g_local::gentity_t;
+use crate::codemp::game::g_main::level;
 use crate::codemp::game::g_main::G_Printf;
+use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_shared::{Com_sprintf, Sz};
 use crate::codemp::game::q_shared_h::{FS_READ, MAX_CLIENTS};
 use crate::trap;
@@ -317,7 +318,9 @@ pub unsafe fn BotDoChat(bs: *mut bot_state_t, section: *mut c_char, always: c_in
     inc_1 = 0;
     inc_2 = 2;
 
-    while *chatgroup.offset(inc_2 as isize) != 0 && *chatgroup.offset(inc_2 as isize) != b'\0' as c_char {
+    while *chatgroup.offset(inc_2 as isize) != 0
+        && *chatgroup.offset(inc_2 as isize) != b'\0' as c_char
+    {
         if *chatgroup.offset(inc_2 as isize) != CR && *chatgroup.offset(inc_2 as isize) != TAB {
             *chatgroup.offset(inc_1 as isize) = *chatgroup.offset(inc_2 as isize);
             inc_1 += 1;
@@ -330,7 +333,9 @@ pub unsafe fn BotDoChat(bs: *mut bot_state_t, section: *mut c_char, always: c_in
 
     lines = {
         let mut count = 0;
-        while *chatgroup.offset(inc_1 as isize) != 0 && *chatgroup.offset(inc_1 as isize) != b'\0' as c_char {
+        while *chatgroup.offset(inc_1 as isize) != 0
+            && *chatgroup.offset(inc_1 as isize) != b'\0' as c_char
+        {
             if *chatgroup.offset(inc_1 as isize) == NL {
                 count += 1;
             }
@@ -358,7 +363,9 @@ pub unsafe fn BotDoChat(bs: *mut bot_state_t, section: *mut c_char, always: c_in
     inc_1 = 0;
 
     while checkedline != getthisline {
-        if *chatgroup.offset(inc_1 as isize) != 0 && *chatgroup.offset(inc_1 as isize) != b'\0' as c_char {
+        if *chatgroup.offset(inc_1 as isize) != 0
+            && *chatgroup.offset(inc_1 as isize) != b'\0' as c_char
+        {
             if *chatgroup.offset(inc_1 as isize) == NL {
                 inc_1 += 1;
                 checkedline += 1;
@@ -587,14 +594,17 @@ pub unsafe fn BotUtilizePersonality(bs: *mut bot_state_t) {
 
     let buf: *mut c_char = B_TempAlloc(131072) as *mut c_char;
 
-    let pfile = core::ffi::CStr::from_ptr((*bs).settings.personalityfile.as_ptr()).to_string_lossy();
+    let pfile =
+        core::ffi::CStr::from_ptr((*bs).settings.personalityfile.as_ptr()).to_string_lossy();
     let (l, f) = trap::FS_FOpenFile(&pfile, FS_READ);
     len = l;
 
     failed = 0;
 
     if f == 0 {
-        G_Printf(&format!("{S_COLOR_RED}Error: Specified personality not found\n"));
+        G_Printf(&format!(
+            "{S_COLOR_RED}Error: Specified personality not found\n"
+        ));
         B_TempFree(131072); //buf
         return;
     }
@@ -671,7 +681,8 @@ pub unsafe fn BotUtilizePersonality(bs: *mut bot_state_t) {
         (*bs).canChat = 0; //default
     }
 
-    if failed == 0 && GetPairedValue(group, c"chatfrequency".as_ptr() as *mut c_char, readbuf) != 0 {
+    if failed == 0 && GetPairedValue(group, c"chatfrequency".as_ptr() as *mut c_char, readbuf) != 0
+    {
         (*bs).chatFrequency = atoi(readbuf);
     } else {
         (*bs).chatFrequency = 5; //default
@@ -765,7 +776,12 @@ pub unsafe fn BotUtilizePersonality(bs: *mut bot_state_t) {
             (*bs).botWeaponWeights[WP_FLECHETTE as usize] = atoi(readbuf) as f32;
         }
 
-        if GetPairedValue(group, c"WP_ROCKET_LAUNCHER".as_ptr() as *mut c_char, readbuf) != 0 {
+        if GetPairedValue(
+            group,
+            c"WP_ROCKET_LAUNCHER".as_ptr() as *mut c_char,
+            readbuf,
+        ) != 0
+        {
             (*bs).botWeaponWeights[WP_ROCKET_LAUNCHER as usize] = atoi(readbuf) as f32;
         }
 

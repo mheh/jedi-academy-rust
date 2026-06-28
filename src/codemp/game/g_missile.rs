@@ -20,16 +20,16 @@ use core::ptr::addr_of;
 use crate::codemp::game::bg_misc::{BG_EvaluateTrajectory, BG_EvaluateTrajectoryDelta};
 use crate::codemp::game::bg_public::{
     EF_ALT_FIRING, EF_JETPACK_ACTIVE, EF_MISSILE_STICK, ET_GENERAL, ET_MISSILE, ET_NPC,
-    EV_GRENADE_BOUNCE, EV_MISSILE_HIT, EV_MISSILE_MISS, EV_MISSILE_MISS_METAL,
-    EV_MISSILE_STICK, EV_SABER_BLOCK, G2_MODEL_PART, MOD_CONC, MOD_CONC_ALT, MOD_CRUSH,
-    MOD_DEMP2_ALT, MOD_DET_PACK_SPLASH, MOD_FLECHETTE_ALT_SPLASH, MOD_REPEATER_ALT, MOD_ROCKET,
-    MOD_ROCKET_HOMING, MOD_SABER, MOD_TARGET_LASER, MOD_THERMAL, MOD_THERMAL_SPLASH,
-    MOD_TIMED_MINE_SPLASH, MOD_TRIP_MINE_SPLASH, MOD_TURBLAST, MOD_VEHICLE, PW_CLOAKED,
+    EV_GRENADE_BOUNCE, EV_MISSILE_HIT, EV_MISSILE_MISS, EV_MISSILE_MISS_METAL, EV_MISSILE_STICK,
+    EV_SABER_BLOCK, G2_MODEL_PART, MOD_CONC, MOD_CONC_ALT, MOD_CRUSH, MOD_DEMP2_ALT,
+    MOD_DET_PACK_SPLASH, MOD_FLECHETTE_ALT_SPLASH, MOD_REPEATER_ALT, MOD_ROCKET, MOD_ROCKET_HOMING,
+    MOD_SABER, MOD_TARGET_LASER, MOD_THERMAL, MOD_THERMAL_SPLASH, MOD_TIMED_MINE_SPLASH,
+    MOD_TRIP_MINE_SPLASH, MOD_TURBLAST, MOD_VEHICLE, PW_CLOAKED,
 };
 use crate::codemp::game::bg_vehicles_h::{VH_FIGHTER, VH_SPEEDER};
 use crate::codemp::game::bg_weapons_h::{
-    WP_BLASTER, WP_BOWCASTER, WP_BRYAR_PISTOL, WP_DEMP2, WP_DET_PACK, WP_EMPLACED_GUN, WP_FLECHETTE,
-    WP_NONE, WP_NUM_WEAPONS, WP_ROCKET_LAUNCHER, WP_SABER, WP_THERMAL, WP_TRIP_MINE,
+    WP_BLASTER, WP_BOWCASTER, WP_BRYAR_PISTOL, WP_DEMP2, WP_DET_PACK, WP_EMPLACED_GUN,
+    WP_FLECHETTE, WP_NONE, WP_NUM_WEAPONS, WP_ROCKET_LAUNCHER, WP_SABER, WP_THERMAL, WP_TRIP_MINE,
 };
 use crate::codemp::game::g_combat::{G_Damage, G_RadiusDamage};
 use crate::codemp::game::g_local::{
@@ -49,15 +49,15 @@ use crate::codemp::game::g_utils::{
 };
 use crate::codemp::game::g_weapon::{laserTrapStick, LogAccuracyHit, SnapVectorTowards};
 use crate::codemp::game::npc_ai_jedi::Jedi_Decloak;
+use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_math::{
     vec3_origin, AngleVectors, DirToByte, DotProduct, VectorAdd, VectorClear, VectorCompare,
     VectorCopy, VectorLength, VectorMA, VectorNormalize, VectorScale, VectorSubtract,
 };
-use crate::codemp::game::q_shared::{Q_stricmp};
-use crate::codemp::game::q_math::Q_irand;
+use crate::codemp::game::q_shared::Q_stricmp;
 use crate::codemp::game::q_shared_h::{
-    trace_t, vec3_t, CHAN_BODY, ENTITYNUM_NONE, ENTITYNUM_WORLD, FORCE_LEVEL_1,
-    FORCE_LEVEL_2, FORCE_LEVEL_3, FP_SABER_DEFENSE, MAX_CLIENTS, PITCH, ROLL, TR_GRAVITY, TR_LINEAR,
+    trace_t, vec3_t, CHAN_BODY, ENTITYNUM_NONE, ENTITYNUM_WORLD, FORCE_LEVEL_1, FORCE_LEVEL_2,
+    FORCE_LEVEL_3, FP_SABER_DEFENSE, MAX_CLIENTS, PITCH, ROLL, TR_GRAVITY, TR_LINEAR,
     TR_STATIONARY,
 };
 use crate::codemp::game::surfaceflags_h::{
@@ -121,7 +121,8 @@ pub unsafe fn G_ReflectMissile(ent: *mut gentity_t, missile: *mut gentity_t, for
 
     // the C guards on `&g_entities[missile->r.ownerNum]`, which (address-of an array
     // element) is always non-NULL; mirrored here as the never-null base+index pointer.
-    let missile_owner = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*missile).r.ownerNum as usize);
+    let missile_owner = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+        .add((*missile).r.ownerNum as usize);
     if !missile_owner.is_null()
         && (*missile).s.weapon != WP_SABER
         && (*missile).s.weapon != G2_MODEL_PART
@@ -292,7 +293,10 @@ pub unsafe fn G_BounceMissile(ent: *mut gentity_t, trace: *mut trace_t) {
         G_Sound(
             ent,
             CHAN_BODY,
-            G_SoundIndex(&format!("sound/weapons/thermal/bounce{}.wav", Q_irand(1, 2))),
+            G_SoundIndex(&format!(
+                "sound/weapons/thermal/bounce{}.wav",
+                Q_irand(1, 2)
+            )),
         );
     } else if (*ent).s.weapon == WP_SABER {
         G_Sound(
@@ -351,7 +355,8 @@ pub unsafe fn G_ExplodeMissile(ent: *mut gentity_t) {
         //valid client owner
         {
             //set my parent to my owner for purposes of damage credit...
-            (*ent).parent = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*ent).r.ownerNum as usize);
+            (*ent).parent = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*ent).r.ownerNum as usize);
         }
         if G_RadiusDamage(
             &(*ent).r.currentOrigin,
@@ -364,10 +369,12 @@ pub unsafe fn G_ExplodeMissile(ent: *mut gentity_t) {
         ) != QFALSE
         {
             if !(*ent).parent.is_null() {
-                let pe = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*ent).parent).s.number as usize);
+                let pe = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*(*ent).parent).s.number as usize);
                 (*(*pe).client).accuracy_hits += 1;
             } else if !(*ent).activator.is_null() {
-                let ae = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*ent).activator).s.number as usize);
+                let ae = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*(*ent).activator).s.number as usize);
                 (*(*ae).client).accuracy_hits += 1;
             }
         }
@@ -387,7 +394,8 @@ pub unsafe fn G_ExplodeMissile(ent: *mut gentity_t) {
 pub unsafe fn G_RunStuckMissile(ent: *mut gentity_t) {
     if (*ent).takedamage != QFALSE {
         if (*ent).s.groundEntityNum >= 0 && (*ent).s.groundEntityNum < ENTITYNUM_WORLD {
-            let other = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*ent).s.groundEntityNum as usize);
+            let other = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*ent).s.groundEntityNum as usize);
 
             if (VectorCompare(&vec3_origin, &(*other).s.pos.trDelta) == QFALSE
                 && (*other).s.pos.trType != TR_STATIONARY)
@@ -470,9 +478,17 @@ pub unsafe fn G_MissileBounceEffect(ent: *mut gentity_t, org: &vec3_t, dir: &vec
     //FIXME: have an EV_BOUNCE_MISSILE event that checks the s.weapon and does the appropriate effect
     let w = (*ent).s.weapon;
     if w == WP_BOWCASTER {
-        G_PlayEffectID(G_EffectIndex("bowcaster/deflect"), &(*ent).r.currentOrigin, dir);
+        G_PlayEffectID(
+            G_EffectIndex("bowcaster/deflect"),
+            &(*ent).r.currentOrigin,
+            dir,
+        );
     } else if w == WP_BLASTER || w == WP_BRYAR_PISTOL {
-        G_PlayEffectID(G_EffectIndex("blaster/deflect"), &(*ent).r.currentOrigin, dir);
+        G_PlayEffectID(
+            G_EffectIndex("blaster/deflect"),
+            &(*ent).r.currentOrigin,
+            dir,
+        );
     } else {
         let te = G_TempEntity(org, EV_SABER_BLOCK);
         VectorCopy(org, &mut (*te).s.origin);
@@ -498,7 +514,8 @@ pub unsafe fn G_MissileImpact(ent: *mut gentity_t, trace: *mut trace_t) {
     let mut hitClient: qboolean = QFALSE;
     let mut isKnockedSaber: qboolean = QFALSE;
 
-    let other = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*trace).entityNum as usize);
+    let other =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*trace).entityNum as usize);
 
     // check for bounce
     if (*other).takedamage == QFALSE
@@ -557,7 +574,8 @@ pub unsafe fn G_MissileImpact(ent: *mut gentity_t, trace: *mut trace_t) {
     'kill_proj: {
         if ((*other).r.contents & CONTENTS_LIGHTSABER) != 0 && isKnockedSaber == QFALSE {
             //hit this person's saber, so..
-            let otherOwner = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*other).r.ownerNum as usize);
+            let otherOwner = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*other).r.ownerNum as usize);
 
             if (*otherOwner).takedamage != QFALSE
                 && !(*otherOwner).client.is_null()
@@ -661,7 +679,8 @@ pub unsafe fn G_MissileImpact(ent: *mut gentity_t, trace: *mut trace_t) {
         {
             //only block one projectile per 200ms (to prevent giant swarms of projectiles being blocked)
             let mut fwd: vec3_t = [0.0; 3];
-            let mut otherDefLevel = (*(*other).client).ps.fd.forcePowerLevel[FP_SABER_DEFENSE as usize];
+            let mut otherDefLevel =
+                (*(*other).client).ps.fd.forcePowerLevel[FP_SABER_DEFENSE as usize];
 
             let te = G_TempEntity(&(*ent).r.currentOrigin, EV_SABER_BLOCK);
             VectorCopy(&(*ent).r.currentOrigin, &mut (*te).s.origin);
@@ -671,9 +690,9 @@ pub unsafe fn G_MissileImpact(ent: *mut gentity_t, trace: *mut trace_t) {
             (*te).s.legsAnim = 0; //bladeNum
 
             /*if (other->client->ps.velocity[2] > 0 ||
-                other->client->pers.cmd.forwardmove ||
-                other->client->pers.cmd.rightmove)
-                */
+            other->client->pers.cmd.forwardmove ||
+            other->client->pers.cmd.rightmove)
+            */
             if (*(*other).client).ps.velocity[2] > 0.0
                 || (*(*other).client).pers.cmd.forwardmove < 0
             //now we only do it if jumping or running backward. Should be able to full-on charge.
@@ -713,7 +732,8 @@ pub unsafe fn G_MissileImpact(ent: *mut gentity_t, trace: *mut trace_t) {
             return;
         } else if ((*other).r.contents & CONTENTS_LIGHTSABER) != 0 && isKnockedSaber == QFALSE {
             //hit this person's saber, so..
-            let otherOwner = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*other).r.ownerNum as usize);
+            let otherOwner = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*other).r.ownerNum as usize);
 
             if (*otherOwner).takedamage != QFALSE
                 && !(*otherOwner).client.is_null()
@@ -748,8 +768,8 @@ pub unsafe fn G_MissileImpact(ent: *mut gentity_t, trace: *mut trace_t) {
                 (*te).s.legsAnim = 0; //bladeNum
 
                 /*if (otherOwner->client->ps.velocity[2] > 0 ||
-                    otherOwner->client->pers.cmd.forwardmove ||
-                    otherOwner->client->pers.cmd.rightmove)*/
+                otherOwner->client->pers.cmd.forwardmove ||
+                otherOwner->client->pers.cmd.rightmove)*/
                 if (*(*otherOwner).client).ps.velocity[2] > 0.0
                     || (*(*otherOwner).client).pers.cmd.forwardmove < 0
                 //now we only do it if jumping or running backward. Should be able to full-on charge.
@@ -793,7 +813,11 @@ pub unsafe fn G_MissileImpact(ent: *mut gentity_t, trace: *mut trace_t) {
 
         // check for sticking
         if (*other).takedamage == QFALSE && ((*ent).s.eFlags & EF_MISSILE_STICK) != 0 {
-            laserTrapStick(ent, (*trace).endpos.as_ptr(), (*trace).plane.normal.as_ptr());
+            laserTrapStick(
+                ent,
+                (*trace).endpos.as_ptr(),
+                (*trace).plane.normal.as_ptr(),
+            );
             G_AddEvent(ent, EV_MISSILE_STICK, 0);
             return;
         }
@@ -807,10 +831,13 @@ pub unsafe fn G_MissileImpact(ent: *mut gentity_t, trace: *mut trace_t) {
 
                 if LogAccuracyHit(
                     other,
-                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*ent).r.ownerNum as usize),
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*ent).r.ownerNum as usize),
                 ) != QFALSE
                 {
-                    (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*ent).r.ownerNum as usize)).client)
+                    (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*ent).r.ownerNum as usize))
+                    .client)
                         .accuracy_hits += 1;
                     hitClient = QTRUE;
                 }
@@ -829,7 +856,8 @@ pub unsafe fn G_MissileImpact(ent: *mut gentity_t, trace: *mut trace_t) {
                         G_Damage(
                             other,
                             ent,
-                            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*ent).r.ownerNum as usize),
+                            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                                .add((*ent).r.ownerNum as usize),
                             &mut velocity,
                             /*ent->s.origin*/ &mut (*ent).r.currentOrigin,
                             (*ent).damage,
@@ -842,7 +870,8 @@ pub unsafe fn G_MissileImpact(ent: *mut gentity_t, trace: *mut trace_t) {
                     G_Damage(
                         other,
                         ent,
-                        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*ent).r.ownerNum as usize),
+                        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                            .add((*ent).r.ownerNum as usize),
                         &mut velocity,
                         /*ent->s.origin*/ &mut (*ent).r.currentOrigin,
                         (*ent).damage,
@@ -903,9 +932,11 @@ pub unsafe fn G_MissileImpact(ent: *mut gentity_t, trace: *mut trace_t) {
                             //add onto it
                             //FIXME: extern the length of the "out of control" time?
                             (*(*other).client).ps.electrifyTime += Q_irand(200, 500);
-                            if (*(*other).client).ps.electrifyTime > (*addr_of!(level)).time + 4000 {
+                            if (*(*other).client).ps.electrifyTime > (*addr_of!(level)).time + 4000
+                            {
                                 //cap it
-                                (*(*other).client).ps.electrifyTime = (*addr_of!(level)).time + 4000;
+                                (*(*other).client).ps.electrifyTime =
+                                    (*addr_of!(level)).time + 4000;
                             }
                         } else {
                             //start it
@@ -932,14 +963,18 @@ pub unsafe fn G_MissileImpact(ent: *mut gentity_t, trace: *mut trace_t) {
             }
         }
     } // killProj:
-    // is it cheaper in bandwidth to just remove this ent and create a new
-    // one, rather than changing the missile into the explosion?
+      // is it cheaper in bandwidth to just remove this ent and create a new
+      // one, rather than changing the missile into the explosion?
 
     if (*other).takedamage != QFALSE && !(*other).client.is_null() && isKnockedSaber == QFALSE {
         G_AddEvent(ent, EV_MISSILE_HIT, DirToByte(&(*trace).plane.normal));
         (*ent).s.otherEntityNum = (*other).s.number;
     } else if ((*trace).surfaceFlags & SURF_METALSTEPS) != 0 {
-        G_AddEvent(ent, EV_MISSILE_MISS_METAL, DirToByte(&(*trace).plane.normal));
+        G_AddEvent(
+            ent,
+            EV_MISSILE_MISS_METAL,
+            DirToByte(&(*trace).plane.normal),
+        );
     } else if (*ent).s.weapon != G2_MODEL_PART && isKnockedSaber == QFALSE {
         G_AddEvent(ent, EV_MISSILE_MISS, DirToByte(&(*trace).plane.normal));
     }
@@ -969,11 +1004,14 @@ pub unsafe fn G_MissileImpact(ent: *mut gentity_t, trace: *mut trace_t) {
         ) != QFALSE
         {
             if hitClient == QFALSE
-                && !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*ent).r.ownerNum as usize))
-                    .client
-                    .is_null()
+                && !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*ent).r.ownerNum as usize))
+                .client
+                .is_null()
             {
-                (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*ent).r.ownerNum as usize)).client)
+                (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*ent).r.ownerNum as usize))
+                .client)
                     .accuracy_hits += 1;
             }
         }
@@ -1043,7 +1081,8 @@ pub unsafe fn G_RunMissile(ent: *mut gentity_t) {
         );
 
         if tr.fraction != 1.0 && (tr.entityNum as c_int) < ENTITYNUM_WORLD {
-            let g2Hit = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(tr.entityNum as usize);
+            let g2Hit = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add(tr.entityNum as usize);
 
             if (*g2Hit).inuse != QFALSE && !(*g2Hit).client.is_null() && !(*g2Hit).ghoul2.is_null()
             {
@@ -1109,9 +1148,7 @@ pub unsafe fn G_RunMissile(ent: *mut gentity_t) {
 
             VectorCopy(&trG.endpos, &mut groundSpot);
 
-            if trG.startsolid == 0
-                && trG.allsolid == 0
-                && trG.entityNum as c_int == ENTITYNUM_WORLD
+            if trG.startsolid == 0 && trG.allsolid == 0 && trG.entityNum as c_int == ENTITYNUM_WORLD
             {
                 (*ent).s.groundEntityNum = trG.entityNum as c_int;
             } else {
@@ -1146,7 +1183,11 @@ pub unsafe fn G_RunMissile(ent: *mut gentity_t) {
             if (*ent).s.weapon > WP_NONE
                 && (*ent).s.weapon < WP_NUM_WEAPONS
                 && ((tr.entityNum as c_int) < MAX_CLIENTS as c_int
-                    || (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(tr.entityNum as usize)).s.eType == ET_NPC)
+                    || (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add(tr.entityNum as usize))
+                    .s
+                    .eType
+                        == ET_NPC)
             {
                 //player or NPC, try making a mark on him
                 //copy current pos to s.origin, and current projected traj to origin2
@@ -1218,8 +1259,16 @@ mod oracle_tests {
             ([0.0, 0.0, 0.0], [10.0, 5.0, -3.0], [0.0, 1.0, 0.0]),
             ([-5.0, 2.0, 1.0], [5.0, -2.0, -1.0], [1.0, 0.0, 0.0]),
             ([1.5, 2.5, 3.5], [-1.5, -2.5, -3.5], [-1.0, 0.0, 0.0]),
-            ([100.0, 200.0, 300.0], [0.0, 0.0, 0.0], [0.577, 0.577, 0.577]),
-            ([-1234.5, 9999.9, -0.001], [12.0, -34.0, 56.0], [0.0, -1.0, 0.0]),
+            (
+                [100.0, 200.0, 300.0],
+                [0.0, 0.0, 0.0],
+                [0.577, 0.577, 0.577],
+            ),
+            (
+                [-1234.5, 9999.9, -0.001],
+                [12.0, -34.0, 56.0],
+                [0.0, -1.0, 0.0],
+            ),
             ([0.0, 0.0, 0.0], [1.0, 1.0, 1.0], [2.0, -3.0, 4.0]),
             ([7.0, 7.0, 7.0], [7.0, 7.0, 7.0], [0.0, 0.0, 1.0]),
         ];

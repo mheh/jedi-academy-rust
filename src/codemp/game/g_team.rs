@@ -13,25 +13,26 @@ use core::ffi::{c_char, c_int, c_void};
 use core::mem::offset_of;
 use core::ptr::{addr_of, addr_of_mut, null_mut};
 
-use crate::codemp::game::bg_public::{
-    CTFMESSAGE_FLAG_RETURNED, CTFMESSAGE_FRAGGED_FLAG_CARRIER, CTFMESSAGE_PLAYER_CAPTURED_FLAG,
-    CTFMESSAGE_PLAYER_GOT_FLAG, CTFMESSAGE_PLAYER_RETURNED_FLAG, CS_FLAGSTATUS, ET_NPC, ET_PLAYER,
-    EV_CTFMESSAGE, EV_GLOBAL_TEAM_SOUND, GTS_BLUE_CAPTURE, GTS_BLUE_RETURN, GTS_BLUE_TAKEN,
-    GTS_BLUETEAM_SCORED, GTS_BLUETEAM_TOOK_LEAD, GTS_RED_CAPTURE, GTS_RED_RETURN, GTS_RED_TAKEN,
-    GTS_REDTEAM_SCORED, GTS_REDTEAM_TOOK_LEAD, GTS_TEAMS_ARE_TIED, GT_CTF, GT_CTY, GT_POWERDUEL,
-    GT_SINGLE_PLAYER, GT_SIEGE, GT_TEAM, PERS_ASSIST_COUNT, PERS_CAPTURES, PERS_DEFEND_COUNT,
-    PW_BLUEFLAG, PW_NEUTRALFLAG, PW_REDFLAG, STAT_ARMOR, STAT_HEALTH, TEAM_BLUE, TEAM_FREE,
-    TEAM_LOCATION_UPDATE_TIME, TEAM_MAXOVERLAY, TEAM_RED, TEAM_SPECTATOR, team_t,
-};
 use crate::codemp::game::bg_lib;
+use crate::codemp::game::bg_public::{
+    team_t, CS_FLAGSTATUS, CTFMESSAGE_FLAG_RETURNED, CTFMESSAGE_FRAGGED_FLAG_CARRIER,
+    CTFMESSAGE_PLAYER_CAPTURED_FLAG, CTFMESSAGE_PLAYER_GOT_FLAG, CTFMESSAGE_PLAYER_RETURNED_FLAG,
+    ET_NPC, ET_PLAYER, EV_CTFMESSAGE, EV_GLOBAL_TEAM_SOUND, GTS_BLUETEAM_SCORED,
+    GTS_BLUETEAM_TOOK_LEAD, GTS_BLUE_CAPTURE, GTS_BLUE_RETURN, GTS_BLUE_TAKEN, GTS_REDTEAM_SCORED,
+    GTS_REDTEAM_TOOK_LEAD, GTS_RED_CAPTURE, GTS_RED_RETURN, GTS_RED_TAKEN, GTS_TEAMS_ARE_TIED,
+    GT_CTF, GT_CTY, GT_POWERDUEL, GT_SIEGE, GT_SINGLE_PLAYER, GT_TEAM, PERS_ASSIST_COUNT,
+    PERS_CAPTURES, PERS_DEFEND_COUNT, PW_BLUEFLAG, PW_NEUTRALFLAG, PW_REDFLAG, STAT_ARMOR,
+    STAT_HEALTH, TEAM_BLUE, TEAM_FREE, TEAM_LOCATION_UPDATE_TIME, TEAM_MAXOVERLAY, TEAM_RED,
+    TEAM_SPECTATOR,
+};
 use crate::codemp::game::bg_saga::bgSiegeClasses;
 use crate::codemp::game::bg_saga_h::SIEGETEAM_TEAM1;
 use crate::codemp::game::g_client::{SelectSpawnPoint, SpotWouldTelefrag};
 use crate::codemp::game::g_combat::{AddScore, G_CheckVehicleNPCTeamDamage};
 use crate::codemp::game::g_items::RespawnItem;
 use crate::codemp::game::g_local::{
-    gentity_t, playerTeamStateState_t, REWARD_SPRITE_TIME, TEAM_BEGIN, CON_CONNECTED,
-    FL_DROPPED_ITEM, FL_FORCE_GESTURE,
+    gentity_t, playerTeamStateState_t, CON_CONNECTED, FL_DROPPED_ITEM, FL_FORCE_GESTURE,
+    REWARD_SPRITE_TIME, TEAM_BEGIN,
 };
 use crate::codemp::game::g_main::{
     g_entities, g_gametype, g_maxclients, level, CalculateRanks, G_Printf,
@@ -570,9 +571,7 @@ pub unsafe fn Team_FragBonuses(
     i = 0;
     while i < (*addr_of!(g_maxclients)).integer {
         carrier = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
-        if (*carrier).inuse != QFALSE
-            && (*(*carrier).client).ps.powerups[flag_pw as usize] != 0
-        {
+        if (*carrier).inuse != QFALSE && (*(*carrier).client).ps.powerups[flag_pw as usize] != 0 {
             break;
         }
         carrier = null_mut();
@@ -597,7 +596,11 @@ pub unsafe fn Team_FragBonuses(
 
     // check to see if we are defending the base's flag
     VectorSubtract(&(*targ).r.currentOrigin, &(*flag).r.currentOrigin, &mut v1);
-    VectorSubtract(&(*attacker).r.currentOrigin, &(*flag).r.currentOrigin, &mut v2);
+    VectorSubtract(
+        &(*attacker).r.currentOrigin,
+        &(*flag).r.currentOrigin,
+        &mut v2,
+    );
 
     if ((VectorLength(&v1) < CTF_TARGET_PROTECT_RADIUS
         && trap::InPVS(&(*flag).r.currentOrigin, &(*targ).r.currentOrigin) != QFALSE)
@@ -616,8 +619,16 @@ pub unsafe fn Team_FragBonuses(
     }
 
     if !carrier.is_null() && carrier != attacker {
-        VectorSubtract(&(*targ).r.currentOrigin, &(*carrier).r.currentOrigin, &mut v1);
-        VectorSubtract(&(*attacker).r.currentOrigin, &(*carrier).r.currentOrigin, &mut v1);
+        VectorSubtract(
+            &(*targ).r.currentOrigin,
+            &(*carrier).r.currentOrigin,
+            &mut v1,
+        );
+        VectorSubtract(
+            &(*attacker).r.currentOrigin,
+            &(*carrier).r.currentOrigin,
+            &mut v1,
+        );
 
         if ((VectorLength(&v1) < CTF_ATTACKER_PROTECT_RADIUS
             && trap::InPVS(&(*carrier).r.currentOrigin, &(*targ).r.currentOrigin) != QFALSE)
@@ -626,7 +637,11 @@ pub unsafe fn Team_FragBonuses(
                     != QFALSE))
             && (*(*attacker).client).sess.sessionTeam != (*(*targ).client).sess.sessionTeam
         {
-            AddScore(attacker, &(*targ).r.currentOrigin, CTF_CARRIER_PROTECT_BONUS);
+            AddScore(
+                attacker,
+                &(*targ).r.currentOrigin,
+                CTF_CARRIER_PROTECT_BONUS,
+            );
             (*(*attacker).client).pers.teamState.carrierdefense += 1;
 
             (*(*attacker).client).ps.persistant[PERS_DEFEND_COUNT as usize] += 1;
@@ -955,11 +970,7 @@ pub unsafe fn Team_TouchOurFlag(ent: *mut gentity_t, other: *mut gentity_t, team
     (*addr_of_mut!(teamgame)).last_capture_team = team;
 
     // Increase the team's score
-    AddTeamScore(
-        &(*ent).s.pos.trBase,
-        (*(*other).client).sess.sessionTeam,
-        1,
-    );
+    AddTeamScore(&(*ent).s.pos.trBase, (*(*other).client).sess.sessionTeam, 1);
     //	Team_ForceGesture(other->client->sess.sessionTeam);
     //rww - don't really want to do this now. Mainly because performing a gesture disables your upper torso animations until it's done and you can't fire
 
@@ -992,7 +1003,11 @@ pub unsafe fn Team_TouchOurFlag(ent: *mut gentity_t, other: *mut gentity_t, team
                 + CTF_RETURN_FLAG_ASSIST_TIMEOUT as f32
                 > (*addr_of!(level)).time as f32
             {
-                AddScore(player, &(*ent).r.currentOrigin, CTF_RETURN_FLAG_ASSIST_BONUS);
+                AddScore(
+                    player,
+                    &(*ent).r.currentOrigin,
+                    CTF_RETURN_FLAG_ASSIST_BONUS,
+                );
                 (*(*other).client).pers.teamState.assists += 1;
 
                 (*(*player).client).ps.persistant[PERS_ASSIST_COUNT as usize] += 1;
@@ -1001,7 +1016,11 @@ pub unsafe fn Team_TouchOurFlag(ent: *mut gentity_t, other: *mut gentity_t, team
                 + CTF_FRAG_CARRIER_ASSIST_TIMEOUT as f32
                 > (*addr_of!(level)).time as f32
             {
-                AddScore(player, &(*ent).r.currentOrigin, CTF_FRAG_CARRIER_ASSIST_BONUS);
+                AddScore(
+                    player,
+                    &(*ent).r.currentOrigin,
+                    CTF_FRAG_CARRIER_ASSIST_BONUS,
+                );
                 (*(*other).client).pers.teamState.assists += 1;
                 (*(*player).client).ps.persistant[PERS_ASSIST_COUNT as usize] += 1;
                 (*(*player).client).rewardTime = (*addr_of!(level)).time + REWARD_SPRITE_TIME;
@@ -1029,7 +1048,11 @@ pub unsafe fn Team_TouchOurFlag(ent: *mut gentity_t, other: *mut gentity_t, team
 ///
 /// # Safety
 /// `ent`/`other` must be valid entities; `other->client` must be non-NULL (it is, for a touch).
-pub unsafe fn Team_TouchEnemyFlag(ent: *mut gentity_t, other: *mut gentity_t, team: c_int) -> c_int {
+pub unsafe fn Team_TouchEnemyFlag(
+    ent: *mut gentity_t,
+    other: *mut gentity_t,
+    team: c_int,
+) -> c_int {
     let cl = (*other).client;
 
     //PrintMsg (NULL, "%s" S_COLOR_WHITE " got the %s flag!\n",
@@ -1125,7 +1148,11 @@ pub unsafe fn Team_GetLocation(ent: *mut gentity_t) -> *mut gentity_t {
 /// `qfalse` if no nearby `target_location` was found.
 ///
 /// No oracle — calls `Team_GetLocation` (entity-list + trap) and `Com_sprintf`.
-pub unsafe fn Team_GetLocationMsg(ent: *mut gentity_t, loc: *mut c_char, loclen: c_int) -> qboolean {
+pub unsafe fn Team_GetLocationMsg(
+    ent: *mut gentity_t,
+    loc: *mut c_char,
+    loclen: c_int,
+) -> qboolean {
     let best = Team_GetLocation(ent);
 
     if best.is_null() {
@@ -1210,7 +1237,8 @@ pub unsafe fn TeamplayInfoMessage(ent: *mut gentity_t) {
     let mut i = 0;
     cnt = 0;
     while i < max && cnt < TEAM_MAXOVERLAY {
-        let player = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(sorted[i as usize] as usize);
+        let player = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add(sorted[i as usize] as usize);
         if (*player).inuse == QTRUE
             && (*(*player).client).sess.sessionTeam == (*(*ent).client).sess.sessionTeam
         {
@@ -1283,8 +1311,7 @@ pub unsafe fn TeamplayInfoMessage(ent: *mut gentity_t) {
 /// No oracle: walks the entity array, calls the location-finding trap path and
 /// `trap_SendServerCommand` (entity/trap scaffolding precedent). Faithful 1:1.
 pub unsafe fn CheckTeamStatus() {
-    if (*addr_of!(level)).time - (*addr_of!(level)).lastTeamLocationTime
-        > TEAM_LOCATION_UPDATE_TIME
+    if (*addr_of!(level)).time - (*addr_of!(level)).lastTeamLocationTime > TEAM_LOCATION_UPDATE_TIME
     {
         (*addr_of_mut!(level)).lastTeamLocationTime = (*addr_of!(level)).time;
 
@@ -1459,7 +1486,9 @@ pub unsafe fn SelectRandomTeamSpawnPoint(
                 && *(*s).idealclass != 0
                 && Q_stricmp(
                     (*s).idealclass,
-                    (*addr_of!(bgSiegeClasses))[siegeClass as usize].name.as_ptr(),
+                    (*addr_of!(bgSiegeClasses))[siegeClass as usize]
+                        .name
+                        .as_ptr(),
                 ) == 0
             {
                 //this spot's idealclass matches the class name
@@ -1551,24 +1580,22 @@ mod tests {
         let cases: [(c_int, c_int); 7] =
             [(0, 0), (1, 0), (0, 1), (5, 3), (3, 5), (-2, 4), (-1, -7)];
         for (a, b) in cases {
-            let rust =
-                SortClients(&a as *const c_int as *const c_void, &b as *const c_int as *const c_void);
+            let rust = SortClients(
+                &a as *const c_int as *const c_void,
+                &b as *const c_int as *const c_void,
+            );
             let c = unsafe {
-                jka_SortClients(&a as *const c_int as *const c_void, &b as *const c_int as *const c_void)
+                jka_SortClients(
+                    &a as *const c_int as *const c_void,
+                    &b as *const c_int as *const c_void,
+                )
             };
             assert_eq!(rust, c, "SortClients({a}, {b})");
         }
     }
 
     // Cover the named teams plus a couple of out-of-range / default values.
-    const CASES: [c_int; 6] = [
-        TEAM_FREE,
-        TEAM_RED,
-        TEAM_BLUE,
-        TEAM_SPECTATOR,
-        -1,
-        99,
-    ];
+    const CASES: [c_int; 6] = [TEAM_FREE, TEAM_RED, TEAM_BLUE, TEAM_SPECTATOR, -1, 99];
 
     #[test]
     fn other_team_matches_c() {

@@ -10,7 +10,7 @@ pub const BONE_ANGLES_REPLACE: c_int = 0x0004;
 
 //rww - RAGDOLL_BEGIN
 pub const BONE_ANGLES_RAGDOLL: c_int = 0x2000; // the rag flags give more details
-//rww - RAGDOLL_END
+                                               //rww - RAGDOLL_END
 pub const BONE_ANGLES_IK: c_int = 0x4000; // the rag flags give more details
 
 pub const BONE_ANGLES_TOTAL: c_int =

@@ -50,17 +50,17 @@
 
 #![allow(non_snake_case, non_upper_case_globals)]
 
+use crate::codemp::cgame::animtable::animTable;
 use crate::codemp::game::anims::*;
 use crate::codemp::game::bg_misc::BG_Alloc;
 use crate::codemp::game::bg_pmove::{pm, PM_RunningAnim, PM_WalkingAnim};
 use crate::codemp::game::bg_public::*;
 use crate::codemp::game::bg_saber::{saberMoveData, BG_MySaber};
 use crate::codemp::game::bg_weapons_h::WP_SABER;
-use crate::codemp::cgame::animtable::animTable;
 use crate::codemp::game::g_local::gentity_t;
 use crate::codemp::game::g_main::{g_entities, Com_Error, Com_Printf};
-use crate::codemp::game::q_shared::{COM_Parse, GetIDForString, Q_stricmp};
 use crate::codemp::game::q_math::Q_irand;
+use crate::codemp::game::q_shared::{COM_Parse, GetIDForString, Q_stricmp};
 use crate::codemp::game::q_shared_h::{
     playerState_t, qboolean, saberBlockedType_t, saberInfo_t, stringID_table_t, BLOCKED_LOWER_LEFT,
     BLOCKED_LOWER_RIGHT, BLOCKED_TOP, BLOCKED_UPPER_LEFT, ERR_DROP, FORCE_LEVEL_1, FORCE_LEVEL_3,
@@ -297,21 +297,16 @@ pub fn BG_SaberInAttack(r#move: c_int) -> qboolean {
 
 pub fn BG_SaberInKata(saberMove: c_int) -> qboolean {
     match saberMove {
-        LS_A1_SPECIAL
-        | LS_A2_SPECIAL
-        | LS_A3_SPECIAL
-        | LS_DUAL_SPIN_PROTECT
-        | LS_STAFF_SOULCAL => QTRUE,
+        LS_A1_SPECIAL | LS_A2_SPECIAL | LS_A3_SPECIAL | LS_DUAL_SPIN_PROTECT | LS_STAFF_SOULCAL => {
+            QTRUE
+        }
         _ => QFALSE,
     }
 }
 
 pub fn BG_InKataAnim(anim: c_int) -> qboolean {
     match anim {
-        BOTH_A6_SABERPROTECT
-        | BOTH_A7_SOULCAL
-        | BOTH_A1_SPECIAL
-        | BOTH_A2_SPECIAL
+        BOTH_A6_SABERPROTECT | BOTH_A7_SOULCAL | BOTH_A1_SPECIAL | BOTH_A2_SPECIAL
         | BOTH_A3_SPECIAL => QTRUE,
         _ => QFALSE,
     }
@@ -376,18 +371,8 @@ pub fn BG_SaberInSpecial(r#move: c_int) -> qboolean {
 
 pub fn BG_KickMove(r#move: c_int) -> qboolean {
     match r#move {
-        LS_KICK_F
-        | LS_KICK_B
-        | LS_KICK_R
-        | LS_KICK_L
-        | LS_KICK_S
-        | LS_KICK_BF
-        | LS_KICK_RL
-        | LS_KICK_F_AIR
-        | LS_KICK_B_AIR
-        | LS_KICK_R_AIR
-        | LS_KICK_L_AIR
-        | LS_HILT_BASH => QTRUE,
+        LS_KICK_F | LS_KICK_B | LS_KICK_R | LS_KICK_L | LS_KICK_S | LS_KICK_BF | LS_KICK_RL
+        | LS_KICK_F_AIR | LS_KICK_B_AIR | LS_KICK_R_AIR | LS_KICK_L_AIR | LS_HILT_BASH => QTRUE,
         _ => QFALSE,
     }
 }
@@ -401,14 +386,8 @@ pub fn BG_SaberInIdle(r#move: c_int) -> qboolean {
 
 pub fn BG_InExtraDefenseSaberMove(r#move: c_int) -> qboolean {
     match r#move {
-        LS_SPINATTACK_DUAL
-        | LS_SPINATTACK
-        | LS_DUAL_SPIN_PROTECT
-        | LS_STAFF_SOULCAL
-        | LS_A1_SPECIAL
-        | LS_A2_SPECIAL
-        | LS_A3_SPECIAL
-        | LS_JUMPATTACK_DUAL => QTRUE,
+        LS_SPINATTACK_DUAL | LS_SPINATTACK | LS_DUAL_SPIN_PROTECT | LS_STAFF_SOULCAL
+        | LS_A1_SPECIAL | LS_A2_SPECIAL | LS_A3_SPECIAL | LS_JUMPATTACK_DUAL => QTRUE,
         _ => QFALSE,
     }
 }
@@ -819,11 +798,9 @@ pub fn BG_InDeathAnim(anim: c_int) -> qboolean {
 
 pub fn BG_InKnockDownOnly(anim: c_int) -> qboolean {
     match anim {
-        BOTH_KNOCKDOWN1
-        | BOTH_KNOCKDOWN2
-        | BOTH_KNOCKDOWN3
-        | BOTH_KNOCKDOWN4
-        | BOTH_KNOCKDOWN5 => QTRUE,
+        BOTH_KNOCKDOWN1 | BOTH_KNOCKDOWN2 | BOTH_KNOCKDOWN3 | BOTH_KNOCKDOWN4 | BOTH_KNOCKDOWN5 => {
+            QTRUE
+        }
         _ => QFALSE,
     }
 }
@@ -869,10 +846,7 @@ pub fn BG_InSaberLock(anim: c_int) -> qboolean {
 //Called only where pm is valid (not all require pm, but some do):
 pub fn PM_InCartwheel(anim: c_int) -> qboolean {
     match anim {
-        BOTH_ARIAL_LEFT
-        | BOTH_ARIAL_RIGHT
-        | BOTH_ARIAL_F1
-        | BOTH_CARTWHEEL_LEFT
+        BOTH_ARIAL_LEFT | BOTH_ARIAL_RIGHT | BOTH_ARIAL_F1 | BOTH_CARTWHEEL_LEFT
         | BOTH_CARTWHEEL_RIGHT => QTRUE,
         _ => QFALSE,
     }
@@ -880,8 +854,8 @@ pub fn PM_InCartwheel(anim: c_int) -> qboolean {
 
 pub unsafe fn BG_InKnockDownOnGround(ps: *mut playerState_t) -> qboolean {
     match (*ps).legsAnim {
-        BOTH_KNOCKDOWN1 | BOTH_KNOCKDOWN2 | BOTH_KNOCKDOWN3 | BOTH_KNOCKDOWN4
-        | BOTH_KNOCKDOWN5 | BOTH_RELEASED => {
+        BOTH_KNOCKDOWN1 | BOTH_KNOCKDOWN2 | BOTH_KNOCKDOWN3 | BOTH_KNOCKDOWN4 | BOTH_KNOCKDOWN5
+        | BOTH_RELEASED => {
             //if ( PM_AnimLength( g_entities[ps->clientNum].client->clientInfo.animFileIndex, (animNumber_t)ps->legsAnim ) - ps->legsAnimTimer > 300 )
             {
                 //at end of fall down anim
@@ -890,9 +864,8 @@ pub unsafe fn BG_InKnockDownOnGround(ps: *mut playerState_t) -> qboolean {
         }
         BOTH_GETUP1 | BOTH_GETUP2 | BOTH_GETUP3 | BOTH_GETUP4 | BOTH_GETUP5
         | BOTH_GETUP_CROUCH_F1 | BOTH_GETUP_CROUCH_B1 | BOTH_FORCE_GETUP_F1
-        | BOTH_FORCE_GETUP_F2 | BOTH_FORCE_GETUP_B1 | BOTH_FORCE_GETUP_B2
-        | BOTH_FORCE_GETUP_B3 | BOTH_FORCE_GETUP_B4 | BOTH_FORCE_GETUP_B5
-        | BOTH_FORCE_GETUP_B6 => {
+        | BOTH_FORCE_GETUP_F2 | BOTH_FORCE_GETUP_B1 | BOTH_FORCE_GETUP_B2 | BOTH_FORCE_GETUP_B3
+        | BOTH_FORCE_GETUP_B4 | BOTH_FORCE_GETUP_B5 | BOTH_FORCE_GETUP_B6 => {
             if BG_AnimLength(0, (*ps).legsAnim as animNumber_t) - (*ps).legsTimer < 500 {
                 //at beginning of getup anim
                 return QTRUE;
@@ -1270,21 +1243,10 @@ pub fn BG_SaberLockBreakAnim(anim: c_int) -> qboolean {
 
 pub fn BG_FullBodyTauntAnim(anim: c_int) -> qboolean {
     match anim {
-        BOTH_GESTURE1
-        | BOTH_DUAL_TAUNT
-        | BOTH_STAFF_TAUNT
-        | BOTH_BOW
-        | BOTH_MEDITATE
-        | BOTH_SHOWOFF_FAST
-        | BOTH_SHOWOFF_MEDIUM
-        | BOTH_SHOWOFF_STRONG
-        | BOTH_SHOWOFF_DUAL
-        | BOTH_SHOWOFF_STAFF
-        | BOTH_VICTORY_FAST
-        | BOTH_VICTORY_MEDIUM
-        | BOTH_VICTORY_STRONG
-        | BOTH_VICTORY_DUAL
-        | BOTH_VICTORY_STAFF => QTRUE,
+        BOTH_GESTURE1 | BOTH_DUAL_TAUNT | BOTH_STAFF_TAUNT | BOTH_BOW | BOTH_MEDITATE
+        | BOTH_SHOWOFF_FAST | BOTH_SHOWOFF_MEDIUM | BOTH_SHOWOFF_STRONG | BOTH_SHOWOFF_DUAL
+        | BOTH_SHOWOFF_STAFF | BOTH_VICTORY_FAST | BOTH_VICTORY_MEDIUM | BOTH_VICTORY_STRONG
+        | BOTH_VICTORY_DUAL | BOTH_VICTORY_STAFF => QTRUE,
         _ => QFALSE,
     }
 }
@@ -2062,7 +2024,11 @@ pub unsafe fn BG_ParseAnimationFile(
         let mut i = 0;
         while i < *addr_of!(bgNumAllAnims) {
             // see if it's been loaded already
-            if Q_stricmp((*addr_of!(bgAllAnims))[i as usize].filename.as_ptr(), filename) == 0 {
+            if Q_stricmp(
+                (*addr_of!(bgAllAnims))[i as usize].filename.as_ptr(),
+                filename,
+            ) == 0
+            {
                 // C does `animset = bgAllAnims[i].anims;` here, but that write to the
                 // pass-by-value pointer is dead — it returns `i` on the next line.
                 return i; // alright, we already have it.
@@ -2205,14 +2171,19 @@ pub unsafe fn BG_ParseAnimationFile(
 
     if isHumanoid != QFALSE {
         (*addr_of_mut!(bgAllAnims))[0].anims = animset;
-        strcpy((*addr_of_mut!(bgAllAnims))[0].filename.as_mut_ptr(), filename);
+        strcpy(
+            (*addr_of_mut!(bgAllAnims))[0].filename.as_mut_ptr(),
+            filename,
+        );
         BGPAFtextLoaded = QTRUE;
 
         usedIndex = 0;
     } else {
         (*addr_of_mut!(bgAllAnims))[nextIndex as usize].anims = animset;
         strcpy(
-            (*addr_of_mut!(bgAllAnims))[nextIndex as usize].filename.as_mut_ptr(),
+            (*addr_of_mut!(bgAllAnims))[nextIndex as usize]
+                .filename
+                .as_mut_ptr(),
             filename,
         );
 
@@ -2543,8 +2514,7 @@ unsafe fn BG_SetAnimFinal(
                         (*ps).legsTimer = (frameLerp as f32 as f64).abs() as c_int;
                     }
                 } else {
-                    (*ps).legsTimer =
-                        (numFrames as f64 * (frameLerp as f32 as f64).abs()) as c_int;
+                    (*ps).legsTimer = (numFrames as f64 * (frameLerp as f32 as f64).abs()) as c_int;
                 }
 
                 if PM_RunningAnim(anim) != QFALSE || PM_WalkingAnim(anim) != QFALSE
@@ -2570,7 +2540,14 @@ pub unsafe fn PM_SetAnimFinal(
     blendTime: c_int,
 ) {
     let pmv = *addr_of!(pm);
-    BG_SetAnimFinal((*pmv).ps, (*pmv).animations, setAnimParts, anim, setAnimFlags, blendTime);
+    BG_SetAnimFinal(
+        (*pmv).ps,
+        (*pmv).animations,
+        setAnimParts,
+        anim,
+        setAnimFlags,
+        blendTime,
+    );
 }
 
 pub unsafe fn BG_HasAnimation(animIndex: c_int, animation: c_int) -> qboolean {
@@ -2678,7 +2655,14 @@ pub unsafe fn BG_SetAnim(
 
 pub unsafe fn PM_SetAnim(setAnimParts: c_int, anim: c_int, setAnimFlags: c_int, blendTime: c_int) {
     let pmv = *addr_of!(pm);
-    BG_SetAnim((*pmv).ps, (*pmv).animations, setAnimParts, anim, setAnimFlags, blendTime);
+    BG_SetAnim(
+        (*pmv).ps,
+        (*pmv).animations,
+        setAnimParts,
+        anim,
+        setAnimFlags,
+        blendTime,
+    );
 }
 
 #[cfg(all(test, feature = "oracle"))]
@@ -2967,7 +2951,9 @@ mod setter_tests {
     unsafe fn oracle_run(input: &[c_int; 22], mode: Mode) -> [c_int; 6] {
         let mut out = [0i32; 6];
         match mode {
-            Mode::Set | Mode::PmSet => crate::oracle::jka_BG_SetAnim(input.as_ptr(), out.as_mut_ptr()),
+            Mode::Set | Mode::PmSet => {
+                crate::oracle::jka_BG_SetAnim(input.as_ptr(), out.as_mut_ptr())
+            }
             Mode::Final | Mode::PmFinal => {
                 crate::oracle::jka_BG_SetAnimFinal(input.as_ptr(), out.as_mut_ptr())
             }
@@ -2980,7 +2966,19 @@ mod setter_tests {
     const BASES: &[[c_int; 11]] = &[
         [0, 3, 0, 0, 0, 0, 0, 0, 0, 1, 0],
         [0, 3, 5, 5, 0, 0, 0, 0, 0, 3, 1 << FP_RAGE],
-        [0, 5, -1, -1, 999, 888, 1, 1, 1 << BROKENLIMB_RARM, 0, 1 << FP_SPEED],
+        [
+            0,
+            5,
+            -1,
+            -1,
+            999,
+            888,
+            1,
+            1,
+            1 << BROKENLIMB_RARM,
+            0,
+            1 << FP_SPEED,
+        ],
         [5, 3, 0, 0, 0, 0, 0, 0, 1 << BROKENLIMB_LARM, 1, 0], // PM_DEAD, client < MAX
         [5, 40, 0, 0, 0, 0, 0, 0, 0, 1, 0],                   // PM_DEAD, client >= MAX
         [0, 7, 5, 0, 777, 666, 0, 1, 0, 1, 1 << FP_RAGE],
@@ -3027,7 +3025,11 @@ mod setter_tests {
             .collect();
         let mut anims: Vec<animation_t> = vec![animation_t::default(); 2048];
         unsafe {
-            core::ptr::copy_nonoverlapping(gents.as_mut_ptr(), core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(), gents.len());
+            core::ptr::copy_nonoverlapping(
+                gents.as_mut_ptr(),
+                core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(),
+                gents.len(),
+            );
             let anims_ptr = anims.as_mut_ptr();
 
             for base in BASES {
@@ -3043,10 +3045,28 @@ mod setter_tests {
                                 // 3 variants: normal, current-anim-matches, ent-matches.
                                 for variant in 0..3 {
                                     let mut input: [c_int; 22] = [
-                                        base[0], base[1], base[2], base[3], base[4], base[5],
-                                        base[6], base[7], base[8], base[9], base[10], anim,
-                                        ff as c_int, nf as c_int, fl as c_int, 0, 0, parts, flags,
-                                        -1, 0, 0,
+                                        base[0],
+                                        base[1],
+                                        base[2],
+                                        base[3],
+                                        base[4],
+                                        base[5],
+                                        base[6],
+                                        base[7],
+                                        base[8],
+                                        base[9],
+                                        base[10],
+                                        anim,
+                                        ff as c_int,
+                                        nf as c_int,
+                                        fl as c_int,
+                                        0,
+                                        0,
+                                        parts,
+                                        flags,
+                                        -1,
+                                        0,
+                                        0,
                                     ];
                                     match variant {
                                         1 => {
@@ -3070,7 +3090,11 @@ mod setter_tests {
                 }
             }
 
-            core::ptr::write_bytes(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(), 0, gents.len());
+            core::ptr::write_bytes(
+                core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(),
+                0,
+                gents.len(),
+            );
         }
     }
 
@@ -3084,7 +3108,11 @@ mod setter_tests {
         // SetAnim adds a (0,0) frame entry to exercise the droid / early-return path.
         let frames_set: &[(u16, u16, i16)] = &[(1, 10, 50), (1, 0, -100), (0, 0, 0)];
         unsafe {
-            core::ptr::copy_nonoverlapping(gents.as_mut_ptr(), core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(), gents.len());
+            core::ptr::copy_nonoverlapping(
+                gents.as_mut_ptr(),
+                core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(),
+                gents.len(),
+            );
             let anims_ptr = anims.as_mut_ptr();
 
             for base in BASES {
@@ -3097,10 +3125,28 @@ mod setter_tests {
                             for &flags in FLAGS {
                                 for variant in 0..3 {
                                     let mut input: [c_int; 22] = [
-                                        base[0], base[1], base[2], base[3], base[4], base[5],
-                                        base[6], base[7], base[8], base[9], base[10], anim,
-                                        ff as c_int, nf as c_int, fl as c_int, 0, 0, parts, flags,
-                                        -1, 0, 0,
+                                        base[0],
+                                        base[1],
+                                        base[2],
+                                        base[3],
+                                        base[4],
+                                        base[5],
+                                        base[6],
+                                        base[7],
+                                        base[8],
+                                        base[9],
+                                        base[10],
+                                        anim,
+                                        ff as c_int,
+                                        nf as c_int,
+                                        fl as c_int,
+                                        0,
+                                        0,
+                                        parts,
+                                        flags,
+                                        -1,
+                                        0,
+                                        0,
                                     ];
                                     match variant {
                                         1 => {
@@ -3124,7 +3170,11 @@ mod setter_tests {
                 }
             }
 
-            core::ptr::write_bytes(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(), 0, gents.len());
+            core::ptr::write_bytes(
+                core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(),
+                0,
+                gents.len(),
+            );
         }
     }
 
@@ -3139,15 +3189,39 @@ mod setter_tests {
             .collect();
         let mut anims: Vec<animation_t> = vec![animation_t::default(); 2048];
         unsafe {
-            core::ptr::copy_nonoverlapping(gents.as_mut_ptr(), core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(), gents.len());
+            core::ptr::copy_nonoverlapping(
+                gents.as_mut_ptr(),
+                core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(),
+                gents.len(),
+            );
             let anims_ptr = anims.as_mut_ptr();
 
             for &src in &[BOTH_RUNBACK1, BOTH_WALKBACK1, BOTH_RUN1] {
                 for &flags in FLAGS {
                     for &parts in PARTS {
                         let input: [c_int; 22] = [
-                            0, 3, 0, 0, 0, 0, 0, 0, 0, 1, 1 << FP_RAGE, src, 0, 0, 0, 0, 0, parts,
-                            flags, BOTH_WALK2, 1, 30,
+                            0,
+                            3,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            1,
+                            1 << FP_RAGE,
+                            src,
+                            0,
+                            0,
+                            0,
+                            0,
+                            0,
+                            parts,
+                            flags,
+                            BOTH_WALK2,
+                            1,
+                            30,
                         ];
                         let got = rust_run(anims_ptr, &input, Mode::Set);
                         let want = oracle_run(&input, Mode::Set);
@@ -3156,7 +3230,11 @@ mod setter_tests {
                 }
             }
 
-            core::ptr::write_bytes(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(), 0, gents.len());
+            core::ptr::write_bytes(
+                core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(),
+                0,
+                gents.len(),
+            );
         }
     }
 
@@ -3175,7 +3253,9 @@ mod setter_tests {
                         let mut s = speed;
                         unsafe { BG_SaberStartTransAnim(0, level, WP_NONE, anim, &mut s, broken) };
                         let want = unsafe {
-                            crate::oracle::jka_BG_SaberStartTransAnim(0, level, WP_NONE, anim, speed, broken)
+                            crate::oracle::jka_BG_SaberStartTransAnim(
+                                0, level, WP_NONE, anim, speed, broken,
+                            )
                         };
                         assert_eq!(
                             s.to_bits(),
@@ -3199,7 +3279,11 @@ mod setter_tests {
             .collect();
         let mut anims: Vec<animation_t> = vec![animation_t::default(); 2048];
         unsafe {
-            core::ptr::copy_nonoverlapping(gents.as_mut_ptr(), core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(), gents.len());
+            core::ptr::copy_nonoverlapping(
+                gents.as_mut_ptr(),
+                core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(),
+                gents.len(),
+            );
             let anims_ptr = anims.as_mut_ptr();
 
             for base in BASES {
@@ -3210,9 +3294,28 @@ mod setter_tests {
                     for &(ff, nf, fl) in FRAMES {
                         for &flags in FLAGS {
                             let input: [c_int; 22] = [
-                                base[0], base[1], base[2], base[3], base[4], base[5], base[6],
-                                base[7], base[8], base[9], base[10], anim, ff as c_int, nf as c_int,
-                                fl as c_int, 0, 0, SETANIM_BOTH, flags, -1, 0, 0,
+                                base[0],
+                                base[1],
+                                base[2],
+                                base[3],
+                                base[4],
+                                base[5],
+                                base[6],
+                                base[7],
+                                base[8],
+                                base[9],
+                                base[10],
+                                anim,
+                                ff as c_int,
+                                nf as c_int,
+                                fl as c_int,
+                                0,
+                                0,
+                                SETANIM_BOTH,
+                                flags,
+                                -1,
+                                0,
+                                0,
                             ];
                             for &(m, om) in
                                 &[(Mode::PmFinal, Mode::Final), (Mode::PmSet, Mode::Set)]
@@ -3226,7 +3329,11 @@ mod setter_tests {
                 }
             }
 
-            core::ptr::write_bytes(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(), 0, gents.len());
+            core::ptr::write_bytes(
+                core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(),
+                0,
+                gents.len(),
+            );
         }
     }
 
@@ -3241,9 +3348,18 @@ mod setter_tests {
             .map(|_| unsafe { MaybeUninit::zeroed().assume_init() })
             .collect();
         unsafe {
-            core::ptr::copy_nonoverlapping(gents.as_mut_ptr(), core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(), gents.len());
+            core::ptr::copy_nonoverlapping(
+                gents.as_mut_ptr(),
+                core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(),
+                gents.len(),
+            );
 
-            let run = |pm_type: c_int, legs_anim: c_int, legs_timer: c_int, new_anim: c_int, force: bool| -> (c_int, c_int) {
+            let run = |pm_type: c_int,
+                       legs_anim: c_int,
+                       legs_timer: c_int,
+                       new_anim: c_int,
+                       force: bool|
+             -> (c_int, c_int) {
                 let mut ps: playerState_t = MaybeUninit::zeroed().assume_init();
                 ps.pm_type = pm_type;
                 ps.clientNum = 1;
@@ -3279,7 +3395,11 @@ mod setter_tests {
             // in a roll (timer>0), not rolling target -> blocked (BG_InRoll gate).
             assert_eq!(run(0, BOTH_ROLL_F, 500, BOTH_RUN1, true).0, BOTH_ROLL_F);
 
-            core::ptr::write_bytes(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(), 0, gents.len());
+            core::ptr::write_bytes(
+                core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(),
+                0,
+                gents.len(),
+            );
         }
     }
 
@@ -3372,7 +3492,8 @@ mod setter_tests {
         let _g = pm_lock();
         let _r = crate::codemp::game::bg_lib::rand_lock();
         const NUM_ALL: c_int = 2;
-        let mut backing: Vec<animation_t> = vec![animation_t::default(); MAX_TOTALANIMATIONS as usize];
+        let mut backing: Vec<animation_t> =
+            vec![animation_t::default(); MAX_TOTALANIMATIONS as usize];
         unsafe {
             let saved_num = *addr_of!(bgNumAllAnims);
             *addr_of_mut!(bgNumAllAnims) = NUM_ALL;

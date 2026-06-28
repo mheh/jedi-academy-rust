@@ -24,40 +24,42 @@ use crate::codemp::game::bg_misc::{
     BG_EvaluateTrajectory, BG_FindItemForWeapon, BG_GiveMeVectorFromMatrix,
 };
 use crate::codemp::game::bg_public::{
-    EFFECT_EXPLOSION_TURRET, EF2_BRACKET_ENTITY, EF_G2ANIMATING, EF_RADAROBJECT, EF_SHADER_ANIM,
+    EF2_BRACKET_ENTITY, EFFECT_EXPLOSION_TURRET, EF_G2ANIMATING, EF_RADAROBJECT, EF_SHADER_ANIM,
     ET_GENERAL, ET_MISSILE, GT_SIEGE, MASK_SHOT, MOD_TARGET_LASER, MOD_UNKNOWN, TEAM_SPECTATOR,
 };
 use crate::codemp::game::bg_weapons_h::{WP_BLASTER, WP_DEMP2, WP_TURRET};
-use crate::codemp::game::g_combat::{AddScore, ObjectDie, G_RadiusDamage};
+use crate::codemp::game::g_combat::{AddScore, G_RadiusDamage, ObjectDie};
 use crate::codemp::game::g_items::RegisterItem;
-use crate::codemp::game::g_team::OnSameTeam;
 use crate::codemp::game::g_local::{
     gentity_t, DAMAGE_HEAVY_WEAP_CLASS, DAMAGE_NO_KNOCKBACK, FL_BBRUSH, FL_NOTARGET, FRAMETIME,
 };
 use crate::codemp::game::g_main::{g_gametype, level, Com_Printf};
 use crate::codemp::game::g_spawn::{G_SpawnFloat, G_SpawnInt, G_SpawnString};
+use crate::codemp::game::g_team::OnSameTeam;
 use crate::codemp::game::g_utils::{
-    G_BoneIndex, G_EffectIndex, G_FreeEntity, G_IconIndex, G_KillG2Queue, G_ModelIndex, G_PlayEffect,
-    G_PlayEffectID, G_RadiusList, G_ScaleNetHealth, G_SetAngles, G_SetOrigin, G_Sound,
-    G_SoundIndex, G_Spawn, G_UseTargets, G_UseTargets2,
+    G_BoneIndex, G_EffectIndex, G_FreeEntity, G_IconIndex, G_KillG2Queue, G_ModelIndex,
+    G_PlayEffect, G_PlayEffectID, G_RadiusList, G_ScaleNetHealth, G_SetAngles, G_SetOrigin,
+    G_Sound, G_SoundIndex, G_Spawn, G_UseTargets, G_UseTargets2,
 };
 use crate::codemp::game::g_weapon::WP_FireTurboLaserMissile;
 use crate::codemp::game::npc_combat::G_SetEnemy;
 use crate::codemp::game::q_math::{
-    flrand, vec3_origin, AngleNormalize360, AngleSubtract, AngleVectors, VectorClear, VectorCopy,
-    VectorLengthSquared, VectorMA, VectorNormalize, VectorScale, VectorSet, VectorSubtract,
-    vectoangles,
+    flrand, vec3_origin, vectoangles, AngleNormalize360, AngleSubtract, AngleVectors, VectorClear,
+    VectorCopy, VectorLengthSquared, VectorMA, VectorNormalize, VectorScale, VectorSet,
+    VectorSubtract,
 };
 use crate::codemp::game::q_shared::{random, Q_stricmp};
 use crate::codemp::game::q_shared_h::{
-    vec3_t, mdxaBone_t, CHAN_BODY, MAT_METAL, MAX_CLIENTS, MAX_GENTITIES, NEGATIVE_X, NEGATIVE_Z,
-    ORIGIN, PITCH,
-    POSITIVE_X, POSITIVE_Y, ROLL, TR_LINEAR, YAW,
+    mdxaBone_t, vec3_t, CHAN_BODY, MAT_METAL, MAX_CLIENTS, MAX_GENTITIES, NEGATIVE_X, NEGATIVE_Z,
+    ORIGIN, PITCH, POSITIVE_X, POSITIVE_Y, ROLL, TR_LINEAR, YAW,
 };
 use crate::codemp::game::surfaceflags_h::{
-    CONTENTS_BODY, CONTENTS_LIGHTSABER, CONTENTS_MONSTERCLIP, CONTENTS_PLAYERCLIP, CONTENTS_SHOTCLIP,
+    CONTENTS_BODY, CONTENTS_LIGHTSABER, CONTENTS_MONSTERCLIP, CONTENTS_PLAYERCLIP,
+    CONTENTS_SHOTCLIP,
 };
-use crate::codemp::ghoul2::g2_h::{BONE_ANGLES_POSTMULT, BONE_ANIM_BLEND, BONE_ANIM_OVERRIDE_FREEZE};
+use crate::codemp::ghoul2::g2_h::{
+    BONE_ANGLES_POSTMULT, BONE_ANIM_BLEND, BONE_ANIM_OVERRIDE_FREEZE,
+};
 use crate::ffi::types::{qboolean, QFALSE, QTRUE};
 use crate::trap;
 
@@ -798,7 +800,11 @@ unsafe fn turretG2_find_enemies(self_: *mut gentity_t) -> qboolean {
         // We were active and alert, i.e. had an enemy in the last 3 secs
         if (*self_).painDebounceTime < (*addr_of!(level)).time {
             if (*self_).spawnflags & SPF_TURRETG2_TURBO == 0 {
-                G_Sound(self_, CHAN_BODY, G_SoundIndex("sound/chars/turret/ping.wav"));
+                G_Sound(
+                    self_,
+                    CHAN_BODY,
+                    G_SoundIndex("sound/chars/turret/ping.wav"),
+                );
             }
             (*self_).painDebounceTime = (*addr_of!(level)).time + 1000;
         }
@@ -839,9 +845,7 @@ unsafe fn turretG2_find_enemies(self_: *mut gentity_t) -> qboolean {
             i += 1;
             continue;
         }
-        if !(*target).client.is_null()
-            && (*(*target).client).sess.sessionTeam == TEAM_SPECTATOR
-        {
+        if !(*target).client.is_null() && (*(*target).client).sess.sessionTeam == TEAM_SPECTATOR {
             i += 1;
             continue;
         }
@@ -1020,16 +1024,15 @@ pub unsafe extern "C" fn turretG2_base_think(self_: *mut gentity_t) {
 
             if enemyDist < (*self_).radius * (*self_).radius {
                 // was in valid radius
-                if trap::InPVS(&(*self_).r.currentOrigin, &(*(*self_).enemy).r.currentOrigin)
-                    != QFALSE
+                if trap::InPVS(
+                    &(*self_).r.currentOrigin,
+                    &(*(*self_).enemy).r.currentOrigin,
+                ) != QFALSE
                 {
                     // Every now and again, check to see if we can even trace to the enemy
 
                     if !(*(*self_).enemy).client.is_null() {
-                        VectorCopy(
-                            &(*(*(*self_).enemy).client).renderInfo.eyePoint,
-                            &mut org,
-                        );
+                        VectorCopy(&(*(*(*self_).enemy).client).renderInfo.eyePoint, &mut org);
                     } else {
                         VectorCopy(&(*(*self_).enemy).r.currentOrigin, &mut org);
                     }
@@ -1130,19 +1133,19 @@ Turret that hangs from the ceiling, will aim and shoot at enemies
   showhealth - set to 1 to show health bar on this entity when crosshair is over it
 
   teamowner - crosshair shows green for this team, red for opposite team
-	0 - none
-	1 - red
-	2 - blue
+    0 - none
+    1 - red
+    2 - blue
 
   alliedTeam - team that this turret won't target
-	0 - none
-	1 - red
-	2 - blue
+    0 - none
+    1 - red
+    2 - blue
 
   teamnodmg - team that turret does not take damage from
-	0 - none
-	1 - red
-	2 - blue
+    0 - none
+    1 - red
+    2 - blue
 
   customscale - custom scaling size. 100 is normal size, 1024 is the max scaling. this will change the bounding box size, so be careful of starting in solid!
 
@@ -1161,7 +1164,11 @@ pub unsafe extern "C" fn SP_misc_turretG2(base: *mut gentity_t) {
     let mut s: *mut c_char = core::ptr::null_mut();
     turretG2_set_models(base, QFALSE);
 
-    G_SpawnInt(c"painwait".as_ptr(), c"0".as_ptr(), &mut (*base).genericValue4);
+    G_SpawnInt(
+        c"painwait".as_ptr(),
+        c"0".as_ptr(),
+        &mut (*base).genericValue4,
+    );
     (*base).genericValue8 = 0;
 
     G_SpawnInt(c"customscale".as_ptr(), c"0".as_ptr(), &mut customscaleVal);

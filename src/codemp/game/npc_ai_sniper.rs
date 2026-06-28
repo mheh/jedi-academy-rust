@@ -25,58 +25,58 @@ use crate::codemp::game::b_local_h::{
     CP_APPROACH_ENEMY, CP_CLEAR, CP_CLOSEST, CP_FLANK, CP_HAS_ROUTE, CP_HORZ_DIST_COLL, CP_NEAREST,
 };
 use crate::codemp::game::b_public_h::{
+    BS_DEFAULT, ENEMY_POS_LAG_INTERVAL, MAX_ENEMY_POS_LAG, SPOT_HEAD_LEAN, SPOT_WEAPON,
+};
+use crate::codemp::game::b_public_h::{ENEMY_POS_LAG_STEPS, SPOT_ORIGIN};
+use crate::codemp::game::b_public_h::{SCF_ALT_FIRE, SCF_DONT_FIRE};
+use crate::codemp::game::b_public_h::{
     SCF_CHASE_ENEMIES, SCF_IGNORE_ALERTS, SCF_LOOK_FOR_ENEMIES, SCF_USE_CP_NEAREST,
 };
+use crate::codemp::game::bg_public::MASK_SHOT;
+use crate::codemp::game::bg_public::{EV_CONFUSE1, EV_CONFUSE3};
+use crate::codemp::game::bg_public::{EV_PUSHED1, EV_PUSHED3};
+use crate::codemp::game::bg_weapons_h::WP_DISRUPTOR;
+use crate::codemp::game::bg_weapons_h::WP_EMPLACED_GUN;
+use crate::codemp::game::g_local::gentity_t;
+use crate::codemp::game::g_local::AEL_DANGER;
+use crate::codemp::game::g_local::{AEL_DISCOVERED, AEL_SUSPICIOUS};
+use crate::codemp::game::g_main::{g_entities, g_spskill, level};
 use crate::codemp::game::g_nav::{
-    navInfo_t, FlyingCreature, NAV_HitNavGoal, NIF_COLLISION, NPC_SetMoveGoal,
+    navInfo_t, FlyingCreature, NAV_HitNavGoal, NPC_SetMoveGoal, NIF_COLLISION,
 };
+use crate::codemp::game::g_public_h::SVF_GLASS_BRUSH;
 use crate::codemp::game::g_timer::TIMER_Done;
+use crate::codemp::game::g_timer::TIMER_Get;
+use crate::codemp::game::g_timer::TIMER_Set;
+use crate::codemp::game::g_utils::G_SoundOnEnt;
+use crate::codemp::game::g_utils::GetAnglesForDirection;
+use crate::codemp::game::g_weapon::CalcMuzzlePoint;
 use crate::codemp::game::npc::{ucmd, NPCInfo, NPC};
 use crate::codemp::game::npc_ai_stormtrooper::NPC_CheckPlayerTeamStealth;
+use crate::codemp::game::npc_combat::{G_AddVoiceEvent, G_ClearEnemy};
 use crate::codemp::game::npc_combat::{
     G_SetEnemy, NPC_FindCombatPoint, NPC_FreeCombatPoint, NPC_SetCombatPoint,
 };
+use crate::codemp::game::npc_combat::{NPC_ChangeWeapon, NPC_MaxDistSquaredForWeapon, WeaponThink};
 use crate::codemp::game::npc_goal::{NPC_ReachedGoal, UpdateGoal};
 use crate::codemp::game::npc_move::{NAV_GetLastMove, NPC_MoveToGoal};
+use crate::codemp::game::npc_reactions::NPC_Pain;
 use crate::codemp::game::npc_senses::{NPC_CheckAlertEvents, NPC_CheckForDanger};
 use crate::codemp::game::npc_utils::{
     CalcEntitySpot, NPC_CheckEnemyExt, NPC_ClearLOS4, NPC_UpdateAngles,
 };
-use crate::codemp::game::npc_combat::{
-    NPC_ChangeWeapon, NPC_MaxDistSquaredForWeapon, WeaponThink,
-};
-use crate::codemp::game::g_utils::G_SoundOnEnt;
-use crate::codemp::game::g_local::AEL_DANGER;
-use crate::codemp::game::g_timer::TIMER_Get;
-use crate::codemp::game::b_public_h::{SCF_ALT_FIRE, SCF_DONT_FIRE};
-use crate::codemp::game::bg_weapons_h::WP_DISRUPTOR;
 use crate::codemp::game::q_math::DistanceSquared;
-use crate::codemp::game::q_shared_h::{BUTTON_ALT_ATTACK, BUTTON_ATTACK, BUTTON_WALKING, CHAN_WEAPON};
+use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_math::{
     flrand, vec3_origin, vectoangles, AngleNormalize360, AngleVectors, VectorCompare, VectorCopy,
     VectorMA, VectorNormalize, VectorSubtract,
 };
-use crate::codemp::game::g_utils::GetAnglesForDirection;
-use crate::codemp::game::g_weapon::CalcMuzzlePoint;
-use crate::codemp::game::b_public_h::{ENEMY_POS_LAG_STEPS, SPOT_ORIGIN};
-use crate::codemp::game::bg_public::MASK_SHOT;
-use crate::trap;
-use crate::ffi::types::{qboolean, QFALSE, QTRUE};
-use crate::codemp::game::b_public_h::{
-    BS_DEFAULT, ENEMY_POS_LAG_INTERVAL, MAX_ENEMY_POS_LAG, SPOT_HEAD_LEAN, SPOT_WEAPON,
-};
-use crate::codemp::game::bg_public::{EV_CONFUSE1, EV_CONFUSE3};
-use crate::codemp::game::bg_weapons_h::WP_EMPLACED_GUN;
-use crate::codemp::game::g_local::gentity_t;
-use crate::codemp::game::g_local::{AEL_DISCOVERED, AEL_SUSPICIOUS};
-use crate::codemp::game::g_main::{g_entities, g_spskill, level};
-use crate::codemp::game::g_public_h::SVF_GLASS_BRUSH;
-use crate::codemp::game::g_timer::TIMER_Set;
-use crate::codemp::game::bg_public::{EV_PUSHED1, EV_PUSHED3};
-use crate::codemp::game::npc_combat::{G_AddVoiceEvent, G_ClearEnemy};
-use crate::codemp::game::npc_reactions::NPC_Pain;
-use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_shared_h::{vec3_t, PITCH, YAW};
+use crate::codemp::game::q_shared_h::{
+    BUTTON_ALT_ATTACK, BUTTON_ATTACK, BUTTON_WALKING, CHAN_WEAPON,
+};
+use crate::ffi::types::{qboolean, QFALSE, QTRUE};
+use crate::trap;
 
 // File-scope statics mirroring the C decls (NPC_AI_Sniper.c:29-34); the unread ones
 // feed the still-blocked NAV-bound siblings (`Sniper_Move`/`Sniper_CheckMoveState`/
@@ -135,7 +135,11 @@ NPC_ST_Pain
 -------------------------
 */
 
-pub unsafe extern "C" fn NPC_Sniper_Pain(self_: *mut gentity_t, attacker: *mut gentity_t, damage: c_int) {
+pub unsafe extern "C" fn NPC_Sniper_Pain(
+    self_: *mut gentity_t,
+    attacker: *mut gentity_t,
+    damage: c_int,
+) {
     (*(*self_).NPC).localState = LSTATE_UNDERFIRE;
 
     TIMER_Set(self_, c"duck".as_ptr(), -1);
@@ -254,7 +258,8 @@ pub unsafe fn Sniper_EvaluateShot(hit: c_int) -> qboolean {
         return QFALSE;
     }
 
-    let hitEnt: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(hit as isize);
+    let hitEnt: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(hit as isize);
     if hit == (*(*npc).enemy).s.number
         || (!hitEnt.is_null()
             && !(*hitEnt).client.is_null()
@@ -358,7 +363,8 @@ pub unsafe fn NPC_BSSniper_Patrol() {
                                 .is_null()
                             && (*(*addr_of!(level)).alertEvents[alertEvent as usize].owner).health
                                 >= 0
-                            && (*(*(*addr_of!(level)).alertEvents[alertEvent as usize].owner).client)
+                            && (*(*(*addr_of!(level)).alertEvents[alertEvent as usize].owner)
+                                .client)
                                 .playerTeam
                                 == (*(*(*addr_of!(NPC))).client).enemyTeam
                         {
@@ -387,7 +393,8 @@ pub unsafe fn NPC_BSSniper_Patrol() {
                         );
                         (*(*addr_of_mut!(NPCInfo))).investigateDebounceTime =
                             (*addr_of!(level)).time + Q_irand(500, 1000);
-                        if (*addr_of!(level)).alertEvents[alertEvent as usize].level == AEL_SUSPICIOUS
+                        if (*addr_of!(level)).alertEvents[alertEvent as usize].level
+                            == AEL_SUSPICIOUS
                         {
                             //suspicious looks longer
                             (*(*addr_of_mut!(NPCInfo))).investigateDebounceTime +=
@@ -792,8 +799,8 @@ pub unsafe fn Sniper_FaceEnemy() {
             } else {
                 //based on distance, aim value, difficulty and enemy movement, miss
                 //FIXME: incorporate distance as a factor?
-                let mut missFactor = 8
-                    - ((*(*addr_of!(NPCInfo))).stats.aim + (*addr_of!(g_spskill)).integer) * 3;
+                let mut missFactor =
+                    8 - ((*(*addr_of!(NPCInfo))).stats.aim + (*addr_of!(g_spskill)).integer) * 3;
                 if missFactor > ENEMY_POS_LAG_STEPS as c_int {
                     missFactor = ENEMY_POS_LAG_STEPS as c_int;
                 } else if missFactor < 0 {
@@ -1023,8 +1030,7 @@ pub unsafe fn NPC_BSSniper_Attack() {
         //we want to face in the dir we're running
         if move2 != 0 {
             //don't run away and shoot
-            (*(*addr_of_mut!(NPCInfo))).desiredYaw =
-                (*(*addr_of!(NPCInfo))).lastPathAngles[YAW];
+            (*(*addr_of_mut!(NPCInfo))).desiredYaw = (*(*addr_of!(NPCInfo))).lastPathAngles[YAW];
             (*(*addr_of_mut!(NPCInfo))).desiredPitch = 0.0;
             shoot2 = QFALSE;
         }

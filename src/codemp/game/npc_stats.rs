@@ -15,24 +15,25 @@ use core::ffi::{c_char, c_int, CStr};
 use core::ptr::{addr_of, addr_of_mut, null_mut};
 
 use crate::codemp::game::b_public_h::{
-    rank_t, SCF_ALT_FIRE, BS_ADVANCE_FIGHT, BS_CINEMATIC, BS_DEFAULT, BS_FOLLOW_LEADER, BS_JUMP,
-    BS_NOCLIP, BS_REMOVE, BS_SEARCH, BS_SLEEP, BS_WANDER, NUM_BSTATES, RANK_CAPTAIN, RANK_CIVILIAN,
-    RANK_COMMANDER, RANK_CREWMAN, RANK_ENSIGN, RANK_LT, RANK_LT_COMM, RANK_LT_JG,
+    rank_t, BS_ADVANCE_FIGHT, BS_CINEMATIC, BS_DEFAULT, BS_FOLLOW_LEADER, BS_JUMP, BS_NOCLIP,
+    BS_REMOVE, BS_SEARCH, BS_SLEEP, BS_WANDER, NUM_BSTATES, RANK_CAPTAIN, RANK_CIVILIAN,
+    RANK_COMMANDER, RANK_CREWMAN, RANK_ENSIGN, RANK_LT, RANK_LT_COMM, RANK_LT_JG, SCF_ALT_FIRE,
 };
 use crate::codemp::game::bg_misc::{BG_FindItemForWeapon, BG_TempAlloc, BG_TempFree};
 use crate::codemp::game::bg_panimate::BG_ParseAnimationFile;
-use crate::codemp::game::g_client::SetupGameGhoul2Model;
 use crate::codemp::game::bg_public::{
-    animation_t, DEFAULT_MAXS_2, DEFAULT_MINS_2, CROUCH_MAXS_2, EF2_FLYING, STAT_MAX_HEALTH,
+    animation_t, CROUCH_MAXS_2, DEFAULT_MAXS_2, DEFAULT_MINS_2, EF2_FLYING, STAT_MAX_HEALTH,
     STAT_WEAPONS,
 };
 use crate::codemp::game::bg_saberLoad::{
-    TranslateSaberColor, WP_RemoveSaber, WP_SaberParseParms, BG_ParseLiteral,
+    BG_ParseLiteral, TranslateSaberColor, WP_RemoveSaber, WP_SaberParseParms,
 };
 use crate::codemp::game::bg_saga::{FPTable, WPTable};
 use crate::codemp::game::bg_vehicles_h::VH_FIGHTER;
 use crate::codemp::game::bg_weapons::weaponData;
 use crate::codemp::game::bg_weapons_h::{weapon_t, WP_NONE, WP_NUM_WEAPONS, WP_SABER};
+use crate::codemp::game::g_client::SetupGameGhoul2Model;
+use crate::codemp::game::g_items::RegisterItem;
 use crate::codemp::game::g_local::gentity_t;
 use crate::codemp::game::g_main::{Com_Printf, G_Error};
 use crate::codemp::game::g_public_h::{
@@ -40,17 +41,16 @@ use crate::codemp::game::g_public_h::{
     BSET_FFDEATH, BSET_FFIRE, BSET_FLEE, BSET_INVALID, BSET_LOSTENEMY, BSET_PAIN, BSET_SPAWN,
     BSET_STUCK, BSET_USE, BSET_VICTORY,
 };
-use crate::codemp::game::g_items::RegisterItem;
 use crate::codemp::game::g_spawn::G_NewString;
 use crate::codemp::game::g_utils::{G_ModelIndex, G_SetOrigin, G_SoundIndex};
-use crate::codemp::game::npc_spawn::NPC_WeaponsForTeam;
 use crate::codemp::game::npc::NPCInfo;
-use crate::codemp::game::q_math::{VectorCopy, VectorSet};
+use crate::codemp::game::npc_spawn::NPC_WeaponsForTeam;
 use crate::codemp::game::q_math::Q_irand;
+use crate::codemp::game::q_math::{VectorCopy, VectorSet};
 use crate::codemp::game::q_shared::{
-    va, Com_sprintf, Q_strcat, Q_stricmp, Q_strncpyz, Sz, COM_BeginParseSession,
-    COM_Compress, COM_ParseExt, COM_ParseFloat, COM_ParseInt, COM_ParseString, GetIDForString,
-    SkipBracedSection, SkipRestOfLine,
+    va, COM_BeginParseSession, COM_Compress, COM_ParseExt, COM_ParseFloat, COM_ParseInt,
+    COM_ParseString, Com_sprintf, GetIDForString, Q_strcat, Q_stricmp, Q_strncpyz,
+    SkipBracedSection, SkipRestOfLine, Sz,
 };
 use crate::codemp::game::q_shared_h::{
     qboolean, saber_colors_t, stringID_table_t, vec3_t, FP_FIRST, FS_READ, MAX_BLADES, MAX_QPATH,
@@ -367,9 +367,8 @@ pub unsafe fn NPC_Precache(spawner: *mut gentity_t) {
                 core::mem::size_of_val(&tk) as c_int,
                 format_args!("NPC{}", Sz(token)),
             );
-            playerTeam =
-                GetIDForString(addr_of!(TeamTable) as *const stringID_table_t, tk.as_ptr())
-                    as npcteam_t;
+            playerTeam = GetIDForString(addr_of!(TeamTable) as *const stringID_table_t, tk.as_ptr())
+                as npcteam_t;
             continue;
         }
 
@@ -389,8 +388,7 @@ pub unsafe fn NPC_Precache(spawner: *mut gentity_t) {
                 if !patch.is_null() {
                     *patch = 0;
                 }
-                (*spawner).s.csSounds_Std =
-                    G_SoundIndex(&format!("*${}", Sz(sound.as_ptr())));
+                (*spawner).s.csSounds_Std = G_SoundIndex(&format!("*${}", Sz(sound.as_ptr())));
             }
             continue;
         }
@@ -411,8 +409,7 @@ pub unsafe fn NPC_Precache(spawner: *mut gentity_t) {
                 if !patch.is_null() {
                     *patch = 0;
                 }
-                (*spawner).s.csSounds_Combat =
-                    G_SoundIndex(&format!("*${}", Sz(sound.as_ptr())));
+                (*spawner).s.csSounds_Combat = G_SoundIndex(&format!("*${}", Sz(sound.as_ptr())));
             }
             continue;
         }
@@ -433,8 +430,7 @@ pub unsafe fn NPC_Precache(spawner: *mut gentity_t) {
                 if !patch.is_null() {
                     *patch = 0;
                 }
-                (*spawner).s.csSounds_Extra =
-                    G_SoundIndex(&format!("*${}", Sz(sound.as_ptr())));
+                (*spawner).s.csSounds_Extra = G_SoundIndex(&format!("*${}", Sz(sound.as_ptr())));
             }
             continue;
         }
@@ -455,8 +451,7 @@ pub unsafe fn NPC_Precache(spawner: *mut gentity_t) {
                 if !patch.is_null() {
                     *patch = 0;
                 }
-                (*spawner).s.csSounds_Jedi =
-                    G_SoundIndex(&format!("*${}", Sz(sound.as_ptr())));
+                (*spawner).s.csSounds_Jedi = G_SoundIndex(&format!("*${}", Sz(sound.as_ptr())));
             }
             continue;
         }
@@ -540,7 +535,10 @@ pub static mut NPCFile: [c_char; MAX_QPATH] = [0; MAX_QPATH];
 
 /// `ENUM2STRING`/`stringID_table_t` entry constructor (`{ #x, x }`), matching the `bg_saga` idiom.
 const fn s(name: &'static CStr, id: c_int) -> stringID_table_t {
-    stringID_table_t { name: name.as_ptr(), id }
+    stringID_table_t {
+        name: name.as_ptr(),
+        id,
+    }
 }
 
 /// `stringID_table_t TeamTable[]` (NPC_stats.c:19) — `NPCTEAM_*` names; `NPCTEAM_FREE` stays entry 0.
@@ -723,7 +721,11 @@ pub fn NPC_LoadParms() {
                 len = COM_Compress(scratch);
 
                 Q_strcat(marker, MAX_NPC_DATA_SIZE as c_int - totallen, scratch);
-                Q_strcat(marker, MAX_NPC_DATA_SIZE as c_int - totallen, c"\n".as_ptr());
+                Q_strcat(
+                    marker,
+                    MAX_NPC_DATA_SIZE as c_int - totallen,
+                    c"\n".as_ptr(),
+                );
                 len += 1;
                 trap::FS_FCloseFile(f);
 

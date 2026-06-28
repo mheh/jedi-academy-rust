@@ -97,13 +97,12 @@ pub unsafe fn VEH_TurretCheckFire(
         //take the ammo away
         (*pVeh).turretStatus[turretNum as usize].ammo -= (*vehWeapon).iAmmoPerShot;
         //toggle to the next muzzle on this turret, if there is one
-        let nextMuzzle: c_int = if (curMuzzle + 1)
-            == (*(*pVeh).m_pVehicleInfo).turret[turretNum as usize].iMuzzle[0]
-        {
-            (*(*pVeh).m_pVehicleInfo).turret[turretNum as usize].iMuzzle[1]
-        } else {
-            (*(*pVeh).m_pVehicleInfo).turret[turretNum as usize].iMuzzle[0]
-        };
+        let nextMuzzle: c_int =
+            if (curMuzzle + 1) == (*(*pVeh).m_pVehicleInfo).turret[turretNum as usize].iMuzzle[0] {
+                (*(*pVeh).m_pVehicleInfo).turret[turretNum as usize].iMuzzle[1]
+            } else {
+                (*(*pVeh).m_pVehicleInfo).turret[turretNum as usize].iMuzzle[0]
+            };
         if nextMuzzle != 0 {
             //a valid muzzle to toggle to
             (*pVeh).turretStatus[turretNum as usize].nextMuzzle = nextMuzzle - 1;
@@ -152,7 +151,11 @@ pub unsafe fn VEH_TurretAnglesToEnemy(
     }
 
     //FIXME: this isn't quite right, it's aiming from the muzzle, not the center of the turret...
-    VectorSubtract(&org, &(*pVeh).m_vMuzzlePos[curMuzzle as usize], &mut enemyDir);
+    VectorSubtract(
+        &org,
+        &(*pVeh).m_vMuzzlePos[curMuzzle as usize],
+        &mut enemyDir,
+    );
     //Get the desired absolute, world angles to our target
     vectoangles(&enemyDir, desiredAngles);
 }
@@ -243,8 +246,7 @@ pub unsafe fn VEH_TurretAim(
             > (*(*pVeh).m_pVehicleInfo).turret[turretNum as usize].pitchClampDown
     {
         aimCorrect = QFALSE;
-        desiredAngles[PITCH] =
-            (*(*pVeh).m_pVehicleInfo).turret[turretNum as usize].pitchClampDown;
+        desiredAngles[PITCH] = (*(*pVeh).m_pVehicleInfo).turret[turretNum as usize].pitchClampDown;
     }
     if (*(*pVeh).m_pVehicleInfo).turret[turretNum as usize].pitchClampUp != 0.0
         && desiredAngles[PITCH] < (*(*pVeh).m_pVehicleInfo).turret[turretNum as usize].pitchClampUp
@@ -281,7 +283,9 @@ pub unsafe fn VEH_TurretAim(
         yawAngles[(*turretStats).yawAxis as usize] = newAngles[YAW];
         NPC_SetBoneAngles(
             parent,
-            CStr::from_ptr((*turretStats).yawBone).to_str().unwrap_or(""),
+            CStr::from_ptr((*turretStats).yawBone)
+                .to_str()
+                .unwrap_or(""),
             &yawAngles,
         );
     }
@@ -333,7 +337,13 @@ unsafe fn VEH_TurretFindEnemies(
     WP_CalcVehMuzzle(parent, curMuzzle);
     VectorCopy(&(*pVeh).m_vMuzzlePos[curMuzzle as usize], &mut org2);
 
-    let count = G_RadiusList(&org2, (*turretStats).fAIRange, parent, QTRUE, &mut entity_list);
+    let count = G_RadiusList(
+        &org2,
+        (*turretStats).fAIRange,
+        parent,
+        QTRUE,
+        &mut entity_list,
+    );
 
     for i in 0..count {
         let target: *mut gentity_t = entity_list[i as usize];
@@ -442,8 +452,7 @@ pub unsafe fn VEH_TurretObeyPassengerControl(
     parent: *mut gentity_t,
     turretNum: c_int,
 ) {
-    let turretStats: *mut turretStats_t =
-        &mut (*(*pVeh).m_pVehicleInfo).turret[turretNum as usize];
+    let turretStats: *mut turretStats_t = &mut (*(*pVeh).m_pVehicleInfo).turret[turretNum as usize];
     let passenger: *mut gentity_t =
         (*pVeh).m_ppPassengers[((*turretStats).passengerNum - 1) as usize] as *mut gentity_t;
 
@@ -485,8 +494,7 @@ pub unsafe fn VEH_TurretObeyPassengerControl(
 /// initialised; `turretNum` a valid turret index.
 pub unsafe fn VEH_TurretThink(pVeh: *mut Vehicle_t, parent: *mut gentity_t, turretNum: c_int) {
     let mut doAim: qboolean = QFALSE;
-    let turretStats: *mut turretStats_t =
-        &mut (*(*pVeh).m_pVehicleInfo).turret[turretNum as usize];
+    let turretStats: *mut turretStats_t = &mut (*(*pVeh).m_pVehicleInfo).turret[turretNum as usize];
     let mut turretEnemy: *mut gentity_t = null_mut();
 
     if turretStats.is_null() || (*turretStats).iAmmoMax == 0 {
@@ -614,7 +622,12 @@ pub unsafe fn VEH_TurretThink(pVeh: *mut Vehicle_t, parent: *mut gentity_t, turr
         ) != QFALSE
         {
             VEH_TurretCheckFire(
-                pVeh, parent, /*turretEnemy,*/ turretStats, vehWeapon, turretNum, curMuzzle,
+                pVeh,
+                parent,
+                /*turretEnemy,*/ turretStats,
+                vehWeapon,
+                turretNum,
+                curMuzzle,
             );
         }
     }

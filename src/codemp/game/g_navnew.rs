@@ -33,13 +33,13 @@ use crate::codemp::game::g_mover::CalcTeamDoorCenter;
 use crate::codemp::game::g_nav::{NAV_CheckAhead, NAV_TestBestNode, NAV_TestForBlocked};
 use crate::codemp::game::g_public_h::MAX_FAILED_NODES;
 use crate::codemp::game::npc::NPCInfo;
+use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_math::{
-    AngleNormalize360, AngleVectors, DistanceSquared, DotProduct, VectorClear, VectorCompare,
-    VectorCopy, VectorMA, VectorNormalize, VectorScale, VectorSet, VectorSubtract, vec3_origin,
-    vectoangles,
+    vec3_origin, vectoangles, AngleNormalize360, AngleVectors, DistanceSquared, DotProduct,
+    VectorClear, VectorCompare, VectorCopy, VectorMA, VectorNormalize, VectorScale, VectorSet,
+    VectorSubtract,
 };
 use crate::codemp::game::q_shared::{random, Q_stricmp};
-use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_shared_h::{
     qboolean, trace_t, vec3_t, ENTITYNUM_NONE, ENTITYNUM_WORLD, QFALSE, QTRUE, YAW,
 };
@@ -54,8 +54,8 @@ use crate::codemp::game::surfaceflags_h::{
 // same declarations, so this single-definition import mirrors the C headers.)
 // ---------------------------------------------------------------------------
 use crate::codemp::game::g_nav::{
-    navInfo_t, MAX_COLL_AVOID_DIST, MIN_BLOCKED_SPEECH_TIME, MIN_DOOR_BLOCK_DIST_SQR, NF_CLEAR_PATH,
-    NIF_COLLISION, NODE_NONE, WAYPOINT_NONE,
+    navInfo_t, MAX_COLL_AVOID_DIST, MIN_BLOCKED_SPEECH_TIME, MIN_DOOR_BLOCK_DIST_SQR,
+    NF_CLEAR_PATH, NIF_COLLISION, NODE_NONE, WAYPOINT_NONE,
 };
 
 // `EDGE_*` / `NODE_*` debug-draw enums (g_public.h:603-618) — only consumed by the
@@ -423,7 +423,12 @@ pub unsafe fn NAVNEW_SidestepBlocker(
         } //else right
         avoidAngles[YAW] = AngleNormalize360(yaw + arcAngle);
         AngleVectors(&avoidAngles, Some(movedir), None, None);
-        VectorMA(&(*self_).r.currentOrigin, blocked_dist, movedir, &mut block_pos);
+        VectorMA(
+            &(*self_).r.currentOrigin,
+            blocked_dist,
+            movedir,
+            &mut block_pos,
+        );
         tr = trap::Trace(
             &(*self_).r.currentOrigin,
             &mins,
@@ -566,7 +571,8 @@ pub unsafe fn NAVNEW_Bypass(
     }
 
     //Okay, so he's not moving to my side, see which side of him is most clear
-    if NAVNEW_SidestepBlocker(self_, blocker, blocked_dir, blocked_dist, movedir, &right) != QFALSE {
+    if NAVNEW_SidestepBlocker(self_, blocker, blocked_dir, blocked_dist, movedir, &right) != QFALSE
+    {
         return QTRUE;
     }
 
@@ -640,7 +646,15 @@ pub unsafe fn NAVNEW_ResolveEntityCollision(
     //		return qtrue;
 
     //First, attempt to walk around the blocker or shove him out of the way
-    if NAVNEW_Bypass(self_, blocker, &blocked_dir, blocked_dist, movedir, setBlockedInfo) != QFALSE {
+    if NAVNEW_Bypass(
+        self_,
+        blocker,
+        &blocked_dir,
+        blocked_dist,
+        movedir,
+        setBlockedInfo,
+    ) != QFALSE
+    {
         return QTRUE;
     }
 
@@ -761,7 +775,8 @@ pub unsafe fn NAVNEW_AvoidCollision(
     //Now test against entities
     if NAV_CheckAhead(self_, &movepos, &mut info.trace, CONTENTS_BODY) == QFALSE {
         //Get the blocker
-        info.blocker = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(info.trace.entityNum as usize);
+        info.blocker = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add(info.trace.entityNum as usize);
         info.flags |= NIF_COLLISION;
 
         //Ok to hit our goal entity
@@ -987,18 +1002,19 @@ pub unsafe fn NAVNEW_MoveToGoal(self_: *mut gentity_t, info: &mut navInfo_t) -> 
         //Com_Printf( "goalwp = %d, mywp = %d, node = %d, origin = %s\n", self->NPC->goalEntity->waypoint, self->waypoint, bestNode, vtos(origin) );
 
         tempInfo = *info;
-        VectorSubtract(
-            &origin,
-            &(*self_).r.currentOrigin,
-            &mut tempInfo.direction,
-        );
+        VectorSubtract(&origin, &(*self_).r.currentOrigin, &mut tempInfo.direction);
         VectorNormalize(&mut tempInfo.direction);
 
         //NOTE: One very important thing NAVNEW_AvoidCollision does is
         //		it actually CHANGES the value of "direction" - it changes it to
         //		whatever dir you need to go in to avoid the obstacle...
-        foundClearPath =
-            NAVNEW_AvoidCollision(self_, (*(*self_).NPC).goalEntity, &mut tempInfo, setBlockedInfo, 5);
+        foundClearPath = NAVNEW_AvoidCollision(
+            self_,
+            (*(*self_).NPC).goalEntity,
+            &mut tempInfo,
+            setBlockedInfo,
+            5,
+        );
 
         if foundClearPath == QFALSE {
             //blocked by an ent

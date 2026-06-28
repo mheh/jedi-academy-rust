@@ -25,12 +25,12 @@ use crate::codemp::game::g_nav::{
     NIF_MACRO_NAV, WAYPOINT_NONE,
 };
 use crate::codemp::game::g_navnew::{NAVNEW_AvoidCollision, NAVNEW_MoveToGoal};
-use crate::codemp::game::npc::{ucmd, NPC, NPCInfo};
-use crate::codemp::game::q_shared_h::ENTITYNUM_NONE;
+use crate::codemp::game::npc::{ucmd, NPCInfo, NPC};
 use crate::codemp::game::q_math::{
-    AngleNormalize360, AngleVectors, Distance, DotProduct, VectorCopy, VectorNormalize,
-    VectorSubtract, vectoangles,
+    vectoangles, AngleNormalize360, AngleVectors, Distance, DotProduct, VectorCopy,
+    VectorNormalize, VectorSubtract,
 };
+use crate::codemp::game::q_shared_h::ENTITYNUM_NONE;
 use crate::codemp::game::q_shared_h::{
     qboolean, usercmd_t, vec3_t, BUTTON_WALKING, PITCH, QFALSE, QTRUE, YAW,
 };
@@ -114,9 +114,7 @@ unsafe fn NPC_LadderMove(dir: &vec3_t) {
     //ALSO: Need to play an anim
     //ALSO: Need transitionary anims?
 
-    if (dir[2] > 0.0)
-        || (dir[2] < 0.0 && (*(*NPC).client).ps.groundEntityNum == ENTITYNUM_NONE)
-    {
+    if (dir[2] > 0.0) || (dir[2] < 0.0 && (*(*NPC).client).ps.groundEntityNum == ENTITYNUM_NONE) {
         //Set our movement direction
         ucmd.upmove = if dir[2] > 0.0 { 127 } else { -127 };
 

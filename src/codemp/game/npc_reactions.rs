@@ -25,51 +25,49 @@
 use core::ffi::c_int;
 use core::ptr::{addr_of, addr_of_mut};
 
-use crate::codemp::game::anims::{
-    BOTH_PAIN1, BOTH_PAIN18, BOTH_PAIN2, BOTH_PAIN3,
-};
+use crate::codemp::game::anims::{BOTH_PAIN1, BOTH_PAIN18, BOTH_PAIN2, BOTH_PAIN3};
 use crate::codemp::game::b_public_h::{
-    NPCAI_DIE_ON_IMPACT, NPCAI_TOUCHED_GOAL, RANK_CAPTAIN, SCF_CHASE_ENEMIES, SCF_CROUCHED,
-    SCF_DONT_FIRE, SCF_FORCED_MARCH, SCF_NO_COMBAT_TALK, SCF_NO_MIND_TRICK, SCF_NO_RESPONSE,
-    SCF_WALKING, BS_DEFAULT, BS_HUNT_AND_KILL,
+    BS_DEFAULT, BS_HUNT_AND_KILL, NPCAI_DIE_ON_IMPACT, NPCAI_TOUCHED_GOAL, RANK_CAPTAIN,
+    SCF_CHASE_ENEMIES, SCF_CROUCHED, SCF_DONT_FIRE, SCF_FORCED_MARCH, SCF_NO_COMBAT_TALK,
+    SCF_NO_MIND_TRICK, SCF_NO_RESPONSE, SCF_WALKING,
 };
 use crate::codemp::game::bg_panimate::{
     bgAllAnims, bgHumanoidAnimations, BG_CrouchAnim, BG_FlippingAnim, BG_PickAnim,
     BG_SaberInSpecialAttack, PM_InCartwheel, PM_InKnockDown, PM_SpinningAnim,
 };
 use crate::codemp::game::bg_pmove::PM_RollingAnim;
-use crate::codemp::game::bg_public::{
-    bgEntity_t, EF2_HELD_BY_MONSTER, EV_ANGER1, EV_ANGER3, EV_CHASE1, EV_CHASE3, EV_CHOKE1, EV_CHOKE3, EV_CONFUSE1, EV_COVER1,
-    EV_COVER5, EV_DETECTED1, EV_DETECTED5, EV_ESCAPING2, EV_FFTURN, EV_FFWARN, EV_GIVEUP3, EV_GIVEUP4,
-    EV_JDETECTED1, EV_JDETECTED2, EV_LOST1, EV_OUTFLANK1, EV_OUTFLANK2, EV_PAIN, EV_SIGHT1,
-    EV_SIGHT2, EV_SIGHT3, EV_SOUND1, EV_SOUND3, EV_SUSPICIOUS4, EV_TAUNT1, EV_TAUNT2, MOD_CRUSH,
-    MOD_MELEE, MOD_SABER, PM_DEAD, SETANIM_BOTH, SETANIM_FLAG_HOLD, SETANIM_FLAG_OVERRIDE,
-    SETANIM_LEGS, STAT_MAX_HEALTH, TEAM_FREE,
-};
 use crate::codemp::game::bg_public::LS_READY;
+use crate::codemp::game::bg_public::{
+    bgEntity_t, EF2_HELD_BY_MONSTER, EV_ANGER1, EV_ANGER3, EV_CHASE1, EV_CHASE3, EV_CHOKE1,
+    EV_CHOKE3, EV_CONFUSE1, EV_COVER1, EV_COVER5, EV_DETECTED1, EV_DETECTED5, EV_ESCAPING2,
+    EV_FFTURN, EV_FFWARN, EV_GIVEUP3, EV_GIVEUP4, EV_JDETECTED1, EV_JDETECTED2, EV_LOST1,
+    EV_OUTFLANK1, EV_OUTFLANK2, EV_PAIN, EV_SIGHT1, EV_SIGHT2, EV_SIGHT3, EV_SOUND1, EV_SOUND3,
+    EV_SUSPICIOUS4, EV_TAUNT1, EV_TAUNT2, MOD_CRUSH, MOD_MELEE, MOD_SABER, PM_DEAD, SETANIM_BOTH,
+    SETANIM_FLAG_HOLD, SETANIM_FLAG_OVERRIDE, SETANIM_LEGS, STAT_MAX_HEALTH, TEAM_FREE,
+};
 use crate::codemp::game::bg_weapons_h::{WP_SABER, WP_THERMAL};
+use crate::codemp::game::g_combat::{gPainHitLoc, gPainMOD, gPainPoint};
 use crate::codemp::game::g_local::{gentity_t, FL_NOTARGET, HL_GENERIC1};
 use crate::codemp::game::g_main::{g_entities, g_spskill, level};
 use crate::codemp::game::g_public_h::{
     BSET_FFIRE, BSET_FLEE, BSET_PAIN, BSET_USE, SVF_ICARUS_FREEZE, TID_CHAN_VOICE,
 };
-use crate::codemp::game::g_utils::{G_Sound, G_SoundIndex, G_UseTargets2, G_AddEvent};
+use crate::codemp::game::g_utils::{G_AddEvent, G_Sound, G_SoundIndex, G_UseTargets2};
 use crate::codemp::game::npc::{
     NPCInfo, NPC_SetAnim, RestoreNPCGlobals, SaveNPCGlobals, SetNPCGlobals, NPC,
 };
 use crate::codemp::game::npc_ai_jedi::{Jedi_Ambush, Jedi_WaitingAmbush};
 use crate::codemp::game::npc_combat::{G_AddVoiceEvent, G_ClearEnemy, G_SetEnemy};
 use crate::codemp::game::npc_utils::{G_ActivateBehavior, NPC_CheckLookTarget, NPC_SetLookTarget};
+use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_math::VectorCopy;
 use crate::codemp::game::q_shared::{random, Q_stricmp};
-use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_shared_h::{trace_t, CHAN_AUTO, FORCE_LEVEL_1, MAX_CLIENTS};
 use crate::codemp::game::teams_h::{
     npcteam_t, CLASS_BESPIN_COP, CLASS_DESANN, CLASS_GALAKMECH, CLASS_GONK, CLASS_JAN, CLASS_JEDI,
     CLASS_LANDO, CLASS_LUKE, CLASS_MOUSE, CLASS_PRISONER, CLASS_PROTOCOL, CLASS_R2D2, CLASS_R5D2,
     CLASS_REBEL, CLASS_VEHICLE, NPCTEAM_NEUTRAL, NPCTEAM_PLAYER,
 };
-use crate::codemp::game::g_combat::{gPainHitLoc, gPainMOD, gPainPoint};
 use crate::ffi::types::{qboolean, QFALSE, QTRUE};
 use crate::trap::ICARUS_TaskIDPending;
 
@@ -282,8 +280,7 @@ pub unsafe fn NPC_ChoosePainAnimation(
     if (*self_).s.weapon == WP_THERMAL && (*(*self_).client).ps.weaponTime > 0 {
         //don't interrupt thermal throwing anim
         return;
-    }
-    else if (*(*self_).client).NPC_class == CLASS_GALAKMECH {
+    } else if (*(*self_).client).NPC_class == CLASS_GALAKMECH {
         if hitLoc == HL_GENERIC1 {
             //hit the antenna!
             pain_chance = 1.0f32;
@@ -335,15 +332,18 @@ pub unsafe fn NPC_ChoosePainAnimation(
         // int animLength; (declared here in C; assigned unconditionally below before use)
 
         //Pick and play our animation
-        if ((*(*self_).client).ps.fd.forceGripBeingGripped as f32) < (*addr_of!(level)).time as f32 {
+        if ((*(*self_).client).ps.fd.forceGripBeingGripped as f32) < (*addr_of!(level)).time as f32
+        {
             //not being force-gripped or force-drained
-            if /*G_CheckForStrongAttackMomentum( self ) //rwwFIXMEFIXME: Is this needed?
-                ||*/ PM_SpinningAnim( (*(*self_).client).ps.legsAnim ) == QTRUE
-                || BG_SaberInSpecialAttack( (*(*self_).client).ps.torsoAnim ) == QTRUE
-                || PM_InKnockDown( &mut (*(*self_).client).ps ) == QTRUE
-                || PM_RollingAnim( (*(*self_).client).ps.legsAnim ) == QTRUE
-                || (BG_FlippingAnim( (*(*self_).client).ps.legsAnim ) == QTRUE
-                    && PM_InCartwheel( (*(*self_).client).ps.legsAnim ) != QTRUE)
+            if
+            /*G_CheckForStrongAttackMomentum( self ) //rwwFIXMEFIXME: Is this needed?
+            ||*/
+            PM_SpinningAnim((*(*self_).client).ps.legsAnim) == QTRUE
+                || BG_SaberInSpecialAttack((*(*self_).client).ps.torsoAnim) == QTRUE
+                || PM_InKnockDown(&mut (*(*self_).client).ps) == QTRUE
+                || PM_RollingAnim((*(*self_).client).ps.legsAnim) == QTRUE
+                || (BG_FlippingAnim((*(*self_).client).ps.legsAnim) == QTRUE
+                    && PM_InCartwheel((*(*self_).client).ps.legsAnim) != QTRUE)
             {
                 //strong attacks, rolls, knockdowns, flips and spins cannot be interrupted by pain
             } else {
@@ -695,7 +695,8 @@ pub unsafe extern "C" fn NPC_Touch(
                 //See if we bumped into an enemy
                 if (*(*other).client).playerTeam == (*(*self_).client).enemyTeam {
                     //bumped into an enemy
-                    if (*NPCInfo).behaviorState != BS_HUNT_AND_KILL && (*NPCInfo).tempBehavior == 0 {
+                    if (*NPCInfo).behaviorState != BS_HUNT_AND_KILL && (*NPCInfo).tempBehavior == 0
+                    {
                         //MCG - Begin: checking specific BS mode here, this is bad, a HACK
                         //FIXME: not medics?
                         if (*NPC).enemy != other {
@@ -939,7 +940,10 @@ pub unsafe fn NPC_Respond(self_: *mut gentity_t, userNum: c_int) {
             G_Sound(
                 self_,
                 CHAN_AUTO,
-                G_SoundIndex(&format!("sound/chars/r5d2/misc/r5talk{}.wav", Q_irand(1, 4))),
+                G_SoundIndex(&format!(
+                    "sound/chars/r5d2/misc/r5talk{}.wav",
+                    Q_irand(1, 4)
+                )),
             );
         }
         x if x == CLASS_MOUSE => {
@@ -1166,8 +1170,8 @@ pub fn NPC_CheckAllClear() {
 #[cfg(all(test, feature = "oracle"))]
 mod oracle_tests {
     use super::*;
-    use crate::codemp::game::g_local::{gclient_t, gentity_t};
     use crate::codemp::game::bg_public::STAT_MAX_HEALTH;
+    use crate::codemp::game::g_local::{gclient_t, gentity_t};
     use core::ptr::addr_of_mut;
 
     extern "C" {
@@ -1188,10 +1192,10 @@ mod oracle_tests {
         // damage > max_health/2 short-circuit, and the three g_spskill branches with
         // varied health/max_health/damage.
         let cases: &[(bool, bool, i32, i32, i32)] = &[
-            (false, true, 50, 100, 10),  // no enemy -> 1.0
-            (true, false, 50, 100, 10),  // no client -> 1.0
-            (true, true, 50, 100, 60),   // damage > max/2 -> 1.0
-            (true, true, 100, 100, 10),  // full health
+            (false, true, 50, 100, 10), // no enemy -> 1.0
+            (true, false, 50, 100, 10), // no client -> 1.0
+            (true, true, 50, 100, 60),  // damage > max/2 -> 1.0
+            (true, true, 100, 100, 10), // full health
             (true, true, 50, 100, 10),
             (true, true, 1, 100, 49),
             (true, true, 75, 200, 30),

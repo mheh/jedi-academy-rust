@@ -49,17 +49,17 @@ use crate::codemp::game::g_main::Com_Error;
 use crate::codemp::game::q_math::{
     vectoangles, AngleNormalize180, AngleSubtract, VectorClear, VectorCopy, VectorMA, VectorScale,
 };
-use crate::codemp::game::q_shared::{va, Q_stricmp, Q_stricmpn, Q_strcat, Q_strncmp, Q_strncpyz, Sz};
+use crate::codemp::game::q_shared::{
+    va, Q_strcat, Q_stricmp, Q_stricmpn, Q_strncmp, Q_strncpyz, Sz,
+};
 use crate::codemp::game::q_shared_h::{
-    byte, entityState_t, playerState_t, qboolean, trajectory_t, vec3_t, vec_t, DEG2RAD, ERR_DROP,
-    FORCE_DARKSIDE, FORCE_LEVEL_3, FORCE_LIGHTSIDE, FP_ABSORB, FP_DRAIN, FP_GRIP, FP_HEAL,
-    FP_LEVITATION, FP_LIGHTNING, FP_PROTECT, FP_PULL,
-    FP_PUSH, FP_RAGE, FP_SABERTHROW, FP_SABER_DEFENSE, FP_SABER_OFFENSE, FP_SEE, FP_SPEED,
-    FP_TEAM_FORCE, FP_TEAM_HEAL, FP_TELEPATHY, FS_READ, MAX_POWERUPS, MAX_PS_EVENTS, MAX_QPATH, M_PI,
-    NUM_FORCE_POWERS, NUM_FORCE_POWER_LEVELS,
-    PITCH,
-    QFALSE, QTRUE, TR_GRAVITY, TR_INTERPOLATE, TR_LINEAR, TR_LINEAR_STOP, TR_NONLINEAR_STOP,
-    TR_SINE, TR_STATIONARY, YAW, snap_vector,
+    byte, entityState_t, playerState_t, qboolean, snap_vector, trajectory_t, vec3_t, vec_t,
+    DEG2RAD, ERR_DROP, FORCE_DARKSIDE, FORCE_LEVEL_3, FORCE_LIGHTSIDE, FP_ABSORB, FP_DRAIN,
+    FP_GRIP, FP_HEAL, FP_LEVITATION, FP_LIGHTNING, FP_PROTECT, FP_PULL, FP_PUSH, FP_RAGE,
+    FP_SABERTHROW, FP_SABER_DEFENSE, FP_SABER_OFFENSE, FP_SEE, FP_SPEED, FP_TEAM_FORCE,
+    FP_TEAM_HEAL, FP_TELEPATHY, FS_READ, MAX_POWERUPS, MAX_PS_EVENTS, MAX_QPATH, M_PI,
+    NUM_FORCE_POWERS, NUM_FORCE_POWER_LEVELS, PITCH, QFALSE, QTRUE, TR_GRAVITY, TR_INTERPOLATE,
+    TR_LINEAR, TR_LINEAR_STOP, TR_NONLINEAR_STOP, TR_SINE, TR_STATIONARY, YAW,
 };
 // `BG_ParseField`'s parser deps: `G_NewString` (the `F_LSTRING` allocator the C
 // forward-declares at bg_misc.c:342) and `sscanf` (the `F_VECTOR` parse; `vm` shim vs
@@ -870,7 +870,10 @@ pub unsafe fn BG_FindItemForWeapon(weapon: weapon_t) -> *mut gitem_t {
         }
         it = it.add(1);
     }
-    Com_Error(ERR_DROP, &format!("Couldn't find item for weapon {}", weapon));
+    Com_Error(
+        ERR_DROP,
+        &format!("Couldn't find item for weapon {}", weapon),
+    );
 }
 
 /// `BG_FindItemForAmmo` (bg_misc.c:1941) — the [`bg_itemlist`] ammo entry for the given
@@ -912,7 +915,7 @@ pub unsafe fn BG_FindItem(classname: *const c_char) -> *mut gitem_t {
 /// which is `!Sync`; it is never mutated, mirroring the `animTable`/`SaberTable`
 /// raw-pointer-table precedent. The trailing `NULL` is `core::ptr::null()`.
 pub static mut bgToggleableSurfaces: [*const c_char; BG_NUM_TOGGLEABLE_SURFACES] = [
-    c"l_arm_key".as_ptr(),  // 0
+    c"l_arm_key".as_ptr(), // 0
     c"torso_canister1".as_ptr(),
     c"torso_canister2".as_ptr(),
     c"torso_canister3".as_ptr(),
@@ -977,7 +980,7 @@ pub static bgToggleableSurfaceDebris: [c_int; BG_NUM_TOGGLEABLE_SURFACES] = [
     0, // blah
     0, // 24
     0, // 25
-    0, 0, 0, // 26..28
+    0, 0, 0,  // 26..28
     0,  // 29
     -1, // terminator
 ];
@@ -1258,7 +1261,7 @@ pub unsafe fn BG_LegalizedForcePowers(
 
         while countDown > 0 {
             usedPoints += bgForcePowerCost[i as usize][countDown as usize]; //[fp index][fp level]
-            //if this is jump, or we have a free saber and it's offense or defense, take the level back down on level 1
+                                                                            //if this is jump, or we have a free saber and it's offense or defense, take the level back down on level 1
             if countDown == 1
                 && (i == FP_LEVITATION
                     || (i == FP_SABER_OFFENSE && freeSaber != 0)
@@ -1307,8 +1310,8 @@ pub unsafe fn BG_LegalizedForcePowers(
                                     && (whichOne != FP_SABER_DEFENSE || freeSaber == 0))
                             {
                                 //don't take attack or defend down on level 1 still, if it's free
-                                usedPoints -=
-                                    bgForcePowerCost[whichOne as usize][final_Powers[whichOne as usize] as usize];
+                                usedPoints -= bgForcePowerCost[whichOne as usize]
+                                    [final_Powers[whichOne as usize] as usize];
                                 final_Powers[whichOne as usize] -= 1;
                             } else {
                                 break;
@@ -1404,12 +1407,19 @@ pub unsafe fn BG_LegalizedForcePowers(
     //We finally have all the force powers legalized and stored locally.
     //Put them all into the string and return the result. We already have
     //the rank there, so print the side and the powers now.
-    Q_strcat(powerOut, 128, va(format_args!("{}-", final_Side)) as *const c_char);
+    Q_strcat(
+        powerOut,
+        128,
+        va(format_args!("{}-", final_Side)) as *const c_char,
+    );
 
     i = strlen(powerOut) as c_int;
     c = 0;
     while c < NUM_FORCE_POWERS as c_int {
-        strcpy(readBuf.as_mut_ptr(), va(format_args!("{}", final_Powers[c as usize])) as *const c_char);
+        strcpy(
+            readBuf.as_mut_ptr(),
+            va(format_args!("{}", final_Powers[c as usize])) as *const c_char,
+        );
         *powerOut.add(i as usize) = readBuf[0];
         c += 1;
         i += 1;
@@ -1654,8 +1664,8 @@ pub fn BG_EvaluateTrajectory(tr: &trajectory_t, mut atTime: c_int, result: &mut 
                 0.0
             } else {
                 //FIXME: maybe scale this somehow?  So that it starts out faster and stops faster?
-                let inner = 90.0
-                    - (90.0 * (atTime as vec_t - tr.trTime as vec_t) / tr.trDuration as vec_t);
+                let inner =
+                    90.0 - (90.0 * (atTime as vec_t - tr.trTime as vec_t) / tr.trDuration as vec_t);
                 tr.trDuration as vec_t * 0.001 * ((DEG2RAD(inner) as f64).cos() as vec_t)
             };
             VectorMA(&tr.trBase, deltaTime, &tr.trDelta, result);
@@ -1714,7 +1724,8 @@ pub fn BG_EvaluateTrajectoryDelta(tr: &trajectory_t, atTime: c_int, result: &mut
             }
             let inner =
                 90.0 - (90.0 * (atTime as vec_t - tr.trTime as vec_t) / tr.trDuration as vec_t);
-            let deltaTime = tr.trDuration as vec_t * 0.001 * ((DEG2RAD(inner) as f64).cos() as vec_t);
+            let deltaTime =
+                tr.trDuration as vec_t * 0.001 * ((DEG2RAD(inner) as f64).cos() as vec_t);
             VectorScale(&tr.trDelta, deltaTime, result);
         }
         TR_GRAVITY => {
@@ -1725,10 +1736,7 @@ pub fn BG_EvaluateTrajectoryDelta(tr: &trajectory_t, atTime: c_int, result: &mut
         _ => {
             Com_Error(
                 ERR_DROP,
-                &format!(
-                    "BG_EvaluateTrajectoryDelta: unknown trType: {}",
-                    tr.trTime
-                ),
+                &format!("BG_EvaluateTrajectoryDelta: unknown trType: {}", tr.trTime),
             );
         }
     }
@@ -1906,14 +1914,16 @@ pub unsafe fn BG_CanItemBeGrabbed(
                 if (*ps).persistant[PERS_TEAM as usize] == TEAM_RED {
                     if (*item).giTag == PW_BLUEFLAG
                         || ((*item).giTag == PW_REDFLAG && ent.modelindex2 != 0)
-                        || ((*item).giTag == PW_REDFLAG && (*ps).powerups[PW_BLUEFLAG as usize] != 0)
+                        || ((*item).giTag == PW_REDFLAG
+                            && (*ps).powerups[PW_BLUEFLAG as usize] != 0)
                     {
                         return QTRUE;
                     }
                 } else if (*ps).persistant[PERS_TEAM as usize] == TEAM_BLUE {
                     if (*item).giTag == PW_REDFLAG
                         || ((*item).giTag == PW_BLUEFLAG && ent.modelindex2 != 0)
-                        || ((*item).giTag == PW_BLUEFLAG && (*ps).powerups[PW_REDFLAG as usize] != 0)
+                        || ((*item).giTag == PW_BLUEFLAG
+                            && (*ps).powerups[PW_REDFLAG as usize] != 0)
                     {
                         return QTRUE;
                     }
@@ -2125,9 +2135,9 @@ pub unsafe fn BG_ParseField(
                 // value). Deliberate no-op (== F_IGNORE): Q3_SetParm exists (g_ICARUScb) but is
                 // a live engine-trap; the oracle C is non-QAGAME, so calling it breaks parity +
                 // SIGSEGVs the test harness. See doc above / DEVIATIONS.md.
-                F_PARM1 | F_PARM2 | F_PARM3 | F_PARM4 | F_PARM5 | F_PARM6 | F_PARM7
-                | F_PARM8 | F_PARM9 | F_PARM10 | F_PARM11 | F_PARM12 | F_PARM13
-                | F_PARM14 | F_PARM15 | F_PARM16 => {}
+                F_PARM1 | F_PARM2 | F_PARM3 | F_PARM4 | F_PARM5 | F_PARM6 | F_PARM7 | F_PARM8
+                | F_PARM9 | F_PARM10 | F_PARM11 | F_PARM12 | F_PARM13 | F_PARM14 | F_PARM15
+                | F_PARM16 => {}
                 // default / F_IGNORE
                 _ => {}
             }
@@ -2660,15 +2670,15 @@ pub fn BG_GiveMeVectorFromMatrix(boltMatrix: &mdxaBone_t, flags: c_int, vec: &mu
 #[cfg(all(test, feature = "oracle"))]
 mod tests {
     use super::*;
+    use crate::codemp::game::g_mem::{G_InitMemory, POOL_LOCK};
     use crate::codemp::game::q_shared_h::{MAX_PERSISTANT, MAX_POWERUPS, MAX_STATS, MAX_WEAPONS};
     use crate::oracle::{
-        jka_bg_add_pred_event, jka_bg_emplaced_view, jka_bg_eval_traj, jka_bg_eval_traj_delta,
-        jka_bg_is_valid_character_model, jka_bg_legalize_force_powers,
+        jka_BG_ParseField, jka_bg_add_pred_event, jka_bg_emplaced_view, jka_bg_eval_traj,
+        jka_bg_eval_traj_delta, jka_bg_is_valid_character_model, jka_bg_legalize_force_powers,
         jka_bg_player_state_to_entity_state, jka_bg_player_state_to_entity_state_extrapolate,
         jka_bg_player_touches_item, jka_bg_touch_jump_pad, jka_bg_vectoyaw,
-        jka_bgitem_can_item_be_grabbed, jka_BG_ParseField,
+        jka_bgitem_can_item_be_grabbed,
     };
-    use crate::codemp::game::g_mem::{G_InitMemory, POOL_LOCK};
     use std::ffi::{CStr, CString};
 
     /// Parity for `BG_CanItemBeGrabbed`: run EVERY real `bg_itemlist` entry
@@ -2719,26 +2729,148 @@ mod tests {
 
         let mut scns: Vec<Scn> = Vec::new();
         scns.push(mk()); // baseline: empty player, FFA
-        scns.push(Scn { has_ps: false, ..mk() }); // NULL ps -> safety return
-        scns.push(Scn { trueJedi: 1, ..mk() }); // force/saber-only gate
-        scns.push(Scn { trueNonJedi: 1, ..mk() }); // no-force-powerups gate
-        scns.push(Scn { isJediMaster: 1, ..mk() }); // jedi master: no weapons/ammo
-        scns.push(Scn { duelInProgress: 1, ..mk() }); // mid-duel: nothing
-        scns.push(Scn { stats: { let mut s = [0; MAX_STATS]; s[STAT_WEAPONS as usize] = !0; s }, ..mk() }); // owns every weapon (weaponstay)
-        scns.push(Scn { eFlags: EF_DROPPEDWEAPON, stats: { let mut s = [0; MAX_STATS]; s[STAT_WEAPONS as usize] = !0; s }, ..mk() }); // dropped weapon bypasses weaponstay
-        scns.push(Scn { generic1: 3, clientNum: 3, es_powerups: 1, ..mk() }); // own un-grabbable dropped weapon
-        scns.push(Scn { ammo: [9999; MAX_WEAPONS], ..mk() }); // full on all ammo
-        scns.push(Scn { stats: { let mut s = [0; MAX_STATS]; s[STAT_ARMOR as usize] = 100; s[STAT_MAX_HEALTH as usize] = 100; s }, ..mk() }); // full armor
-        scns.push(Scn { stats: { let mut s = [0; MAX_STATS]; s[STAT_HEALTH as usize] = 100; s[STAT_MAX_HEALTH as usize] = 100; s }, ..mk() }); // full health
-        scns.push(Scn { forcePowersActive: 1 << FP_RAGE, ..mk() }); // rage active (health refusal)
-        scns.push(Scn { powerups: { let mut p = [0; MAX_POWERUPS]; p[PW_YSALAMIRI as usize] = 1; p }, ..mk() }); // already has ysalamiri
-        scns.push(Scn { stats: { let mut s = [0; MAX_STATS]; s[STAT_HOLDABLE_ITEMS as usize] = !0; s }, ..mk() }); // owns every holdable
-        // CTF/CTY flag-carry logic
-        scns.push(Scn { gametype: GT_CTF, persistant: { let mut p = [0; MAX_PERSISTANT]; p[PERS_TEAM as usize] = TEAM_RED; p }, ..mk() });
-        scns.push(Scn { gametype: GT_CTF, persistant: { let mut p = [0; MAX_PERSISTANT]; p[PERS_TEAM as usize] = TEAM_BLUE; p }, ..mk() });
-        scns.push(Scn { gametype: GT_CTY, modelindex2: 1, persistant: { let mut p = [0; MAX_PERSISTANT]; p[PERS_TEAM as usize] = TEAM_RED; p }, ..mk() }); // dropped flag
-        scns.push(Scn { gametype: GT_CTY, persistant: { let mut p = [0; MAX_PERSISTANT]; p[PERS_TEAM as usize] = TEAM_BLUE; p }, powerups: { let mut p = [0; MAX_POWERUPS]; p[PW_REDFLAG as usize] = 1; p }, ..mk() }); // carrying enemy flag
-        scns.push(Scn { gametype: GT_CTF, persistant: { let mut p = [0; MAX_PERSISTANT]; p[PERS_TEAM as usize] = TEAM_RED; p }, powerups: { let mut p = [0; MAX_POWERUPS]; p[PW_BLUEFLAG as usize] = 1; p }, ..mk() });
+        scns.push(Scn {
+            has_ps: false,
+            ..mk()
+        }); // NULL ps -> safety return
+        scns.push(Scn {
+            trueJedi: 1,
+            ..mk()
+        }); // force/saber-only gate
+        scns.push(Scn {
+            trueNonJedi: 1,
+            ..mk()
+        }); // no-force-powerups gate
+        scns.push(Scn {
+            isJediMaster: 1,
+            ..mk()
+        }); // jedi master: no weapons/ammo
+        scns.push(Scn {
+            duelInProgress: 1,
+            ..mk()
+        }); // mid-duel: nothing
+        scns.push(Scn {
+            stats: {
+                let mut s = [0; MAX_STATS];
+                s[STAT_WEAPONS as usize] = !0;
+                s
+            },
+            ..mk()
+        }); // owns every weapon (weaponstay)
+        scns.push(Scn {
+            eFlags: EF_DROPPEDWEAPON,
+            stats: {
+                let mut s = [0; MAX_STATS];
+                s[STAT_WEAPONS as usize] = !0;
+                s
+            },
+            ..mk()
+        }); // dropped weapon bypasses weaponstay
+        scns.push(Scn {
+            generic1: 3,
+            clientNum: 3,
+            es_powerups: 1,
+            ..mk()
+        }); // own un-grabbable dropped weapon
+        scns.push(Scn {
+            ammo: [9999; MAX_WEAPONS],
+            ..mk()
+        }); // full on all ammo
+        scns.push(Scn {
+            stats: {
+                let mut s = [0; MAX_STATS];
+                s[STAT_ARMOR as usize] = 100;
+                s[STAT_MAX_HEALTH as usize] = 100;
+                s
+            },
+            ..mk()
+        }); // full armor
+        scns.push(Scn {
+            stats: {
+                let mut s = [0; MAX_STATS];
+                s[STAT_HEALTH as usize] = 100;
+                s[STAT_MAX_HEALTH as usize] = 100;
+                s
+            },
+            ..mk()
+        }); // full health
+        scns.push(Scn {
+            forcePowersActive: 1 << FP_RAGE,
+            ..mk()
+        }); // rage active (health refusal)
+        scns.push(Scn {
+            powerups: {
+                let mut p = [0; MAX_POWERUPS];
+                p[PW_YSALAMIRI as usize] = 1;
+                p
+            },
+            ..mk()
+        }); // already has ysalamiri
+        scns.push(Scn {
+            stats: {
+                let mut s = [0; MAX_STATS];
+                s[STAT_HOLDABLE_ITEMS as usize] = !0;
+                s
+            },
+            ..mk()
+        }); // owns every holdable
+            // CTF/CTY flag-carry logic
+        scns.push(Scn {
+            gametype: GT_CTF,
+            persistant: {
+                let mut p = [0; MAX_PERSISTANT];
+                p[PERS_TEAM as usize] = TEAM_RED;
+                p
+            },
+            ..mk()
+        });
+        scns.push(Scn {
+            gametype: GT_CTF,
+            persistant: {
+                let mut p = [0; MAX_PERSISTANT];
+                p[PERS_TEAM as usize] = TEAM_BLUE;
+                p
+            },
+            ..mk()
+        });
+        scns.push(Scn {
+            gametype: GT_CTY,
+            modelindex2: 1,
+            persistant: {
+                let mut p = [0; MAX_PERSISTANT];
+                p[PERS_TEAM as usize] = TEAM_RED;
+                p
+            },
+            ..mk()
+        }); // dropped flag
+        scns.push(Scn {
+            gametype: GT_CTY,
+            persistant: {
+                let mut p = [0; MAX_PERSISTANT];
+                p[PERS_TEAM as usize] = TEAM_BLUE;
+                p
+            },
+            powerups: {
+                let mut p = [0; MAX_POWERUPS];
+                p[PW_REDFLAG as usize] = 1;
+                p
+            },
+            ..mk()
+        }); // carrying enemy flag
+        scns.push(Scn {
+            gametype: GT_CTF,
+            persistant: {
+                let mut p = [0; MAX_PERSISTANT];
+                p[PERS_TEAM as usize] = TEAM_RED;
+                p
+            },
+            powerups: {
+                let mut p = [0; MAX_POWERUPS];
+                p[PW_BLUEFLAG as usize] = 1;
+                p
+            },
+            ..mk()
+        });
 
         for mi in 1..bg_numItems {
             for s in &scns {
@@ -2851,7 +2983,10 @@ mod tests {
                         let want = unsafe {
                             crate::oracle::jka_bg_has_ysalamiri(gt, pw_red, pw_blue, pw_ysa)
                         };
-                        assert_eq!(got, want, "gt={gt} red={pw_red} blue={pw_blue} ysa={pw_ysa}");
+                        assert_eq!(
+                            got, want,
+                            "gt={gt} red={pw_red} blue={pw_blue} ysa={pw_ysa}"
+                        );
                     }
                 }
             }
@@ -3121,7 +3256,9 @@ mod tests {
         let player: vec3_t = [100.0, 200.0, 300.0];
         // offsets added to the player origin to place the item base on each axis,
         // straddling the bounds (item = player - diff, so diff = -offset hits the test).
-        let offsets = [-51.0f32, -50.0, -49.0, -45.0, -1.0, 0.0, 1.0, 35.0, 36.0, 37.0, 44.0, 45.0];
+        let offsets = [
+            -51.0f32, -50.0, -49.0, -45.0, -1.0, 0.0, 1.0, 35.0, 36.0, 37.0, 44.0, 45.0,
+        ];
         let trtypes = [TR_STATIONARY, TR_LINEAR, TR_GRAVITY];
         let attimes = [0, 250, 1000];
 
@@ -3130,8 +3267,7 @@ mod tests {
                 for &ox in &offsets {
                     for &oy in &offsets {
                         for &oz in &offsets {
-                            let base: vec3_t =
-                                [player[0] + ox, player[1] + oy, player[2] + oz];
+                            let base: vec3_t = [player[0] + ox, player[1] + oy, player[2] + oz];
                             // small delta so TR_LINEAR/TR_GRAVITY actually move the item
                             let delta: vec3_t = [2.0, -3.0, 4.0];
 
@@ -3149,11 +3285,8 @@ mod tests {
                             let got = BG_PlayerTouchesItem(&ps, &item, atTime);
                             let want = unsafe {
                                 jka_bg_player_touches_item(
-                                    player[0], player[1], player[2],
-                                    trType, 0, 1000,
-                                    base[0], base[1], base[2],
-                                    delta[0], delta[1], delta[2],
-                                    atTime,
+                                    player[0], player[1], player[2], trType, 0, 1000, base[0],
+                                    base[1], base[2], delta[0], delta[1], delta[2], atTime,
                                 )
                             };
                             assert_eq!(
@@ -3250,7 +3383,11 @@ mod tests {
                         cc.is_null()
                     );
                 } else {
-                    assert_eq!(CStr::from_ptr(r), CStr::from_ptr(cc), "bg_itemlist[{i}].{what}");
+                    assert_eq!(
+                        CStr::from_ptr(r),
+                        CStr::from_ptr(cc),
+                        "bg_itemlist[{i}].{what}"
+                    );
                 }
             };
 
@@ -3441,7 +3578,10 @@ mod tests {
                     let mut want_yaw = SENTINEL;
                     let want = unsafe { jka_bg_emplaced_view(base, ang, c, &mut want_yaw) };
 
-                    assert_eq!(got, want, "BG_EmplacedView ret (base={base}, ang={ang}, c={c})");
+                    assert_eq!(
+                        got, want,
+                        "BG_EmplacedView ret (base={base}, ang={ang}, c={c})"
+                    );
                     assert_eq!(
                         got_yaw.to_bits(),
                         want_yaw.to_bits(),
@@ -3787,10 +3927,7 @@ mod tests {
                     es.isJediMaster,
                 ];
                 for k in 0..45 {
-                    assert_eq!(
-                        r_i[k], out_i[k],
-                        "out_i[{k}] mode={name} snap={snap}"
-                    );
+                    assert_eq!(r_i[k], out_i[k], "out_i[{k}] mode={name} snap={snap}");
                 }
 
                 let r_f: [f32; 16] = [
@@ -4311,8 +4448,16 @@ mod tests {
         }
 
         // Everything except the F_LSTRING pointer (bytes 32..40) is byte-exact.
-        assert_eq!(rust_buf[..OFS_S as usize], orac_buf[..OFS_S as usize], "scalar region");
-        assert_eq!(rust_buf[40..], orac_buf[40..], "F_IGNORE/F_PARM/tail region (untouched)");
+        assert_eq!(
+            rust_buf[..OFS_S as usize],
+            orac_buf[..OFS_S as usize],
+            "scalar region"
+        );
+        assert_eq!(
+            rust_buf[40..],
+            orac_buf[40..],
+            "F_IGNORE/F_PARM/tail region (untouched)"
+        );
 
         // The F_LSTRING slot: compare the strings the two pointers point at.
         unsafe {

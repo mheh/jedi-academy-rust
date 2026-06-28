@@ -52,91 +52,87 @@
 use core::ffi::{c_char, c_int, CStr};
 use core::ptr::{addr_of, addr_of_mut};
 
+use crate::codemp::game::ai_h::SQUAD_STAND_AND_SHOOT;
+use crate::codemp::game::anims::{BOTH_STRAFE_LEFT1, BOTH_STRAFE_RIGHT1};
+use crate::codemp::game::b_public_h::SCF_FORCED_MARCH;
 use crate::codemp::game::bg_lib::rand;
 use crate::codemp::game::bg_misc::{
     bg_itemlist, bg_numItems, BG_AddPredictableEventToPlayerstate, BG_CanItemBeGrabbed,
     BG_CycleInven, BG_EmplacedView, BG_EvaluateTrajectory, BG_EvaluateTrajectoryDelta, BG_FindItem,
     BG_FindItemForHoldable, BG_FindItemForWeapon, BG_GiveMeVectorFromMatrix,
 };
-use crate::codemp::game::bg_vehicles_h::VH_WALKER;
 use crate::codemp::game::bg_public::{
     gitem_t, itemType_t, CS_ITEMS, EFFECT_EXPLOSION_DETPACK, EFFECT_EXPLOSION_PAS, EF_CLIENTSMOOTH,
-    EF_DEAD, EF_DROPPEDWEAPON, EF_G2ANIMATING, EF_ITEMPLACEHOLDER, EF_NODRAW,
-    MOD_TURBLAST, SETANIM_FLAG_HOLD, SETANIM_FLAG_OVERRIDE, SETANIM_LEGS,
-    EF_SEEKERDRONE, ET_GENERAL, ET_HOLOCRON, ET_ITEM, ET_NPC, ET_SPECIAL,
-    EV_GENERAL_SOUND, EV_GLOBAL_ITEM_PICKUP, EV_GLOBAL_SOUND, EV_ITEM_PICKUP, EV_ITEM_RESPAWN,
-    EV_LOCALTIMER, GT_CTF, GT_CTY, GT_DUEL, GT_HOLOCRON, GT_JEDIMASTER, GT_POWERDUEL, GT_SIEGE,
-    GT_TEAM, HANDEXTEND_NONE, HI_EWEB,
-    HI_HEALTHDISP, HI_MEDPAC, HI_MEDPAC_BIG, HI_SEEKER, HI_SENTRY_GUN, HI_SHIELD, IT_AMMO, IT_ARMOR, IT_HEALTH,
-    IT_HOLDABLE, IT_POWERUP, IT_TEAM, ITEM_RADIUS,
-    IT_WEAPON, MASK_PLAYERSOLID, MASK_SHOT, MASK_SOLID, MAX_ITEMS, MOD_SENTRY, MOD_SUICIDE, MOD_UNKNOWN, PERS_PLAYEREVENTS, PLAYEREVENT_DENIEDREWARD,
-    PM_DEAD,
-    PW_BLUEFLAG, PW_CLOAKED, PW_FORCE_BOON, PW_FORCE_ENLIGHTENED_DARK, PW_FORCE_ENLIGHTENED_LIGHT,
-    PW_NEUTRALFLAG, PW_REDFLAG, PW_YSALAMIRI, STAT_ARMOR,
-    STAT_HEALTH, STAT_HOLDABLE_ITEM, STAT_HOLDABLE_ITEMS, STAT_MAX_HEALTH, STAT_WEAPONS,
-    TOSS_DEBOUNCE_TIME, WEAPON_READY,
+    EF_DEAD, EF_DROPPEDWEAPON, EF_G2ANIMATING, EF_ITEMPLACEHOLDER, EF_NODRAW, EF_SEEKERDRONE,
+    ET_GENERAL, ET_HOLOCRON, ET_ITEM, ET_NPC, ET_SPECIAL, EV_GENERAL_SOUND, EV_GLOBAL_ITEM_PICKUP,
+    EV_GLOBAL_SOUND, EV_ITEM_PICKUP, EV_ITEM_RESPAWN, EV_LOCALTIMER, GT_CTF, GT_CTY, GT_DUEL,
+    GT_HOLOCRON, GT_JEDIMASTER, GT_POWERDUEL, GT_SIEGE, GT_TEAM, HANDEXTEND_NONE, HI_EWEB,
+    HI_HEALTHDISP, HI_MEDPAC, HI_MEDPAC_BIG, HI_SEEKER, HI_SENTRY_GUN, HI_SHIELD, ITEM_RADIUS,
+    IT_AMMO, IT_ARMOR, IT_HEALTH, IT_HOLDABLE, IT_POWERUP, IT_TEAM, IT_WEAPON, MASK_PLAYERSOLID,
+    MASK_SHOT, MASK_SOLID, MAX_ITEMS, MOD_SENTRY, MOD_SUICIDE, MOD_TURBLAST, MOD_UNKNOWN,
+    PERS_PLAYEREVENTS, PLAYEREVENT_DENIEDREWARD, PM_DEAD, PW_BLUEFLAG, PW_CLOAKED, PW_FORCE_BOON,
+    PW_FORCE_ENLIGHTENED_DARK, PW_FORCE_ENLIGHTENED_LIGHT, PW_NEUTRALFLAG, PW_REDFLAG,
+    PW_YSALAMIRI, SETANIM_FLAG_HOLD, SETANIM_FLAG_OVERRIDE, SETANIM_LEGS, STAT_ARMOR, STAT_HEALTH,
+    STAT_HOLDABLE_ITEM, STAT_HOLDABLE_ITEMS, STAT_MAX_HEALTH, STAT_WEAPONS, TOSS_DEBOUNCE_TIME,
+    WEAPON_READY,
 };
+use crate::codemp::game::bg_vehicles_h::VH_WALKER;
 use crate::codemp::game::bg_weapons::{ammoData, weaponData};
 use crate::codemp::game::bg_weapons_h::{
     weapon_t, AMMO_BLASTER, AMMO_DETPACK, AMMO_METAL_BOLTS, AMMO_POWERCELL, AMMO_ROCKETS,
     AMMO_THERMAL, AMMO_TRIPMINE, WP_BOWCASTER, WP_BRYAR_PISTOL, WP_DET_PACK, WP_EMPLACED_GUN,
-    WP_MELEE, WP_NONE,
-    WP_SABER, WP_STUN_BATON, WP_THERMAL, WP_TRIP_MINE, WP_TURRET,
+    WP_MELEE, WP_NONE, WP_SABER, WP_STUN_BATON, WP_THERMAL, WP_TRIP_MINE, WP_TURRET,
 };
-use crate::codemp::game::ai_h::SQUAD_STAND_AND_SHOOT;
-use crate::codemp::game::b_public_h::SCF_FORCED_MARCH;
 use crate::codemp::game::g_combat::G_RadiusDamage;
 use crate::codemp::game::g_exphysics::G_RunExPhys;
-use crate::codemp::game::g_weapon::WP_FireTurretMissile;
-use crate::codemp::game::npc_combat::G_SetEnemy;
-use crate::codemp::game::npc_ai_jedi::{Jedi_Cloak, Jedi_Decloak};
-use crate::codemp::game::g_log::{G_LogWeaponItem, G_LogWeaponPickup, G_LogWeaponPowerup};
 use crate::codemp::game::g_local::{
     gclient_t, gentity_t, CON_CONNECTED, CON_DISCONNECTED, DAMAGE_DEATH_KNOCKBACK, FL_BOUNCE_HALF,
-    FL_DROPPED_ITEM,
-    FL_NOTARGET, FL_TEAMSLAVE, FRAMETIME,
+    FL_DROPPED_ITEM, FL_NOTARGET, FL_TEAMSLAVE, FRAMETIME,
 };
+use crate::codemp::game::g_log::{G_LogWeaponItem, G_LogWeaponPickup, G_LogWeaponPowerup};
 use crate::codemp::game::g_main::{
     g_adaptRespawn, g_duelWeaponDisable, g_entities, g_forcePowerDisable, g_gametype,
-    g_weaponDisable, g_weaponRespawn, level, Com_Printf, G_Error, G_LogPrintf, G_Printf, G_RunThink,
+    g_weaponDisable, g_weaponRespawn, level, Com_Printf, G_Error, G_LogPrintf, G_Printf,
+    G_RunThink,
 };
-use crate::codemp::game::anims::{BOTH_STRAFE_LEFT1, BOTH_STRAFE_RIGHT1};
-use crate::codemp::game::g_spawn::G_SpawnFloat;
+use crate::codemp::game::g_missile::CreateMissile;
 use crate::codemp::game::g_public_h::{SVF_BROADCAST, SVF_NOCLIENT, SVF_SINGLECLIENT};
+use crate::codemp::game::g_spawn::G_SpawnFloat;
 use crate::codemp::game::g_team::{
     OnSameTeam, Pickup_Team, Team_CheckDroppedItem, Team_DroppedFlagThink, Team_FreeEntity,
     Team_InitGame,
-};
-use crate::codemp::game::teams_h::{
-    CLASS_ATST, CLASS_GONK, CLASS_MARK1, CLASS_MARK2, CLASS_MOUSE, CLASS_PROBE, CLASS_PROTOCOL,
-    CLASS_R2D2, CLASS_R5D2, CLASS_RANCOR, CLASS_REMOTE, CLASS_SEEKER, CLASS_SENTRY, CLASS_UGNAUGHT,
-    CLASS_VEHICLE, CLASS_WAMPA,
 };
 use crate::codemp::game::g_utils::{
     vtos, G_AddEvent, G_AddPredictableEvent, G_BoneIndex, G_EffectIndex, G_FreeEntity,
     G_ModelIndex, G_PlayEffect, G_PlayEffectID, G_RadiusList, G_ScaleNetHealth, G_SetAnim,
     G_SetOrigin, G_Sound, G_SoundIndex, G_Spawn, G_TempEntity, G_UseTargets,
 };
-use crate::codemp::game::g_missile::CreateMissile;
-use crate::codemp::ghoul2::g2_h::{
-    BONE_ANGLES_POSTMULT, BONE_ANIM_BLEND, BONE_ANIM_OVERRIDE_FREEZE,
-};
-use crate::codemp::game::w_saber::HasSetSaberOnly;
+use crate::codemp::game::g_weapon::WP_FireTurretMissile;
+use crate::codemp::game::npc_ai_jedi::{Jedi_Cloak, Jedi_Decloak};
+use crate::codemp::game::npc_combat::G_SetEnemy;
 use crate::codemp::game::q_math::{
     vec3_origin, vectoangles, AngleNormalize360, AngleSubtract, AngleVectors, DotProduct,
-    VectorAdd, VectorCopy, VectorLength, VectorLengthSquared, VectorMA, VectorNormalize,
-    VectorClear, VectorScale, VectorSet, VectorSubtract,
+    VectorAdd, VectorClear, VectorCopy, VectorLength, VectorLengthSquared, VectorMA,
+    VectorNormalize, VectorScale, VectorSet, VectorSubtract,
 };
 use crate::codemp::game::q_shared::{crandom, random, Com_sprintf, Sz};
 use crate::codemp::game::q_shared_h::{
     mdxaBone_t, qhandle_t, trace_t, vec3_t, BUTTON_ATTACK, CHAN_AUTO, CHAN_BODY, ENTITYNUM_NONE,
-    ENTITYNUM_WORLD, FORCE_DARKSIDE,
-    FORCE_LIGHTSIDE, MAX_CLIENTS, MAX_GENTITIES, NEGATIVE_X, NEGATIVE_Y, NEGATIVE_Z, ORIGIN, PITCH,
-    POSITIVE_Y, ROLL, TR_GRAVITY, TR_STATIONARY, YAW,
+    ENTITYNUM_WORLD, FORCE_DARKSIDE, FORCE_LIGHTSIDE, MAX_CLIENTS, MAX_GENTITIES, NEGATIVE_X,
+    NEGATIVE_Y, NEGATIVE_Z, ORIGIN, PITCH, POSITIVE_Y, ROLL, TR_GRAVITY, TR_STATIONARY, YAW,
 };
 use crate::codemp::game::surfaceflags_h::{
     CONTENTS_BODY, CONTENTS_LIGHTSABER, CONTENTS_NODROP, CONTENTS_PLAYERCLIP, CONTENTS_SHOTCLIP,
     CONTENTS_SOLID, CONTENTS_TRIGGER,
+};
+use crate::codemp::game::teams_h::{
+    CLASS_ATST, CLASS_GONK, CLASS_MARK1, CLASS_MARK2, CLASS_MOUSE, CLASS_PROBE, CLASS_PROTOCOL,
+    CLASS_R2D2, CLASS_R5D2, CLASS_RANCOR, CLASS_REMOTE, CLASS_SEEKER, CLASS_SENTRY, CLASS_UGNAUGHT,
+    CLASS_VEHICLE, CLASS_WAMPA,
+};
+use crate::codemp::game::w_saber::HasSetSaberOnly;
+use crate::codemp::ghoul2::g2_h::{
+    BONE_ANGLES_POSTMULT, BONE_ANIM_BLEND, BONE_ANIM_OVERRIDE_FREEZE,
 };
 use crate::ffi::types::{qboolean, QFALSE, QTRUE};
 use crate::trap::{self, SnapVector};
@@ -387,13 +383,16 @@ pub unsafe fn G_BounceItem(ent: *mut gentity_t, trace: *mut trace_t) {
     let trDelta = (*ent).s.pos.trDelta;
     VectorScale(&trDelta, (*ent).physicsBounce, &mut (*ent).s.pos.trDelta);
 
-    if (*ent).s.weapon == WP_DET_PACK
-        && (*ent).s.eType == ET_GENERAL
-        && (*ent).physicsObject != 0
-    {
+    if (*ent).s.weapon == WP_DET_PACK && (*ent).s.eType == ET_GENERAL && (*ent).physicsObject != 0 {
         // detpacks only
         if let Some(touch) = (*ent).touch {
-            touch(ent, core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add((*trace).entityNum as usize), trace);
+            touch(
+                ent,
+                core::ptr::addr_of_mut!(g_entities)
+                    .cast::<gentity_t>()
+                    .add((*trace).entityNum as usize),
+                trace,
+            );
             return;
         }
     }
@@ -422,7 +421,13 @@ pub unsafe fn G_BounceItem(ent: *mut gentity_t, trace: *mut trace_t) {
     {
         // holocrons and sentry guns
         if let Some(touch) = (*ent).touch {
-            touch(ent, core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add((*trace).entityNum as usize), trace);
+            touch(
+                ent,
+                core::ptr::addr_of_mut!(g_entities)
+                    .cast::<gentity_t>()
+                    .add((*trace).entityNum as usize),
+                trace,
+            );
         }
     }
 }
@@ -563,7 +568,11 @@ pub unsafe fn Pickup_Ammo(ent: *mut gentity_t, other: *mut gentity_t) -> c_int {
         Add_Ammo(other, (*(*ent).item).giTag, quantity);
     }
 
-    adjustRespawnTime(RESPAWN_AMMO as f32, (*(*ent).item).giType, (*(*ent).item).giTag)
+    adjustRespawnTime(
+        RESPAWN_AMMO as f32,
+        (*(*ent).item).giType,
+        (*(*ent).item).giTag,
+    )
 }
 
 //======================================================================
@@ -684,8 +693,8 @@ pub unsafe fn Pickup_Powerup(ent: *mut gentity_t, other: *mut gentity_t) -> c_in
 /// No oracle: walks the `gentity_t`→`client`→`ps` graph and reads `bg_itemlist` — same
 /// precedent as [`Pickup_Ammo`] / [`RegisterItem`].
 pub unsafe fn Pickup_Holdable(ent: *mut gentity_t, other: *mut gentity_t) -> c_int {
-    let idx = ((*ent).item as *const gitem_t)
-        .offset_from(addr_of!(bg_itemlist) as *const gitem_t) as c_int;
+    let idx = ((*ent).item as *const gitem_t).offset_from(addr_of!(bg_itemlist) as *const gitem_t)
+        as c_int;
     (*(*other).client).ps.stats[STAT_HOLDABLE_ITEM as usize] = idx;
 
     (*(*other).client).ps.stats[STAT_HOLDABLE_ITEMS as usize] |= 1 << (*(*ent).item).giTag;
@@ -748,7 +757,11 @@ pub unsafe fn Pickup_Weapon(ent: *mut gentity_t, other: *mut gentity_t) -> c_int
     // add the weapon
     (*(*other).client).ps.stats[STAT_WEAPONS as usize] |= 1 << (*(*ent).item).giTag;
 
-    Add_Ammo(other, weaponData[(*(*ent).item).giTag as usize].ammoIndex, quantity);
+    Add_Ammo(
+        other,
+        weaponData[(*(*ent).item).giTag as usize].ammoIndex,
+        quantity,
+    );
 
     G_LogWeaponPickup((*other).s.number, (*(*ent).item).giTag);
 
@@ -808,7 +821,11 @@ pub unsafe fn Pickup_Health(ent: *mut gentity_t, other: *mut gentity_t) -> c_int
         return RESPAWN_MEGAHEALTH;
     }
 
-    adjustRespawnTime(RESPAWN_HEALTH as f32, (*(*ent).item).giType, (*(*ent).item).giTag)
+    adjustRespawnTime(
+        RESPAWN_HEALTH as f32,
+        (*(*ent).item).giType,
+        (*(*ent).item).giTag,
+    )
 }
 
 //======================================================================
@@ -828,7 +845,11 @@ pub unsafe fn Pickup_Armor(ent: *mut gentity_t, other: *mut gentity_t) -> c_int 
             (*(*other).client).ps.stats[STAT_MAX_HEALTH as usize] * (*(*ent).item).giTag;
     }
 
-    adjustRespawnTime(RESPAWN_ARMOR as f32, (*(*ent).item).giType, (*(*ent).item).giTag)
+    adjustRespawnTime(
+        RESPAWN_ARMOR as f32,
+        (*(*ent).item).giType,
+        (*(*ent).item).giTag,
+    )
 }
 
 //======================================================================
@@ -1110,9 +1131,7 @@ pub unsafe fn ItemUse_UseCloak(ent: *mut gentity_t) {
         return;
     }
 
-    if (*(*ent).client).ps.powerups[PW_CLOAKED as usize] == 0
-        && (*(*ent).client).ps.cloakFuel < 5
-    {
+    if (*(*ent).client).ps.powerups[PW_CLOAKED as usize] == 0 && (*(*ent).client).ps.cloakFuel < 5 {
         //too low on fuel to start it up
         return;
     }
@@ -1165,7 +1184,9 @@ pub unsafe extern "C" fn turret_die(
         G_UseTargets(self_, attacker);
     }
 
-    let owner = core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add((*self_).genericValue3 as usize);
+    let owner = core::ptr::addr_of_mut!(g_entities)
+        .cast::<gentity_t>()
+        .add((*self_).genericValue3 as usize);
     if (*owner).inuse == QFALSE || (*owner).client.is_null() {
         G_FreeEntity(self_);
         return;
@@ -1229,7 +1250,15 @@ pub unsafe extern "C" fn SpecialItemThink(ent: *mut gentity_t) {
         return;
     }
 
-    G_RunExPhys(ent, gravity, mass, bounce, QFALSE as i32, core::ptr::null_mut(), 0);
+    G_RunExPhys(
+        ent,
+        gravity,
+        mass,
+        bounce,
+        QFALSE as i32,
+        core::ptr::null_mut(),
+        0,
+    );
     VectorCopy(&(*ent).r.currentOrigin, &mut (*ent).s.origin);
     (*ent).nextthink = (*addr_of!(level)).time + 50;
 }
@@ -1260,8 +1289,7 @@ pub unsafe fn G_SpecialSpawnItem(ent: *mut gentity_t, item: *mut gitem_t) {
     VectorSet(&mut (*ent).r.maxs, 8.0, 8.0, 16.0);
 
     (*ent).s.eType = ET_ITEM;
-    (*ent).s.modelindex =
-        item.offset_from(addr_of!(bg_itemlist) as *const gitem_t) as c_int; // store item number in modelindex
+    (*ent).s.modelindex = item.offset_from(addr_of!(bg_itemlist) as *const gitem_t) as c_int; // store item number in modelindex
 
     (*ent).r.contents = CONTENTS_TRIGGER;
     (*ent).touch = Some(Touch_Item);
@@ -1359,8 +1387,7 @@ pub unsafe extern "C" fn FinishSpawningItem(ent: *mut gentity_t) {
         }
     }
 
-    if (*addr_of!(g_gametype)).integer == GT_DUEL
-        || (*addr_of!(g_gametype)).integer == GT_POWERDUEL
+    if (*addr_of!(g_gametype)).integer == GT_DUEL || (*addr_of!(g_gametype)).integer == GT_POWERDUEL
     {
         if (*(*ent).item).giType == IT_ARMOR
             || (*(*ent).item).giType == IT_HEALTH
@@ -1401,8 +1428,9 @@ pub unsafe extern "C" fn FinishSpawningItem(ent: *mut gentity_t) {
     VectorSet(&mut (*ent).r.maxs, 8.0, 8.0, 16.0);
 
     (*ent).s.eType = ET_ITEM;
-    (*ent).s.modelindex =
-        (*ent).item.offset_from(addr_of!(bg_itemlist) as *const gitem_t) as c_int; // store item number in modelindex
+    (*ent).s.modelindex = (*ent)
+        .item
+        .offset_from(addr_of!(bg_itemlist) as *const gitem_t) as c_int; // store item number in modelindex
     (*ent).s.modelindex2 = 0; // zero indicates this isn't a dropped item
 
     (*ent).r.contents = CONTENTS_TRIGGER;
@@ -1503,8 +1531,7 @@ pub unsafe fn G_SpawnItem(ent: *mut gentity_t, item: *mut gitem_t) {
     G_SpawnFloat(c"random".as_ptr(), c"0".as_ptr(), &mut (*ent).random);
     G_SpawnFloat(c"wait".as_ptr(), c"0".as_ptr(), &mut (*ent).wait);
 
-    if (*addr_of!(g_gametype)).integer == GT_DUEL
-        || (*addr_of!(g_gametype)).integer == GT_POWERDUEL
+    if (*addr_of!(g_gametype)).integer == GT_DUEL || (*addr_of!(g_gametype)).integer == GT_POWERDUEL
     {
         wDisable = (*addr_of!(g_duelWeaponDisable)).integer;
     } else {
@@ -1654,7 +1681,9 @@ pub unsafe extern "C" fn EWebDie(
     G_PlayEffect(EFFECT_EXPLOSION_DETPACK, &(*self_).r.currentOrigin, &fx_dir);
 
     if (*self_).r.ownerNum != ENTITYNUM_NONE {
-        let owner = core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add((*self_).r.ownerNum as usize);
+        let owner = core::ptr::addr_of_mut!(g_entities)
+            .cast::<gentity_t>()
+            .add((*self_).r.ownerNum as usize);
 
         if (*owner).inuse == QTRUE && !(*owner).client.is_null() {
             EWebDisattach(owner, self_);
@@ -1981,9 +2010,11 @@ pub unsafe extern "C" fn CreateShield(ent: *mut gentity_t) {
     // kef -- monkey with dimensions and place origin in center
     half_width = (pos_width + neg_width) >> 1;
     if xaxis != QFALSE {
-        (*ent).r.currentOrigin[0] = (*ent).r.currentOrigin[0] - neg_width as f32 + half_width as f32;
+        (*ent).r.currentOrigin[0] =
+            (*ent).r.currentOrigin[0] - neg_width as f32 + half_width as f32;
     } else {
-        (*ent).r.currentOrigin[1] = (*ent).r.currentOrigin[1] - neg_width as f32 + half_width as f32;
+        (*ent).r.currentOrigin[1] =
+            (*ent).r.currentOrigin[1] - neg_width as f32 + half_width as f32;
     }
     (*ent).r.currentOrigin[2] += (height >> 1) as f32;
 
@@ -2137,14 +2168,7 @@ pub unsafe fn PlaceShield(playerent: *mut gentity_t) -> qboolean {
         VectorCopy(&tr.endpos, &mut pos);
         // drop to floor
         VectorSet(&mut dest, pos[0], pos[1], pos[2] - 4096.0);
-        tr = trap::Trace(
-            &pos,
-            &mins,
-            &maxs,
-            &dest,
-            (*playerent).s.number,
-            MASK_SOLID,
-        );
+        tr = trap::Trace(&pos, &mins, &maxs, &dest, (*playerent).s.number, MASK_SOLID);
         if tr.startsolid == 0 && tr.allsolid == 0 {
             // got enough room so place the portable shield
             shield = G_Spawn();
@@ -2225,10 +2249,16 @@ pub unsafe fn ItemUse_Shield(ent: *mut gentity_t) {
 /// # Safety
 /// `self_` must point to a valid `gentity_t`; when its `r.ownerNum` is a real entity index,
 /// `g_entities` must point to the live entity array.
-pub unsafe extern "C" fn EWebPain(self_: *mut gentity_t, _attacker: *mut gentity_t, _damage: c_int) {
+pub unsafe extern "C" fn EWebPain(
+    self_: *mut gentity_t,
+    _attacker: *mut gentity_t,
+    _damage: c_int,
+) {
     //update the owner's health status of me
     if (*self_).r.ownerNum != ENTITYNUM_NONE {
-        let owner = core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add((*self_).r.ownerNum as usize);
+        let owner = core::ptr::addr_of_mut!(g_entities)
+            .cast::<gentity_t>()
+            .add((*self_).r.ownerNum as usize);
 
         if (*owner).inuse != QFALSE && !(*owner).client.is_null() {
             (*(*owner).client).ewebHealth = (*self_).health;
@@ -2642,7 +2672,9 @@ pub unsafe extern "C" fn EWebThink(self_: *mut gentity_t) {
     if (*self_).r.ownerNum == ENTITYNUM_NONE {
         killMe = true;
     } else {
-        let owner = core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add((*self_).r.ownerNum as usize);
+        let owner = core::ptr::addr_of_mut!(g_entities)
+            .cast::<gentity_t>()
+            .add((*self_).r.ownerNum as usize);
 
         if (*owner).inuse == QFALSE
             || (*owner).client.is_null()
@@ -2692,7 +2724,9 @@ pub unsafe extern "C" fn EWebThink(self_: *mut gentity_t) {
                         //set fire debounce time
                         (*self_).genericValue5 = (*addr_of!(level)).time + 100;
                     }
-                } else if (*self_).genericValue5 < (*addr_of!(level)).time && (*self_).genericValue3 != 0 {
+                } else if (*self_).genericValue5 < (*addr_of!(level)).time
+                    && (*self_).genericValue3 != 0
+                {
                     //reset the anim back to non-firing
                     EWeb_SetBoneAnim(self_, 0, 1);
                     (*self_).genericValue3 = 0;
@@ -2708,7 +2742,15 @@ pub unsafe extern "C" fn EWebThink(self_: *mut gentity_t) {
     }
 
     //run some physics on it real quick so it falls and stuff properly
-    G_RunExPhys(self_, gravity, mass, bounce, QFALSE as i32, core::ptr::null_mut(), 0);
+    G_RunExPhys(
+        self_,
+        gravity,
+        mass,
+        bounce,
+        QFALSE as i32,
+        core::ptr::null_mut(),
+        0,
+    );
 
     (*self_).nextthink = (*addr_of!(level)).time;
 }
@@ -2750,7 +2792,14 @@ pub unsafe fn EWeb_Create(spawner: *mut gentity_t) -> *mut gentity_t {
     let s_copy = s;
     VectorMA(&s_copy, 48.0, &fwd, &mut pos);
 
-    tr = trap::Trace(&s, &mins, &maxs, &pos, (*spawner).s.number, MASK_PLAYERSOLID);
+    tr = trap::Trace(
+        &s,
+        &mins,
+        &maxs,
+        &pos,
+        (*spawner).s.number,
+        MASK_PLAYERSOLID,
+    );
 
     if tr.allsolid != 0 || tr.startsolid != 0 || tr.fraction != 1.0 {
         //can't spawn here, we are in solid
@@ -2770,9 +2819,20 @@ pub unsafe fn EWeb_Create(spawner: *mut gentity_t) -> *mut gentity_t {
 
     VectorCopy(&pos, &mut downPos);
     downPos[2] -= 18.0;
-    tr = trap::Trace(&pos, &mins, &maxs, &downPos, (*spawner).s.number, MASK_PLAYERSOLID);
+    tr = trap::Trace(
+        &pos,
+        &mins,
+        &maxs,
+        &downPos,
+        (*spawner).s.number,
+        MASK_PLAYERSOLID,
+    );
 
-    if tr.startsolid != 0 || tr.allsolid != 0 || tr.fraction == 1.0 || (tr.entityNum as c_int) < ENTITYNUM_WORLD {
+    if tr.startsolid != 0
+        || tr.allsolid != 0
+        || tr.fraction == 1.0
+        || (tr.entityNum as c_int) < ENTITYNUM_WORLD
+    {
         //didn't hit ground.
         G_FreeEntity(ent);
         G_Sound(spawner, CHAN_AUTO, failSound);
@@ -2875,8 +2935,7 @@ pub unsafe fn ItemUse_UseEWeb(ent: *mut gentity_t) {
         return;
     }
 
-    if (*(*ent).client).ps.weaponTime > 0
-        || (*(*ent).client).ps.forceHandExtend != HANDEXTEND_NONE
+    if (*(*ent).client).ps.weaponTime > 0 || (*(*ent).client).ps.forceHandExtend != HANDEXTEND_NONE
     {
         //busy doing something else
         return;
@@ -2889,7 +2948,12 @@ pub unsafe fn ItemUse_UseEWeb(ent: *mut gentity_t) {
 
     if (*(*ent).client).ewebIndex != 0 {
         //put it away
-        EWebDisattach(ent, core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add((*(*ent).client).ewebIndex as usize));
+        EWebDisattach(
+            ent,
+            core::ptr::addr_of_mut!(g_entities)
+                .cast::<gentity_t>()
+                .add((*(*ent).client).ewebIndex as usize),
+        );
     } else {
         //create it
         let eweb = EWeb_Create(ent);
@@ -2970,7 +3034,11 @@ pub unsafe fn pas_adjust_enemy(ent: *mut gentity_t) {
         // don't ping pong on and off
         (*ent).enemy = core::ptr::null_mut();
         // shut-down sound
-        G_Sound(ent, CHAN_BODY, G_SoundIndex("sound/chars/turret/shutdown.wav"));
+        G_Sound(
+            ent,
+            CHAN_BODY,
+            G_SoundIndex("sound/chars/turret/shutdown.wav"),
+        );
 
         // C `level.time + 500 + random() * 150` evaluates the whole sum in `float` (the
         // `random()*150` term promotes the int part to `float`) and truncates once on the
@@ -3019,7 +3087,9 @@ pub unsafe fn pas_fire(ent: *mut gentity_t) {
     myOrg[2] += fwd[2] * 16.0;
 
     WP_FireTurretMissile(
-        core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add((*ent).genericValue3 as usize),
+        core::ptr::addr_of_mut!(g_entities)
+            .cast::<gentity_t>()
+            .add((*ent).genericValue3 as usize),
         &mut myOrg,
         &fwd,
         QFALSE,
@@ -3057,7 +3127,11 @@ unsafe fn pas_find_enemies(self_: *mut gentity_t) -> qboolean {
         // time since we've been shut off
         // We were active and alert, i.e. had an enemy in the last 3 secs
         if (*self_).painDebounceTime < (*lvl).time {
-            G_Sound(self_, CHAN_BODY, G_SoundIndex("sound/chars/turret/ping.wav"));
+            G_Sound(
+                self_,
+                CHAN_BODY,
+                G_SoundIndex("sound/chars/turret/ping.wav"),
+            );
             (*self_).painDebounceTime = (*lvl).time + 1000;
         }
     }
@@ -3079,9 +3153,7 @@ unsafe fn pas_find_enemies(self_: *mut gentity_t) -> qboolean {
         {
             continue;
         }
-        if (*self_).alliedTeam != 0
-            && (*(*target).client).sess.sessionTeam == (*self_).alliedTeam
-        {
+        if (*self_).alliedTeam != 0 && (*(*target).client).sess.sessionTeam == (*self_).alliedTeam {
             continue;
         }
         if (*self_).genericValue3 == (*target).s.number {
@@ -3116,7 +3188,11 @@ unsafe fn pas_find_enemies(self_: *mut gentity_t) -> qboolean {
             && (tr.fraction == 1.0 || tr.entityNum as c_int == (*target).s.number)
         {
             // Only acquire if have a clear shot, Is it in range and closer than our best?
-            VectorSubtract(&(*target).r.currentOrigin, &(*self_).r.currentOrigin, &mut enemyDir);
+            VectorSubtract(
+                &(*target).r.currentOrigin,
+                &(*self_).r.currentOrigin,
+                &mut enemyDir,
+            );
             enemyDist = VectorLengthSquared(&enemyDir);
 
             if enemyDist < bestDist {
@@ -3188,8 +3264,16 @@ pub unsafe extern "C" fn pas_think(ent: *mut gentity_t) {
             let clNum = iEntityList[i as usize];
 
             numListedEntities = trap::EntitiesInBox(
-                &(*core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add(clNum as usize)).r.absmin,
-                &(*core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add(clNum as usize)).r.absmax,
+                &(*core::ptr::addr_of_mut!(g_entities)
+                    .cast::<gentity_t>()
+                    .add(clNum as usize))
+                .r
+                .absmin,
+                &(*core::ptr::addr_of_mut!(g_entities)
+                    .cast::<gentity_t>()
+                    .add(clNum as usize))
+                .r
+                .absmax,
                 &mut iEntityList,
             );
 
@@ -3216,7 +3300,9 @@ pub unsafe extern "C" fn pas_think(ent: *mut gentity_t) {
         (*ent).r.contents = CONTENTS_SOLID;
     }
 
-    let owner = core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add((*ent).genericValue3 as usize);
+    let owner = core::ptr::addr_of_mut!(g_entities)
+        .cast::<gentity_t>()
+        .add((*ent).genericValue3 as usize);
     if (*owner).inuse == QFALSE
         || (*owner).client.is_null()
         || (*(*owner).client).sess.sessionTeam != (*ent).genericValue2
@@ -3526,8 +3612,7 @@ pub unsafe fn ItemUse_UseDisp(ent: *mut gentity_t, type_: c_int) {
         return;
     }
 
-    if (*(*ent).client).ps.weaponTime > 0
-        || (*(*ent).client).ps.forceHandExtend != HANDEXTEND_NONE
+    if (*(*ent).client).ps.weaponTime > 0 || (*(*ent).client).ps.forceHandExtend != HANDEXTEND_NONE
     {
         //busy doing something else
         return;
@@ -3593,8 +3678,9 @@ pub unsafe fn CheckItemCanBePickedUpByNPC(
         && (*pickerupper).painDebounceTime < (*addr_of!(level)).time
         && !(*pickerupper).NPC.is_null()
         && (*(*pickerupper).NPC).surrenderTime < (*addr_of!(level)).time //not surrendering
-        && ((*(*pickerupper).NPC).scriptFlags & SCF_FORCED_MARCH) == 0 //not being forced to march
-        /*&& item->item->giTag != INV_SECURITY_KEY*/
+        && ((*(*pickerupper).NPC).scriptFlags & SCF_FORCED_MARCH) == 0
+    //not being forced to march
+    /*&& item->item->giTag != INV_SECURITY_KEY*/
     {
         //non-player, in combat, picking up a dropped item that does NOT belong to the player and it *not* a security key
         if (*addr_of!(level)).time - (*item).s.time < 3000
@@ -3623,7 +3709,11 @@ Touch_Item
 /// No oracle: heavily side-effecting over the `gentity_t`→`client`→`ps` graph, the temp-entity
 /// system, and `level.time`.
 ///
-pub unsafe extern "C" fn Touch_Item(ent: *mut gentity_t, other: *mut gentity_t, _trace: *mut trace_t) {
+pub unsafe extern "C" fn Touch_Item(
+    ent: *mut gentity_t,
+    other: *mut gentity_t,
+    _trace: *mut trace_t,
+) {
     let respawn: c_int;
     let mut predict: qboolean;
 
@@ -3829,7 +3919,9 @@ pub unsafe extern "C" fn Touch_Item(ent: *mut gentity_t, other: *mut gentity_t, 
     }
 
     // powerup pickups are global broadcasts
-    if /*ent->item->giType == IT_POWERUP ||*/ (*(*ent).item).giType == IT_TEAM {
+    if
+    /*ent->item->giType == IT_POWERUP ||*/
+    (*(*ent).item).giType == IT_TEAM {
         // if we want the global sound to play
         if (*ent).speed == 0.0 {
             let te: *mut gentity_t = G_TempEntity(&(*ent).s.pos.trBase, EV_GLOBAL_ITEM_PICKUP);
@@ -3954,8 +4046,7 @@ pub unsafe fn LaunchItem(item: *mut gitem_t, origin: &vec3_t, velocity: &vec3_t)
 
     (*dropped).s.eType = ET_ITEM;
     // store item number in modelindex
-    (*dropped).s.modelindex =
-        item.offset_from(addr_of!(bg_itemlist) as *const gitem_t) as c_int;
+    (*dropped).s.modelindex = item.offset_from(addr_of!(bg_itemlist) as *const gitem_t) as c_int;
     if (*dropped).s.modelindex < 0 {
         (*dropped).s.modelindex = 0;
     }
@@ -4019,9 +4110,7 @@ pub unsafe fn LaunchItem(item: *mut gitem_t, origin: &vec3_t, velocity: &vec3_t)
         (*dropped).s.angles[PITCH] = -90.0;
     }
 
-    if (*item).giTag != WP_BOWCASTER
-        && (*item).giTag != WP_DET_PACK
-        && (*item).giTag != WP_THERMAL
+    if (*item).giTag != WP_BOWCASTER && (*item).giTag != WP_DET_PACK && (*item).giTag != WP_THERMAL
     {
         (*dropped).s.angles[ROLL] = -90.0;
     }
@@ -4092,12 +4181,12 @@ mod tests {
         let base_times = [20.0f32, 30.0, 40.0, 60.0, 120.0, 0.5, 3.7];
         // (itemType, itemTag) pairs: non-weapon, weapon-with-special-tag, weapon-other.
         let items: [(itemType_t, weapon_t); 6] = [
-            (0, 0),            // IT_BAD / no tag (non-weapon path)
+            (0, 0), // IT_BAD / no tag (non-weapon path)
             (IT_WEAPON, WP_THERMAL),
             (IT_WEAPON, WP_TRIP_MINE),
             (IT_WEAPON, WP_DET_PACK),
-            (IT_WEAPON, 5),    // a normal weapon — no special case
-            (3, 12),           // non-weapon type that happens to share a tag value
+            (IT_WEAPON, 5), // a normal weapon — no special case
+            (3, 12),        // non-weapon type that happens to share a tag value
         ];
         let adapt_flags = [0i32, 1];
         let player_counts = [0i32, 4, 5, 8, 12, 13, 20, 32, 33, 64, 200];
@@ -4112,9 +4201,8 @@ mod tests {
                         }
 
                         let got = adjustRespawnTime(pre, itype, itag);
-                        let want = unsafe {
-                            oracle::jka_adjustRespawnTime(pre, itype, itag, adapt, npc)
-                        };
+                        let want =
+                            unsafe { oracle::jka_adjustRespawnTime(pre, itype, itag, adapt, npc) };
                         assert_eq!(
                             got, want,
                             "pre={pre} itype={itype} itag={itag} adapt={adapt} npc={npc}"

@@ -12,114 +12,118 @@
 #![allow(non_snake_case)] // C function names (`SetClientViewAngle`, …) kept verbatim
 #![allow(non_upper_case_globals)] // file-local statics keep their C names (playerMins, playerMaxs)
 
+use crate::codemp::game::ai_main::BotAIShutdownClient;
+use crate::codemp::game::anims::{BOTH_PAIN2, BOTH_PAIN3};
+use crate::codemp::game::anims::{BOTH_STAND1TO2, TORSO_RAISEWEAP1};
 use crate::codemp::game::bg_lib;
+use crate::codemp::game::bg_misc::{
+    BG_IsValidCharacterModel, BG_PlayerStateToEntityState, BG_ValidateSkinForTeam, WeaponReadyAnim,
+};
+use crate::codemp::game::bg_panimate::{
+    bgAllAnims, bgHumanoidAnimations, BGPAFtextLoaded, BG_ParseAnimationFile,
+    BG_SaberStartTransAnim,
+};
 use crate::codemp::game::bg_public::{
     bgEntity_t, team_t, BROKENLIMB_LARM, BROKENLIMB_RARM, CROUCH_MAXS_2, CS_CLIENT_JEDIMASTER,
-    CS_PLAYERS,
-    DEFAULT_MAXS_2, DEFAULT_MINS_2, DUELTEAM_DOUBLE, DUELTEAM_FREE, DUELTEAM_LONE, DUELTEAM_SINGLE,
-    EF2_SHIP_DEATH,
-    EF_DEAD, EF_DISINTEGRATION, EF_DOUBLE_AMMO, EF_INVULNERABLE, EF_NODRAW, EF_TELEPORT_BIT, ET_BODY,
-    ET_GENERAL, ET_MISSILE, MASK_SOLID, EV_BODYFADE, EV_BECOME_JEDIMASTER, EV_CLIENTJOIN, EV_PLAYER_TELEPORT_IN,
-    EV_PLAYER_TELEPORT_OUT, EV_SIEGESPEC, GIB_HEALTH, GT_CTF, GT_CTY,
-    GT_DUEL, GT_HOLOCRON,
-    GT_JEDIMASTER, GT_POWERDUEL, GT_SIEGE, GT_TEAM, MASK_PLAYERSOLID, PERS_SCORE, PERS_SPAWN_COUNT,
-    PERS_TEAM,
-    PMF_RESPAWNED, PMF_TIME_KNOCKBACK, PW_NUM_POWERUPS, SETANIM_BOTH, SETANIM_FLAG_HOLD,
-    SETANIM_FLAG_HOLDLESS, SETANIM_FLAG_OVERRIDE, SETANIM_TORSO, STAT_ARMOR, STAT_HEALTH,
-    STAT_HOLDABLE_ITEM, STAT_HOLDABLE_ITEMS, STAT_MAX_HEALTH, STAT_WEAPONS, TEAM_BLUE,
-    TEAM_FREE, TEAM_NUM_TEAMS, TEAM_RED, TEAM_SPECTATOR, WEAPON_RAISING,
+    CS_PLAYERS, DEFAULT_MAXS_2, DEFAULT_MINS_2, DUELTEAM_DOUBLE, DUELTEAM_FREE, DUELTEAM_LONE,
+    DUELTEAM_SINGLE, EF2_SHIP_DEATH, EF_DEAD, EF_DISINTEGRATION, EF_DOUBLE_AMMO, EF_INVULNERABLE,
+    EF_NODRAW, EF_TELEPORT_BIT, ET_BODY, ET_GENERAL, ET_MISSILE, EV_BECOME_JEDIMASTER, EV_BODYFADE,
+    EV_CLIENTJOIN, EV_PLAYER_TELEPORT_IN, EV_PLAYER_TELEPORT_OUT, EV_SIEGESPEC, GIB_HEALTH, GT_CTF,
+    GT_CTY, GT_DUEL, GT_HOLOCRON, GT_JEDIMASTER, GT_POWERDUEL, GT_SIEGE, GT_TEAM, MASK_PLAYERSOLID,
+    MASK_SOLID, PERS_SCORE, PERS_SPAWN_COUNT, PERS_TEAM, PMF_RESPAWNED, PMF_TIME_KNOCKBACK,
+    PW_NUM_POWERUPS, SETANIM_BOTH, SETANIM_FLAG_HOLD, SETANIM_FLAG_HOLDLESS, SETANIM_FLAG_OVERRIDE,
+    SETANIM_TORSO, STAT_ARMOR, STAT_HEALTH, STAT_HOLDABLE_ITEM, STAT_HOLDABLE_ITEMS,
+    STAT_MAX_HEALTH, STAT_WEAPONS, TEAM_BLUE, TEAM_FREE, TEAM_NUM_TEAMS, TEAM_RED, TEAM_SPECTATOR,
+    WEAPON_RAISING,
 };
+use crate::codemp::game::bg_saberLoad::{WP_SaberStyleValidForSaber, WP_UseFirstValidSaberStyle};
 use crate::codemp::game::bg_saga::{
     bgSiegeClasses, BG_SiegeCheckClassLegality, BG_SiegeFindClassIndexByName,
 };
 use crate::codemp::game::bg_saga_h::siegeClass_t;
-use crate::codemp::game::bg_saberLoad::{WP_SaberStyleValidForSaber, WP_UseFirstValidSaberStyle};
-use crate::codemp::game::g_cmds::{BroadcastTeamChange, G_SetSaber, SetTeam, SetTeamQuick, StopFollowing};
-use crate::codemp::game::g_svcmds::G_FilterPacket;
-use crate::codemp::game::g_bot::{G_BotConnect, G_RemoveQueuedBotBegin};
-use crate::codemp::game::g_misc::gEscaping;
-use crate::codemp::game::g_combat::body_die;
-use crate::codemp::game::g_log::G_ClearClientLog;
-use crate::codemp::game::g_combat::TossClientItems;
-use crate::codemp::game::g_combat::player_die;
-use crate::codemp::game::g_active::{ClientEndFrame, ClientThink};
-use crate::codemp::game::ai_main::BotAIShutdownClient;
-use crate::codemp::game::w_force::{
-    WP_ForcePowerStop, WP_HasForcePowers, WP_InitForcePowers, WP_SpawnInitForcePowers,
-};
-use crate::codemp::game::w_saber::{HasSetSaberOnly, WP_SaberAddG2Model, WP_SaberInitBladeData};
-use crate::codemp::game::g_object::G_RunObject;
-use crate::codemp::game::g_team::{SelectCTFSpawnPoint, SelectSiegeSpawnPoint, TeamName};
-use crate::codemp::game::bg_misc::{
-    BG_IsValidCharacterModel, BG_PlayerStateToEntityState, BG_ValidateSkinForTeam, WeaponReadyAnim,
-};
+use crate::codemp::game::bg_saga_h::{CFL_EXTRA_AMMO, CFL_SINGLE_ROCKET, SIEGETEAM_TEAM1};
 use crate::codemp::game::bg_vehicleLoad::BG_GetVehicleModelName;
 use crate::codemp::game::bg_vehicles_h::{
     MAX_VEHICLE_EXHAUSTS, MAX_VEHICLE_MUZZLES, MAX_VEHICLE_TURRET_MUZZLES,
 };
 use crate::codemp::game::bg_weapons::{ammoData, weaponData};
-use crate::codemp::game::teams_h::{NPCTEAM_ENEMY, NPCTEAM_PLAYER};
-use crate::codemp::game::bg_saga_h::{CFL_EXTRA_AMMO, CFL_SINGLE_ROCKET, SIEGETEAM_TEAM1};
-use crate::codemp::game::g_public_h::Q3_INFINITE;
-use crate::codemp::game::anims::{BOTH_STAND1TO2, TORSO_RAISEWEAP1};
+use crate::codemp::game::bg_weapons_h::{
+    AMMO_BLASTER, AMMO_POWERCELL, WP_BLASTER, WP_BOWCASTER, WP_BRYAR_PISTOL, WP_MELEE, WP_NONE,
+    WP_NUM_WEAPONS, WP_ROCKET_LAUNCHER, WP_SABER,
+};
+use crate::codemp::game::g_active::{ClientEndFrame, ClientThink};
+use crate::codemp::game::g_bot::{G_BotConnect, G_RemoveQueuedBotBegin};
+use crate::codemp::game::g_cmds::{
+    BroadcastTeamChange, G_SetSaber, SetTeam, SetTeamQuick, StopFollowing,
+};
+use crate::codemp::game::g_combat::body_die;
+use crate::codemp::game::g_combat::player_die;
+use crate::codemp::game::g_combat::TossClientItems;
 use crate::codemp::game::g_local::{
     clientPersistant_t, clientSession_t, gclient_t, gentity_t, BODY_QUEUE_SIZE, CON_CONNECTED,
     CON_CONNECTING, CON_DISCONNECTED, FL_BOUNCE_HALF, FL_NO_BOTS, FL_NO_HUMANS, HL_MAX,
-    PSG_TEAMVOTED, PSG_VOTED,
-    SPECTATOR_FOLLOW, SPECTATOR_FREE, SPECTATOR_SCOREBOARD, TEAM_ACTIVE, TEAM_BEGIN,
+    PSG_TEAMVOTED, PSG_VOTED, SPECTATOR_FOLLOW, SPECTATOR_FREE, SPECTATOR_SCOREBOARD, TEAM_ACTIVE,
+    TEAM_BEGIN,
 };
+use crate::codemp::game::g_log::G_ClearClientLog;
 use crate::codemp::game::g_main::{
     d_perPlayerGhoul2, g_duelWeaponDisable, g_duel_fraglimit, g_entities, g_forcePowerDisable,
     g_gametype, g_inactivity, g_logClientInfo, g_needpass, g_password, g_powerDuelEndHealth,
-    g_powerDuelStartHealth,
-    g_siegeRespawn, g_siegeRespawnCheck, g_spawnInvulnerability, g_trueJedi, g_weaponDisable, level,
-    CalculateRanks, Com_Error, Com_Printf, FindIntermissionPoint,
-    G_Error, G_GetStringEdString, G_LogPrintf, MoveClientToIntermission,
+    g_powerDuelStartHealth, g_siegeRespawn, g_siegeRespawnCheck, g_spawnInvulnerability,
+    g_trueJedi, g_weaponDisable, level, CalculateRanks, Com_Error, Com_Printf,
+    FindIntermissionPoint, G_Error, G_GetStringEdString, G_LogPrintf, MoveClientToIntermission,
 };
-use crate::codemp::game::g_saga::{gSiegeRoundBegun, gSiegeRoundEnded, SiegeRespawn, G_ValidateSiegeClassForTeam};
-use crate::codemp::game::g_session::{G_InitSessionData, G_ReadSessionData, G_WriteClientSessionData};
+use crate::codemp::game::g_misc::gEscaping;
+use crate::codemp::game::g_object::G_RunObject;
+use crate::codemp::game::g_public_h::Q3_INFINITE;
+use crate::codemp::game::g_public_h::{SVF_BOT, SVF_BROADCAST};
+use crate::codemp::game::g_saga::{
+    gSiegeRoundBegun, gSiegeRoundEnded, G_ValidateSiegeClassForTeam, SiegeRespawn,
+};
+use crate::codemp::game::g_session::{
+    G_InitSessionData, G_ReadSessionData, G_WriteClientSessionData,
+};
 use crate::codemp::game::g_spawn::{precachedKyle, G_SpawnInt};
+use crate::codemp::game::g_svcmds::G_FilterPacket;
+use crate::codemp::game::g_team::{SelectCTFSpawnPoint, SelectSiegeSpawnPoint, TeamName};
 use crate::codemp::game::g_utils::{
     G_AddEvent, G_EntitySound, G_Find, G_FreeEntity, G_InitGentity, G_KillBox, G_KillG2Queue,
     G_ModelIndex, G_MuteSound, G_PlayerHasCustomSkeleton, G_SetAnim, G_SetOrigin, G_Sound,
     G_SoundIndex, G_Spawn, G_TempEntity, G_UseTargets,
 };
-use crate::codemp::game::anims::{BOTH_PAIN2, BOTH_PAIN3};
-use crate::codemp::game::bg_panimate::{
-    bgAllAnims, bgHumanoidAnimations, BGPAFtextLoaded, BG_ParseAnimationFile, BG_SaberStartTransAnim,
-};
-use crate::codemp::ghoul2::g2_h::{
-    BONE_ANGLES_POSTMULT, BONE_ANIM_BLEND, BONE_ANIM_OVERRIDE_FREEZE, BONE_ANIM_OVERRIDE_LOOP,
-};
-use crate::codemp::game::teams_h::CLASS_VEHICLE;
+use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_math::{
     vec3_origin, VectorAdd, VectorCopy, VectorLength, VectorNormalize, VectorSet, VectorSubtract,
 };
-use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_shared::{
-    random, va, Com_sprintf, Info_SetValueForKey, Info_ValueForKey, Info_Validate,     Q_stricmp, Q_strncpyz, Q_strrchr, Sz,
+    random, va, Com_sprintf, Info_SetValueForKey, Info_Validate, Info_ValueForKey, Q_stricmp,
+    Q_strncpyz, Q_strrchr, Sz,
 };
-use crate::codemp::game::q_shared_h::MAX_SABERS;
 use crate::codemp::game::q_shared_h::ANGLE2SHORT;
+use crate::codemp::game::q_shared_h::MAX_SABERS;
 use crate::codemp::game::q_shared_h::SFL_BOLT_TO_WRIST;
 use crate::codemp::game::q_shared_h::SFL_TWO_HANDED;
 use crate::codemp::game::q_shared_h::{
     forcedata_t, saberInfo_t, trace_t, usercmd_t, vec3_t, CHAN_AUTO, CHAN_VOICE, ENTITYNUM_NONE,
-    ERR_DROP, FORCE_LEVEL_3, FORCE_LIGHTSIDE, FP_SABER_OFFENSE, MAX_CLIENTS,
-    MAX_GENTITIES, MAX_INFO_STRING, MAX_INFO_VALUE, MAX_PERSISTANT, MAX_QPATH, MAX_STRING_CHARS,
-    NEGATIVE_Y, NEGATIVE_Z, NUM_FORCE_POWERS, NUM_TRACK_CHANNELS, POSITIVE_X, POSITIVE_Z,
-    Q_COLOR_ESCAPE, PITCH, ROLL, SS_DUAL, SS_FAST, SS_STAFF, SS_STRONG, TRACK_CHANNEL_1, TR_GRAVITY,
+    ERR_DROP, FORCE_LEVEL_3, FORCE_LIGHTSIDE, FP_SABER_OFFENSE, MAX_CLIENTS, MAX_GENTITIES,
+    MAX_INFO_STRING, MAX_INFO_VALUE, MAX_PERSISTANT, MAX_QPATH, MAX_STRING_CHARS, NEGATIVE_Y,
+    NEGATIVE_Z, NUM_FORCE_POWERS, NUM_TRACK_CHANNELS, PITCH, POSITIVE_X, POSITIVE_Z,
+    Q_COLOR_ESCAPE, ROLL, SS_DUAL, SS_FAST, SS_STAFF, SS_STRONG, TRACK_CHANNEL_1, TR_GRAVITY,
     TR_STATIONARY,
-};
-use crate::codemp::game::bg_weapons_h::{
-    AMMO_BLASTER, AMMO_POWERCELL, WP_BLASTER, WP_BOWCASTER, WP_BRYAR_PISTOL, WP_MELEE, WP_NONE,
-    WP_NUM_WEAPONS, WP_ROCKET_LAUNCHER, WP_SABER,
 };
 use crate::codemp::game::surfaceflags_h::{
     CONTENTS_BODY, CONTENTS_CORPSE, CONTENTS_NODROP, CONTENTS_PLAYERCLIP, CONTENTS_SOLID,
     CONTENTS_TRIGGER,
 };
-use crate::codemp::game::g_public_h::{SVF_BOT, SVF_BROADCAST};
+use crate::codemp::game::teams_h::CLASS_VEHICLE;
+use crate::codemp::game::teams_h::{NPCTEAM_ENEMY, NPCTEAM_PLAYER};
+use crate::codemp::game::w_force::{
+    WP_ForcePowerStop, WP_HasForcePowers, WP_InitForcePowers, WP_SpawnInitForcePowers,
+};
+use crate::codemp::game::w_saber::{HasSetSaberOnly, WP_SaberAddG2Model, WP_SaberInitBladeData};
+use crate::codemp::ghoul2::g2_h::{
+    BONE_ANGLES_POSTMULT, BONE_ANIM_BLEND, BONE_ANIM_OVERRIDE_FREEZE, BONE_ANIM_OVERRIDE_LOOP,
+};
 use crate::ffi::types::{qboolean, QFALSE, QTRUE};
 use crate::trap;
 use core::ffi::c_char;
@@ -997,7 +1001,8 @@ unsafe fn CopyToBodyQue(ent: *mut gentity_t) -> qboolean {
     (*body).s.powerups = 0; // clear powerups
     (*body).s.loopSound = 0; // clear lava burning
     (*body).s.loopIsSoundset = QFALSE;
-    (*body).s.number = body.offset_from(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()) as c_int;
+    (*body).s.number =
+        body.offset_from(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()) as c_int;
     (*body).timestamp = (*addr_of!(level)).time;
     (*body).physicsObject = QTRUE;
     (*body).physicsBounce = 0.0; // don't bounce
@@ -1191,7 +1196,8 @@ pub unsafe fn PickTeam(ignoreClientNum: c_int) -> team_t {
         return TEAM_BLUE;
     }
     // equal team count, so join the team with the lowest score
-    if (*addr_of!(level)).teamScores[TEAM_BLUE as usize] > (*addr_of!(level)).teamScores[TEAM_RED as usize]
+    if (*addr_of!(level)).teamScores[TEAM_BLUE as usize]
+        > (*addr_of!(level)).teamScores[TEAM_RED as usize]
     {
         return TEAM_RED;
     }
@@ -1478,7 +1484,8 @@ pub unsafe fn ClientUserinfoChanged(clientNum: c_int) {
         (*client).ps.customRGBA[2] = 255;
     }
 
-    if ((*client).ps.customRGBA[0] + (*client).ps.customRGBA[1] + (*client).ps.customRGBA[2]) < 100 {
+    if ((*client).ps.customRGBA[0] + (*client).ps.customRGBA[1] + (*client).ps.customRGBA[2]) < 100
+    {
         // hmm, too dark!
         (*client).ps.customRGBA[0] = 255;
         (*client).ps.customRGBA[1] = 255;
@@ -1497,7 +1504,11 @@ pub unsafe fn ClientUserinfoChanged(clientNum: c_int) {
     // bots set their team a few frames later
     let team: c_int;
     if (*addr_of!(g_gametype)).integer >= GT_TEAM
-        && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(clientNum as usize)).r.svFlags & SVF_BOT != 0
+        && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(clientNum as usize))
+            .r
+            .svFlags
+            & SVF_BOT
+            != 0
     {
         s = Info_ValueForKey(userinfo.as_ptr(), c"team".as_ptr());
         if Q_stricmp(s, c"red".as_ptr()) == 0 || Q_stricmp(s, c"r".as_ptr()) == 0 {
@@ -1612,24 +1623,24 @@ pub unsafe fn ClientUserinfoChanged(clientNum: c_int) {
 
     /*	NOTE: all client side now
 
-    // team
-    switch( team ) {
-    case TEAM_RED:
-        ForceClientSkin(client, model, "red");
-//		ForceClientSkin(client, headModel, "red");
-        break;
-    case TEAM_BLUE:
-        ForceClientSkin(client, model, "blue");
-//		ForceClientSkin(client, headModel, "blue");
-        break;
-    }
-    // don't ever use a default skin in teamplay, it would just waste memory
-    // however bots will always join a team but they spawn in as spectator
-    if ( g_gametype.integer >= GT_TEAM && team == TEAM_SPECTATOR) {
-        ForceClientSkin(client, model, "red");
-//		ForceClientSkin(client, headModel, "red");
-    }
-    */
+        // team
+        switch( team ) {
+        case TEAM_RED:
+            ForceClientSkin(client, model, "red");
+    //		ForceClientSkin(client, headModel, "red");
+            break;
+        case TEAM_BLUE:
+            ForceClientSkin(client, model, "blue");
+    //		ForceClientSkin(client, headModel, "blue");
+            break;
+        }
+        // don't ever use a default skin in teamplay, it would just waste memory
+        // however bots will always join a team but they spawn in as spectator
+        if ( g_gametype.integer >= GT_TEAM && team == TEAM_SPECTATOR) {
+            ForceClientSkin(client, model, "red");
+    //		ForceClientSkin(client, headModel, "red");
+        }
+        */
 
     if (*addr_of!(g_gametype)).integer >= GT_TEAM {
         (*client).pers.teamInfo = QTRUE;
@@ -1657,8 +1668,14 @@ pub unsafe fn ClientUserinfoChanged(clientNum: c_int) {
     let teamLeader = (*client).sess.teamLeader;
 
     // colors
-    strcpy(c1.as_mut_ptr(), Info_ValueForKey(userinfo.as_ptr(), c"color1".as_ptr()));
-    strcpy(c2.as_mut_ptr(), Info_ValueForKey(userinfo.as_ptr(), c"color2".as_ptr()));
+    strcpy(
+        c1.as_mut_ptr(),
+        Info_ValueForKey(userinfo.as_ptr(), c"color1".as_ptr()),
+    );
+    strcpy(
+        c2.as_mut_ptr(),
+        Info_ValueForKey(userinfo.as_ptr(), c"color2".as_ptr()),
+    );
 
     //	strcpy(redTeam, Info_ValueForKey( userinfo, "g_redteam" ));
     //	strcpy(blueTeam, Info_ValueForKey( userinfo, "g_blueteam" ));
@@ -1724,10 +1741,7 @@ pub unsafe fn ClientUserinfoChanged(clientNum: c_int) {
         ))
     };
 
-    trap::SetConfigstring(
-        CS_PLAYERS + clientNum,
-        &CStr::from_ptr(s).to_string_lossy(),
-    );
+    trap::SetConfigstring(CS_PLAYERS + clientNum, &CStr::from_ptr(s).to_string_lossy());
 
     // The Xbox `if (com_dedicated && com_dedicated->integer) XBL_PL_UpdatePlayerName(...)`
     // block (g_client.c:2189) is dropped — `_XBOX`-only, not this build (see fn doc).
@@ -2050,14 +2064,13 @@ pub unsafe fn G_UpdateClientAnims(self_: *mut gentity_t, mut anim_speed_scale: f
     } {
         //If this fails as well just return.
         return;
-    } else if (*self_).s.number >= MAX_CLIENTS as c_int
-        && (*self_).s.NPC_class == CLASS_VEHICLE
-    {
+    } else if (*self_).s.number >= MAX_CLIENTS as c_int && (*self_).s.NPC_class == CLASS_VEHICLE {
         //we only want to set the root bone for vehicles
         return;
     }
 
-    if ((*client).torsoAnimExecute != torso_anim || (*client).torsoLastFlip != (*client).ps.torsoFlip)
+    if ((*client).torsoAnimExecute != torso_anim
+        || (*client).torsoLastFlip != (*client).ps.torsoFlip)
         && (*self_).noLumbar == QFALSE
     {
         // C resets `aFlags = 0; animSpeed = 0;` here; both are dead stores (re-set below
@@ -2139,8 +2152,8 @@ pub unsafe fn G_UpdateClientAnims(self_: *mut gentity_t, mut anim_speed_scale: f
 const JMSABER_RESPAWN_TIME: c_int = 20000;
 
 pub unsafe fn ThrowSaberToAttacker(self_: *mut gentity_t, attacker: *mut gentity_t) {
-    let mut ent: *mut gentity_t =
-        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*self_).client).ps.saberIndex as usize);
+    let mut ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+        .add((*(*self_).client).ps.saberIndex as usize);
     let mut a: vec3_t = [0.0; 3];
     let mut alt_velocity: c_int = 0;
 
@@ -2177,8 +2190,8 @@ pub unsafe fn ThrowSaberToAttacker(self_: *mut gentity_t, attacker: *mut gentity
         // someone killed us and we had the saber thrown, so actually move this saber to the saber location
         // if we killed ourselves with saber thrown, however, same suicide rules of respawning at spawn spot still
         // apply.
-        let flyingsaber: *mut gentity_t =
-            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*self_).client).ps.saberEntityNum as usize);
+        let flyingsaber: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*(*self_).client).ps.saberEntityNum as usize);
 
         if !flyingsaber.is_null() && (*flyingsaber).inuse == QTRUE {
             VectorCopy(&(*flyingsaber).s.pos.trBase, &mut (*ent).s.pos.trBase);
@@ -2219,7 +2232,11 @@ pub unsafe fn ThrowSaberToAttacker(self_: *mut gentity_t, attacker: *mut gentity
         VectorCopy(&(*self_).s.pos.trBase, &mut (*ent).s.origin);
         VectorCopy(&(*self_).s.pos.trBase, &mut (*ent).r.currentOrigin);
 
-        VectorSubtract(&(*(*attacker).client).ps.origin, &(*ent).s.pos.trBase, &mut a);
+        VectorSubtract(
+            &(*(*attacker).client).ps.origin,
+            &(*ent).s.pos.trBase,
+            &mut a,
+        );
 
         VectorNormalize(&mut a);
 
@@ -2494,7 +2511,8 @@ pub(crate) unsafe fn SetupGameGhoul2Model(
                     skinHandle = trap::R_RegisterSkin(&format!(
                         "models/players/{}/model_{}.skin",
                         CStr::from_ptr(modelname).to_string_lossy(),
-                        CStr::from_ptr((*(*(*ent).m_pVehicle).m_pVehicleInfo).skin).to_string_lossy()
+                        CStr::from_ptr((*(*(*ent).m_pVehicle).m_pVehicleInfo).skin)
+                            .to_string_lossy()
                     ));
                 } else {
                     skinHandle = trap::R_RegisterSkin(&format!(
@@ -2595,7 +2613,8 @@ pub(crate) unsafe fn SetupGameGhoul2Model(
             if handle2 < 0 {
                 //Huh. Guess we don't have this model. Use the default.
 
-                if !(*ent).ghoul2.is_null() && trap::G2_HaveWeGhoul2Models((*ent).ghoul2) != QFALSE {
+                if !(*ent).ghoul2.is_null() && trap::G2_HaveWeGhoul2Models((*ent).ghoul2) != QFALSE
+                {
                     trap::G2API_CleanGhoul2Models(&mut (*ent).ghoul2);
                 }
                 (*ent).ghoul2 = null_mut();
@@ -2674,8 +2693,7 @@ pub(crate) unsafe fn SetupGameGhoul2Model(
         GLAName[0] = 0;
         trap::G2API_GetGLAName((*ent).ghoul2, 0, GLAName.as_mut_ptr());
 
-        if GLAName[0] != 0
-            && strstr(GLAName.as_ptr(), c"players/_humanoid/".as_ptr()).is_null()
+        if GLAName[0] != 0 && strstr(GLAName.as_ptr(), c"players/_humanoid/".as_ptr()).is_null()
         /*&& !strstr(GLAName, "players/rockettrooper/")*/
         {
             //it doesn't use humanoid anims.
@@ -3046,9 +3064,7 @@ pub unsafe fn ClientBegin(client_num: c_int, allow_team_reset: qboolean) {
                 G_SetSaber(ent, 0, saber_val, QFALSE);
             }
 
-            if !saber_val.is_null()
-                && *saber_val != 0
-                && (saber2_val.is_null() || *saber2_val == 0)
+            if !saber_val.is_null() && *saber_val != 0 && (saber2_val.is_null() || *saber2_val == 0)
             {
                 G_SetSaber(ent, 0, c"none".as_ptr() as *mut c_char, QFALSE);
                 Info_SetValueForKey(userinfo.as_mut_ptr(), c"saber2".as_ptr(), c"none".as_ptr());
@@ -3318,8 +3334,7 @@ pub unsafe fn ClientSpawn(ent: *mut gentity_t) {
     // ranging doesn't count this client
     if (*client).sess.sessionTeam == TEAM_SPECTATOR {
         spawnPoint = SelectSpectatorSpawnPoint(&mut spawn_origin, &mut spawn_angles);
-    } else if (*addr_of!(g_gametype)).integer == GT_CTF
-        || (*addr_of!(g_gametype)).integer == GT_CTY
+    } else if (*addr_of!(g_gametype)).integer == GT_CTF || (*addr_of!(g_gametype)).integer == GT_CTY
     {
         // all base oriented team games use the CTF spawn points
         spawnPoint = SelectCTFSpawnPoint(
@@ -3451,7 +3466,8 @@ pub unsafe fn ClientSpawn(ent: *mut gentity_t) {
         (*client).ps.customRGBA[2] = 255;
     }
 
-    if ((*client).ps.customRGBA[0] + (*client).ps.customRGBA[1] + (*client).ps.customRGBA[2]) < 100 {
+    if ((*client).ps.customRGBA[0] + (*client).ps.customRGBA[1] + (*client).ps.customRGBA[2]) < 100
+    {
         //hmm, too dark!
         (*client).ps.customRGBA[0] = 255;
         (*client).ps.customRGBA[1] = 255;
@@ -3541,8 +3557,7 @@ pub unsafe fn ClientSpawn(ent: *mut gentity_t) {
     //give default weapons
     (*client).ps.stats[STAT_WEAPONS as usize] = 1 << WP_NONE;
 
-    if (*addr_of!(g_gametype)).integer == GT_DUEL
-        || (*addr_of!(g_gametype)).integer == GT_POWERDUEL
+    if (*addr_of!(g_gametype)).integer == GT_DUEL || (*addr_of!(g_gametype)).integer == GT_POWERDUEL
     {
         wDisable = (*addr_of!(g_duelWeaponDisable)).integer;
     } else {
@@ -3556,8 +3571,7 @@ pub unsafe fn ClientSpawn(ent: *mut gentity_t) {
         && (*addr_of!(g_trueJedi)).integer != 0
     {
         if (*addr_of!(g_gametype)).integer >= GT_TEAM
-            && ((*client).sess.sessionTeam == TEAM_BLUE
-                || (*client).sess.sessionTeam == TEAM_RED)
+            && ((*client).sess.sessionTeam == TEAM_BLUE || (*client).sess.sessionTeam == TEAM_RED)
         {
             //In Team games, force one side to be merc and other to be jedi
             if (*addr_of!(level)).numPlayingClients > 0 {
@@ -3572,9 +3586,7 @@ pub unsafe fn ClientSpawn(ent: *mut gentity_t) {
                         i += 1;
                         continue;
                     }
-                    if (*cl).sess.sessionTeam == TEAM_BLUE
-                        || (*cl).sess.sessionTeam == TEAM_RED
-                    {
+                    if (*cl).sess.sessionTeam == TEAM_BLUE || (*cl).sess.sessionTeam == TEAM_RED {
                         //in-game
                         if WP_HasForcePowers(&(*cl).ps) != QFALSE {
                             //this side is using force
@@ -3710,11 +3722,11 @@ pub unsafe fn ClientSpawn(ent: *mut gentity_t) {
                                 & (1 << CFL_SINGLE_ROCKET))
                                 != 0
                         {
-                            (*client).ps.ammo[(*addr_of!(weaponData))[m as usize].ammoIndex as usize] =
-                                1;
+                            (*client).ps.ammo
+                                [(*addr_of!(weaponData))[m as usize].ammoIndex as usize] = 1;
                         } else {
-                            (*client).ps.ammo[(*addr_of!(weaponData))[m as usize].ammoIndex as usize] =
-                                10;
+                            (*client).ps.ammo
+                                [(*addr_of!(weaponData))[m as usize].ammoIndex as usize] = 10;
                         }
                     } else {
                         if (*addr_of!(g_gametype)).integer == GT_SIEGE
@@ -3761,7 +3773,8 @@ pub unsafe fn ClientSpawn(ent: *mut gentity_t) {
         //this class has some start powerups
         i = 0;
         while i < PW_NUM_POWERUPS {
-            if ((*addr_of!(bgSiegeClasses))[(*client).siegeClass as usize].powerups & (1 << i)) != 0 {
+            if ((*addr_of!(bgSiegeClasses))[(*client).siegeClass as usize].powerups & (1 << i)) != 0
+            {
                 (*client).ps.powerups[i as usize] = Q3_INFINITE;
             }
             i += 1;
@@ -3992,7 +4005,10 @@ pub unsafe fn ClientSpawn(ent: *mut gentity_t) {
     // initialize animations and other things
     (*client).ps.commandTime = (*addr_of!(level)).time - 100;
     (*(*ent).client).pers.cmd.serverTime = (*addr_of!(level)).time;
-    ClientThink(ent.offset_from(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()) as c_int, null_mut());
+    ClientThink(
+        ent.offset_from(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()) as c_int,
+        null_mut(),
+    );
 
     // positively link the client, even if the command times are weird
     if (*(*ent).client).sess.sessionTeam != TEAM_SPECTATOR {
@@ -4201,12 +4217,10 @@ pub unsafe fn ClientConnect(
     {
         //if this is the first time then auto-assign a desired siege team and show briefing for that team
         (*client).sess.siegeDesiredTeam = 0; //PickTeam(ent->s.number);
-        //don't just show it - they'll see it if they switch to a team on purpose.
+                                             //don't just show it - they'll see it if they switch to a team on purpose.
     }
 
-    if (*addr_of!(g_gametype)).integer == GT_SIEGE
-        && (*client).sess.sessionTeam != TEAM_SPECTATOR
-    {
+    if (*addr_of!(g_gametype)).integer == GT_SIEGE && (*client).sess.sessionTeam != TEAM_SPECTATOR {
         if first_time != QFALSE || (*addr_of!(level)).newSession != QFALSE {
             //start as spec
             (*client).sess.siegeDesiredTeam = (*client).sess.sessionTeam;
@@ -4221,7 +4235,11 @@ pub unsafe fn ClientConnect(
     if is_bot != QFALSE {
         (*ent).r.svFlags |= SVF_BOT;
         (*ent).inuse = QTRUE;
-        if G_BotConnect(client_num, if first_time != QFALSE { QFALSE } else { QTRUE }) == QFALSE {
+        if G_BotConnect(
+            client_num,
+            if first_time != QFALSE { QFALSE } else { QTRUE },
+        ) == QFALSE
+        {
             return c"BotConnectfailed".as_ptr() as *mut c_char;
         }
     }
@@ -4242,14 +4260,15 @@ pub unsafe fn ClientConnect(
             &format!(
                 "print \"{}^7 {}\n\"",
                 Sz((*client).pers.netname.as_ptr()),
-                Sz(G_GetStringEdString(c"MP_SVGAME".as_ptr(), c"PLCONNECT".as_ptr())),
+                Sz(G_GetStringEdString(
+                    c"MP_SVGAME".as_ptr(),
+                    c"PLCONNECT".as_ptr()
+                )),
             ),
         );
     }
 
-    if (*addr_of!(g_gametype)).integer >= GT_TEAM
-        && (*client).sess.sessionTeam != TEAM_SPECTATOR
-    {
+    if (*addr_of!(g_gametype)).integer >= GT_TEAM && (*client).sess.sessionTeam != TEAM_SPECTATOR {
         BroadcastTeamChange(client, -1);
     }
 
@@ -4326,7 +4345,8 @@ pub unsafe fn ClientDisconnect(client_num: c_int) {
 
     if (*(*ent).client).ps.m_iVehicleNum != 0 {
         //tell it I'm getting off
-        let veh = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*ent).client).ps.m_iVehicleNum as usize);
+        let veh = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*(*ent).client).ps.m_iVehicleNum as usize);
 
         if (*veh).inuse != QFALSE && !(*veh).client.is_null() && !(*veh).m_pVehicle.is_null() {
             let p_con = (*(*ent).client).pers.connected;
@@ -4349,7 +4369,9 @@ pub unsafe fn ClientDisconnect(client_num: c_int) {
             && (*ci).sess.spectatorState == SPECTATOR_FOLLOW
             && (*ci).sess.spectatorClient == client_num
         {
-            StopFollowing((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize));
+            StopFollowing(
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize),
+            );
         }
         i += 1;
     }
@@ -4379,12 +4401,16 @@ pub unsafe fn ClientDisconnect(client_num: c_int) {
         && (*addr_of!(level)).warmupTime == 0
     {
         if (*addr_of!(level)).sortedClients[1] == client_num {
-            let win = (*addr_of!(level)).clients.add((*addr_of!(level)).sortedClients[0] as usize);
+            let win = (*addr_of!(level))
+                .clients
+                .add((*addr_of!(level)).sortedClients[0] as usize);
             (*win).ps.persistant[PERS_SCORE as usize] = 0;
             (*win).sess.wins += 1;
             ClientUserinfoChanged((*addr_of!(level)).sortedClients[0]);
         } else if (*addr_of!(level)).sortedClients[0] == client_num {
-            let win = (*addr_of!(level)).clients.add((*addr_of!(level)).sortedClients[1] as usize);
+            let win = (*addr_of!(level))
+                .clients
+                .add((*addr_of!(level)).sortedClients[1] as usize);
             (*win).ps.persistant[PERS_SCORE as usize] = 0;
             (*win).sess.wins += 1;
             ClientUserinfoChanged((*addr_of!(level)).sortedClients[1]);

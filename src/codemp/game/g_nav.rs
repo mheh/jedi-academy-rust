@@ -31,13 +31,13 @@ fn cstr(s: &str) -> CString {
     CString::new(s).unwrap_or_default()
 }
 
-use crate::codemp::game::bg_misc::vectoyaw;
-use crate::codemp::game::bg_public::{
-    DEFAULT_MAXS_2, DEFAULT_MINS_2, ET_ITEM, MASK_DEADSOLID, MASK_NPCSOLID, STEPSIZE, CROUCH_MAXS_2,
-};
-use crate::codemp::game::bg_weapons_h::WP_SABER;
 use crate::codemp::game::b_public_h::NPCAI_BLOCKED;
 use crate::codemp::game::b_public_h::NPCAI_NO_COLL_AVOID;
+use crate::codemp::game::bg_misc::vectoyaw;
+use crate::codemp::game::bg_public::{
+    CROUCH_MAXS_2, DEFAULT_MAXS_2, DEFAULT_MINS_2, ET_ITEM, MASK_DEADSOLID, MASK_NPCSOLID, STEPSIZE,
+};
+use crate::codemp::game::bg_weapons_h::WP_SABER;
 use crate::codemp::game::g_local::{gentity_t, waypointData_t, FL_NAVGOAL, FRAMETIME, RTF_NAVGOAL};
 use crate::codemp::game::g_main::{g_entities, level, Com_Error, Com_Printf};
 use crate::codemp::game::g_misc::TAG_Add;
@@ -46,8 +46,7 @@ use crate::codemp::game::g_mover::{
 };
 use crate::codemp::game::g_public_h::BSET_BLOCKED;
 use crate::codemp::game::g_utils::{vtos, G_CheckInSolid, G_FreeEntity, G_SetOrigin, G_Spawn};
-use crate::codemp::game::q_shared::{Com_sprintf, Q_stricmp, Q_strncpyz};
-use crate::codemp::game::npc::{NPC, NPCInfo};
+use crate::codemp::game::npc::{NPCInfo, NPC};
 use crate::codemp::game::npc_combat::G_SetEnemy;
 use crate::codemp::game::npc_goal::G_BoundsOverlap;
 use crate::codemp::game::npc_utils::{G_ActivateBehavior, NPC_FaceEntity};
@@ -58,6 +57,7 @@ use crate::codemp::game::q_math::{
     VectorSet, VectorSubtract,
 };
 use crate::codemp::game::q_shared::random;
+use crate::codemp::game::q_shared::{Com_sprintf, Q_stricmp, Q_strncpyz};
 use crate::codemp::game::q_shared_h::{
     trace_t, vec3_t, ENTITYNUM_NONE, ENTITYNUM_WORLD, ERR_DROP, MAX_QPATH, SOLID_BMODEL, YAW,
 };
@@ -209,7 +209,8 @@ pub unsafe fn NPC_Blocked(self_: *mut gentity_t, blocker: *mut gentity_t) {
     //Debug_Printf( debugNPCAI, DEBUG_LEVEL_WARNING, "%s: Excuse me, %s %s!\n", self->targetname, blocker->classname, blocker->targetname );
 
     //If we're being blocked by the player, say something to them
-    if (*blocker).s.number == 0 && (*(*blocker).client).playerTeam == (*(*self_).client).playerTeam {
+    if (*blocker).s.number == 0 && (*(*blocker).client).playerTeam == (*(*self_).client).playerTeam
+    {
         //guys in formation are not trying to get to a critical point,
         //don't make them yell at the player (unless they have an enemy and
         //are in combat because BP thinks it sounds cool during battle)
@@ -380,14 +381,16 @@ pub unsafe fn NAV_CheckAhead(
 
     //Do a special check for doors
     if (trace.entityNum as i32) < ENTITYNUM_WORLD {
-        let blocker = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(trace.entityNum as usize);
+        let blocker =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(trace.entityNum as usize);
 
         if !(*blocker).classname.is_null() && *(*blocker).classname != 0 {
             if G_EntIsUnlockedDoor((*blocker).s.number) == QTRUE
             //if ( Q_stricmp( blocker->classname, "func_door" ) == 0 )
             {
                 //We're too close, try and avoid the door (most likely stuck on a lip)
-                if DistanceSquared(&(*self_).r.currentOrigin, &trace.endpos) < MIN_DOOR_BLOCK_DIST_SQR
+                if DistanceSquared(&(*self_).r.currentOrigin, &trace.endpos)
+                    < MIN_DOOR_BLOCK_DIST_SQR
                 {
                     return QFALSE;
                 }
@@ -478,7 +481,8 @@ pub unsafe fn NAV_TestBestNode(
 
     //Do a special check for doors
     if (trace.entityNum as i32) < ENTITYNUM_WORLD {
-        let blocker = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(trace.entityNum as usize);
+        let blocker =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(trace.entityNum as usize);
 
         if !(*blocker).classname.is_null() && *(*blocker).classname != 0 {
             //special case: doors are architecture, but are dynamic, like entitites
@@ -487,7 +491,8 @@ pub unsafe fn NAV_TestBestNode(
             {
                 //it's unlocked, go for it
                 //We're too close, try and avoid the door (most likely stuck on a lip)
-                if DistanceSquared(&(*self_).r.currentOrigin, &trace.endpos) < MIN_DOOR_BLOCK_DIST_SQR
+                if DistanceSquared(&(*self_).r.currentOrigin, &trace.endpos)
+                    < MIN_DOOR_BLOCK_DIST_SQR
                 {
                     return start_id;
                 }
@@ -629,7 +634,12 @@ unsafe fn NAV_TestBypass(
     avoid_angles[YAW as usize] = yaw;
 
     AngleVectors(&avoid_angles, Some(&mut block_test), None, None);
-    VectorMA(&(*self_).r.currentOrigin, blocked_dist, &block_test, &mut block_pos);
+    VectorMA(
+        &(*self_).r.currentOrigin,
+        blocked_dist,
+        &block_test,
+        &mut block_pos,
+    );
 
     //NAVDEBUG_showCollision debug graphics (no-op stubs in JKA) elided
 
@@ -681,7 +691,8 @@ pub unsafe fn NAV_Bypass(
     avoid_radius = ((*blocker).r.maxs[0] * (*blocker).r.maxs[0]
         + (*blocker).r.maxs[1] * (*blocker).r.maxs[1])
         .sqrt()
-        + ((*self_).r.maxs[0] * (*self_).r.maxs[0] + (*self_).r.maxs[1] * (*self_).r.maxs[1]).sqrt();
+        + ((*self_).r.maxs[0] * (*self_).r.maxs[0] + (*self_).r.maxs[1] * (*self_).r.maxs[1])
+            .sqrt();
 
     //See if we're inside our avoidance radius
     arc_angle = if blocked_dist <= avoid_radius {
@@ -735,7 +746,13 @@ pub unsafe fn NAV_Bypass(
     }
 
     //Test full, best position first
-    if NAV_TestBypass(self_, AngleNormalize360(yaw + arc_angle), blocked_dist, movedir) == QTRUE {
+    if NAV_TestBypass(
+        self_,
+        AngleNormalize360(yaw + arc_angle),
+        blocked_dist,
+        movedir,
+    ) == QTRUE
+    {
         return QTRUE;
     }
 
@@ -913,7 +930,8 @@ pub unsafe fn NAV_StackedCanyon(
     avoid_radius = ((*blocker).r.maxs[0] * (*blocker).r.maxs[0]
         + (*blocker).r.maxs[1] * (*blocker).r.maxs[1])
         .sqrt()
-        + ((*self_).r.maxs[0] * (*self_).r.maxs[0] + (*self_).r.maxs[1] * (*self_).r.maxs[1]).sqrt();
+        + ((*self_).r.maxs[0] * (*self_).r.maxs[0] + (*self_).r.maxs[1] * (*self_).r.maxs[1])
+            .sqrt();
 
     VectorMA(&(*blocker).r.currentOrigin, avoid_radius, &cross, &mut test);
 
@@ -944,7 +962,12 @@ pub unsafe fn NAV_StackedCanyon(
         return QFALSE;
     }
 
-    VectorMA(&(*blocker).r.currentOrigin, -avoid_radius, &cross, &mut test);
+    VectorMA(
+        &(*blocker).r.currentOrigin,
+        -avoid_radius,
+        &cross,
+        &mut test,
+    );
 
     let mut tr = trap::Trace(
         &test,
@@ -1004,7 +1027,11 @@ pub unsafe fn NAV_ResolveEntityCollision(
         }
     }
 
-    VectorSubtract(&(*blocker).r.currentOrigin, &(*self_).r.currentOrigin, &mut blocked_dir);
+    VectorSubtract(
+        &(*blocker).r.currentOrigin,
+        &(*self_).r.currentOrigin,
+        &mut blocked_dir,
+    );
     blocked_dist = VectorNormalize(&mut blocked_dir);
 
     //Make sure an actual collision is going to happen
@@ -1111,7 +1138,9 @@ pub unsafe fn NAV_AvoidCollision(
     );
     VectorCopy(&info.direction, &mut movedir);
 
-    if !self_.is_null() && !(*self_).NPC.is_null() && ((*(*self_).NPC).aiFlags & NPCAI_NO_COLL_AVOID) != 0
+    if !self_.is_null()
+        && !(*self_).NPC.is_null()
+        && ((*(*self_).NPC).aiFlags & NPCAI_NO_COLL_AVOID) != 0
     {
         //pretend there's no-one in the way
         return QTRUE;
@@ -1119,7 +1148,8 @@ pub unsafe fn NAV_AvoidCollision(
     //Now test against entities
     if NAV_CheckAhead(self_, &movepos, &mut info.trace, CONTENTS_BODY) == QFALSE {
         //Get the blocker
-        info.blocker = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(info.trace.entityNum as usize);
+        info.blocker = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add(info.trace.entityNum as usize);
         info.flags |= NIF_COLLISION;
 
         //Ok to hit our goal entity
@@ -1456,7 +1486,8 @@ pub unsafe fn NAV_FindClosestWaypointForPoint(ent: *mut gentity_t, point: &vec3_
     (*marker).clipmask = (*ent).clipmask;
     (*marker).waypoint = WAYPOINT_NONE;
 
-    let best_wp = trap::Nav_GetNearestNode(marker, (*marker).waypoint, NF_CLEAR_PATH, WAYPOINT_NONE);
+    let best_wp =
+        trap::Nav_GetNearestNode(marker, (*marker).waypoint, NF_CLEAR_PATH, WAYPOINT_NONE);
 
     G_FreeEntity(marker);
 
@@ -1480,7 +1511,8 @@ pub unsafe fn NAV_FindClosestWaypointForPoint2(point: &vec3_t) -> i32 {
     (*marker).clipmask = MASK_NPCSOLID;
     (*marker).waypoint = WAYPOINT_NONE;
 
-    let best_wp = trap::Nav_GetNearestNode(marker, (*marker).waypoint, NF_CLEAR_PATH, WAYPOINT_NONE);
+    let best_wp =
+        trap::Nav_GetNearestNode(marker, (*marker).waypoint, NF_CLEAR_PATH, WAYPOINT_NONE);
 
     G_FreeEntity(marker);
 
@@ -1518,20 +1550,40 @@ pub unsafe fn NAV_Steer(self_: *mut gentity_t, dir: &vec3_t, distance: f32) -> i
 
     //Find the end positions
     let right_in = right_test;
-    VectorMA(&(*self_).r.currentOrigin, distance, &right_in, &mut right_test);
+    VectorMA(
+        &(*self_).r.currentOrigin,
+        distance,
+        &right_in,
+        &mut right_test,
+    );
     let left_in = left_test;
-    VectorMA(&(*self_).r.currentOrigin, distance, &left_in, &mut left_test);
+    VectorMA(
+        &(*self_).r.currentOrigin,
+        distance,
+        &left_in,
+        &mut left_test,
+    );
 
     //NAVDEBUG_showCollision debug graphics (no-op stubs in JKA) elided
 
     //Find the right influence
     tr = trace_t::default();
-    NAV_CheckAhead(self_, &right_test, &mut tr, (*self_).clipmask | CONTENTS_BOTCLIP);
+    NAV_CheckAhead(
+        self_,
+        &right_test,
+        &mut tr,
+        (*self_).clipmask | CONTENTS_BOTCLIP,
+    );
 
     right_push = -45.0 * (1.0 - tr.fraction);
 
     //Find the left influence
-    NAV_CheckAhead(self_, &left_test, &mut tr, (*self_).clipmask | CONTENTS_BOTCLIP);
+    NAV_CheckAhead(
+        self_,
+        &left_test,
+        &mut tr,
+        (*self_).clipmask | CONTENTS_BOTCLIP,
+    );
 
     left_push = 45.0 * (1.0 - tr.fraction);
 
@@ -1577,7 +1629,12 @@ pub fn waypoint_testDirection(origin: &vec3_t, yaw: f32, min_dist: u32) -> u32 {
 
     //Setup the mins and max
     VectorSet(&mut maxs, 15.0, 15.0, DEFAULT_MAXS_2 as f32);
-    VectorSet(&mut mins, -15.0, -15.0, DEFAULT_MINS_2 as f32 + STEPSIZE as f32);
+    VectorSet(
+        &mut mins,
+        -15.0,
+        -15.0,
+        DEFAULT_MINS_2 as f32 + STEPSIZE as f32,
+    );
 
     //Get our test direction
     VectorSet(&mut angles, 0.0, yaw, 0.0);
@@ -1931,7 +1988,11 @@ pub unsafe fn Svcmd_Nav_f() {
         let cmd = cmd2.as_ptr();
 
         if Q_stricmp(cmd, c"all".as_ptr()) == 0 {
-            NAVDEBUG_showNodes = if NAVDEBUG_showNodes != QFALSE { QFALSE } else { QTRUE };
+            NAVDEBUG_showNodes = if NAVDEBUG_showNodes != QFALSE {
+                QFALSE
+            } else {
+                QTRUE
+            };
 
             //NOTENOTE: This causes the two states to sync up if they aren't already
             NAVDEBUG_showCollision = NAVDEBUG_showNodes;
@@ -1941,22 +2002,53 @@ pub unsafe fn Svcmd_Nav_f() {
             NAVDEBUG_showEdges = NAVDEBUG_showNodes;
             NAVDEBUG_showRadius = NAVDEBUG_showNodes;
         } else if Q_stricmp(cmd, c"nodes".as_ptr()) == 0 {
-            NAVDEBUG_showNodes = if NAVDEBUG_showNodes != QFALSE { QFALSE } else { QTRUE };
+            NAVDEBUG_showNodes = if NAVDEBUG_showNodes != QFALSE {
+                QFALSE
+            } else {
+                QTRUE
+            };
         } else if Q_stricmp(cmd, c"radius".as_ptr()) == 0 {
-            NAVDEBUG_showRadius = if NAVDEBUG_showRadius != QFALSE { QFALSE } else { QTRUE };
+            NAVDEBUG_showRadius = if NAVDEBUG_showRadius != QFALSE {
+                QFALSE
+            } else {
+                QTRUE
+            };
         } else if Q_stricmp(cmd, c"edges".as_ptr()) == 0 {
-            NAVDEBUG_showEdges = if NAVDEBUG_showEdges != QFALSE { QFALSE } else { QTRUE };
+            NAVDEBUG_showEdges = if NAVDEBUG_showEdges != QFALSE {
+                QFALSE
+            } else {
+                QTRUE
+            };
         } else if Q_stricmp(cmd, c"testpath".as_ptr()) == 0 {
-            NAVDEBUG_showTestPath = if NAVDEBUG_showTestPath != QFALSE { QFALSE } else { QTRUE };
+            NAVDEBUG_showTestPath = if NAVDEBUG_showTestPath != QFALSE {
+                QFALSE
+            } else {
+                QTRUE
+            };
         } else if Q_stricmp(cmd, c"enemypath".as_ptr()) == 0 {
-            NAVDEBUG_showEnemyPath = if NAVDEBUG_showEnemyPath != QFALSE { QFALSE } else { QTRUE };
+            NAVDEBUG_showEnemyPath = if NAVDEBUG_showEnemyPath != QFALSE {
+                QFALSE
+            } else {
+                QTRUE
+            };
         } else if Q_stricmp(cmd, c"combatpoints".as_ptr()) == 0 {
-            NAVDEBUG_showCombatPoints =
-                if NAVDEBUG_showCombatPoints != QFALSE { QFALSE } else { QTRUE };
+            NAVDEBUG_showCombatPoints = if NAVDEBUG_showCombatPoints != QFALSE {
+                QFALSE
+            } else {
+                QTRUE
+            };
         } else if Q_stricmp(cmd, c"navgoals".as_ptr()) == 0 {
-            NAVDEBUG_showNavGoals = if NAVDEBUG_showNavGoals != QFALSE { QFALSE } else { QTRUE };
+            NAVDEBUG_showNavGoals = if NAVDEBUG_showNavGoals != QFALSE {
+                QFALSE
+            } else {
+                QTRUE
+            };
         } else if Q_stricmp(cmd, c"collision".as_ptr()) == 0 {
-            NAVDEBUG_showCollision = if NAVDEBUG_showCollision != QFALSE { QFALSE } else { QTRUE };
+            NAVDEBUG_showCollision = if NAVDEBUG_showCollision != QFALSE {
+                QFALSE
+            } else {
+                QTRUE
+            };
         }
     } else if Q_stricmp(cmd, c"set".as_ptr()) == 0 {
         let cmd2 = cstr(&trap::Argv(2));
@@ -1970,7 +2062,10 @@ pub unsafe fn Svcmd_Nav_f() {
     } else if Q_stricmp(cmd, c"totals".as_ptr()) == 0 {
         Com_Printf("Navigation Totals:\n");
         Com_Printf("------------------\n");
-        Com_Printf(&format!("Total Nodes:         {}\n", trap::Nav_GetNumNodes()));
+        Com_Printf(&format!(
+            "Total Nodes:         {}\n",
+            trap::Nav_GetNumNodes()
+        ));
         Com_Printf(&format!(
             "Total Combat Points: {}\n",
             (*addr_of!(level)).numCombatPoints
@@ -2056,7 +2151,11 @@ pub unsafe fn NAV_WaypointsTooFar(wp1: *mut gentity_t, wp2: *mut gentity_t) -> q
             );
         }
         // strcat( fatalErrorPointer, temp ); — append temp at the current offset.
-        core::ptr::copy_nonoverlapping(temp.as_ptr(), fes_ptr.add(offset as usize), (len + 1) as usize);
+        core::ptr::copy_nonoverlapping(
+            temp.as_ptr(),
+            fes_ptr.add(offset as usize),
+            (len + 1) as usize,
+        );
         QTRUE
     } else {
         QFALSE
@@ -2285,12 +2384,37 @@ mod oracle_tests {
             ([0.0, 0.0, 0.0], [200.0, 200.0, 0.0], 64, 0),
             ([10.0, 5.0, -3.0], [10.0, 5.0, 100.0], 8, 1),
             // radius branch, grounded (z fudge)
-            ([0.0, 0.0, 0.0], [30.0, 0.0, 20.0], 32 | NAVGOAL_USE_RADIUS, 0),
-            ([0.0, 0.0, 0.0], [0.0, 0.0, 40.0], 32 | NAVGOAL_USE_RADIUS, 0),
-            ([0.0, 0.0, 0.0], [50.0, 50.0, 0.0], 32 | NAVGOAL_USE_RADIUS, 0),
+            (
+                [0.0, 0.0, 0.0],
+                [30.0, 0.0, 20.0],
+                32 | NAVGOAL_USE_RADIUS,
+                0,
+            ),
+            (
+                [0.0, 0.0, 0.0],
+                [0.0, 0.0, 40.0],
+                32 | NAVGOAL_USE_RADIUS,
+                0,
+            ),
+            (
+                [0.0, 0.0, 0.0],
+                [50.0, 50.0, 0.0],
+                32 | NAVGOAL_USE_RADIUS,
+                0,
+            ),
             // radius branch, flying (exact distance)
-            ([0.0, 0.0, 0.0], [10.0, 10.0, 10.0], 32 | NAVGOAL_USE_RADIUS, 1),
-            ([0.0, 0.0, 0.0], [40.0, 40.0, 40.0], 32 | NAVGOAL_USE_RADIUS, 1),
+            (
+                [0.0, 0.0, 0.0],
+                [10.0, 10.0, 10.0],
+                32 | NAVGOAL_USE_RADIUS,
+                1,
+            ),
+            (
+                [0.0, 0.0, 0.0],
+                [40.0, 40.0, 40.0],
+                32 | NAVGOAL_USE_RADIUS,
+                1,
+            ),
         ];
 
         for (i, (point, dest, radius, flying)) in cases.iter().enumerate() {
@@ -2305,7 +2429,10 @@ mod oracle_tests {
                     *flying,
                 )
             };
-            assert_eq!(got, want, "case {i}: point {point:?} dest {dest:?} r {radius}");
+            assert_eq!(
+                got, want,
+                "case {i}: point {point:?} dest {dest:?} r {radius}"
+            );
         }
     }
 }

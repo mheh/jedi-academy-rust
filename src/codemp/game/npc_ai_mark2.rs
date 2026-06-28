@@ -20,8 +20,13 @@ use core::ffi::{c_char, c_int};
 use core::ptr::addr_of;
 
 use crate::codemp::game::anims::{BOTH_RUN1START, BOTH_RUN1STOP};
+use crate::codemp::game::b_public_h::{SCF_LOOK_FOR_ENEMIES, SPOT_HEAD};
 use crate::codemp::game::bg_misc::{BG_FindItemForAmmo, BG_FindItemForWeapon};
 use crate::codemp::game::bg_public::BG_GiveMeVectorFromMatrix;
+use crate::codemp::game::bg_public::{
+    MASK_SHOT, MOD_BRYAR_PISTOL, MOD_UNKNOWN, SETANIM_BOTH, SETANIM_FLAG_HOLD,
+    SETANIM_FLAG_OVERRIDE,
+};
 use crate::codemp::game::bg_weapons_h::{
     AMMO_BLASTER, AMMO_METAL_BOLTS, AMMO_POWERCELL, WP_BRYAR_PISTOL,
 };
@@ -34,7 +39,7 @@ use crate::codemp::game::g_main::level;
 use crate::codemp::game::g_missile::CreateMissile;
 use crate::codemp::game::g_timer::{TIMER_Done, TIMER_Set};
 use crate::codemp::game::g_utils::{G_EffectIndex, G_PlayEffectID, G_Sound, G_SoundIndex};
-use crate::codemp::game::npc::{ucmd, NPC_SetAnim, NPC, NPCInfo};
+use crate::codemp::game::npc::{ucmd, NPCInfo, NPC_SetAnim, NPC};
 use crate::codemp::game::npc_ai_default::NPC_BSIdle;
 use crate::codemp::game::npc_ai_stormtrooper::NPC_CheckPlayerTeamStealth;
 use crate::codemp::game::npc_goal::UpdateGoal;
@@ -43,8 +48,6 @@ use crate::codemp::game::npc_reactions::NPC_Pain;
 use crate::codemp::game::npc_utils::{
     CalcEntitySpot, NPC_ClearLOS4, NPC_FaceEnemy, NPC_SetSurfaceOnOff, NPC_UpdateAngles,
 };
-use crate::ffi::types::{qboolean, QFALSE, QTRUE};
-use crate::codemp::game::b_public_h::{SCF_LOOK_FOR_ENEMIES, SPOT_HEAD};
 use crate::codemp::game::q_math::{
     vectoangles, AngleVectors, DistanceHorizontalSquared, Q_irand, VectorSubtract,
 };
@@ -52,10 +55,8 @@ use crate::codemp::game::q_shared::va;
 use crate::codemp::game::q_shared_h::{
     mdxaBone_t, vec3_t, BUTTON_WALKING, CHAN_AUTO, NEGATIVE_Y, ORIGIN,
 };
-use crate::codemp::game::bg_public::{
-    MASK_SHOT, MOD_BRYAR_PISTOL, MOD_UNKNOWN, SETANIM_BOTH, SETANIM_FLAG_HOLD, SETANIM_FLAG_OVERRIDE,
-};
 use crate::codemp::game::surfaceflags_h::CONTENTS_LIGHTSABER;
+use crate::ffi::types::{qboolean, QFALSE, QTRUE};
 use crate::trap;
 
 //#define AMMO_POD_HEALTH				40
@@ -327,9 +328,7 @@ pub unsafe fn Mark2_AttackDecision() {
             BOTH_RUN1START,
             SETANIM_FLAG_HOLD | SETANIM_FLAG_OVERRIDE,
         );
-        if ((*(*NPC).client).ps.legsTimer <= 0)
-            && (*(*NPC).client).ps.torsoAnim == BOTH_RUN1START
-        {
+        if ((*(*NPC).client).ps.legsTimer <= 0) && (*(*NPC).client).ps.torsoAnim == BOTH_RUN1START {
             (*NPCInfo).localState = LSTATE_NONE; // He's up again.
         }
         return;

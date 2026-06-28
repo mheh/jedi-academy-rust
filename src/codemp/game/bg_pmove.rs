@@ -37,33 +37,31 @@
 #![allow(non_upper_case_globals)]
 
 use crate::codemp::game::anims::{
-    BOTH_FORCE_GETUP_B1, BOTH_FORCE_GETUP_B2, BOTH_FORCE_GETUP_B3, BOTH_FORCE_GETUP_B4,
-    BOTH_FORCE_GETUP_B5, BOTH_FORCE_GETUP_F1, BOTH_FORCE_GETUP_F2, BOTH_GETUP1, BOTH_GETUP2,
-    BOTH_GETUP3, BOTH_GETUP4, BOTH_GETUP5, BOTH_GETUP_BROLL_B, BOTH_GETUP_BROLL_F,
-    BOTH_GETUP_BROLL_L, BOTH_GETUP_BROLL_R, BOTH_GETUP_FROLL_B, BOTH_GETUP_FROLL_F,
-    BOTH_GETUP_FROLL_L, BOTH_GETUP_FROLL_R, BOTH_KNOCKDOWN1, BOTH_KNOCKDOWN2, BOTH_KNOCKDOWN3,
-    BOTH_KNOCKDOWN4, BOTH_KNOCKDOWN5,
-    BOTH_JUMPATTACK6, BOTH_ROLL_B, BOTH_ROLL_F, BOTH_ROLL_L, BOTH_ROLL_R, BOTH_RUN1, BOTH_RUN1START,
-    BOTH_RUN1STOP, BOTH_RUN2, BOTH_RUNBACK1, BOTH_RUNBACK2, BOTH_RUNBACK_DUAL, BOTH_RUNBACK_STAFF,
-    BOTH_RUNSTRAFE_LEFT1, BOTH_RUNSTRAFE_RIGHT1, BOTH_RUN_DUAL, BOTH_RUN_STAFF, BOTH_SABERDUAL_STANCE,
+    BOTH_CROUCH1, BOTH_FORCE_GETUP_B1, BOTH_FORCE_GETUP_B2, BOTH_FORCE_GETUP_B3,
+    BOTH_FORCE_GETUP_B4, BOTH_FORCE_GETUP_B5, BOTH_FORCE_GETUP_F1, BOTH_FORCE_GETUP_F2,
+    BOTH_GETUP1, BOTH_GETUP2, BOTH_GETUP3, BOTH_GETUP4, BOTH_GETUP5, BOTH_GETUP_BROLL_B,
+    BOTH_GETUP_BROLL_F, BOTH_GETUP_BROLL_L, BOTH_GETUP_BROLL_R, BOTH_GETUP_FROLL_B,
+    BOTH_GETUP_FROLL_F, BOTH_GETUP_FROLL_L, BOTH_GETUP_FROLL_R, BOTH_JUMPATTACK6, BOTH_KNOCKDOWN1,
+    BOTH_KNOCKDOWN2, BOTH_KNOCKDOWN3, BOTH_KNOCKDOWN4, BOTH_KNOCKDOWN5, BOTH_ROLL_B, BOTH_ROLL_F,
+    BOTH_ROLL_L, BOTH_ROLL_R, BOTH_RUN1, BOTH_RUN1START, BOTH_RUN1STOP, BOTH_RUN2, BOTH_RUNBACK1,
+    BOTH_RUNBACK2, BOTH_RUNBACK_DUAL, BOTH_RUNBACK_STAFF, BOTH_RUNSTRAFE_LEFT1,
+    BOTH_RUNSTRAFE_RIGHT1, BOTH_RUN_DUAL, BOTH_RUN_STAFF, BOTH_SABERDUAL_STANCE,
     BOTH_SABERFAST_STANCE, BOTH_SABERSLOW_STANCE, BOTH_SABERSTAFF_STANCE, BOTH_STAND1, BOTH_STAND2,
-    BOTH_STAND3, BOTH_STAND5, BOTH_CROUCH1, BOTH_STRAFE_LEFT1, BOTH_STRAFE_RIGHT1,
-    TORSO_WEAPONREADY1, TORSO_WEAPONREADY2, TORSO_WEAPONREADY3, TORSO_WEAPONREADY10,
-    BOTH_SWIMBACKWARD, BOTH_SWIMFORWARD, BOTH_SWIM_IDLE1, BOTH_WALK1, BOTH_WALK2, BOTH_WALK5,
-    BOTH_WALK6, BOTH_WALK7, BOTH_WALKBACK1, BOTH_WALKBACK2, BOTH_WALKBACK_DUAL, BOTH_WALKBACK_STAFF,
-    BOTH_WALK_DUAL, BOTH_WALK_STAFF, BOTH_WALL_RUN_LEFT, BOTH_WALL_RUN_RIGHT, LEGS_LEFTUP1,
-    LEGS_LEFTUP2, LEGS_LEFTUP3, LEGS_LEFTUP4, LEGS_LEFTUP5, LEGS_RIGHTUP1, LEGS_RIGHTUP2,
-    LEGS_RIGHTUP3, LEGS_RIGHTUP4, LEGS_RIGHTUP5, LEGS_S1_LUP1, LEGS_S1_LUP2, LEGS_S1_LUP3,
-    LEGS_S1_LUP4, LEGS_S1_LUP5, LEGS_S1_RUP1, LEGS_S1_RUP2, LEGS_S1_RUP3, LEGS_S1_RUP4,
-    LEGS_S1_RUP5, LEGS_S3_LUP1, LEGS_S3_LUP2, LEGS_S3_LUP3, LEGS_S3_LUP4, LEGS_S3_LUP5,
-    LEGS_S3_RUP1, LEGS_S3_RUP2, LEGS_S3_RUP3, LEGS_S3_RUP4, LEGS_S3_RUP5, LEGS_S4_LUP1,
-    LEGS_S4_LUP2, LEGS_S4_LUP3, LEGS_S4_LUP4, LEGS_S4_LUP5, LEGS_S4_RUP1, LEGS_S4_RUP2,
-    LEGS_S4_RUP3, LEGS_S4_RUP4, LEGS_S4_RUP5, LEGS_S5_LUP1, LEGS_S5_LUP2, LEGS_S5_LUP3,
-    LEGS_S5_LUP4, LEGS_S5_LUP5, LEGS_S5_RUP1, LEGS_S5_RUP2, LEGS_S5_RUP3, LEGS_S5_RUP4,
-    LEGS_S5_RUP5,
+    BOTH_STAND3, BOTH_STAND5, BOTH_STRAFE_LEFT1, BOTH_STRAFE_RIGHT1, BOTH_SWIMBACKWARD,
+    BOTH_SWIMFORWARD, BOTH_SWIM_IDLE1, BOTH_WALK1, BOTH_WALK2, BOTH_WALK5, BOTH_WALK6, BOTH_WALK7,
+    BOTH_WALKBACK1, BOTH_WALKBACK2, BOTH_WALKBACK_DUAL, BOTH_WALKBACK_STAFF, BOTH_WALK_DUAL,
+    BOTH_WALK_STAFF, BOTH_WALL_RUN_LEFT, BOTH_WALL_RUN_RIGHT, LEGS_LEFTUP1, LEGS_LEFTUP2,
+    LEGS_LEFTUP3, LEGS_LEFTUP4, LEGS_LEFTUP5, LEGS_RIGHTUP1, LEGS_RIGHTUP2, LEGS_RIGHTUP3,
+    LEGS_RIGHTUP4, LEGS_RIGHTUP5, LEGS_S1_LUP1, LEGS_S1_LUP2, LEGS_S1_LUP3, LEGS_S1_LUP4,
+    LEGS_S1_LUP5, LEGS_S1_RUP1, LEGS_S1_RUP2, LEGS_S1_RUP3, LEGS_S1_RUP4, LEGS_S1_RUP5,
+    LEGS_S3_LUP1, LEGS_S3_LUP2, LEGS_S3_LUP3, LEGS_S3_LUP4, LEGS_S3_LUP5, LEGS_S3_RUP1,
+    LEGS_S3_RUP2, LEGS_S3_RUP3, LEGS_S3_RUP4, LEGS_S3_RUP5, LEGS_S4_LUP1, LEGS_S4_LUP2,
+    LEGS_S4_LUP3, LEGS_S4_LUP4, LEGS_S4_LUP5, LEGS_S4_RUP1, LEGS_S4_RUP2, LEGS_S4_RUP3,
+    LEGS_S4_RUP4, LEGS_S4_RUP5, LEGS_S5_LUP1, LEGS_S5_LUP2, LEGS_S5_LUP3, LEGS_S5_LUP4,
+    LEGS_S5_LUP5, LEGS_S5_RUP1, LEGS_S5_RUP2, LEGS_S5_RUP3, LEGS_S5_RUP4, LEGS_S5_RUP5,
+    TORSO_WEAPONREADY1, TORSO_WEAPONREADY10, TORSO_WEAPONREADY2, TORSO_WEAPONREADY3,
 };
 use crate::codemp::game::bg_local_h::{pml_t, MIN_WALK_NORMAL, OVERCLIP};
-use crate::codemp::game::bg_slidemove::{PM_GroundSlideOkay, PM_SlideMove, PM_StepSlideMove};
 use crate::codemp::game::bg_misc::{
     vectoyaw, BG_AddPredictableEventToPlayerstate, BG_CanUseFPNow, BG_GetItemIndexByTag,
     BG_HasYsalamiri,
@@ -72,40 +70,37 @@ use crate::codemp::game::bg_panimate::{
     BG_SaberInAttack, BG_SaberInSpecialAttack, BG_SpinningSaberAnim, PM_CanRollFromSoulCal,
     PM_SaberInStart,
 };
-use crate::codemp::game::g_main::{Com_Error, Com_Printf};
-use crate::codemp::game::g_utils::{G_AddEvent, G_PlayEffect, G_PlayEffectID};
-use crate::codemp::game::g_active::G_CheapWeaponFire;
+use crate::codemp::game::bg_public::{
+    bgEntity_t, pmove_t, CROUCH_VIEWHEIGHT, DEAD_VIEWHEIGHT, DEFAULT_VIEWHEIGHT, EF2_FLYING,
+    EV_TAUNT, GT_SIEGE, JUMP_VELOCITY, LS_NONE, MASK_PLAYERSOLID, MASK_SOLID, MASK_WATER, MAXTOUCH,
+    MINS_Z, PMF_ALL_TIMES, PMF_BACKWARDS_RUN, PMF_DUCKED, PMF_FIX_MINS, PMF_STUCK_TO_WALL,
+    PMF_TIME_KNOCKBACK, PMF_TIME_WATERJUMP, PM_FLOAT, PM_NORMAL, PM_SPECTATOR, STAT_WEAPONS,
+    STEPSIZE,
+};
 use crate::codemp::game::bg_public::{
     EFFECT_ACID_SPLASH, EFFECT_LAVA_SPLASH, EFFECT_WATER_SPLASH, EV_PLAY_EFFECT_ID,
 };
-use crate::codemp::game::bg_public::{
-    bgEntity_t, pmove_t, CROUCH_VIEWHEIGHT, DEAD_VIEWHEIGHT, DEFAULT_VIEWHEIGHT, EF2_FLYING,
-    EV_TAUNT, GT_SIEGE, JUMP_VELOCITY, LS_NONE,
-    MASK_PLAYERSOLID, MASK_SOLID, MASK_WATER, MAXTOUCH, MINS_Z, PMF_ALL_TIMES, PMF_BACKWARDS_RUN,
-    PMF_DUCKED,
-    PMF_FIX_MINS, PMF_STUCK_TO_WALL, PMF_TIME_KNOCKBACK, PMF_TIME_WATERJUMP, PM_FLOAT, PM_NORMAL,
-    PM_SPECTATOR, STAT_WEAPONS, STEPSIZE,
-};
+use crate::codemp::game::bg_slidemove::{PM_GroundSlideOkay, PM_SlideMove, PM_StepSlideMove};
 use crate::codemp::game::bg_vehicles_h::{
     Vehicle_t, MIN_LANDING_SLOPE, VH_ANIMAL, VH_FIGHTER, VH_SPEEDER, VH_WALKER,
 };
 use crate::codemp::game::bg_weapons_h::{WP_BLASTER, WP_MELEE, WP_NUM_WEAPONS, WP_SABER};
+use crate::codemp::game::g_active::G_CheapWeaponFire;
+use crate::codemp::game::g_main::{Com_Error, Com_Printf};
+use crate::codemp::game::g_utils::{G_AddEvent, G_PlayEffect, G_PlayEffectID};
 use crate::codemp::game::q_math::{
-    vec3_origin, AngleDelta, AngleMod, AngleNormalize180, AngleNormalize360, AngleSubtract,
-    AnglesSubtract, AngleVectors,
-    DotProduct, Q_fabs,
-    VectorAdd, VectorClear, VectorCompare, VectorCopy, VectorLength, VectorLengthSquared, VectorMA,
-    VectorNormalize, VectorScale, VectorSet, VectorSubtract, vectoangles,
+    vec3_origin, vectoangles, AngleDelta, AngleMod, AngleNormalize180, AngleNormalize360,
+    AngleSubtract, AngleVectors, AnglesSubtract, DotProduct, Q_fabs, VectorAdd, VectorClear,
+    VectorCompare, VectorCopy, VectorLength, VectorLengthSquared, VectorMA, VectorNormalize,
+    VectorScale, VectorSet, VectorSubtract,
 };
 use crate::codemp::game::q_shared_h::{
     entityState_t, mdxaBone_t, playerState_t, qboolean, trace_t, usercmd_t, vec3_t, vec_t,
-    ANGLE2SHORT,
-    BUTTON_ALT_ATTACK,
-    BUTTON_ATTACK, BUTTON_GESTURE, ENTITYNUM_NONE, ENTITYNUM_WORLD, FORCE_LEVEL_0, FORCE_LEVEL_1, FORCE_LEVEL_2,
-    FORCE_LEVEL_3, FP_LEVITATION, MAX_CLIENTS, MAX_GENTITIES, NUM_FORCE_POWERS,
-    NUM_FORCE_POWER_LEVELS, PITCH, QFALSE, QTRUE, ROLL, SFL_NO_FLIPS, SFL_NO_ROLLS,
-    SFL_NO_WALL_FLIPS, SFL_NO_WALL_GRAB, SFL_NO_WALL_RUNS, SHORT2ANGLE, SOLID_BMODEL,
-    SS_DUAL, SS_FAST, SS_STAFF, SS_STRONG, SS_TAVION, YAW,
+    ANGLE2SHORT, BUTTON_ALT_ATTACK, BUTTON_ATTACK, BUTTON_GESTURE, ENTITYNUM_NONE, ENTITYNUM_WORLD,
+    FORCE_LEVEL_0, FORCE_LEVEL_1, FORCE_LEVEL_2, FORCE_LEVEL_3, FP_LEVITATION, MAX_CLIENTS,
+    MAX_GENTITIES, NUM_FORCE_POWERS, NUM_FORCE_POWER_LEVELS, PITCH, QFALSE, QTRUE, ROLL,
+    SFL_NO_FLIPS, SFL_NO_ROLLS, SFL_NO_WALL_FLIPS, SFL_NO_WALL_GRAB, SFL_NO_WALL_RUNS, SHORT2ANGLE,
+    SOLID_BMODEL, SS_DUAL, SS_FAST, SS_STAFF, SS_STRONG, SS_TAVION, YAW,
 };
 use crate::codemp::game::surfaceflags_h::{
     CONTENTS_BODY, CONTENTS_LAVA, CONTENTS_SLIME, CONTENTS_SOLID, CONTENTS_WATER, MATERIAL_DIRT,
@@ -115,11 +110,12 @@ use crate::codemp::game::surfaceflags_h::{
 use crate::codemp::game::teams_h::CLASS_VEHICLE;
 // Ground-trace / crash-land slice (bg_pmove.c:3583-4129) extra deps:
 use crate::codemp::game::anims::{
-    BOTH_A7_KICK_B_AIR, BOTH_A7_KICK_F_AIR, BOTH_A7_KICK_L_AIR, BOTH_A7_KICK_R_AIR, BOTH_A7_SOULCAL,
-    BOTH_CHOKE3, BOTH_FORCEJUMP1, BOTH_FORCEJUMPBACK1, BOTH_FORCEJUMPLEFT1, BOTH_FORCEJUMPRIGHT1,
-    BOTH_FORCELAND1, BOTH_FORCELANDBACK1, BOTH_FORCELANDLEFT1, BOTH_FORCELANDRIGHT1, BOTH_GUNSIT1,
-    BOTH_INAIR1, BOTH_JUMP1, BOTH_JUMPBACK1, BOTH_JUMPLEFT1, BOTH_JUMPRIGHT1, BOTH_LAND1,
-    BOTH_LANDBACK1, BOTH_LANDLEFT1, BOTH_LANDRIGHT1, TORSO_WEAPONREADY4,
+    BOTH_A7_KICK_B_AIR, BOTH_A7_KICK_F_AIR, BOTH_A7_KICK_L_AIR, BOTH_A7_KICK_R_AIR,
+    BOTH_A7_SOULCAL, BOTH_CHOKE3, BOTH_FORCEJUMP1, BOTH_FORCEJUMPBACK1, BOTH_FORCEJUMPLEFT1,
+    BOTH_FORCEJUMPRIGHT1, BOTH_FORCELAND1, BOTH_FORCELANDBACK1, BOTH_FORCELANDLEFT1,
+    BOTH_FORCELANDRIGHT1, BOTH_GUNSIT1, BOTH_INAIR1, BOTH_JUMP1, BOTH_JUMPBACK1, BOTH_JUMPLEFT1,
+    BOTH_JUMPRIGHT1, BOTH_LAND1, BOTH_LANDBACK1, BOTH_LANDLEFT1, BOTH_LANDRIGHT1,
+    TORSO_WEAPONREADY4,
 };
 // PM_CheckJump (bg_pmove.c:1766) extra anim deps:
 use crate::codemp::game::anims::{
@@ -141,17 +137,18 @@ use crate::codemp::game::bg_misc::{WeaponReadyAnim, WeaponReadyLegsAnim};
 use crate::codemp::game::bg_panimate::{
     BG_AnimLength, BG_InBackFlip, BG_InDeathAnim, BG_InReboundHold, BG_InReboundJump, BG_InRoll,
     BG_InSpecialJump, BG_SaberInSpecial, PM_AnimLength, PM_ForceLegsAnim, PM_InKnockDown,
-    PM_InOnGroundAnim,
-    PM_InRollComplete, PM_SetAnim, PM_StartTorsoAnim,
+    PM_InOnGroundAnim, PM_InRollComplete, PM_SetAnim, PM_StartTorsoAnim,
 };
 use crate::codemp::game::bg_public::{
-    EV_FALL, EV_FOOTSTEP, EV_JUMP, EV_ROLL, ET_NPC, EV_SABER_ATTACK, GT_DUEL, GT_POWERDUEL, GT_TEAM,
-    HANDEXTEND_KNOCKDOWN, HANDEXTEND_NONE, HANDEXTEND_POSTTHROWN, HANDEXTEND_PRETHROWN, LS_R_TL2BR,
-    PMF_BACKWARDS_JUMP, PMF_JUMP_HELD, PMF_RESPAWNED, PMF_ROLLING, PMF_TIME_LAND, PM_JETPACK,
-    SETANIM_BOTH, SETANIM_FLAG_HOLD, SETANIM_FLAG_NORMAL, SETANIM_FLAG_OVERRIDE,
+    ET_NPC, EV_FALL, EV_FOOTSTEP, EV_JUMP, EV_ROLL, EV_SABER_ATTACK, GT_DUEL, GT_POWERDUEL,
+    GT_TEAM, HANDEXTEND_KNOCKDOWN, HANDEXTEND_NONE, HANDEXTEND_POSTTHROWN, HANDEXTEND_PRETHROWN,
+    LS_R_TL2BR, PMF_BACKWARDS_JUMP, PMF_JUMP_HELD, PMF_RESPAWNED, PMF_ROLLING, PMF_TIME_LAND,
+    PM_JETPACK, SETANIM_BOTH, SETANIM_FLAG_HOLD, SETANIM_FLAG_NORMAL, SETANIM_FLAG_OVERRIDE,
     SETANIM_FLAG_RESTART, SETANIM_LEGS,
 };
-use crate::codemp::game::bg_saber::{BG_ForcePowerDrain, PM_WalkableGroundDistance, PM_irand_timesync};
+use crate::codemp::game::bg_saber::{
+    BG_ForcePowerDrain, PM_WalkableGroundDistance, PM_irand_timesync,
+};
 // vehicle weapon anims (PM_VehicleWeaponAnimate)
 use crate::codemp::game::anims::{
     BOTH_ATTACK3, BOTH_VS_AIR_G, BOTH_VS_ATF_G, BOTH_VS_ATL_G, BOTH_VS_ATL_S, BOTH_VS_ATR_G,
@@ -167,24 +164,22 @@ use crate::codemp::game::g_main::{bg_fighterAltControl, g_entities, g_gametype};
 use crate::codemp::game::surfaceflags_h::SURF_NODAMAGE;
 // PmoveSingle / Pmove keystone (bg_pmove.c:9837 / 10830) extra deps:
 use crate::codemp::game::anims::{
-    BOTH_A2_SPECIAL, BOTH_A3_SPECIAL,
-    BOTH_A2_STABBACK1, BOTH_ATTACK_BACK, BOTH_CROUCHATTACKBACK1, BOTH_FORCELEAP2_T__B_,
-    BOTH_FORCEWALLRUNFLIP_ALT, BOTH_INAIRBACK1, BOTH_INAIRLEFT1, BOTH_INAIRRIGHT1,
-    BOTH_JUMPFLIPSLASHDOWN1, BOTH_JUMPFLIPSTABDOWN, BOTH_MEDITATE, BOTH_MEDITATE_END,
-    BOTH_ROLL_STAB,
-};
-use crate::codemp::game::bg_public::{
-    EF_ALT_FIRING, EF_DISINTEGRATION, EF_FIRING, EF_JETPACK_FLAMING, EF_NODRAW, EF_TALK,
-    EV_WEAPON_CHARGE, HANDEXTEND_TAUNT, HYPERSPACE_TIME, LS_A_BACK, LS_A_BACKSTAB,
-    LS_A_BACK_CR, LS_A_FLIP_SLASH, LS_A_FLIP_STAB, LS_A_JUMP_T__B_, LS_A_LUNGE, LS_DUAL_FB,
-    LS_DUAL_LR, LS_PULL_ATTACK_STAB, LS_PULL_ATTACK_SWING, LS_STABDOWN,
-    LS_STABDOWN_DUAL, LS_STABDOWN_STAFF, LS_STAFF_SOULCAL, PM_DEAD, PM_FREEZE, PM_INTERMISSION, PM_NOCLIP,
-    PM_SPINTERMISSION, STAT_HEALTH, STAT_HOLDABLE_ITEMS, WEAPON_CHARGING_ALT,
-    WEAPON_READY,
+    BOTH_A2_SPECIAL, BOTH_A2_STABBACK1, BOTH_A3_SPECIAL, BOTH_ATTACK_BACK, BOTH_CROUCHATTACKBACK1,
+    BOTH_FORCELEAP2_T__B_, BOTH_FORCEWALLRUNFLIP_ALT, BOTH_INAIRBACK1, BOTH_INAIRLEFT1,
+    BOTH_INAIRRIGHT1, BOTH_JUMPFLIPSLASHDOWN1, BOTH_JUMPFLIPSTABDOWN, BOTH_MEDITATE,
+    BOTH_MEDITATE_END, BOTH_ROLL_STAB,
 };
 use crate::codemp::game::bg_panimate::{
     BG_FullBodyTauntAnim, BG_InGrappleMove, BG_InKataAnim, BG_KickMove, BG_KickingAnim,
     BG_SaberInKata, BG_SaberLockBreakAnim, PM_ContinueLegsAnim, PM_SaberInTransition,
+};
+use crate::codemp::game::bg_public::{
+    EF_ALT_FIRING, EF_DISINTEGRATION, EF_FIRING, EF_JETPACK_FLAMING, EF_NODRAW, EF_TALK,
+    EV_WEAPON_CHARGE, HANDEXTEND_TAUNT, HYPERSPACE_TIME, LS_A_BACK, LS_A_BACKSTAB, LS_A_BACK_CR,
+    LS_A_FLIP_SLASH, LS_A_FLIP_STAB, LS_A_JUMP_T__B_, LS_A_LUNGE, LS_DUAL_FB, LS_DUAL_LR,
+    LS_PULL_ATTACK_STAB, LS_PULL_ATTACK_SWING, LS_STABDOWN, LS_STABDOWN_DUAL, LS_STABDOWN_STAFF,
+    LS_STAFF_SOULCAL, PM_DEAD, PM_FREEZE, PM_INTERMISSION, PM_NOCLIP, PM_SPINTERMISSION,
+    STAT_HEALTH, STAT_HOLDABLE_ITEMS, WEAPON_CHARGING_ALT, WEAPON_READY,
 };
 // PM_CmdForSaberMoves (bg_pmove.c:9232) extra deps:
 use crate::codemp::game::anims::{
@@ -197,11 +192,11 @@ use crate::codemp::game::bg_public::{
 // PM_VehicleViewAngles / PM_VehForcedTurning / PM_VehFaceHyperspacePoint (bg_pmove.c:9402-9655)
 // extra deps:
 use crate::codemp::game::bg_public::{DEFAULT_MINS_2, EF2_HYPERSPACE, HYPERSPACE_TELEPORT_FRAC};
+use crate::codemp::game::bg_saber::PM_GroundDistance;
 use crate::codemp::game::bg_vehicles_h::{MAX_VEHICLE_TURRETS, VH_FLIER};
+use crate::codemp::game::g_weapon::WP_GetVehicleCamPos;
 use crate::codemp::game::q_math::AnglesToAxis;
 use crate::codemp::game::q_math::Distance;
-use crate::codemp::game::g_weapon::WP_GetVehicleCamPos;
-use crate::codemp::game::bg_saber::PM_GroundDistance;
 // PM_WaterEvents (bg_pmove.c:5518) extra deps (the EFFECT_*_SPLASH constants arrive with
 // the not-yet-ported G_PlayEffect calls):
 use crate::codemp::game::bg_public::{
@@ -213,7 +208,6 @@ use crate::codemp::game::bg_public::{
     EFFECT_LANDING_DIRT, EFFECT_LANDING_GRAVEL, EFFECT_LANDING_MUD, EFFECT_LANDING_SAND,
     EFFECT_LANDING_SNOW,
 };
-use crate::codemp::game::q_shared_h::{FP_GRIP, FP_RAGE, FP_SPEED};
 use crate::codemp::game::bg_vehicles_h::{VEH_CRASHING, VEH_FLYING};
 use crate::codemp::game::bg_weapons::weaponData;
 use crate::codemp::game::q_math::Q_irand;
@@ -221,17 +215,18 @@ use crate::codemp::game::q_shared_h::{
     BUTTON_FORCEGRIP, BUTTON_FORCEPOWER, BUTTON_FORCE_DRAIN, BUTTON_FORCE_LIGHTNING, BUTTON_TALK,
     BUTTON_USE, BUTTON_USE_HOLDABLE, BUTTON_WALKING, PS_PMOVEFRAMECOUNTBITS,
 };
+use crate::codemp::game::q_shared_h::{FP_GRIP, FP_RAGE, FP_SPEED};
 use crate::codemp::game::teams_h::{CLASS_RANCOR, CLASS_WAMPA};
 // PM_Footsteps (bg_pmove.c:5027) pull-ins.
 use crate::codemp::game::anims::{
-    BOTH_BUTTON_HOLD, BOTH_BUTTON_RELEASE, BOTH_CROUCH1IDLE, BOTH_CROUCH1WALK, BOTH_CROUCH1WALKBACK,
-    BOTH_STAND4,
+    BOTH_BUTTON_HOLD, BOTH_BUTTON_RELEASE, BOTH_CROUCH1IDLE, BOTH_CROUCH1WALK,
+    BOTH_CROUCH1WALKBACK, BOTH_STAND4,
 };
-use crate::codemp::game::bg_public::{EF2_ALERTED, EF2_USE_ALT_ANIM, EV_FOOTSPLASH, EV_SWIM};
 use crate::codemp::game::anims::{BOTH_STAND1TO2, BOTH_STAND2TO1};
 use crate::codemp::game::bg_panimate::{PM_InSaberAnim, PM_LandingAnim, PM_PainAnim};
-use crate::codemp::ghoul2::g2_h::BONE_ANGLES_POSTMULT;
+use crate::codemp::game::bg_public::{EF2_ALERTED, EF2_USE_ALT_ANIM, EV_FOOTSPLASH, EV_SWIM};
 use crate::codemp::game::q_shared_h::{ERR_DROP, NEGATIVE_Y, NEGATIVE_Z, POSITIVE_X};
+use crate::codemp::ghoul2::g2_h::BONE_ANGLES_POSTMULT;
 // BG_IK_MoveArm (ghoul2 IK arm) deps:
 use crate::codemp::game::bg_panimate::bgHumanoidAnimations;
 use crate::codemp::game::q_shared_h::{
@@ -248,7 +243,9 @@ use crate::codemp::game::bg_public::{
 use crate::codemp::game::bg_saber::PM_SetSaberMove;
 use crate::codemp::game::bg_weapons_h::WP_NONE;
 // PM_RocketLock / PM_DoChargedWeapons (bg_pmove.c:5660/5757).
-use crate::codemp::game::bg_public::{ET_PLAYER, EV_WEAPON_CHARGE_ALT, PW_CLOAKED, WEAPON_CHARGING};
+use crate::codemp::game::bg_public::{
+    ET_PLAYER, EV_WEAPON_CHARGE_ALT, PW_CLOAKED, WEAPON_CHARGING,
+};
 use crate::codemp::game::bg_vehicleLoad::g_vehWeaponInfo;
 use crate::codemp::game::bg_weapons::WP_MuzzlePoint;
 use crate::codemp::game::bg_weapons_h::{
@@ -260,9 +257,9 @@ use core::ptr::{addr_of, addr_of_mut, null_mut};
 // already imported above for earlier slices.)
 use crate::codemp::game::anims::{
     BOTH_A3_TL_BR, BOTH_ATTACK4, BOTH_B1_BL___, BOTH_D3_TL___, BOTH_ENGAGETAUNT,
-    BOTH_FORCE_2HANDEDLIGHTNING_HOLD, BOTH_FORCEGRIP_HOLD, BOTH_FORCELIGHTNING_HOLD, BOTH_FORCEPULL,
-    BOTH_FORCEPUSH, BOTH_GESTURE1, BOTH_KNEES1, BOTH_MELEE1, BOTH_MELEE2, BOTH_SABERPULL,
-    BOTH_STAND6, TORSO_WEAPONIDLE3,
+    BOTH_FORCEGRIP_HOLD, BOTH_FORCELIGHTNING_HOLD, BOTH_FORCEPULL, BOTH_FORCEPUSH,
+    BOTH_FORCE_2HANDEDLIGHTNING_HOLD, BOTH_GESTURE1, BOTH_KNEES1, BOTH_MELEE1, BOTH_MELEE2,
+    BOTH_SABERPULL, BOTH_STAND6, TORSO_WEAPONIDLE3,
 };
 use crate::codemp::game::bg_misc::WeaponAttackAnim;
 use crate::codemp::game::bg_panimate::BG_FlippingAnim;
@@ -270,14 +267,14 @@ use crate::codemp::game::bg_public::{
     EV_ALT_FIRE, EV_FIRE_WEAPON, EV_NOAMMO, HANDEXTEND_CHOKE, HANDEXTEND_DRAGGING,
     HANDEXTEND_DUELCHALLENGE, HANDEXTEND_FORCEPULL, HANDEXTEND_FORCEPUSH, HANDEXTEND_FORCE_HOLD,
     HANDEXTEND_JEDITAUNT, HANDEXTEND_POSTTHROW, HANDEXTEND_PRETHROW, HANDEXTEND_SABERPULL,
-    HANDEXTEND_WEAPONREADY, LS_HILT_BASH, LS_KICK_B, LS_KICK_B_AIR, LS_KICK_F, LS_KICK_F_AIR,
-    LS_KICK_L, LS_KICK_L_AIR, LS_KICK_R, LS_KICK_R_AIR, LS_READY, PERS_TEAM, PMF_USE_ITEM_HELD,
-    IT_HOLDABLE, STAT_HOLDABLE_ITEM, TEAM_SPECTATOR, WEAPON_FIRING,
+    HANDEXTEND_WEAPONREADY, IT_HOLDABLE, LS_HILT_BASH, LS_KICK_B, LS_KICK_B_AIR, LS_KICK_F,
+    LS_KICK_F_AIR, LS_KICK_L, LS_KICK_L_AIR, LS_KICK_R, LS_KICK_R_AIR, LS_READY, PERS_TEAM,
+    PMF_USE_ITEM_HELD, STAT_HOLDABLE_ITEM, TEAM_SPECTATOR, WEAPON_FIRING,
 };
-use crate::codemp::game::bg_saber::{saberMoveData, PM_KickMoveForConditions, PM_WeaponLightsaber};
 use crate::codemp::game::bg_saber::BG_MySaber;
-use crate::codemp::game::q_shared_h::saberInfo_t;
+use crate::codemp::game::bg_saber::{saberMoveData, PM_KickMoveForConditions, PM_WeaponLightsaber};
 use crate::codemp::game::bg_weapons_h::{WP_DET_PACK, WP_STUN_BATON, WP_TRIP_MINE};
+use crate::codemp::game::q_shared_h::saberInfo_t;
 use crate::codemp::game::q_shared_h::{FP_DRAIN, FP_LIGHTNING};
 // PM_ItemUsable (bg_pmove.c:6025) + the holdable-item consumption block (:6844-6881) pull-ins.
 use crate::codemp::game::bg_misc::{bg_itemlist, BG_CycleInven, BG_IsItemSelectable};
@@ -457,7 +454,9 @@ pub static forceJumpHeight: [f32; NUM_FORCE_POWER_LEVELS] = [
 /// `JUMP_VELOCITY` define (bg_public.h), so it tracks that constant exactly.
 pub static forceJumpStrength: [f32; NUM_FORCE_POWER_LEVELS] = [
     JUMP_VELOCITY as f32, //normal jump
-    420.0, 590.0, 840.0,
+    420.0,
+    590.0,
+    840.0,
 ];
 
 // --- NOT YET PORTED: bg_pmove.c lines 56-170 (PM_INLINE/file-scope helpers above
@@ -626,8 +625,7 @@ pub unsafe fn PM_GetSaberStance() -> c_int {
 /// `pm` must point to a valid `pmove_t` with a valid `ps`.
 pub unsafe fn PM_DoSlowFall() -> qboolean {
     let pmv = *addr_of!(pm);
-    if ((*(*pmv).ps).legsAnim == BOTH_WALL_RUN_RIGHT
-        || (*(*pmv).ps).legsAnim == BOTH_WALL_RUN_LEFT)
+    if ((*(*pmv).ps).legsAnim == BOTH_WALL_RUN_RIGHT || (*(*pmv).ps).legsAnim == BOTH_WALL_RUN_LEFT)
         && (*(*pmv).ps).legsTimer > 500
     {
         return QTRUE;
@@ -724,7 +722,12 @@ pub unsafe fn PM_pitch_roll_for_slope(
         tempAngles[YAW as usize] = *(*pVeh).m_vOrientation.add(YAW as usize);
         AngleVectors(&tempAngles, Some(&mut ovf), Some(&mut ovr), None);
     } else {
-        AngleVectors(&(*(*pmv).ps).viewangles, Some(&mut ovf), Some(&mut ovr), None);
+        AngleVectors(
+            &(*(*pmv).ps).viewangles,
+            Some(&mut ovf),
+            Some(&mut ovr),
+            None,
+        );
     }
 
     vectoangles(&slope, &mut new_angles);
@@ -734,7 +737,11 @@ pub unsafe fn PM_pitch_roll_for_slope(
 
     AngleVectors(&new_angles, Some(&mut nvf), None, None);
 
-    r#mod = if DotProduct(&nvf, &ovr) < 0.0 { -1.0 } else { 1.0 };
+    r#mod = if DotProduct(&nvf, &ovr) < 0.0 {
+        -1.0
+    } else {
+        1.0
+    };
 
     dot = DotProduct(&nvf, &ovf);
 
@@ -843,9 +850,7 @@ pub unsafe fn PM_SetVehicleAngles(normal: *mut vec_t) {
     let vinfo = (*pVeh).m_pVehicleInfo;
     vehicleBankingSpeed = ((*vinfo).bankingSpeed * 32.0) * (*addr_of!(pml)).frametime; //0.25f
 
-    if vehicleBankingSpeed <= 0.0
-        || ((*vinfo).pitchLimit == 0.0 && (*vinfo).rollLimit == 0.0)
-    {
+    if vehicleBankingSpeed <= 0.0 || ((*vinfo).pitchLimit == 0.0 && (*vinfo).rollLimit == 0.0) {
         // don't bother, this vehicle doesn't bank
         return;
     }
@@ -872,7 +877,8 @@ pub unsafe fn PM_SetVehicleAngles(normal: *mut vec_t) {
     } else if !normal.is_null() {
         // have a valid surface below me
         PM_pitch_roll_for_slope(pEnt, normal, vAngles.as_mut_ptr());
-        if ((*addr_of!(pml)).groundTrace.contents & (CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA))
+        if ((*addr_of!(pml)).groundTrace.contents
+            & (CONTENTS_WATER | CONTENTS_SLIME | CONTENTS_LAVA))
             != 0
         {
             // on water
@@ -913,7 +919,10 @@ pub unsafe fn PM_SetVehicleAngles(normal: *mut vec_t) {
                 speed = 60.0;
             }
 
-            VectorCopy(&*((*pVeh).m_vOrientation as *const vec3_t), &mut tempVAngles);
+            VectorCopy(
+                &*((*pVeh).m_vOrientation as *const vec3_t),
+                &mut tempVAngles,
+            );
             tempVAngles[ROLL as usize] = 0.0;
             AngleVectors(&tempVAngles, None, Some(&mut rt), None);
             dp = DotProduct(&velocity, &rt);
@@ -981,7 +990,10 @@ pub unsafe fn PM_SetVehicleAngles(normal: *mut vec_t) {
 ///
 /// # Safety
 /// Trivially safe (empty body); the raw pointers are unused.
-pub unsafe fn BG_ExternThisSoICanRecompileInDebug(_pVeh: *mut Vehicle_t, _riderPS: *mut playerState_t) {
+pub unsafe fn BG_ExternThisSoICanRecompileInDebug(
+    _pVeh: *mut Vehicle_t,
+    _riderPS: *mut playerState_t,
+) {
     /*
     float pitchSubtract, pitchDelta, yawDelta;
     //Com_Printf( S_COLOR_RED"PITCH: %4.2f, YAW: %4.2f, ROLL: %4.2f\n", riderPS->viewangles[0],riderPS->viewangles[1],riderPS->viewangles[2]);
@@ -1454,7 +1466,11 @@ pub unsafe fn PM_Friction() {
         if (*(*pmv).ps).pm_flags & PMF_TIME_KNOCKBACK == 0
         /*&& !(pm->ps->pm_flags & PMF_TIME_NOFRICTION)*/
         {
-            control = if speed < pm_stopspeed { pm_stopspeed } else { speed };
+            control = if speed < pm_stopspeed {
+                pm_stopspeed
+            } else {
+                speed
+            };
             drop += control * friction * (*addr_of!(pml)).frametime;
             /*
             if ( Flying == FLY_HOVER )
@@ -1486,7 +1502,11 @@ pub unsafe fn PM_Friction() {
             {
                 // if getting knocked back, no friction
                 if (*(*pmv).ps).pm_flags & PMF_TIME_KNOCKBACK == 0 {
-                    control = if speed < pm_stopspeed { pm_stopspeed } else { speed };
+                    control = if speed < pm_stopspeed {
+                        pm_stopspeed
+                    } else {
+                        speed
+                    };
                     drop += control * pm_friction * (*addr_of!(pml)).frametime;
                 }
             }
@@ -1726,7 +1746,13 @@ pub unsafe fn PM_ForceJumpingUp() -> qboolean {
         return QFALSE;
     }
 
-    if BG_CanUseFPNow((*pmv).gametype, (*pmv).ps, (*pmv).cmd.serverTime, FP_LEVITATION) == QFALSE {
+    if BG_CanUseFPNow(
+        (*pmv).gametype,
+        (*pmv).ps,
+        (*pmv).cmd.serverTime,
+        FP_LEVITATION,
+    ) == QFALSE
+    {
         return QFALSE;
     }
 
@@ -2027,8 +2053,9 @@ pub unsafe fn PM_AdjustAngleForWallRunUp(
             }
         }
 
-        if //ucmd->upmove <= 0 &&
-            (*ps).legsTimer > 0
+        if
+        //ucmd->upmove <= 0 &&
+        (*ps).legsTimer > 0
             && (*ucmd).forwardmove > 0
             && trace.fraction < 1.0
             && (trace.plane.normal[2] >= 0.0 && trace.plane.normal[2] <= 0.4/*MAX_WALL_RUN_Z_NORMAL*/)
@@ -2074,7 +2101,11 @@ pub unsafe fn PM_AdjustAngleForWallRunUp(
                 {
                     if doMove == QTRUE {
                         // pull me toward the wall
-                        VectorScale(&trace.plane.normal, -dist * trace.fraction, &mut (*ps).velocity);
+                        VectorScale(
+                            &trace.plane.normal,
+                            -dist * trace.fraction,
+                            &mut (*ps).velocity,
+                        );
                         // push me up
                         if (*ps).legsTimer > 200 {
                             // not at end of anim yet
@@ -2232,10 +2263,12 @@ pub unsafe fn PM_AdjustAngleForWallJump(
             (*ps).clientNum,
             MASK_PLAYERSOLID,
         );
-        if //ucmd->upmove <= 0 &&
-            (*ps).legsTimer > 100
+        if
+        //ucmd->upmove <= 0 &&
+        (*ps).legsTimer > 100
             && trace.fraction < 1.0
-            && (trace.plane.normal[2] as f64).abs() <= 0.2f32 as f64/*MAX_WALL_GRAB_SLOPE*/
+            && (trace.plane.normal[2] as f64).abs() <= 0.2f32 as f64
+        /*MAX_WALL_GRAB_SLOPE*/
         {
             // still a vertical wall there
             // FIXME: don't pull around 90 turns
@@ -2329,8 +2362,7 @@ pub unsafe fn PM_SetForceJumpZStart(value: f32) {
     let pmv = *addr_of!(pm);
     (*(*pmv).ps).fd.forceJumpZStart = value;
     if (*(*pmv).ps).fd.forceJumpZStart == 0.0 {
-        (*(*pmv).ps).fd.forceJumpZStart =
-            ((*(*pmv).ps).fd.forceJumpZStart as f64 - 0.1) as f32;
+        (*(*pmv).ps).fd.forceJumpZStart = ((*(*pmv).ps).fd.forceJumpZStart as f64 - 0.1) as f32;
     }
 }
 
@@ -2553,7 +2585,12 @@ pub unsafe fn PM_CheckJump() -> qboolean {
                                 let dotR: f32;
                                 let dotF: f32;
 
-                                VectorSet(&mut facingAngles, 0.0, (*(*pmv).ps).viewangles[YAW], 0.0);
+                                VectorSet(
+                                    &mut facingAngles,
+                                    0.0,
+                                    (*(*pmv).ps).viewangles[YAW],
+                                    0.0,
+                                );
 
                                 AngleVectors(
                                     &facingAngles,
@@ -2623,9 +2660,9 @@ pub unsafe fn PM_CheckJump() -> qboolean {
                     }
 
                     //need to scale this down, start with height velocity (based on max force jump height) and scale down to regular jump vel
-                    (*(*pmv).ps).velocity[2] =
-                        (forceJumpHeight[lvl] - curHeight) / forceJumpHeight[lvl]
-                            * forceJumpStrength[lvl]; //JUMP_VELOCITY;
+                    (*(*pmv).ps).velocity[2] = (forceJumpHeight[lvl] - curHeight)
+                        / forceJumpHeight[lvl]
+                        * forceJumpStrength[lvl]; //JUMP_VELOCITY;
                     (*(*pmv).ps).velocity[2] /= 10.0;
                     (*(*pmv).ps).velocity[2] += JUMP_VELOCITY as f32;
                     (*(*pmv).ps).pm_flags |= PMF_JUMP_HELD;
@@ -2704,8 +2741,12 @@ pub unsafe fn PM_CheckJump() -> qboolean {
         && ((*(*pmv).ps).weapon == WP_SABER || (*(*pmv).ps).weapon == WP_MELEE)
         && PM_IsRocketTrooper() == QFALSE
         && BG_HasYsalamiri((*pmv).gametype, (*pmv).ps) == QFALSE
-        && BG_CanUseFPNow((*pmv).gametype, (*pmv).ps, (*pmv).cmd.serverTime, FP_LEVITATION)
-            != QFALSE
+        && BG_CanUseFPNow(
+            (*pmv).gametype,
+            (*pmv).ps,
+            (*pmv).cmd.serverTime,
+            FP_LEVITATION,
+        ) != QFALSE
     {
         let mut allowWallRuns: qboolean = QTRUE;
         let mut allowWallFlips: qboolean = QTRUE;
@@ -2849,8 +2890,7 @@ pub unsafe fn PM_CheckJump() -> qboolean {
                     if (anim != BOTH_WALL_RUN_LEFT
                         && anim != BOTH_WALL_RUN_RIGHT
                         && anim != BOTH_FORCEWALLRUNFLIP_START)
-                        || (wallNormal[2] >= 0.0 && wallNormal[2] <= 0.4
-                        /*MAX_WALL_RUN_Z_NORMAL*/)
+                        || (wallNormal[2] >= 0.0 && wallNormal[2] <= 0.4/*MAX_WALL_RUN_Z_NORMAL*/)
                     {
                         //wall-runs can only run on perfectly flat walls, sorry.
                         let mut parts;
@@ -3115,89 +3155,95 @@ pub unsafe fn PM_CheckJump() -> qboolean {
             {
                 //run up wall, flip backwards
                 if allowWallRuns != 0 {
-                //FIXME: have to be moving... make sure it's opposite the wall... or at least forward?
-                let mut wallWalkAnim = BOTH_WALL_FLIP_BACK1;
-                let mut parts = SETANIM_LEGS;
-                let contents: c_int = MASK_SOLID; //MASK_PLAYERSOLID;//CONTENTS_SOLID;
-                                                  //qboolean kick = qtrue;
-                if (*(*pmv).ps).fd.forcePowerLevel[FP_LEVITATION as usize] > FORCE_LEVEL_2 {
-                    wallWalkAnim = BOTH_FORCEWALLRUNFLIP_START;
-                    parts = SETANIM_BOTH;
-                //kick = qfalse;
-                } else if (*(*pmv).ps).weaponTime == 0 {
-                    parts = SETANIM_BOTH;
-                }
-                //if ( PM_HasAnimation( pm->gent, wallWalkAnim ) )
-                if true
-                //sure, we have it! Because I SAID SO.
-                {
-                    let mut fwd: vec3_t = [0.0; 3];
-                    let mut traceto: vec3_t = [0.0; 3];
-                    let mut mins: vec3_t = [0.0; 3];
-                    let mut maxs: vec3_t = [0.0; 3];
-                    let mut fwdAngles: vec3_t = [0.0; 3];
-                    let mut trace: trace_t = core::mem::zeroed();
-                    let mut idealNormal: vec3_t = [0.0; 3];
-                    let traceEnt: *mut bgEntity_t;
-
-                    VectorSet(&mut mins, (*pmv).mins[0], (*pmv).mins[1], 0.0);
-                    VectorSet(&mut maxs, (*pmv).maxs[0], (*pmv).maxs[1], 24.0);
-                    VectorSet(&mut fwdAngles, 0.0, (*(*pmv).ps).viewangles[YAW], 0.0);
-
-                    AngleVectors(&fwdAngles, Some(&mut fwd), None, None);
-                    VectorMA(&(*(*pmv).ps).origin, 32.0, &fwd, &mut traceto);
-
-                    ((*pmv).trace.unwrap())(
-                        &mut trace,
-                        (*(*pmv).ps).origin.as_ptr(),
-                        mins.as_ptr(),
-                        maxs.as_ptr(),
-                        traceto.as_ptr(),
-                        (*(*pmv).ps).clientNum,
-                        contents,
-                    ); //FIXME: clip brushes too?
-                    VectorSubtract(&(*(*pmv).ps).origin, &traceto, &mut idealNormal);
-                    VectorNormalize(&mut idealNormal);
-                    traceEnt = PM_BGEntForNum(trace.entityNum as c_int);
-
-                    if trace.fraction < 1.0
-                        && (((trace.entityNum as c_int) < ENTITYNUM_WORLD
-                            && !traceEnt.is_null()
-                            && (*traceEnt).s.solid != SOLID_BMODEL)
-                            || DotProduct(&trace.plane.normal, &idealNormal) > 0.7)
-                    {
-                        //there is a wall there
-                        (*(*pmv).ps).velocity[1] = 0.0;
-                        (*(*pmv).ps).velocity[0] = 0.0;
-                        if wallWalkAnim == BOTH_FORCEWALLRUNFLIP_START {
-                            (*(*pmv).ps).velocity[2] = forceJumpStrength[FORCE_LEVEL_3 as usize] / 2.0;
-                        } else {
-                            let v_snap = (*(*pmv).ps).velocity;
-                            VectorMA(&v_snap, -150.0, &fwd, &mut (*(*pmv).ps).velocity);
-                            (*(*pmv).ps).velocity[2] += 150.0;
-                        }
-                        //animate me
-                        PM_SetAnim(parts, wallWalkAnim, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD, 0);
-                        //						pm->ps->pm_flags |= PMF_JUMPING|PMF_SLOW_MO_FALL;
-                        //again with the flags!
-                        //G_SoundOnEnt( pm->gent, CHAN_BODY, "sound/weapons/force/jump.wav" );
-                        //yucky!
-                        PM_SetForceJumpZStart((*(*pmv).ps).origin[2]); //so we don't take damage if we land at same height
-                        (*pmv).cmd.upmove = 0;
-                        (*(*pmv).ps).fd.forceJumpSound = 1;
-                        BG_ForcePowerDrain((*pmv).ps, FP_LEVITATION, 5);
-
-                        //kick if jumping off an ent
-                        /*
-                        if ( kick && traceEnt && (traceEnt->s.eType == ET_PLAYER || traceEnt->s.eType == ET_NPC) )
-                        { //kick that thang!
-                            pm->ps->forceKickFlip = traceEnt->s.number+1;
-                        }
-                        */
-                        (*pmv).cmd.rightmove = 0;
-                        (*pmv).cmd.forwardmove = 0;
+                    //FIXME: have to be moving... make sure it's opposite the wall... or at least forward?
+                    let mut wallWalkAnim = BOTH_WALL_FLIP_BACK1;
+                    let mut parts = SETANIM_LEGS;
+                    let contents: c_int = MASK_SOLID; //MASK_PLAYERSOLID;//CONTENTS_SOLID;
+                                                      //qboolean kick = qtrue;
+                    if (*(*pmv).ps).fd.forcePowerLevel[FP_LEVITATION as usize] > FORCE_LEVEL_2 {
+                        wallWalkAnim = BOTH_FORCEWALLRUNFLIP_START;
+                        parts = SETANIM_BOTH;
+                    //kick = qfalse;
+                    } else if (*(*pmv).ps).weaponTime == 0 {
+                        parts = SETANIM_BOTH;
                     }
-                }
+                    //if ( PM_HasAnimation( pm->gent, wallWalkAnim ) )
+                    if true
+                    //sure, we have it! Because I SAID SO.
+                    {
+                        let mut fwd: vec3_t = [0.0; 3];
+                        let mut traceto: vec3_t = [0.0; 3];
+                        let mut mins: vec3_t = [0.0; 3];
+                        let mut maxs: vec3_t = [0.0; 3];
+                        let mut fwdAngles: vec3_t = [0.0; 3];
+                        let mut trace: trace_t = core::mem::zeroed();
+                        let mut idealNormal: vec3_t = [0.0; 3];
+                        let traceEnt: *mut bgEntity_t;
+
+                        VectorSet(&mut mins, (*pmv).mins[0], (*pmv).mins[1], 0.0);
+                        VectorSet(&mut maxs, (*pmv).maxs[0], (*pmv).maxs[1], 24.0);
+                        VectorSet(&mut fwdAngles, 0.0, (*(*pmv).ps).viewangles[YAW], 0.0);
+
+                        AngleVectors(&fwdAngles, Some(&mut fwd), None, None);
+                        VectorMA(&(*(*pmv).ps).origin, 32.0, &fwd, &mut traceto);
+
+                        ((*pmv).trace.unwrap())(
+                            &mut trace,
+                            (*(*pmv).ps).origin.as_ptr(),
+                            mins.as_ptr(),
+                            maxs.as_ptr(),
+                            traceto.as_ptr(),
+                            (*(*pmv).ps).clientNum,
+                            contents,
+                        ); //FIXME: clip brushes too?
+                        VectorSubtract(&(*(*pmv).ps).origin, &traceto, &mut idealNormal);
+                        VectorNormalize(&mut idealNormal);
+                        traceEnt = PM_BGEntForNum(trace.entityNum as c_int);
+
+                        if trace.fraction < 1.0
+                            && (((trace.entityNum as c_int) < ENTITYNUM_WORLD
+                                && !traceEnt.is_null()
+                                && (*traceEnt).s.solid != SOLID_BMODEL)
+                                || DotProduct(&trace.plane.normal, &idealNormal) > 0.7)
+                        {
+                            //there is a wall there
+                            (*(*pmv).ps).velocity[1] = 0.0;
+                            (*(*pmv).ps).velocity[0] = 0.0;
+                            if wallWalkAnim == BOTH_FORCEWALLRUNFLIP_START {
+                                (*(*pmv).ps).velocity[2] =
+                                    forceJumpStrength[FORCE_LEVEL_3 as usize] / 2.0;
+                            } else {
+                                let v_snap = (*(*pmv).ps).velocity;
+                                VectorMA(&v_snap, -150.0, &fwd, &mut (*(*pmv).ps).velocity);
+                                (*(*pmv).ps).velocity[2] += 150.0;
+                            }
+                            //animate me
+                            PM_SetAnim(
+                                parts,
+                                wallWalkAnim,
+                                SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD,
+                                0,
+                            );
+                            //						pm->ps->pm_flags |= PMF_JUMPING|PMF_SLOW_MO_FALL;
+                            //again with the flags!
+                            //G_SoundOnEnt( pm->gent, CHAN_BODY, "sound/weapons/force/jump.wav" );
+                            //yucky!
+                            PM_SetForceJumpZStart((*(*pmv).ps).origin[2]); //so we don't take damage if we land at same height
+                            (*pmv).cmd.upmove = 0;
+                            (*(*pmv).ps).fd.forceJumpSound = 1;
+                            BG_ForcePowerDrain((*pmv).ps, FP_LEVITATION, 5);
+
+                            //kick if jumping off an ent
+                            /*
+                            if ( kick && traceEnt && (traceEnt->s.eType == ET_PLAYER || traceEnt->s.eType == ET_NPC) )
+                            { //kick that thang!
+                                pm->ps->forceKickFlip = traceEnt->s.number+1;
+                            }
+                            */
+                            (*pmv).cmd.rightmove = 0;
+                            (*pmv).cmd.forwardmove = 0;
+                        }
+                    }
                 }
             } else if (BG_InSpecialJump(legsAnim) == QFALSE//not in a special jump anim
                     ||BG_InReboundJump(legsAnim) != QFALSE//we're already in a rebound
@@ -3216,76 +3262,76 @@ pub unsafe fn PM_CheckJump() -> qboolean {
             {
                 //see if we're pushing at a wall and jump off it if so
                 if allowWallGrabs != 0 {
-                //FIXME: make sure we have enough force power
-                //FIXME: check  to see if we can go any higher
-                //FIXME: limit to a certain number of these in a row?
-                //FIXME: maybe don't require a ucmd direction, just check all 4?
-                //FIXME: should stick to the wall for a second, then push off...
-                let mut checkDir: vec3_t = [0.0; 3];
-                let mut traceto: vec3_t = [0.0; 3];
-                let mut mins: vec3_t = [0.0; 3];
-                let mut maxs: vec3_t = [0.0; 3];
-                let mut fwdAngles: vec3_t = [0.0; 3];
-                let mut trace: trace_t = core::mem::zeroed();
-                let mut idealNormal: vec3_t = [0.0; 3];
-                let mut anim: c_int = -1;
+                    //FIXME: make sure we have enough force power
+                    //FIXME: check  to see if we can go any higher
+                    //FIXME: limit to a certain number of these in a row?
+                    //FIXME: maybe don't require a ucmd direction, just check all 4?
+                    //FIXME: should stick to the wall for a second, then push off...
+                    let mut checkDir: vec3_t = [0.0; 3];
+                    let mut traceto: vec3_t = [0.0; 3];
+                    let mut mins: vec3_t = [0.0; 3];
+                    let mut maxs: vec3_t = [0.0; 3];
+                    let mut fwdAngles: vec3_t = [0.0; 3];
+                    let mut trace: trace_t = core::mem::zeroed();
+                    let mut idealNormal: vec3_t = [0.0; 3];
+                    let mut anim: c_int = -1;
 
-                VectorSet(&mut mins, (*pmv).mins[0], (*pmv).mins[1], 0.0);
-                VectorSet(&mut maxs, (*pmv).maxs[0], (*pmv).maxs[1], 24.0);
-                VectorSet(&mut fwdAngles, 0.0, (*(*pmv).ps).viewangles[YAW], 0.0);
+                    VectorSet(&mut mins, (*pmv).mins[0], (*pmv).mins[1], 0.0);
+                    VectorSet(&mut maxs, (*pmv).maxs[0], (*pmv).maxs[1], 24.0);
+                    VectorSet(&mut fwdAngles, 0.0, (*(*pmv).ps).viewangles[YAW], 0.0);
 
-                if (*pmv).cmd.rightmove != 0 {
-                    if (*pmv).cmd.rightmove > 0 {
-                        anim = BOTH_FORCEWALLREBOUND_RIGHT;
-                        AngleVectors(&fwdAngles, None, Some(&mut checkDir), None);
-                    } else if (*pmv).cmd.rightmove < 0 {
-                        anim = BOTH_FORCEWALLREBOUND_LEFT;
-                        AngleVectors(&fwdAngles, None, Some(&mut checkDir), None);
+                    if (*pmv).cmd.rightmove != 0 {
+                        if (*pmv).cmd.rightmove > 0 {
+                            anim = BOTH_FORCEWALLREBOUND_RIGHT;
+                            AngleVectors(&fwdAngles, None, Some(&mut checkDir), None);
+                        } else if (*pmv).cmd.rightmove < 0 {
+                            anim = BOTH_FORCEWALLREBOUND_LEFT;
+                            AngleVectors(&fwdAngles, None, Some(&mut checkDir), None);
+                            let c_snap = checkDir;
+                            VectorScale(&c_snap, -1.0, &mut checkDir);
+                        }
+                    } else if (*pmv).cmd.forwardmove > 0 {
+                        anim = BOTH_FORCEWALLREBOUND_FORWARD;
+                        AngleVectors(&fwdAngles, Some(&mut checkDir), None, None);
+                    } else if (*pmv).cmd.forwardmove < 0 {
+                        anim = BOTH_FORCEWALLREBOUND_BACK;
+                        AngleVectors(&fwdAngles, Some(&mut checkDir), None, None);
                         let c_snap = checkDir;
                         VectorScale(&c_snap, -1.0, &mut checkDir);
                     }
-                } else if (*pmv).cmd.forwardmove > 0 {
-                    anim = BOTH_FORCEWALLREBOUND_FORWARD;
-                    AngleVectors(&fwdAngles, Some(&mut checkDir), None, None);
-                } else if (*pmv).cmd.forwardmove < 0 {
-                    anim = BOTH_FORCEWALLREBOUND_BACK;
-                    AngleVectors(&fwdAngles, Some(&mut checkDir), None, None);
-                    let c_snap = checkDir;
-                    VectorScale(&c_snap, -1.0, &mut checkDir);
-                }
-                if anim != -1 {
-                    //trace in the dir we're pushing in and see if there's a vertical wall there
-                    let traceEnt: *mut bgEntity_t;
+                    if anim != -1 {
+                        //trace in the dir we're pushing in and see if there's a vertical wall there
+                        let traceEnt: *mut bgEntity_t;
 
-                    VectorMA(&(*(*pmv).ps).origin, 8.0, &checkDir, &mut traceto);
-                    ((*pmv).trace.unwrap())(
-                        &mut trace,
-                        (*(*pmv).ps).origin.as_ptr(),
-                        mins.as_ptr(),
-                        maxs.as_ptr(),
-                        traceto.as_ptr(),
-                        (*(*pmv).ps).clientNum,
-                        CONTENTS_SOLID,
-                    ); //FIXME: clip brushes too?
-                    VectorSubtract(&(*(*pmv).ps).origin, &traceto, &mut idealNormal);
-                    VectorNormalize(&mut idealNormal);
-                    traceEnt = PM_BGEntForNum(trace.entityNum as c_int);
-                    if trace.fraction < 1.0
+                        VectorMA(&(*(*pmv).ps).origin, 8.0, &checkDir, &mut traceto);
+                        ((*pmv).trace.unwrap())(
+                            &mut trace,
+                            (*(*pmv).ps).origin.as_ptr(),
+                            mins.as_ptr(),
+                            maxs.as_ptr(),
+                            traceto.as_ptr(),
+                            (*(*pmv).ps).clientNum,
+                            CONTENTS_SOLID,
+                        ); //FIXME: clip brushes too?
+                        VectorSubtract(&(*(*pmv).ps).origin, &traceto, &mut idealNormal);
+                        VectorNormalize(&mut idealNormal);
+                        traceEnt = PM_BGEntForNum(trace.entityNum as c_int);
+                        if trace.fraction < 1.0
                         && trace.plane.normal[2].abs() <= 0.2/*MAX_WALL_GRAB_SLOPE*/
                         && (((trace.entityNum as c_int) < ENTITYNUM_WORLD
                             && !traceEnt.is_null()
                             && (*traceEnt).s.solid != SOLID_BMODEL)
                             || DotProduct(&trace.plane.normal, &idealNormal) > 0.7)
-                    {
-                        //there is a wall there
-                        let dot = DotProduct(&(*(*pmv).ps).velocity, &trace.plane.normal);
-                        if dot < 1.0 {
-                            //can't be heading *away* from the wall!
-                            //grab it!
-                            PM_GrabWallForJump(anim);
+                        {
+                            //there is a wall there
+                            let dot = DotProduct(&(*(*pmv).ps).velocity, &trace.plane.normal);
+                            if dot < 1.0 {
+                                //can't be heading *away* from the wall!
+                                //grab it!
+                                PM_GrabWallForJump(anim);
+                            }
                         }
                     }
-                }
                 }
             } else {
                 //FIXME: if in a butterfly, kick people away?
@@ -3627,12 +3673,12 @@ pub unsafe fn PM_FlyVehicleMove() {
 
         // If The UCmds Were Set, But Never Converted Into A MoveDir, Then Make The WishDir From UCmds
         //--------------------------------------------------------------------------------------------
-        if (fmove != 0.0 || smove != 0.0)
-            && VectorCompare(&(*(*pmv).ps).moveDir, &vec3_origin) != 0
+        if (fmove != 0.0 || smove != 0.0) && VectorCompare(&(*(*pmv).ps).moveDir, &vec3_origin) != 0
         {
             //gi.Printf("Generating MoveDir\n");
             for i in 0..3 {
-                wishvel[i] = (*addr_of!(pml)).forward[i] * fmove + (*addr_of!(pml)).right[i] * smove;
+                wishvel[i] =
+                    (*addr_of!(pml)).forward[i] * fmove + (*addr_of!(pml)).right[i] * smove;
             }
 
             VectorCopy(&wishvel, &mut wishdir);
@@ -4175,7 +4221,11 @@ pub unsafe fn PM_NoclipMove() {
 
         // C: `pm_friction*1.5` promotes through f64 (the 1.5 double literal).
         friction = (pm_friction as f64 * 1.5) as f32; // extra friction
-        control = if speed < pm_stopspeed { pm_stopspeed } else { speed };
+        control = if speed < pm_stopspeed {
+            pm_stopspeed
+        } else {
+            speed
+        };
         drop += control * friction * (*addr_of!(pml)).frametime;
 
         // scale the velocity
@@ -4286,7 +4336,12 @@ pub unsafe fn PM_TryRoll() -> c_int {
     if ((*(*pmv).ps).weapon != WP_SABER && (*(*pmv).ps).weapon != WP_MELEE)
         || PM_IsRocketTrooper() != 0
         || BG_HasYsalamiri((*pmv).gametype, (*pmv).ps) != 0
-        || BG_CanUseFPNow((*pmv).gametype, (*pmv).ps, (*pmv).cmd.serverTime, FP_LEVITATION) == 0
+        || BG_CanUseFPNow(
+            (*pmv).gametype,
+            (*pmv).ps,
+            (*pmv).cmd.serverTime,
+            FP_LEVITATION,
+        ) == 0
     {
         //Not using saber, or can't use jump
         return 0;
@@ -4804,8 +4859,7 @@ pub unsafe fn PM_GroundTraceMissed() {
         //PM_SetAnim(SETANIM_LEGS,BOTH_FORCEJUMP1,SETANIM_FLAG_OVERRIDE, 100);
     }
     //If the anim is choke3, act like we just went into the air because we aren't in a float
-    else if (*(*pmv).ps).groundEntityNum != ENTITYNUM_NONE
-        || (*(*pmv).ps).legsAnim == BOTH_CHOKE3
+    else if (*(*pmv).ps).groundEntityNum != ENTITYNUM_NONE || (*(*pmv).ps).legsAnim == BOTH_CHOKE3
     {
         // we just transitioned into freefall
         if (*pmv).debugLevel != 0 {
@@ -5004,7 +5058,8 @@ pub unsafe fn PM_GroundTrace() {
             && !(*addr_of!(pm_entSelf)).is_null()
         {
             //check if we landed on a vehicle
-            let trEnt: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(trace.entityNum as usize);
+            let trEnt: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add(trace.entityNum as usize);
             if (*trEnt).inuse != QFALSE
                 && !(*trEnt).client.is_null()
                 && (*trEnt).s.eType == ET_NPC
@@ -5207,7 +5262,8 @@ pub unsafe fn PM_CheckFixMins() {
                     } else
                     //crap, no room to expand, so just crouch us
                     {
-                        if (*(*pmv).ps).legsAnim != BOTH_JUMPATTACK6 || (*(*pmv).ps).legsTimer <= 200
+                        if (*(*pmv).ps).legsAnim != BOTH_JUMPATTACK6
+                            || (*(*pmv).ps).legsTimer <= 200
                         {
                             //at the end of the anim, and we can't leave ourselves like this
                             //so drop the maxs, put the mins back and move us up
@@ -5290,8 +5346,9 @@ pub unsafe fn PM_CheckDuck() {
                 VectorClear(&mut (*pmv).maxs);
                 // #ifdef QAGAME
                 {
-                    let me: *mut gentity_t =
-                        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*pmv).ps).clientNum as usize);
+                    let me: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities)
+                        .cast::<gentity_t>())
+                    .add((*(*pmv).ps).clientNum as usize);
                     if (*me).inuse != QFALSE && !(*me).client.is_null() {
                         //yeah, this is a really terrible hack.
                         (*(*me).client).solidHack =
@@ -5777,9 +5834,21 @@ pub unsafe fn PM_AdjustStandAnimForSlope() -> qboolean {
         | LEGS_S1_RUP1 | LEGS_S1_RUP2 | LEGS_S1_RUP3 | LEGS_S1_RUP4 | LEGS_S1_RUP5 => {
             destAnim = LEGS_S1_LUP1 + (destAnim - LEGS_LEFTUP1);
         }
-        BOTH_STAND2 | BOTH_SABERFAST_STANCE | BOTH_SABERSLOW_STANCE | BOTH_CROUCH1IDLE
-        | BOTH_CROUCH1 | LEGS_LEFTUP1 | LEGS_LEFTUP2 | LEGS_LEFTUP3 | LEGS_LEFTUP4 | LEGS_LEFTUP5
-        | LEGS_RIGHTUP1 | LEGS_RIGHTUP2 | LEGS_RIGHTUP3 | LEGS_RIGHTUP4 | LEGS_RIGHTUP5 => {
+        BOTH_STAND2
+        | BOTH_SABERFAST_STANCE
+        | BOTH_SABERSLOW_STANCE
+        | BOTH_CROUCH1IDLE
+        | BOTH_CROUCH1
+        | LEGS_LEFTUP1
+        | LEGS_LEFTUP2
+        | LEGS_LEFTUP3
+        | LEGS_LEFTUP4
+        | LEGS_LEFTUP5
+        | LEGS_RIGHTUP1
+        | LEGS_RIGHTUP2
+        | LEGS_RIGHTUP3
+        | LEGS_RIGHTUP4
+        | LEGS_RIGHTUP5 => {
             //fine
         }
         BOTH_STAND3 | LEGS_S3_LUP1 | LEGS_S3_LUP2 | LEGS_S3_LUP3 | LEGS_S3_LUP4 | LEGS_S3_LUP5
@@ -6020,7 +6089,8 @@ pub unsafe fn PM_Footsteps() {
     let mut footstep: qboolean;
     let mut setAnimFlags: c_int = 0;
 
-    if (PM_InSaberAnim((*(*pmv).ps).legsAnim) != 0 && BG_SpinningSaberAnim((*(*pmv).ps).legsAnim) == 0)
+    if (PM_InSaberAnim((*(*pmv).ps).legsAnim) != 0
+        && BG_SpinningSaberAnim((*(*pmv).ps).legsAnim) == 0)
         || (*(*pmv).ps).legsAnim == BOTH_STAND1
         || (*(*pmv).ps).legsAnim == BOTH_STAND1TO2
         || (*(*pmv).ps).legsAnim == BOTH_STAND2TO1
@@ -6113,7 +6183,9 @@ pub unsafe fn PM_Footsteps() {
                     } else {
                         if (*(*pmv).ps).weapon != WP_SABER || PM_AdjustStandAnimForSlope() == 0 {
                             if (*(*pmv).ps).weapon == WP_SABER {
-                                PM_ContinueLegsAnim(PM_LegsSlopeBackTransition(PM_GetSaberStance()));
+                                PM_ContinueLegsAnim(
+                                    PM_LegsSlopeBackTransition(PM_GetSaberStance()),
+                                );
                             } else {
                                 PM_ContinueLegsAnim(PM_LegsSlopeBackTransition(
                                     WeaponReadyLegsAnim[(*(*pmv).ps).weapon as usize],
@@ -6858,7 +6930,12 @@ pub unsafe fn BG_VehTraceFromCamPos(
     VectorCopy(&*end, &mut *newEnd);
     VectorSubtract(&*end, &camPos, &mut viewDir2End);
     VectorNormalize(&mut viewDir2End);
-    VectorMA(&camPos, MAX_XHAIR_DIST_ACCURACY, &viewDir2End, &mut extraEnd);
+    VectorMA(
+        &camPos,
+        MAX_XHAIR_DIST_ACCURACY,
+        &viewDir2End,
+        &mut extraEnd,
+    );
 
     *camTrace = trap::Trace(
         &camPos,
@@ -6873,7 +6950,8 @@ pub unsafe fn BG_VehTraceFromCamPos(
         && (*camTrace).startsolid == 0
         && (*camTrace).fraction < 1.0
         && ((*camTrace).fraction * MAX_XHAIR_DIST_ACCURACY) > minAutoAimDist
-        && (((*camTrace).fraction * MAX_XHAIR_DIST_ACCURACY) - Distance(&*entOrg, &camPos)) < bestDist
+        && (((*camTrace).fraction * MAX_XHAIR_DIST_ACCURACY) - Distance(&*entOrg, &camPos))
+            < bestDist
     {
         //this trace hit *something* that's closer than the thing the main trace hit, so use this result instead
         VectorCopy(&(*camTrace).endpos, &mut *newEnd);
@@ -6929,7 +7007,10 @@ pub unsafe fn PM_RocketLock(lockDist: f32, vehicleLock: qboolean) {
         AngleVectors(&(*ps).viewangles, Some(&mut ang), None, None);
 
         VectorCopy(&(*ps).origin, &mut muzzlePoint);
-        VectorCopy(&WP_MuzzlePoint[WP_ROCKET_LAUNCHER as usize], &mut muzzleOffPoint);
+        VectorCopy(
+            &WP_MuzzlePoint[WP_ROCKET_LAUNCHER as usize],
+            &mut muzzleOffPoint,
+        );
 
         // The C `VectorMA(muzzlePoint, …, forward, muzzlePoint)` accumulates in place;
         // copy the source out first so the read/write don't alias (vec3_t is Copy).
@@ -6983,7 +7064,8 @@ pub unsafe fn PM_RocketLock(lockDist: f32, vehicleLock: qboolean) {
         if !bgEnt.is_null() && (*bgEnt).s.powerups & PW_CLOAKED != 0 {
             (*ps).rocketLockIndex = ENTITYNUM_NONE;
             (*ps).rocketLockTime = 0.0;
-        } else if !bgEnt.is_null() && ((*bgEnt).s.eType == ET_PLAYER || (*bgEnt).s.eType == ET_NPC) {
+        } else if !bgEnt.is_null() && ((*bgEnt).s.eType == ET_PLAYER || (*bgEnt).s.eType == ET_NPC)
+        {
             if (*ps).rocketLockIndex == ENTITYNUM_NONE {
                 (*ps).rocketLockIndex = tr.entityNum as c_int;
                 (*ps).rocketLockTime = (*pmv).cmd.serverTime as f32;
@@ -7046,7 +7128,8 @@ pub unsafe fn PM_DoChargedWeapons(vehicleRocketLock: qboolean, veh: *mut bgEntit
                 let vinfo = (*(*veh).m_pVehicle).m_pVehicleInfo;
                 if ((*pmv).cmd.buttons & BUTTON_ATTACK != 0
                     && g_vehWeaponInfo[(*vinfo).weapon[0].ID as usize].fHoming != 0.0
-                    && (*ps).ammo[0] >= g_vehWeaponInfo[(*vinfo).weapon[0].ID as usize].iAmmoPerShot)
+                    && (*ps).ammo[0]
+                        >= g_vehWeaponInfo[(*vinfo).weapon[0].ID as usize].iAmmoPerShot)
                     || ((*pmv).cmd.buttons & BUTTON_ALT_ATTACK != 0
                         && g_vehWeaponInfo[(*vinfo).weapon[1].ID as usize].fHoming != 0.0
                         && (*ps).ammo[1]
@@ -7246,8 +7329,8 @@ pub unsafe fn PM_DoChargedWeapons(vehicleRocketLock: qboolean, veh: *mut bgEntit
                     if (*ps).weaponChargeSubtractTime < (*pmv).cmd.serverTime {
                         (*ps).ammo[weaponData[(*ps).weapon as usize].ammoIndex as usize] -=
                             weaponData[(*ps).weapon as usize].chargeSub;
-                        (*ps).weaponChargeSubtractTime = (*pmv).cmd.serverTime
-                            + weaponData[(*ps).weapon as usize].chargeSubTime;
+                        (*ps).weaponChargeSubtractTime =
+                            (*pmv).cmd.serverTime + weaponData[(*ps).weapon as usize].chargeSubTime;
                     }
                 }
             }
@@ -7808,7 +7891,9 @@ unsafe fn PM_Weapon() {
     }
 
     // ignore if spectator
-    if (*ps).clientNum < MAX_CLIENTS as c_int && (*ps).persistant[PERS_TEAM as usize] == TEAM_SPECTATOR {
+    if (*ps).clientNum < MAX_CLIENTS as c_int
+        && (*ps).persistant[PERS_TEAM as usize] == TEAM_SPECTATOR
+    {
         return;
     }
 
@@ -8537,19 +8622,18 @@ pub unsafe fn PM_AdjustAttackStates(pmptr: *mut pmove_t) {
     }
     // get ammo usage
     if (*pmptr).cmd.buttons & BUTTON_ALT_ATTACK != 0 {
-        amount = (*(*pmptr).ps).ammo
-            [weaponData[(*(*pmptr).ps).weapon as usize].ammoIndex as usize]
+        amount = (*(*pmptr).ps).ammo[weaponData[(*(*pmptr).ps).weapon as usize].ammoIndex as usize]
             - weaponData[(*(*pmptr).ps).weapon as usize].altEnergyPerShot;
     } else {
-        amount = (*(*pmptr).ps).ammo
-            [weaponData[(*(*pmptr).ps).weapon as usize].ammoIndex as usize]
+        amount = (*(*pmptr).ps).ammo[weaponData[(*(*pmptr).ps).weapon as usize].ammoIndex as usize]
             - weaponData[(*(*pmptr).ps).weapon as usize].energyPerShot;
     }
     let mut amount = amount;
 
     // disruptor alt-fire should toggle the zoom mode, but only bother doing this for the player?
     if (*(*pmptr).ps).weapon == WP_DISRUPTOR && (*(*pmptr).ps).weaponstate == WEAPON_READY {
-        if (*(*pmptr).ps).eFlags & EF_ALT_FIRING == 0 && (*pmptr).cmd.buttons & BUTTON_ALT_ATTACK != 0
+        if (*(*pmptr).ps).eFlags & EF_ALT_FIRING == 0
+            && (*pmptr).cmd.buttons & BUTTON_ALT_ATTACK != 0
         /*&& pm->cmd.upmove <= 0 && !pm->cmd.forwardmove && !pm->cmd.rightmove*/
         {
             // We just pressed the alt-fire key
@@ -8579,7 +8663,8 @@ pub unsafe fn PM_AdjustAttackStates(pmptr: *mut pmove_t) {
                 if (*(*pmptr).ps).zoomMode == 1 && (*(*pmptr).ps).zoomLocked == QFALSE {
                     //approximate what level the client should be zoomed at based on how long zoom was held
                     (*(*pmptr).ps).zoomFov =
-                        (((*pmptr).cmd.serverTime + 50) - (*(*pmptr).ps).zoomLockTime) as f32 * 0.035;
+                        (((*pmptr).cmd.serverTime + 50) - (*(*pmptr).ps).zoomLockTime) as f32
+                            * 0.035;
                     if (*(*pmptr).ps).zoomFov > 50.0 {
                         (*(*pmptr).ps).zoomFov = 50.0;
                     }
@@ -8941,26 +9026,11 @@ pub fn BG_InKnockDown(anim: c_int) -> qboolean {
         BOTH_KNOCKDOWN1 | BOTH_KNOCKDOWN2 | BOTH_KNOCKDOWN3 | BOTH_KNOCKDOWN4 | BOTH_KNOCKDOWN5 => {
             QTRUE
         }
-        BOTH_GETUP1
-        | BOTH_GETUP2
-        | BOTH_GETUP3
-        | BOTH_GETUP4
-        | BOTH_GETUP5
-        | BOTH_FORCE_GETUP_F1
-        | BOTH_FORCE_GETUP_F2
-        | BOTH_FORCE_GETUP_B1
-        | BOTH_FORCE_GETUP_B2
-        | BOTH_FORCE_GETUP_B3
-        | BOTH_FORCE_GETUP_B4
-        | BOTH_FORCE_GETUP_B5
-        | BOTH_GETUP_BROLL_B
-        | BOTH_GETUP_BROLL_F
-        | BOTH_GETUP_BROLL_L
-        | BOTH_GETUP_BROLL_R
-        | BOTH_GETUP_FROLL_B
-        | BOTH_GETUP_FROLL_F
-        | BOTH_GETUP_FROLL_L
-        | BOTH_GETUP_FROLL_R => QTRUE,
+        BOTH_GETUP1 | BOTH_GETUP2 | BOTH_GETUP3 | BOTH_GETUP4 | BOTH_GETUP5
+        | BOTH_FORCE_GETUP_F1 | BOTH_FORCE_GETUP_F2 | BOTH_FORCE_GETUP_B1 | BOTH_FORCE_GETUP_B2
+        | BOTH_FORCE_GETUP_B3 | BOTH_FORCE_GETUP_B4 | BOTH_FORCE_GETUP_B5 | BOTH_GETUP_BROLL_B
+        | BOTH_GETUP_BROLL_F | BOTH_GETUP_BROLL_L | BOTH_GETUP_BROLL_R | BOTH_GETUP_FROLL_B
+        | BOTH_GETUP_FROLL_F | BOTH_GETUP_FROLL_L | BOTH_GETUP_FROLL_R => QTRUE,
         _ => QFALSE,
     }
 }
@@ -9039,7 +9109,8 @@ pub unsafe fn BG_IK_MoveArm(
         VectorCopy(&*scale, &mut ikP.scale);
 
         //base pose frames for the limb
-        ikP.startFrame = (*addr_of!(bgHumanoidAnimations))[baseposeAnim as usize].firstFrame as c_int
+        ikP.startFrame = (*addr_of!(bgHumanoidAnimations))[baseposeAnim as usize].firstFrame
+            as c_int
             + (*addr_of!(bgHumanoidAnimations))[baseposeAnim as usize].numFrames as c_int;
         ikP.endFrame = (*addr_of!(bgHumanoidAnimations))[baseposeAnim as usize].firstFrame as c_int
             + (*addr_of!(bgHumanoidAnimations))[baseposeAnim as usize].numFrames as c_int;
@@ -9151,12 +9222,30 @@ pub unsafe fn BG_IK_MoveArm(
 
         //then reset the angles/anims on these PCJs
         trap::G2API_SetBoneAngles(
-            ghoul2, 0, "lhumerus", &vec3_origin, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y,
-            NEGATIVE_Z, core::ptr::null_mut(), 0, time,
+            ghoul2,
+            0,
+            "lhumerus",
+            &vec3_origin,
+            BONE_ANGLES_POSTMULT,
+            POSITIVE_X,
+            NEGATIVE_Y,
+            NEGATIVE_Z,
+            core::ptr::null_mut(),
+            0,
+            time,
         );
         trap::G2API_SetBoneAngles(
-            ghoul2, 0, "lradius", &vec3_origin, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y,
-            NEGATIVE_Z, core::ptr::null_mut(), 0, time,
+            ghoul2,
+            0,
+            "lradius",
+            &vec3_origin,
+            BONE_ANGLES_POSTMULT,
+            POSITIVE_X,
+            NEGATIVE_Y,
+            NEGATIVE_Z,
+            core::ptr::null_mut(),
+            0,
+            time,
         );
 
         //Get the anim/frames that the pelvis is on exactly, and match the left arm back up with them again.
@@ -9173,10 +9262,28 @@ pub unsafe fn BG_IK_MoveArm(
             0,
         );
         trap::G2API_SetBoneAnim(
-            ghoul2, 0, "lhumerus", sFrame, eFrame, flags, animSpeed, time, sFrame as f32, 300,
+            ghoul2,
+            0,
+            "lhumerus",
+            sFrame,
+            eFrame,
+            flags,
+            animSpeed,
+            time,
+            sFrame as f32,
+            300,
         );
         trap::G2API_SetBoneAnim(
-            ghoul2, 0, "lradius", sFrame, eFrame, flags, animSpeed, time, sFrame as f32, 300,
+            ghoul2,
+            0,
+            "lradius",
+            sFrame,
+            eFrame,
+            flags,
+            animSpeed,
+            time,
+            sFrame as f32,
+            300,
         );
 
         //And finally, get rid of all the ik state effector data by calling with null bone name (similar to how we init it).
@@ -9341,16 +9448,43 @@ pub unsafe fn BG_G2ClientNeckAngles(
     */
 
     trap::G2API_SetBoneAngles(
-        ghoul2, 0, "cranium", &*headAngles, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y,
-        NEGATIVE_Z, core::ptr::null_mut(), 0, time,
+        ghoul2,
+        0,
+        "cranium",
+        &*headAngles,
+        BONE_ANGLES_POSTMULT,
+        POSITIVE_X,
+        NEGATIVE_Y,
+        NEGATIVE_Z,
+        core::ptr::null_mut(),
+        0,
+        time,
     );
     trap::G2API_SetBoneAngles(
-        ghoul2, 0, "cervical", &*neckAngles, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y,
-        NEGATIVE_Z, core::ptr::null_mut(), 0, time,
+        ghoul2,
+        0,
+        "cervical",
+        &*neckAngles,
+        BONE_ANGLES_POSTMULT,
+        POSITIVE_X,
+        NEGATIVE_Y,
+        NEGATIVE_Z,
+        core::ptr::null_mut(),
+        0,
+        time,
     );
     trap::G2API_SetBoneAngles(
-        ghoul2, 0, "thoracic", &*thoracicAngles, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y,
-        NEGATIVE_Z, core::ptr::null_mut(), 0, time,
+        ghoul2,
+        0,
+        "thoracic",
+        &*thoracicAngles,
+        BONE_ANGLES_POSTMULT,
+        POSITIVE_X,
+        NEGATIVE_Y,
+        NEGATIVE_Z,
+        core::ptr::null_mut(),
+        0,
+        time,
     );
 }
 
@@ -9570,18 +9704,9 @@ pub unsafe fn BG_SwingAngles(
 /// `es` must point to a valid `entityState_t`.
 pub unsafe fn BG_InRoll2(es: *mut entityState_t) -> qboolean {
     match (*es).legsAnim {
-        BOTH_GETUP_BROLL_B
-        | BOTH_GETUP_BROLL_F
-        | BOTH_GETUP_BROLL_L
-        | BOTH_GETUP_BROLL_R
-        | BOTH_GETUP_FROLL_B
-        | BOTH_GETUP_FROLL_F
-        | BOTH_GETUP_FROLL_L
-        | BOTH_GETUP_FROLL_R
-        | BOTH_ROLL_F
-        | BOTH_ROLL_B
-        | BOTH_ROLL_R
-        | BOTH_ROLL_L => QTRUE,
+        BOTH_GETUP_BROLL_B | BOTH_GETUP_BROLL_F | BOTH_GETUP_BROLL_L | BOTH_GETUP_BROLL_R
+        | BOTH_GETUP_FROLL_B | BOTH_GETUP_FROLL_F | BOTH_GETUP_FROLL_L | BOTH_GETUP_FROLL_R
+        | BOTH_ROLL_F | BOTH_ROLL_B | BOTH_ROLL_R | BOTH_ROLL_L => QTRUE,
         _ => QFALSE,
     }
 }
@@ -9678,11 +9803,71 @@ pub unsafe fn BG_G2PlayerAngles(
         VectorCopy(&forcedAngles, &mut *legsAngles);
 
         if (*cent).number < MAX_CLIENTS as c_int {
-            trap::G2API_SetBoneAngles(ghoul2, 0, "lower_lumbar", &vec3_origin, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, core::ptr::null_mut(), 0, time);
-            trap::G2API_SetBoneAngles(ghoul2, 0, "upper_lumbar", &vec3_origin, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, core::ptr::null_mut(), 0, time);
-            trap::G2API_SetBoneAngles(ghoul2, 0, "cranium", &vec3_origin, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, core::ptr::null_mut(), 0, time);
-            trap::G2API_SetBoneAngles(ghoul2, 0, "thoracic", &vec3_origin, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, core::ptr::null_mut(), 0, time);
-            trap::G2API_SetBoneAngles(ghoul2, 0, "cervical", &vec3_origin, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, core::ptr::null_mut(), 0, time);
+            trap::G2API_SetBoneAngles(
+                ghoul2,
+                0,
+                "lower_lumbar",
+                &vec3_origin,
+                BONE_ANGLES_POSTMULT,
+                POSITIVE_X,
+                NEGATIVE_Y,
+                NEGATIVE_Z,
+                core::ptr::null_mut(),
+                0,
+                time,
+            );
+            trap::G2API_SetBoneAngles(
+                ghoul2,
+                0,
+                "upper_lumbar",
+                &vec3_origin,
+                BONE_ANGLES_POSTMULT,
+                POSITIVE_X,
+                NEGATIVE_Y,
+                NEGATIVE_Z,
+                core::ptr::null_mut(),
+                0,
+                time,
+            );
+            trap::G2API_SetBoneAngles(
+                ghoul2,
+                0,
+                "cranium",
+                &vec3_origin,
+                BONE_ANGLES_POSTMULT,
+                POSITIVE_X,
+                NEGATIVE_Y,
+                NEGATIVE_Z,
+                core::ptr::null_mut(),
+                0,
+                time,
+            );
+            trap::G2API_SetBoneAngles(
+                ghoul2,
+                0,
+                "thoracic",
+                &vec3_origin,
+                BONE_ANGLES_POSTMULT,
+                POSITIVE_X,
+                NEGATIVE_Y,
+                NEGATIVE_Z,
+                core::ptr::null_mut(),
+                0,
+                time,
+            );
+            trap::G2API_SetBoneAngles(
+                ghoul2,
+                0,
+                "cervical",
+                &vec3_origin,
+                BONE_ANGLES_POSTMULT,
+                POSITIVE_X,
+                NEGATIVE_Y,
+                NEGATIVE_Z,
+                core::ptr::null_mut(),
+                0,
+                time,
+            );
         }
         return;
     }
@@ -9835,7 +10020,15 @@ pub unsafe fn BG_G2PlayerAngles(
         // swing instantly on vehicles
         *lYawAngle = (*legsAngles)[YAW];
     } else {
-        BG_SwingAngles((*legsAngles)[YAW], /*40*/ 0.0, 90.0, 0.65, lYawAngle, lYawing, frametime);
+        BG_SwingAngles(
+            (*legsAngles)[YAW],
+            /*40*/ 0.0,
+            90.0,
+            0.65,
+            lYawAngle,
+            lYawing,
+            frametime,
+        );
     }
     (*legsAngles)[YAW] = *lYawAngle;
 
@@ -9892,7 +10085,11 @@ pub unsafe fn BG_G2PlayerAngles(
         // if using an emplaced gun, then we want to make sure we're angled to "hold" it right
         let mut facingAngles: vec3_t = [0.0; 3];
 
-        VectorSubtract(&(*emplaced).pos.trBase, &*cent_lerpOrigin, &mut facingAngles);
+        VectorSubtract(
+            &(*emplaced).pos.trBase,
+            &*cent_lerpOrigin,
+            &mut facingAngles,
+        );
         {
             let tmp = facingAngles;
             vectoangles(&tmp, &mut facingAngles);
@@ -9923,13 +10120,63 @@ pub unsafe fn BG_G2PlayerAngles(
                 }
 
                 BG_G2ClientSpineAngles(
-                    ghoul2, motionBolt, cent_lerpOrigin, cent_lerpAngles, cent, time,
-                    &mut viewAngles, ciLegs, ciTorso, &angles, &mut thoracicAngles,
-                    &mut ulAngles, &mut llAngles, modelScale, tPitchAngle, tYawAngle, corrTime,
+                    ghoul2,
+                    motionBolt,
+                    cent_lerpOrigin,
+                    cent_lerpAngles,
+                    cent,
+                    time,
+                    &mut viewAngles,
+                    ciLegs,
+                    ciTorso,
+                    &angles,
+                    &mut thoracicAngles,
+                    &mut ulAngles,
+                    &mut llAngles,
+                    modelScale,
+                    tPitchAngle,
+                    tYawAngle,
+                    corrTime,
                 );
-                trap::G2API_SetBoneAngles(ghoul2, 0, "lower_lumbar", &llAngles, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, core::ptr::null_mut(), 0, time);
-                trap::G2API_SetBoneAngles(ghoul2, 0, "upper_lumbar", &ulAngles, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, core::ptr::null_mut(), 0, time);
-                trap::G2API_SetBoneAngles(ghoul2, 0, "cranium", &vec3_origin, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, core::ptr::null_mut(), 0, time);
+                trap::G2API_SetBoneAngles(
+                    ghoul2,
+                    0,
+                    "lower_lumbar",
+                    &llAngles,
+                    BONE_ANGLES_POSTMULT,
+                    POSITIVE_X,
+                    NEGATIVE_Y,
+                    NEGATIVE_Z,
+                    core::ptr::null_mut(),
+                    0,
+                    time,
+                );
+                trap::G2API_SetBoneAngles(
+                    ghoul2,
+                    0,
+                    "upper_lumbar",
+                    &ulAngles,
+                    BONE_ANGLES_POSTMULT,
+                    POSITIVE_X,
+                    NEGATIVE_Y,
+                    NEGATIVE_Z,
+                    core::ptr::null_mut(),
+                    0,
+                    time,
+                );
+                trap::G2API_SetBoneAngles(
+                    ghoul2,
+                    0,
+                    "cranium",
+                    &vec3_origin,
+                    BONE_ANGLES_POSTMULT,
+                    POSITIVE_X,
+                    NEGATIVE_Y,
+                    NEGATIVE_Z,
+                    core::ptr::null_mut(),
+                    0,
+                    time,
+                );
 
                 {
                     let tmp = facingAngles;
@@ -9943,24 +10190,72 @@ pub unsafe fn BG_G2PlayerAngles(
             } else {
                 //strap_G2API_SetBoneAngles(ghoul2, 0, "lower_lumbar", vec3_origin, ...);
                 //strap_G2API_SetBoneAngles(ghoul2, 0, "upper_lumbar", vec3_origin, ...);
-                trap::G2API_SetBoneAngles(ghoul2, 0, "cranium", &vec3_origin, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, core::ptr::null_mut(), 0, time);
+                trap::G2API_SetBoneAngles(
+                    ghoul2,
+                    0,
+                    "cranium",
+                    &vec3_origin,
+                    BONE_ANGLES_POSTMULT,
+                    POSITIVE_X,
+                    NEGATIVE_Y,
+                    NEGATIVE_Z,
+                    core::ptr::null_mut(),
+                    0,
+                    time,
+                );
             }
 
             {
                 let tmp = facingAngles;
                 VectorScale(&tmp, 0.6, &mut facingAngles);
             }
-            trap::G2API_SetBoneAngles(ghoul2, 0, "lower_lumbar", &vec3_origin, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, core::ptr::null_mut(), 0, time);
+            trap::G2API_SetBoneAngles(
+                ghoul2,
+                0,
+                "lower_lumbar",
+                &vec3_origin,
+                BONE_ANGLES_POSTMULT,
+                POSITIVE_X,
+                NEGATIVE_Y,
+                NEGATIVE_Z,
+                core::ptr::null_mut(),
+                0,
+                time,
+            );
             {
                 let tmp = facingAngles;
                 VectorScale(&tmp, 0.8, &mut facingAngles);
             }
-            trap::G2API_SetBoneAngles(ghoul2, 0, "upper_lumbar", &facingAngles, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, core::ptr::null_mut(), 0, time);
+            trap::G2API_SetBoneAngles(
+                ghoul2,
+                0,
+                "upper_lumbar",
+                &facingAngles,
+                BONE_ANGLES_POSTMULT,
+                POSITIVE_X,
+                NEGATIVE_Y,
+                NEGATIVE_Z,
+                core::ptr::null_mut(),
+                0,
+                time,
+            );
             {
                 let tmp = facingAngles;
                 VectorScale(&tmp, 0.8, &mut facingAngles);
             }
-            trap::G2API_SetBoneAngles(ghoul2, 0, "thoracic", &facingAngles, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, core::ptr::null_mut(), 0, time);
+            trap::G2API_SetBoneAngles(
+                ghoul2,
+                0,
+                "thoracic",
+                &facingAngles,
+                BONE_ANGLES_POSTMULT,
+                POSITIVE_X,
+                NEGATIVE_Y,
+                NEGATIVE_Z,
+                core::ptr::null_mut(),
+                0,
+                time,
+            );
 
             // Now we want the head angled toward where we are facing
             VectorSet(&mut facingAngles, 0.0, dif, 0.0);
@@ -9968,16 +10263,42 @@ pub unsafe fn BG_G2PlayerAngles(
                 let tmp = facingAngles;
                 VectorScale(&tmp, 0.6, &mut facingAngles);
             }
-            trap::G2API_SetBoneAngles(ghoul2, 0, "cervical", &facingAngles, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, core::ptr::null_mut(), 0, time);
+            trap::G2API_SetBoneAngles(
+                ghoul2,
+                0,
+                "cervical",
+                &facingAngles,
+                BONE_ANGLES_POSTMULT,
+                POSITIVE_X,
+                NEGATIVE_Y,
+                NEGATIVE_Z,
+                core::ptr::null_mut(),
+                0,
+                time,
+            );
 
             return; // don't have to bother with the rest then
         }
     }
 
     BG_G2ClientSpineAngles(
-        ghoul2, motionBolt, cent_lerpOrigin, cent_lerpAngles, cent, time, &mut viewAngles,
-        ciLegs, ciTorso, &angles, &mut thoracicAngles, &mut ulAngles, &mut llAngles, modelScale,
-        tPitchAngle, tYawAngle, corrTime,
+        ghoul2,
+        motionBolt,
+        cent_lerpOrigin,
+        cent_lerpAngles,
+        cent,
+        time,
+        &mut viewAngles,
+        ciLegs,
+        ciTorso,
+        &angles,
+        &mut thoracicAngles,
+        &mut ulAngles,
+        &mut llAngles,
+        modelScale,
+        tPitchAngle,
+        tYawAngle,
+        corrTime,
     );
 
     VectorCopy(&*cent_lerpAngles, &mut eyeAngles);
@@ -9992,19 +10313,70 @@ pub unsafe fn BG_G2PlayerAngles(
     }
 
     BG_UpdateLookAngles(
-        lookTime, lastHeadAngles, time, lookAngles, lookSpeed, -50.0, 50.0, -70.0, 70.0, -30.0,
+        lookTime,
+        lastHeadAngles,
+        time,
+        lookAngles,
+        lookSpeed,
+        -50.0,
+        50.0,
+        -70.0,
+        70.0,
+        -30.0,
         30.0,
     );
 
     BG_G2ClientNeckAngles(
-        ghoul2, time, lookAngles, &mut headAngles, &mut neckAngles, &mut thoracicAngles,
-        &headClampMinAngles, &headClampMaxAngles,
+        ghoul2,
+        time,
+        lookAngles,
+        &mut headAngles,
+        &mut neckAngles,
+        &mut thoracicAngles,
+        &headClampMinAngles,
+        &headClampMaxAngles,
     );
 
     // BONE_BASED_LEG_ANGLES is undefined upstream — the bLAngles model_root block is dropped.
-    trap::G2API_SetBoneAngles(ghoul2, 0, "lower_lumbar", &llAngles, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, core::ptr::null_mut(), 0, time);
-    trap::G2API_SetBoneAngles(ghoul2, 0, "upper_lumbar", &ulAngles, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, core::ptr::null_mut(), 0, time);
-    trap::G2API_SetBoneAngles(ghoul2, 0, "thoracic", &thoracicAngles, BONE_ANGLES_POSTMULT, POSITIVE_X, NEGATIVE_Y, NEGATIVE_Z, core::ptr::null_mut(), 0, time);
+    trap::G2API_SetBoneAngles(
+        ghoul2,
+        0,
+        "lower_lumbar",
+        &llAngles,
+        BONE_ANGLES_POSTMULT,
+        POSITIVE_X,
+        NEGATIVE_Y,
+        NEGATIVE_Z,
+        core::ptr::null_mut(),
+        0,
+        time,
+    );
+    trap::G2API_SetBoneAngles(
+        ghoul2,
+        0,
+        "upper_lumbar",
+        &ulAngles,
+        BONE_ANGLES_POSTMULT,
+        POSITIVE_X,
+        NEGATIVE_Y,
+        NEGATIVE_Z,
+        core::ptr::null_mut(),
+        0,
+        time,
+    );
+    trap::G2API_SetBoneAngles(
+        ghoul2,
+        0,
+        "thoracic",
+        &thoracicAngles,
+        BONE_ANGLES_POSTMULT,
+        POSITIVE_X,
+        NEGATIVE_Y,
+        NEGATIVE_Z,
+        core::ptr::null_mut(),
+        0,
+        time,
+    );
     //strap_G2API_SetBoneAngles(ghoul2, 0, "cervical", vec3_origin, ...);
 }
 
@@ -10063,8 +10435,7 @@ pub unsafe fn PM_CmdForSaberMoves(ucmd: *mut usercmd_t) {
     let pmv = *addr_of!(pm);
 
     //DUAL FORWARD+JUMP+ATTACK
-    if ((*(*pmv).ps).legsAnim == BOTH_JUMPATTACK6
-        && (*(*pmv).ps).saberMove == LS_JUMPATTACK_DUAL)
+    if ((*(*pmv).ps).legsAnim == BOTH_JUMPATTACK6 && (*(*pmv).ps).saberMove == LS_JUMPATTACK_DUAL)
         || ((*(*pmv).ps).legsAnim == BOTH_BUTTERFLY_FL1
             && (*(*pmv).ps).saberMove == LS_JUMPATTACK_STAFF_LEFT)
         || ((*(*pmv).ps).legsAnim == BOTH_BUTTERFLY_FR1
@@ -10195,7 +10566,12 @@ pub unsafe fn PM_CmdForSaberMoves(ucmd: *mut usercmd_t) {
                 let mut backDir: vec3_t = [0.0; 3];
 
                 //push backwards some?
-                VectorSet(&mut yawAngles, 0.0, (*(*pmv).ps).viewangles[YAW] + 180.0, 0.0);
+                VectorSet(
+                    &mut yawAngles,
+                    0.0,
+                    (*(*pmv).ps).viewangles[YAW] + 180.0,
+                    0.0,
+                );
                 AngleVectors(&yawAngles, Some(&mut backDir), None, None);
                 VectorScale(&backDir, 100.0, &mut (*(*pmv).ps).velocity);
 
@@ -10235,7 +10611,11 @@ pub unsafe fn PM_CmdForSaberMoves(ucmd: *mut usercmd_t) {
 /// # Safety
 /// `ps`/`ucmd` must be valid; `veh` must point to a live `bgEntity_t` whose `m_pVehicle`
 /// (and its `m_pVehicleInfo`) is set.
-pub unsafe fn PM_VehicleViewAngles(ps: *mut playerState_t, veh: *mut bgEntity_t, ucmd: *mut usercmd_t) {
+pub unsafe fn PM_VehicleViewAngles(
+    ps: *mut playerState_t,
+    veh: *mut bgEntity_t,
+    ucmd: *mut usercmd_t,
+) {
     let pVeh: *mut Vehicle_t = (*veh).m_pVehicle;
     let mut setAngles: qboolean = QTRUE;
     let mut clampMin: vec3_t = [0.0; 3];
@@ -10328,7 +10708,8 @@ pub unsafe fn PM_GetOkWeaponForVehicle() -> c_int {
     let mut i: c_int = 0;
 
     while i < WP_NUM_WEAPONS {
-        if ((*(*pmv).ps).stats[STAT_WEAPONS as usize] & (1 << i)) != 0 && PM_WeaponOkOnVehicle(i) != 0
+        if ((*(*pmv).ps).stats[STAT_WEAPONS as usize] & (1 << i)) != 0
+            && PM_WeaponOkOnVehicle(i) != 0
         {
             //this one's good
             return i;
@@ -10392,7 +10773,11 @@ pub unsafe fn PM_VehForcedTurning(veh: *mut bgEntity_t) {
     (*(*pmv).ps).viewangles[PITCH as usize] =
         AngleSubtract((*(*pmv).ps).viewangles[PITCH as usize], pitchD);
 
-    PM_SetPMViewAngle((*pmv).ps, (*(*pmv).ps).viewangles.as_mut_ptr(), addr_of_mut!((*pmv).cmd));
+    PM_SetPMViewAngle(
+        (*pmv).ps,
+        (*(*pmv).ps).viewangles.as_mut_ptr(),
+        addr_of_mut!((*pmv).cmd),
+    );
 }
 
 /// `PM_VehFaceHyperspacePoint` (bg_pmove.c:9575) — rotate the vehicle to face the stored
@@ -10463,7 +10848,11 @@ pub unsafe fn PM_VehFaceHyperspacePoint(veh: *mut bgEntity_t) {
 
         // #ifdef VEH_CONTROL_SCHEME_4 (defined nowhere) — the playerState write + PITCH-zero +
         // double PM_SetPMViewAngle + m_vPrevRiderViewAngles dead branch dropped; active #else:
-        PM_SetPMViewAngle((*pmv).ps, (*(*pmv).ps).viewangles.as_mut_ptr(), addr_of_mut!((*pmv).cmd));
+        PM_SetPMViewAngle(
+            (*pmv).ps,
+            (*(*pmv).ps).viewangles.as_mut_ptr(),
+            addr_of_mut!((*pmv).cmd),
+        );
 
         if timeFrac < HYPERSPACE_TELEPORT_FRAC {
             //haven't gone through yet
@@ -11045,7 +11434,11 @@ pub unsafe fn PmoveSingle(pmove: *mut pmove_t) {
     }
 
     // clear all pmove local vars
-    core::ptr::write_bytes(addr_of_mut!(pml) as *mut u8, 0, core::mem::size_of::<pml_t>());
+    core::ptr::write_bytes(
+        addr_of_mut!(pml) as *mut u8,
+        0,
+        core::mem::size_of::<pml_t>(),
+    );
 
     // determine the time
     (*addr_of_mut!(pml)).msec = (*pmove).cmd.serverTime - (*(*pmv).ps).commandTime;
@@ -11058,10 +11451,16 @@ pub unsafe fn PmoveSingle(pmove: *mut pmove_t) {
     (*(*pmv).ps).commandTime = (*pmove).cmd.serverTime;
 
     // save old org in case we get stuck
-    VectorCopy(&(*(*pmv).ps).origin, &mut (*addr_of_mut!(pml)).previous_origin);
+    VectorCopy(
+        &(*(*pmv).ps).origin,
+        &mut (*addr_of_mut!(pml)).previous_origin,
+    );
 
     // save old velocity for crashlanding
-    VectorCopy(&(*(*pmv).ps).velocity, &mut (*addr_of_mut!(pml)).previous_velocity);
+    VectorCopy(
+        &(*(*pmv).ps).velocity,
+        &mut (*addr_of_mut!(pml)).previous_velocity,
+    );
 
     // C: pml.frametime = pml.msec * 0.001; — `0.001` is a double, so the product is f64
     // before narrowing to the f32 field (the bg_pmove.rs f64-promote-where-C-does convention).
@@ -11345,10 +11744,7 @@ pub unsafe fn PmoveSingle(pmove: *mut pmove_t) {
         //I am a player client, not riding on a vehicle, and potentially standing on an NPC
         let pEnt: *mut bgEntity_t = PM_BGEntForNum((*(*pmv).ps).groundEntityNum);
 
-        if !pEnt.is_null()
-            && (*pEnt).s.eType == ET_NPC
-            && (*pEnt).s.NPC_class != CLASS_VEHICLE
-        {
+        if !pEnt.is_null() && (*pEnt).s.eType == ET_NPC && (*pEnt).s.NPC_class != CLASS_VEHICLE {
             //don't bounce on vehicles
             //this is actually an NPC, let's try to bounce of its head to make sure we can't just stand around on top of it.
             if (*(*pmv).ps).velocity[2] < 270.0 {
@@ -11576,8 +11972,9 @@ pub unsafe fn PmoveSingle(pmove: *mut pmove_t) {
         (*(*pmv).ps).gravity = savedGravity;
     }
 
-    if //pm->ps->m_iVehicleNum &&
-        (*(*pmv).ps).clientNum >= MAX_CLIENTS as c_int
+    if
+    //pm->ps->m_iVehicleNum &&
+    (*(*pmv).ps).clientNum >= MAX_CLIENTS as c_int
         && !(*addr_of!(pm_entSelf)).is_null()
         && (*(*addr_of!(pm_entSelf))).s.NPC_class == CLASS_VEHICLE
     {
@@ -11713,7 +12110,8 @@ mod tests {
             );
             assert_eq!(rust_fpn, c_fpn, "forcePowerNeeded");
 
-            let c_fjh = core::slice::from_raw_parts(jka_pm_forceJumpHeight(), NUM_FORCE_POWER_LEVELS);
+            let c_fjh =
+                core::slice::from_raw_parts(jka_pm_forceJumpHeight(), NUM_FORCE_POWER_LEVELS);
             assert_eq!(&forceJumpHeight[..], c_fjh, "forceJumpHeight");
 
             let c_fjs =
@@ -11769,8 +12167,14 @@ mod tests {
                 jka_pm_addtouchent(ent, &mut c_numtouch, c_touchents.as_mut_ptr());
             }
 
-            assert_eq!(pmv.numtouch, c_numtouch, "numtouch (ent={ent}, n={numtouch})");
-            assert_eq!(pmv.touchents, c_touchents, "touchents (ent={ent}, n={numtouch})");
+            assert_eq!(
+                pmv.numtouch, c_numtouch,
+                "numtouch (ent={ent}, n={numtouch})"
+            );
+            assert_eq!(
+                pmv.touchents, c_touchents,
+                "touchents (ent={ent}, n={numtouch})"
+            );
         }
     }
 
@@ -11805,9 +12209,8 @@ mod tests {
                 *addr_of_mut!(pm) = null_mut();
                 r
             };
-            let c = unsafe {
-                jka_PM_BGEntForNum(base as core::ffi::c_ulong, ent_size, num) as usize
-            };
+            let c =
+                unsafe { jka_PM_BGEntForNum(base as core::ffi::c_ulong, ent_size, num) as usize };
             assert_eq!(rust, c, "base={base:#x} entSize={ent_size} num={num}");
         }
     }
@@ -11871,7 +12274,11 @@ mod tests {
             .map(|_| unsafe { core::mem::MaybeUninit::zeroed().assume_init() })
             .collect();
         unsafe {
-            core::ptr::copy_nonoverlapping(gents.as_mut_ptr(), core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(), gents.len());
+            core::ptr::copy_nonoverlapping(
+                gents.as_mut_ptr(),
+                core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(),
+                gents.len(),
+            );
         }
 
         for entnum in 0..=1 {
@@ -11902,7 +12309,11 @@ mod tests {
         }
 
         unsafe {
-            core::ptr::write_bytes(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(), 0, gents.len());
+            core::ptr::write_bytes(
+                core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>(),
+                0,
+                gents.len(),
+            );
         }
     }
 
@@ -12144,40 +12555,291 @@ mod tests {
             veh_type: c_int,
             veh_friction: f32,
         }
-        let s = |vel, walking, pm_type, client_num, pm_flags, ground_ent, waterlevel, surface_flags, frametime, flying, has_ent, npc_class, has_vehicle, veh_type, veh_friction| S {
-            vel, walking, pm_type, client_num, pm_flags, ground_ent, waterlevel, surface_flags,
-            frametime, flying, has_ent, npc_class, has_vehicle, veh_type, veh_friction,
+        let s = |vel,
+                 walking,
+                 pm_type,
+                 client_num,
+                 pm_flags,
+                 ground_ent,
+                 waterlevel,
+                 surface_flags,
+                 frametime,
+                 flying,
+                 has_ent,
+                 npc_class,
+                 has_vehicle,
+                 veh_type,
+                 veh_friction| S {
+            vel,
+            walking,
+            pm_type,
+            client_num,
+            pm_flags,
+            ground_ent,
+            waterlevel,
+            surface_flags,
+            frametime,
+            flying,
+            has_ent,
+            npc_class,
+            has_vehicle,
+            veh_type,
+            veh_friction,
         };
         let no_fly = FLY_NONE;
         let scenarios = [
             // speed < 1 early-out, spectator (zeros vel[2] too)
-            s([0.5, -0.4, 0.3], 0, PM_SPECTATOR, 0, 0, ENTITYNUM_NONE, 0, 0, 0.05, no_fly, false, 0, false, 0, 0.0),
+            s(
+                [0.5, -0.4, 0.3],
+                0,
+                PM_SPECTATOR,
+                0,
+                0,
+                ENTITYNUM_NONE,
+                0,
+                0,
+                0.05,
+                no_fly,
+                false,
+                0,
+                false,
+                0,
+                0.0,
+            ),
             // speed < 1 early-out, normal (leaves vel[2])
-            s([0.2, 0.1, 5.0], 0, PM_NORMAL, 0, 0, ENTITYNUM_NONE, 0, 0, 0.05, no_fly, false, 0, false, 0, 0.0),
+            s(
+                [0.2, 0.1, 5.0],
+                0,
+                PM_NORMAL,
+                0,
+                0,
+                ENTITYNUM_NONE,
+                0,
+                0,
+                0.05,
+                no_fly,
+                false,
+                0,
+                false,
+                0,
+                0.0,
+            ),
             // player ground friction: walking, not slick, no knockback
-            s([300.0, -120.0, 0.0], 1, PM_NORMAL, 0, 0, ENTITYNUM_NONE, 0, 0, 0.008, no_fly, false, 0, false, 0, 0.0),
+            s(
+                [300.0, -120.0, 0.0],
+                1,
+                PM_NORMAL,
+                0,
+                0,
+                ENTITYNUM_NONE,
+                0,
+                0,
+                0.008,
+                no_fly,
+                false,
+                0,
+                false,
+                0,
+                0.0,
+            ),
             // player ground friction: slick surface → no ground friction
-            s([300.0, -120.0, 0.0], 1, PM_NORMAL, 0, 0, ENTITYNUM_NONE, 0, SURF_SLICK, 0.008, no_fly, false, 0, false, 0, 0.0),
+            s(
+                [300.0, -120.0, 0.0],
+                1,
+                PM_NORMAL,
+                0,
+                0,
+                ENTITYNUM_NONE,
+                0,
+                SURF_SLICK,
+                0.008,
+                no_fly,
+                false,
+                0,
+                false,
+                0,
+                0.0,
+            ),
             // player ground friction: knockback → no ground friction
-            s([300.0, -120.0, 0.0], 1, PM_NORMAL, PMF_TIME_KNOCKBACK, 0, ENTITYNUM_NONE, 0, 0, 0.008, no_fly, false, 0, false, 0, 0.0),
+            s(
+                [300.0, -120.0, 0.0],
+                1,
+                PM_NORMAL,
+                PMF_TIME_KNOCKBACK,
+                0,
+                ENTITYNUM_NONE,
+                0,
+                0,
+                0.008,
+                no_fly,
+                false,
+                0,
+                false,
+                0,
+                0.0,
+            ),
             // slow speed (below stopspeed) hits the pm_stopspeed clamp
-            s([40.0, 0.0, 0.0], 1, PM_NORMAL, 0, 0, ENTITYNUM_NONE, 0, 0, 0.05, no_fly, false, 0, false, 0, 0.0),
+            s(
+                [40.0, 0.0, 0.0],
+                1,
+                PM_NORMAL,
+                0,
+                0,
+                ENTITYNUM_NONE,
+                0,
+                0,
+                0.05,
+                no_fly,
+                false,
+                0,
+                false,
+                0,
+                0.0,
+            ),
             // water friction (waterlevel 2)
-            s([200.0, 80.0, -30.0], 0, PM_NORMAL, 0, 0, ENTITYNUM_NONE, 2, 0, 0.05, no_fly, false, 0, false, 0, 0.0),
+            s(
+                [200.0, 80.0, -30.0],
+                0,
+                PM_NORMAL,
+                0,
+                0,
+                ENTITYNUM_NONE,
+                2,
+                0,
+                0.05,
+                no_fly,
+                false,
+                0,
+                false,
+                0,
+                0.0,
+            ),
             // groundEntityNum < MAX_CLIENTS → drop forced to 0
-            s([200.0, 80.0, -30.0], 0, PM_NORMAL, 0, 5, ENTITYNUM_NONE, 0, 0, 0.05, FLY_NORMAL, false, 0, false, 0, 0.0),
+            s(
+                [200.0, 80.0, -30.0],
+                0,
+                PM_NORMAL,
+                0,
+                5,
+                ENTITYNUM_NONE,
+                0,
+                0,
+                0.05,
+                FLY_NORMAL,
+                false,
+                0,
+                false,
+                0,
+                0.0,
+            ),
             // spectator friction
-            s([260.0, -90.0, 40.0], 0, PM_SPECTATOR, 0, 0, ENTITYNUM_NONE, 0, 0, 0.05, no_fly, false, 0, false, 0, 0.0),
+            s(
+                [260.0, -90.0, 40.0],
+                0,
+                PM_SPECTATOR,
+                0,
+                0,
+                ENTITYNUM_NONE,
+                0,
+                0,
+                0.05,
+                no_fly,
+                false,
+                0,
+                false,
+                0,
+                0.0,
+            ),
             // float friction (the f64-promoted 0.1 path)
-            s([260.0, -90.0, 40.0], 0, PM_FLOAT, 0, 0, ENTITYNUM_NONE, 0, 0, 0.05, no_fly, false, 0, false, 0, 0.0),
+            s(
+                [260.0, -90.0, 40.0],
+                0,
+                PM_FLOAT,
+                0,
+                0,
+                ENTITYNUM_NONE,
+                0,
+                0,
+                0.05,
+                no_fly,
+                false,
+                0,
+                false,
+                0,
+                0.0,
+            ),
             // vehicle branch: clientNum ≥ MAX_CLIENTS, CLASS_VEHICLE, fighter, friction, no knockback
-            s([280.0, 100.0, -20.0], 0, PM_NORMAL, 40, 0, ENTITYNUM_NONE, 0, 0, 0.008, no_fly, true, CLASS_VEHICLE, true, VH_FIGHTER, 5.0),
+            s(
+                [280.0, 100.0, -20.0],
+                0,
+                PM_NORMAL,
+                40,
+                0,
+                ENTITYNUM_NONE,
+                0,
+                0,
+                0.008,
+                no_fly,
+                true,
+                CLASS_VEHICLE,
+                true,
+                VH_FIGHTER,
+                5.0,
+            ),
             // vehicle branch but knockback set → skip vehicle friction
-            s([280.0, 100.0, -20.0], 0, PM_NORMAL, 40, PMF_TIME_KNOCKBACK, ENTITYNUM_NONE, 0, 0, 0.008, no_fly, true, CLASS_VEHICLE, true, VH_FIGHTER, 5.0),
+            s(
+                [280.0, 100.0, -20.0],
+                0,
+                PM_NORMAL,
+                40,
+                PMF_TIME_KNOCKBACK,
+                ENTITYNUM_NONE,
+                0,
+                0,
+                0.008,
+                no_fly,
+                true,
+                CLASS_VEHICLE,
+                true,
+                VH_FIGHTER,
+                5.0,
+            ),
             // vehicle branch but friction 0 → falls through to else-if
-            s([280.0, 100.0, -20.0], 1, PM_NORMAL, 40, 0, ENTITYNUM_NONE, 0, 0, 0.008, no_fly, true, CLASS_VEHICLE, true, VH_FIGHTER, 0.0),
+            s(
+                [280.0, 100.0, -20.0],
+                1,
+                PM_NORMAL,
+                40,
+                0,
+                ENTITYNUM_NONE,
+                0,
+                0,
+                0.008,
+                no_fly,
+                true,
+                CLASS_VEHICLE,
+                true,
+                VH_FIGHTER,
+                0.0,
+            ),
             // FLY_VEHICLE branch
-            s([280.0, 100.0, -20.0], 0, PM_NORMAL, 40, 0, ENTITYNUM_NONE, 0, 0, 0.008, FLY_VEHICLE, false, 0, false, 0, 0.0),
+            s(
+                [280.0, 100.0, -20.0],
+                0,
+                PM_NORMAL,
+                40,
+                0,
+                ENTITYNUM_NONE,
+                0,
+                0,
+                0.008,
+                FLY_VEHICLE,
+                false,
+                0,
+                false,
+                0,
+                0.0,
+            ),
         ];
 
         for (i, sc) in scenarios.iter().enumerate() {
@@ -12345,7 +13007,11 @@ mod tests {
                 ps.fd.forceJumpZStart
             };
             let c = unsafe { jka_PM_SetForceJumpZStart(value) };
-            assert_eq!(r.to_bits(), c.to_bits(), "PM_SetForceJumpZStart value={value}");
+            assert_eq!(
+                r.to_bits(),
+                c.to_bits(),
+                "PM_SetForceJumpZStart value={value}"
+            );
         }
     }
 
@@ -12434,10 +13100,26 @@ mod tests {
     #[test]
     fn anim_classifiers_match_oracle() {
         for i in -8..=2100 {
-            assert_eq!(PM_WalkingAnim(i), unsafe { jka_PM_WalkingAnim(i) }, "PM_WalkingAnim {i}");
-            assert_eq!(PM_RunningAnim(i), unsafe { jka_PM_RunningAnim(i) }, "PM_RunningAnim {i}");
-            assert_eq!(PM_SwimmingAnim(i), unsafe { jka_PM_SwimmingAnim(i) }, "PM_SwimmingAnim {i}");
-            assert_eq!(PM_RollingAnim(i), unsafe { jka_PM_RollingAnim(i) }, "PM_RollingAnim {i}");
+            assert_eq!(
+                PM_WalkingAnim(i),
+                unsafe { jka_PM_WalkingAnim(i) },
+                "PM_WalkingAnim {i}"
+            );
+            assert_eq!(
+                PM_RunningAnim(i),
+                unsafe { jka_PM_RunningAnim(i) },
+                "PM_RunningAnim {i}"
+            );
+            assert_eq!(
+                PM_SwimmingAnim(i),
+                unsafe { jka_PM_SwimmingAnim(i) },
+                "PM_SwimmingAnim {i}"
+            );
+            assert_eq!(
+                PM_RollingAnim(i),
+                unsafe { jka_PM_RollingAnim(i) },
+                "PM_RollingAnim {i}"
+            );
         }
     }
 
@@ -12480,7 +13162,11 @@ mod tests {
     #[test]
     fn bg_inslopeanim_matches_oracle() {
         for i in -8..=2100 {
-            assert_eq!(BG_InSlopeAnim(i), unsafe { jka_BG_InSlopeAnim(i) }, "BG_InSlopeAnim {i}");
+            assert_eq!(
+                BG_InSlopeAnim(i),
+                unsafe { jka_BG_InSlopeAnim(i) },
+                "BG_InSlopeAnim {i}"
+            );
         }
     }
 
@@ -12519,9 +13205,7 @@ mod tests {
                             let (mut c_t, mut c_f, mut c_l, mut c_to) =
                                 (pm_time, flags, legs, torso);
                             unsafe {
-                                jka_PM_DropTimers(
-                                    msec, &mut c_t, &mut c_f, &mut c_l, &mut c_to,
-                                );
+                                jka_PM_DropTimers(msec, &mut c_t, &mut c_f, &mut c_l, &mut c_to);
                             }
                             assert_eq!(
                                 (r_t, r_f, r_l, r_to),
@@ -12547,7 +13231,11 @@ mod tests {
                 BG_InRollAnim(&mut es)
             };
             assert_eq!(r_roll, unsafe { jka_BG_InRollAnim(i) }, "BG_InRollAnim {i}");
-            assert_eq!(BG_InKnockDown(i), unsafe { jka_BG_InKnockDown(i) }, "BG_InKnockDown {i}");
+            assert_eq!(
+                BG_InKnockDown(i),
+                unsafe { jka_BG_InKnockDown(i) },
+                "BG_InKnockDown {i}"
+            );
             let r_es = unsafe {
                 let mut es: entityState_t = core::mem::zeroed();
                 BG_InRollES(&mut es, i)
@@ -12643,7 +13331,13 @@ mod tests {
                                     let mut ang = a;
                                     let mut swinging = sw;
                                     let ret = BG_SwingAngles(
-                                        d, swingtol, clamptol, spd, &mut ang, &mut swinging, ft,
+                                        d,
+                                        swingtol,
+                                        clamptol,
+                                        spd,
+                                        &mut ang,
+                                        &mut swinging,
+                                        ft,
                                     );
                                     (ret, ang, swinging)
                                 };
@@ -12696,12 +13390,12 @@ mod tests {
         }
         let bits = [
             0i32,
-            1 << 2,            // only melee
-            1 << 5,            // only blaster
-            1 << 0 | 1 << 1,   // owned but none vehicle-legal
-            1 << 3 | 1 << 5,   // saber + blaster
-            0x7FFFF,           // all 19 weapons
-            !0,                // every bit
+            1 << 2,          // only melee
+            1 << 5,          // only blaster
+            1 << 0 | 1 << 1, // owned but none vehicle-legal
+            1 << 3 | 1 << 5, // saber + blaster
+            0x7FFFF,         // all 19 weapons
+            !0,              // every bit
         ];
         for &b in &bits {
             let r = unsafe {
@@ -12714,7 +13408,11 @@ mod tests {
                 *addr_of_mut!(pm) = null_mut();
                 got
             };
-            assert_eq!(r, unsafe { jka_PM_GetOkWeaponForVehicle(b) }, "PM_GetOkWeaponForVehicle {b:#x}");
+            assert_eq!(
+                r,
+                unsafe { jka_PM_GetOkWeaponForVehicle(b) },
+                "PM_GetOkWeaponForVehicle {b:#x}"
+            );
         }
     }
 }

@@ -35,37 +35,37 @@
 #![allow(non_upper_case_globals, non_snake_case, non_camel_case_types)]
 
 use crate::codemp::cgame::animtable::animTable;
+use crate::codemp::game::animalnpc::G_SetAnimalVehicleFunctions;
 use crate::codemp::game::bg_lib::sscanf;
+use crate::codemp::game::bg_misc::{BG_Alloc, BG_TempAlloc, BG_TempFree};
+use crate::codemp::game::bg_public::{bgEntity_t, BG_GiveMeVectorFromMatrix};
+use crate::codemp::game::bg_vehicles_h::Vehicle_t;
 use crate::codemp::game::bg_vehicles_h::{
     turretStats_t, vehWeaponInfo_t, vehWeaponStats_t, vehicleInfo_t, vehicleType_t, MAX_VEHICLES,
     MAX_VEH_WEAPONS, NUM_VWEAP_PARMS, VEHICLE_BASE, VEHICLE_NONE, VEH_MAX_PASSENGERS,
     VEH_WEAPON_BASE, VEH_WEAPON_NONE, VH_ANIMAL, VH_FIGHTER, VH_FLIER, VH_NONE, VH_NUM_VEHICLES,
     VH_SPEEDER, VH_WALKER,
 };
-use crate::codemp::game::g_vehicles::G_SetSharedVehicleFunctions;
-use crate::codemp::game::speedernpc::G_SetSpeederVehicleFunctions;
-use crate::codemp::game::animalnpc::G_SetAnimalVehicleFunctions;
 use crate::codemp::game::fighternpc::G_SetFighterVehicleFunctions;
-use crate::codemp::game::walkernpc::G_SetWalkerVehicleFunctions;
-use crate::codemp::game::bg_misc::{BG_Alloc, BG_TempAlloc, BG_TempFree};
+use crate::codemp::game::g_main::BG_GetTime;
 use crate::codemp::game::g_main::{Com_Error, Com_Printf};
 use crate::codemp::game::g_utils::{G_EffectIndex, G_ModelIndex, G_SoundIndex};
+use crate::codemp::game::g_vehicles::G_SetSharedVehicleFunctions;
+use crate::codemp::game::q_math::VectorSet;
 use crate::codemp::game::q_shared::{
-    GetIDForString, Q_strncpyz, Q_stricmp, Sz, COM_BeginParseSession, COM_ParseExt,
-    SkipBracedSection, SkipRestOfLine,
+    COM_BeginParseSession, COM_ParseExt, GetIDForString, Q_stricmp, Q_strncpyz, SkipBracedSection,
+    SkipRestOfLine, Sz,
 };
 use crate::codemp::game::q_shared_h::{
     mdxaBone_t, qboolean, stringID_table_t, vec3_t, ERR_DROP, FS_READ, ORIGIN, YAW,
 };
-use crate::codemp::game::bg_public::{bgEntity_t, BG_GiveMeVectorFromMatrix};
-use crate::codemp::game::bg_vehicles_h::Vehicle_t;
-use crate::codemp::game::g_main::BG_GetTime;
-use crate::codemp::game::q_math::VectorSet;
+use crate::codemp::game::speedernpc::G_SetSpeederVehicleFunctions;
+use crate::codemp::game::walkernpc::G_SetWalkerVehicleFunctions;
 use crate::ffi::types::{QFALSE, QTRUE};
 use crate::trap;
-use core::ffi::{c_char, c_int, CStr};
 #[cfg(feature = "vm")]
 use core::ffi::c_void;
+use core::ffi::{c_char, c_int, CStr};
 use core::mem::{offset_of, size_of};
 use core::ptr::{addr_of, addr_of_mut};
 
@@ -167,30 +167,98 @@ const fn vf(name: &'static CStr, ofs: usize, r#type: vehFieldType_t) -> vehField
 /// a mutable global and `vehField_t` carries a raw pointer (`!Sync`), so `static mut`.
 pub static mut vehWeaponFields: [vehField_t; NUM_VWEAP_PARMS as usize] = [
     vf(c"name", offset_of!(vehWeaponInfo_t, name), VF_LSTRING), //unique name of the vehicle
-    vf(c"projectile", offset_of!(vehWeaponInfo_t, bIsProjectile), VF_BOOL), //traceline or entity?
-    vf(c"hasGravity", offset_of!(vehWeaponInfo_t, bHasGravity), VF_BOOL), //if a projectile, drops
-    vf(c"ionWeapon", offset_of!(vehWeaponInfo_t, bIonWeapon), VF_BOOL), //disables ship shields and sends them out of control
-    vf(c"saberBlockable", offset_of!(vehWeaponInfo_t, bSaberBlockable), VF_BOOL), //lightsabers can deflect this projectile
-    vf(c"muzzleFX", offset_of!(vehWeaponInfo_t, iMuzzleFX), VF_EFFECT_CLIENT), //index of Muzzle Effect
-    vf(c"model", offset_of!(vehWeaponInfo_t, iModel), VF_MODEL_CLIENT), //handle to the model used by this projectile
-    vf(c"shotFX", offset_of!(vehWeaponInfo_t, iShotFX), VF_EFFECT_CLIENT), //index of Shot Effect
-    vf(c"impactFX", offset_of!(vehWeaponInfo_t, iImpactFX), VF_EFFECT_CLIENT), //index of Impact Effect
-    vf(c"g2MarkShader", offset_of!(vehWeaponInfo_t, iG2MarkShaderHandle), VF_SHADER), //index of shader to use for G2 marks made on other models when hit by this projectile
-    vf(c"g2MarkSize", offset_of!(vehWeaponInfo_t, fG2MarkSize), VF_FLOAT), //size (diameter) of the ghoul2 mark
-    vf(c"loopSound", offset_of!(vehWeaponInfo_t, iLoopSound), VF_SOUND_CLIENT), //index of loopSound
+    vf(
+        c"projectile",
+        offset_of!(vehWeaponInfo_t, bIsProjectile),
+        VF_BOOL,
+    ), //traceline or entity?
+    vf(
+        c"hasGravity",
+        offset_of!(vehWeaponInfo_t, bHasGravity),
+        VF_BOOL,
+    ), //if a projectile, drops
+    vf(
+        c"ionWeapon",
+        offset_of!(vehWeaponInfo_t, bIonWeapon),
+        VF_BOOL,
+    ), //disables ship shields and sends them out of control
+    vf(
+        c"saberBlockable",
+        offset_of!(vehWeaponInfo_t, bSaberBlockable),
+        VF_BOOL,
+    ), //lightsabers can deflect this projectile
+    vf(
+        c"muzzleFX",
+        offset_of!(vehWeaponInfo_t, iMuzzleFX),
+        VF_EFFECT_CLIENT,
+    ), //index of Muzzle Effect
+    vf(
+        c"model",
+        offset_of!(vehWeaponInfo_t, iModel),
+        VF_MODEL_CLIENT,
+    ), //handle to the model used by this projectile
+    vf(
+        c"shotFX",
+        offset_of!(vehWeaponInfo_t, iShotFX),
+        VF_EFFECT_CLIENT,
+    ), //index of Shot Effect
+    vf(
+        c"impactFX",
+        offset_of!(vehWeaponInfo_t, iImpactFX),
+        VF_EFFECT_CLIENT,
+    ), //index of Impact Effect
+    vf(
+        c"g2MarkShader",
+        offset_of!(vehWeaponInfo_t, iG2MarkShaderHandle),
+        VF_SHADER,
+    ), //index of shader to use for G2 marks made on other models when hit by this projectile
+    vf(
+        c"g2MarkSize",
+        offset_of!(vehWeaponInfo_t, fG2MarkSize),
+        VF_FLOAT,
+    ), //size (diameter) of the ghoul2 mark
+    vf(
+        c"loopSound",
+        offset_of!(vehWeaponInfo_t, iLoopSound),
+        VF_SOUND_CLIENT,
+    ), //index of loopSound
     vf(c"speed", offset_of!(vehWeaponInfo_t, fSpeed), VF_FLOAT), //speed of projectile/range of traceline
     vf(c"homing", offset_of!(vehWeaponInfo_t, fHoming), VF_FLOAT), //0.0 = not homing, 0.5 = half vel to targ, half cur vel, 1.0 = all vel to targ
-    vf(c"homingFOV", offset_of!(vehWeaponInfo_t, fHomingFOV), VF_FLOAT), //missile will lose lock on if DotProduct of missile direction and direction to target ever drops below this (-1 to 1, -1 = never lose target, 0 = lose if ship gets behind missile, 1 = pretty much will lose it's target right away)
-    vf(c"lockOnTime", offset_of!(vehWeaponInfo_t, iLockOnTime), VF_INT), //0 = no lock time needed, else # of ms needed to lock on
+    vf(
+        c"homingFOV",
+        offset_of!(vehWeaponInfo_t, fHomingFOV),
+        VF_FLOAT,
+    ), //missile will lose lock on if DotProduct of missile direction and direction to target ever drops below this (-1 to 1, -1 = never lose target, 0 = lose if ship gets behind missile, 1 = pretty much will lose it's target right away)
+    vf(
+        c"lockOnTime",
+        offset_of!(vehWeaponInfo_t, iLockOnTime),
+        VF_INT,
+    ), //0 = no lock time needed, else # of ms needed to lock on
     vf(c"damage", offset_of!(vehWeaponInfo_t, iDamage), VF_INT), //damage done when traceline or projectile directly hits target
-    vf(c"splashDamage", offset_of!(vehWeaponInfo_t, iSplashDamage), VF_INT), //damage done to ents in splashRadius of end of traceline or projectile origin on impact
-    vf(c"splashRadius", offset_of!(vehWeaponInfo_t, fSplashRadius), VF_FLOAT), //radius that ent must be in to take splashDamage (linear fall-off)
-    vf(c"ammoPerShot", offset_of!(vehWeaponInfo_t, iAmmoPerShot), VF_INT), //how much "ammo" each shot takes
+    vf(
+        c"splashDamage",
+        offset_of!(vehWeaponInfo_t, iSplashDamage),
+        VF_INT,
+    ), //damage done to ents in splashRadius of end of traceline or projectile origin on impact
+    vf(
+        c"splashRadius",
+        offset_of!(vehWeaponInfo_t, fSplashRadius),
+        VF_FLOAT,
+    ), //radius that ent must be in to take splashDamage (linear fall-off)
+    vf(
+        c"ammoPerShot",
+        offset_of!(vehWeaponInfo_t, iAmmoPerShot),
+        VF_INT,
+    ), //how much "ammo" each shot takes
     vf(c"health", offset_of!(vehWeaponInfo_t, iHealth), VF_INT), //if non-zero, projectile can be shot, takes this much damage before being destroyed
     vf(c"width", offset_of!(vehWeaponInfo_t, fWidth), VF_FLOAT), //width of traceline or bounding box of projecile (non-rotating!)
     vf(c"height", offset_of!(vehWeaponInfo_t, fHeight), VF_FLOAT), //height of traceline or bounding box of projecile (non-rotating!)
     vf(c"lifetime", offset_of!(vehWeaponInfo_t, iLifeTime), VF_INT), //removes itself after this amount of time
-    vf(c"explodeOnExpire", offset_of!(vehWeaponInfo_t, bExplodeOnExpire), VF_BOOL), //when iLifeTime is up, explodes rather than simply removing itself
+    vf(
+        c"explodeOnExpire",
+        offset_of!(vehWeaponInfo_t, bExplodeOnExpire),
+        VF_BOOL,
+    ), //when iLifeTime is up, explodes rather than simply removing itself
 ];
 
 // The C `VFOFS(x)` offsetof macro for nested-array fields (`weapon[i].field`,
@@ -241,38 +309,94 @@ pub static mut vehicleFields: [vehField_t; 175] = [
     vf(c"length", offset_of!(vehicleInfo_t, length), VF_FLOAT), //how long it is - used for body length traces when turning/moving?
     vf(c"width", offset_of!(vehicleInfo_t, width), VF_FLOAT), //how wide it is - used for body length traces when turning/moving?
     vf(c"height", offset_of!(vehicleInfo_t, height), VF_FLOAT), //how tall it is - used for body length traces when turning/moving?
-    vf(c"centerOfGravity", offset_of!(vehicleInfo_t, centerOfGravity), VF_VECTOR), //offset from origin: {forward, right, up} as a modifier on that dimension (-1.0f is all the way back, 1.0f is all the way forward)
+    vf(
+        c"centerOfGravity",
+        offset_of!(vehicleInfo_t, centerOfGravity),
+        VF_VECTOR,
+    ), //offset from origin: {forward, right, up} as a modifier on that dimension (-1.0f is all the way back, 1.0f is all the way forward)
     //speed stats
     vf(c"speedMax", offset_of!(vehicleInfo_t, speedMax), VF_FLOAT), //top speed
-    vf(c"turboSpeed", offset_of!(vehicleInfo_t, turboSpeed), VF_FLOAT), //turbo speed
+    vf(
+        c"turboSpeed",
+        offset_of!(vehicleInfo_t, turboSpeed),
+        VF_FLOAT,
+    ), //turbo speed
     vf(c"speedMin", offset_of!(vehicleInfo_t, speedMin), VF_FLOAT), //if < 0, can go in reverse
     vf(c"speedIdle", offset_of!(vehicleInfo_t, speedIdle), VF_FLOAT), //what speed it drifts to when no accel/decel input is given
     vf(c"accelIdle", offset_of!(vehicleInfo_t, accelIdle), VF_FLOAT), //if speedIdle > 0, how quickly it goes up to that speed
-    vf(c"acceleration", offset_of!(vehicleInfo_t, acceleration), VF_FLOAT), //when pressing on accelerator
+    vf(
+        c"acceleration",
+        offset_of!(vehicleInfo_t, acceleration),
+        VF_FLOAT,
+    ), //when pressing on accelerator
     vf(c"decelIdle", offset_of!(vehicleInfo_t, decelIdle), VF_FLOAT), //when giving no input, how quickly it drops to speedIdle
-    vf(c"throttleSticks", offset_of!(vehicleInfo_t, throttleSticks), VF_BOOL), //if true, speed stays at whatever you accel/decel to, unless you turbo or brake
-    vf(c"strafePerc", offset_of!(vehicleInfo_t, strafePerc), VF_FLOAT), //multiplier on current speed for strafing.  If 1.0f, you can strafe at the same speed as you're going forward, 0.5 is half, 0 is no strafing
+    vf(
+        c"throttleSticks",
+        offset_of!(vehicleInfo_t, throttleSticks),
+        VF_BOOL,
+    ), //if true, speed stays at whatever you accel/decel to, unless you turbo or brake
+    vf(
+        c"strafePerc",
+        offset_of!(vehicleInfo_t, strafePerc),
+        VF_FLOAT,
+    ), //multiplier on current speed for strafing.  If 1.0f, you can strafe at the same speed as you're going forward, 0.5 is half, 0 is no strafing
     //handling stats
-    vf(c"bankingSpeed", offset_of!(vehicleInfo_t, bankingSpeed), VF_FLOAT), //how quickly it pitches and rolls (not under player control)
-    vf(c"pitchLimit", offset_of!(vehicleInfo_t, pitchLimit), VF_FLOAT), //how far it can roll forward or backward
+    vf(
+        c"bankingSpeed",
+        offset_of!(vehicleInfo_t, bankingSpeed),
+        VF_FLOAT,
+    ), //how quickly it pitches and rolls (not under player control)
+    vf(
+        c"pitchLimit",
+        offset_of!(vehicleInfo_t, pitchLimit),
+        VF_FLOAT,
+    ), //how far it can roll forward or backward
     vf(c"rollLimit", offset_of!(vehicleInfo_t, rollLimit), VF_FLOAT), //how far it can roll to either side
-    vf(c"braking", offset_of!(vehicleInfo_t, braking), VF_FLOAT), //when pressing on decelerator
-    vf(c"mouseYaw", offset_of!(vehicleInfo_t, mouseYaw), VF_FLOAT), // The mouse yaw override.
-    vf(c"mousePitch", offset_of!(vehicleInfo_t, mousePitch), VF_FLOAT), // The mouse yaw override.
-    vf(c"turningSpeed", offset_of!(vehicleInfo_t, turningSpeed), VF_FLOAT), //how quickly you can turn
-    vf(c"turnWhenStopped", offset_of!(vehicleInfo_t, turnWhenStopped), VF_BOOL), //whether or not you can turn when not moving
+    vf(c"braking", offset_of!(vehicleInfo_t, braking), VF_FLOAT),     //when pressing on decelerator
+    vf(c"mouseYaw", offset_of!(vehicleInfo_t, mouseYaw), VF_FLOAT),   // The mouse yaw override.
+    vf(
+        c"mousePitch",
+        offset_of!(vehicleInfo_t, mousePitch),
+        VF_FLOAT,
+    ), // The mouse yaw override.
+    vf(
+        c"turningSpeed",
+        offset_of!(vehicleInfo_t, turningSpeed),
+        VF_FLOAT,
+    ), //how quickly you can turn
+    vf(
+        c"turnWhenStopped",
+        offset_of!(vehicleInfo_t, turnWhenStopped),
+        VF_BOOL,
+    ), //whether or not you can turn when not moving
     vf(c"traction", offset_of!(vehicleInfo_t, traction), VF_FLOAT), //how much your command input affects velocity
     vf(c"friction", offset_of!(vehicleInfo_t, friction), VF_FLOAT), //how much velocity is cut on its own
     vf(c"maxSlope", offset_of!(vehicleInfo_t, maxSlope), VF_FLOAT), //the max slope that it can go up with control
-    vf(c"speedDependantTurning", offset_of!(vehicleInfo_t, speedDependantTurning), VF_BOOL), //vehicle turns faster the faster it's going
+    vf(
+        c"speedDependantTurning",
+        offset_of!(vehicleInfo_t, speedDependantTurning),
+        VF_BOOL,
+    ), //vehicle turns faster the faster it's going
     //durability stats
     vf(c"mass", offset_of!(vehicleInfo_t, mass), VF_INT), //for momentum and impact force (player mass is 10)
     vf(c"armor", offset_of!(vehicleInfo_t, armor), VF_INT), //total points of damage it can take
     vf(c"shields", offset_of!(vehicleInfo_t, shields), VF_INT), //energy shield damage points
-    vf(c"shieldRechargeMS", offset_of!(vehicleInfo_t, shieldRechargeMS), VF_INT), //energy shield milliseconds per point recharged
+    vf(
+        c"shieldRechargeMS",
+        offset_of!(vehicleInfo_t, shieldRechargeMS),
+        VF_INT,
+    ), //energy shield milliseconds per point recharged
     vf(c"toughness", offset_of!(vehicleInfo_t, toughness), VF_FLOAT), //modifies incoming damage, 1.0 is normal, 0.5 is half, etc.  Simulates being made of tougher materials/construction
-    vf(c"malfunctionArmorLevel", offset_of!(vehicleInfo_t, malfunctionArmorLevel), VF_INT), //when armor drops to or below this point, start malfunctioning
-    vf(c"surfDestruction", offset_of!(vehicleInfo_t, surfDestruction), VF_INT),
+    vf(
+        c"malfunctionArmorLevel",
+        offset_of!(vehicleInfo_t, malfunctionArmorLevel),
+        VF_INT,
+    ), //when armor drops to or below this point, start malfunctioning
+    vf(
+        c"surfDestruction",
+        offset_of!(vehicleInfo_t, surfDestruction),
+        VF_INT,
+    ),
     //visuals & sounds
     vf(c"model", offset_of!(vehicleInfo_t, model), VF_LSTRING), //what model to use - if make it an NPC's primary model, don't need this?
     vf(c"skin", offset_of!(vehicleInfo_t, skin), VF_LSTRING), //what skin to use - if make it an NPC's primary model, don't need this?
@@ -280,72 +404,272 @@ pub static mut vehicleFields: [vehField_t; 175] = [
     vf(c"riderAnim", offset_of!(vehicleInfo_t, riderAnim), VF_ANIM), //what animation the rider uses
     vf(c"droidNPC", offset_of!(vehicleInfo_t, droidNPC), VF_LSTRING), //NPC to attach to *droidunit tag (if it exists in the model)
     // #ifdef _JK2MP
-    vf(c"radarIcon", offset_of!(vehicleInfo_t, radarIconHandle), VF_SHADER_NOMIP), //what icon to show on radar in MP
-    vf(c"dmgIndicFrame", offset_of!(vehicleInfo_t, dmgIndicFrameHandle), VF_SHADER_NOMIP), //what image to use for the frame of the damage indicator
-    vf(c"dmgIndicShield", offset_of!(vehicleInfo_t, dmgIndicShieldHandle), VF_SHADER_NOMIP), //what image to use for the shield of the damage indicator
-    vf(c"dmgIndicBackground", offset_of!(vehicleInfo_t, dmgIndicBackgroundHandle), VF_SHADER_NOMIP), //what image to use for the background of the damage indicator
-    vf(c"icon_front", offset_of!(vehicleInfo_t, iconFrontHandle), VF_SHADER_NOMIP), //what image to use for the front of the ship on the damage indicator
-    vf(c"icon_back", offset_of!(vehicleInfo_t, iconBackHandle), VF_SHADER_NOMIP), //what image to use for the back of the ship on the damage indicator
-    vf(c"icon_right", offset_of!(vehicleInfo_t, iconRightHandle), VF_SHADER_NOMIP), //what image to use for the right of the ship on the damage indicator
-    vf(c"icon_left", offset_of!(vehicleInfo_t, iconLeftHandle), VF_SHADER_NOMIP), //what image to use for the left of the ship on the damage indicator
-    vf(c"crosshairShader", offset_of!(vehicleInfo_t, crosshairShaderHandle), VF_SHADER_NOMIP), //what image to use as the crosshair
-    vf(c"shieldShader", offset_of!(vehicleInfo_t, shieldShaderHandle), VF_SHADER), //What shader to use when drawing the shield shell
+    vf(
+        c"radarIcon",
+        offset_of!(vehicleInfo_t, radarIconHandle),
+        VF_SHADER_NOMIP,
+    ), //what icon to show on radar in MP
+    vf(
+        c"dmgIndicFrame",
+        offset_of!(vehicleInfo_t, dmgIndicFrameHandle),
+        VF_SHADER_NOMIP,
+    ), //what image to use for the frame of the damage indicator
+    vf(
+        c"dmgIndicShield",
+        offset_of!(vehicleInfo_t, dmgIndicShieldHandle),
+        VF_SHADER_NOMIP,
+    ), //what image to use for the shield of the damage indicator
+    vf(
+        c"dmgIndicBackground",
+        offset_of!(vehicleInfo_t, dmgIndicBackgroundHandle),
+        VF_SHADER_NOMIP,
+    ), //what image to use for the background of the damage indicator
+    vf(
+        c"icon_front",
+        offset_of!(vehicleInfo_t, iconFrontHandle),
+        VF_SHADER_NOMIP,
+    ), //what image to use for the front of the ship on the damage indicator
+    vf(
+        c"icon_back",
+        offset_of!(vehicleInfo_t, iconBackHandle),
+        VF_SHADER_NOMIP,
+    ), //what image to use for the back of the ship on the damage indicator
+    vf(
+        c"icon_right",
+        offset_of!(vehicleInfo_t, iconRightHandle),
+        VF_SHADER_NOMIP,
+    ), //what image to use for the right of the ship on the damage indicator
+    vf(
+        c"icon_left",
+        offset_of!(vehicleInfo_t, iconLeftHandle),
+        VF_SHADER_NOMIP,
+    ), //what image to use for the left of the ship on the damage indicator
+    vf(
+        c"crosshairShader",
+        offset_of!(vehicleInfo_t, crosshairShaderHandle),
+        VF_SHADER_NOMIP,
+    ), //what image to use as the crosshair
+    vf(
+        c"shieldShader",
+        offset_of!(vehicleInfo_t, shieldShaderHandle),
+        VF_SHADER,
+    ), //What shader to use when drawing the shield shell
     //individual "area" health -rww
-    vf(c"health_front", offset_of!(vehicleInfo_t, health_front), VF_INT),
-    vf(c"health_back", offset_of!(vehicleInfo_t, health_back), VF_INT),
-    vf(c"health_right", offset_of!(vehicleInfo_t, health_right), VF_INT),
-    vf(c"health_left", offset_of!(vehicleInfo_t, health_left), VF_INT),
+    vf(
+        c"health_front",
+        offset_of!(vehicleInfo_t, health_front),
+        VF_INT,
+    ),
+    vf(
+        c"health_back",
+        offset_of!(vehicleInfo_t, health_back),
+        VF_INT,
+    ),
+    vf(
+        c"health_right",
+        offset_of!(vehicleInfo_t, health_right),
+        VF_INT,
+    ),
+    vf(
+        c"health_left",
+        offset_of!(vehicleInfo_t, health_left),
+        VF_INT,
+    ),
     // #endif
     vf(c"soundOn", offset_of!(vehicleInfo_t, soundOn), VF_SOUND), //sound to play when get on it
     vf(c"soundOff", offset_of!(vehicleInfo_t, soundOff), VF_SOUND), //sound to play when get off
     vf(c"soundLoop", offset_of!(vehicleInfo_t, soundLoop), VF_SOUND), //sound to loop while riding it
-    vf(c"soundTakeOff", offset_of!(vehicleInfo_t, soundTakeOff), VF_SOUND), //sound to play when ship takes off
-    vf(c"soundEngineStart", offset_of!(vehicleInfo_t, soundEngineStart), VF_SOUND_CLIENT), //sound to play when ship's thrusters first activate
+    vf(
+        c"soundTakeOff",
+        offset_of!(vehicleInfo_t, soundTakeOff),
+        VF_SOUND,
+    ), //sound to play when ship takes off
+    vf(
+        c"soundEngineStart",
+        offset_of!(vehicleInfo_t, soundEngineStart),
+        VF_SOUND_CLIENT,
+    ), //sound to play when ship's thrusters first activate
     vf(c"soundSpin", offset_of!(vehicleInfo_t, soundSpin), VF_SOUND), //sound to loop while spiraling out of control
-    vf(c"soundTurbo", offset_of!(vehicleInfo_t, soundTurbo), VF_SOUND), //sound to play when turbo/afterburner kicks in
-    vf(c"soundHyper", offset_of!(vehicleInfo_t, soundHyper), VF_SOUND_CLIENT), //sound to play when hits hyperspace
+    vf(
+        c"soundTurbo",
+        offset_of!(vehicleInfo_t, soundTurbo),
+        VF_SOUND,
+    ), //sound to play when turbo/afterburner kicks in
+    vf(
+        c"soundHyper",
+        offset_of!(vehicleInfo_t, soundHyper),
+        VF_SOUND_CLIENT,
+    ), //sound to play when hits hyperspace
     vf(c"soundLand", offset_of!(vehicleInfo_t, soundLand), VF_SOUND), //sound to play when ship lands
-    vf(c"soundFlyBy", offset_of!(vehicleInfo_t, soundFlyBy), VF_SOUND_CLIENT), //sound to play when they buzz you
-    vf(c"soundFlyBy2", offset_of!(vehicleInfo_t, soundFlyBy2), VF_SOUND_CLIENT), //alternate sound to play when they buzz you
-    vf(c"soundShift1", offset_of!(vehicleInfo_t, soundShift1), VF_SOUND), //sound to play when changing speeds
-    vf(c"soundShift2", offset_of!(vehicleInfo_t, soundShift2), VF_SOUND), //sound to play when changing speeds
-    vf(c"soundShift3", offset_of!(vehicleInfo_t, soundShift3), VF_SOUND), //sound to play when changing speeds
-    vf(c"soundShift4", offset_of!(vehicleInfo_t, soundShift4), VF_SOUND), //sound to play when changing speeds
-    vf(c"exhaustFX", offset_of!(vehicleInfo_t, iExhaustFX), VF_EFFECT_CLIENT), //exhaust effect, played from "*exhaust" bolt(s)
-    vf(c"turboFX", offset_of!(vehicleInfo_t, iTurboFX), VF_EFFECT_CLIENT), //turbo exhaust effect, played from "*exhaust" bolt(s) when ship is in "turbo" mode
-    vf(c"turboStartFX", offset_of!(vehicleInfo_t, iTurboStartFX), VF_EFFECT), //turbo start effect, played from "*exhaust" bolt(s) when ship is in "turbo" mode
-    vf(c"trailFX", offset_of!(vehicleInfo_t, iTrailFX), VF_EFFECT_CLIENT), //trail effect, played from "*trail" bolt(s)
-    vf(c"impactFX", offset_of!(vehicleInfo_t, iImpactFX), VF_EFFECT_CLIENT), //impact effect, for when it bumps into something
-    vf(c"explodeFX", offset_of!(vehicleInfo_t, iExplodeFX), VF_EFFECT), //explosion effect, for when it blows up (should have the sound built into explosion effect)
-    vf(c"wakeFX", offset_of!(vehicleInfo_t, iWakeFX), VF_EFFECT_CLIENT), //effect it makes when going across water
-    vf(c"dmgFX", offset_of!(vehicleInfo_t, iDmgFX), VF_EFFECT_CLIENT), //effect to play on damage from a weapon or something
+    vf(
+        c"soundFlyBy",
+        offset_of!(vehicleInfo_t, soundFlyBy),
+        VF_SOUND_CLIENT,
+    ), //sound to play when they buzz you
+    vf(
+        c"soundFlyBy2",
+        offset_of!(vehicleInfo_t, soundFlyBy2),
+        VF_SOUND_CLIENT,
+    ), //alternate sound to play when they buzz you
+    vf(
+        c"soundShift1",
+        offset_of!(vehicleInfo_t, soundShift1),
+        VF_SOUND,
+    ), //sound to play when changing speeds
+    vf(
+        c"soundShift2",
+        offset_of!(vehicleInfo_t, soundShift2),
+        VF_SOUND,
+    ), //sound to play when changing speeds
+    vf(
+        c"soundShift3",
+        offset_of!(vehicleInfo_t, soundShift3),
+        VF_SOUND,
+    ), //sound to play when changing speeds
+    vf(
+        c"soundShift4",
+        offset_of!(vehicleInfo_t, soundShift4),
+        VF_SOUND,
+    ), //sound to play when changing speeds
+    vf(
+        c"exhaustFX",
+        offset_of!(vehicleInfo_t, iExhaustFX),
+        VF_EFFECT_CLIENT,
+    ), //exhaust effect, played from "*exhaust" bolt(s)
+    vf(
+        c"turboFX",
+        offset_of!(vehicleInfo_t, iTurboFX),
+        VF_EFFECT_CLIENT,
+    ), //turbo exhaust effect, played from "*exhaust" bolt(s) when ship is in "turbo" mode
+    vf(
+        c"turboStartFX",
+        offset_of!(vehicleInfo_t, iTurboStartFX),
+        VF_EFFECT,
+    ), //turbo start effect, played from "*exhaust" bolt(s) when ship is in "turbo" mode
+    vf(
+        c"trailFX",
+        offset_of!(vehicleInfo_t, iTrailFX),
+        VF_EFFECT_CLIENT,
+    ), //trail effect, played from "*trail" bolt(s)
+    vf(
+        c"impactFX",
+        offset_of!(vehicleInfo_t, iImpactFX),
+        VF_EFFECT_CLIENT,
+    ), //impact effect, for when it bumps into something
+    vf(
+        c"explodeFX",
+        offset_of!(vehicleInfo_t, iExplodeFX),
+        VF_EFFECT,
+    ), //explosion effect, for when it blows up (should have the sound built into explosion effect)
+    vf(
+        c"wakeFX",
+        offset_of!(vehicleInfo_t, iWakeFX),
+        VF_EFFECT_CLIENT,
+    ), //effect it makes when going across water
+    vf(
+        c"dmgFX",
+        offset_of!(vehicleInfo_t, iDmgFX),
+        VF_EFFECT_CLIENT,
+    ), //effect to play on damage from a weapon or something
     // #ifdef _JK2MP
-    vf(c"injureFX", offset_of!(vehicleInfo_t, iInjureFX), VF_EFFECT_CLIENT), //effect to play on partially damaged ship surface
-    vf(c"noseFX", offset_of!(vehicleInfo_t, iNoseFX), VF_EFFECT_CLIENT), //effect for nose piece flying away when blown off
-    vf(c"lwingFX", offset_of!(vehicleInfo_t, iLWingFX), VF_EFFECT_CLIENT), //effect for left wing piece flying away when blown off
-    vf(c"rwingFX", offset_of!(vehicleInfo_t, iRWingFX), VF_EFFECT_CLIENT), //effect for right wing piece flying away when blown off
+    vf(
+        c"injureFX",
+        offset_of!(vehicleInfo_t, iInjureFX),
+        VF_EFFECT_CLIENT,
+    ), //effect to play on partially damaged ship surface
+    vf(
+        c"noseFX",
+        offset_of!(vehicleInfo_t, iNoseFX),
+        VF_EFFECT_CLIENT,
+    ), //effect for nose piece flying away when blown off
+    vf(
+        c"lwingFX",
+        offset_of!(vehicleInfo_t, iLWingFX),
+        VF_EFFECT_CLIENT,
+    ), //effect for left wing piece flying away when blown off
+    vf(
+        c"rwingFX",
+        offset_of!(vehicleInfo_t, iRWingFX),
+        VF_EFFECT_CLIENT,
+    ), //effect for right wing piece flying away when blown off
     // #endif
     // Weapon stuff:
-    vf(c"weap1", weap_ofs(0, offset_of!(vehWeaponStats_t, ID)), VF_WEAPON), //weapon used when press fire
-    vf(c"weap2", weap_ofs(1, offset_of!(vehWeaponStats_t, ID)), VF_WEAPON), //weapon used when press alt-fire
+    vf(
+        c"weap1",
+        weap_ofs(0, offset_of!(vehWeaponStats_t, ID)),
+        VF_WEAPON,
+    ), //weapon used when press fire
+    vf(
+        c"weap2",
+        weap_ofs(1, offset_of!(vehWeaponStats_t, ID)),
+        VF_WEAPON,
+    ), //weapon used when press alt-fire
     // The delay between shots for this weapon.
-    vf(c"weap1Delay", weap_ofs(0, offset_of!(vehWeaponStats_t, delay)), VF_INT),
-    vf(c"weap2Delay", weap_ofs(1, offset_of!(vehWeaponStats_t, delay)), VF_INT),
+    vf(
+        c"weap1Delay",
+        weap_ofs(0, offset_of!(vehWeaponStats_t, delay)),
+        VF_INT,
+    ),
+    vf(
+        c"weap2Delay",
+        weap_ofs(1, offset_of!(vehWeaponStats_t, delay)),
+        VF_INT,
+    ),
     // Whether or not all the muzzles for each weapon can be linked together (linked delay = weapon delay * number of muzzles linked!)
-    vf(c"weap1Link", weap_ofs(0, offset_of!(vehWeaponStats_t, linkable)), VF_INT),
-    vf(c"weap2Link", weap_ofs(1, offset_of!(vehWeaponStats_t, linkable)), VF_INT),
+    vf(
+        c"weap1Link",
+        weap_ofs(0, offset_of!(vehWeaponStats_t, linkable)),
+        VF_INT,
+    ),
+    vf(
+        c"weap2Link",
+        weap_ofs(1, offset_of!(vehWeaponStats_t, linkable)),
+        VF_INT,
+    ),
     // Whether or not to auto-aim the projectiles at the thing under the crosshair when we fire
-    vf(c"weap1Aim", weap_ofs(0, offset_of!(vehWeaponStats_t, aimCorrect)), VF_BOOL),
-    vf(c"weap2Aim", weap_ofs(1, offset_of!(vehWeaponStats_t, aimCorrect)), VF_BOOL),
+    vf(
+        c"weap1Aim",
+        weap_ofs(0, offset_of!(vehWeaponStats_t, aimCorrect)),
+        VF_BOOL,
+    ),
+    vf(
+        c"weap2Aim",
+        weap_ofs(1, offset_of!(vehWeaponStats_t, aimCorrect)),
+        VF_BOOL,
+    ),
     //maximum ammo
-    vf(c"weap1AmmoMax", weap_ofs(0, offset_of!(vehWeaponStats_t, ammoMax)), VF_INT),
-    vf(c"weap2AmmoMax", weap_ofs(1, offset_of!(vehWeaponStats_t, ammoMax)), VF_INT),
+    vf(
+        c"weap1AmmoMax",
+        weap_ofs(0, offset_of!(vehWeaponStats_t, ammoMax)),
+        VF_INT,
+    ),
+    vf(
+        c"weap2AmmoMax",
+        weap_ofs(1, offset_of!(vehWeaponStats_t, ammoMax)),
+        VF_INT,
+    ),
     //ammo recharge rate - milliseconds per unit (minimum of 100, which is 10 ammo per second)
-    vf(c"weap1AmmoRechargeMS", weap_ofs(0, offset_of!(vehWeaponStats_t, ammoRechargeMS)), VF_INT),
-    vf(c"weap2AmmoRechargeMS", weap_ofs(1, offset_of!(vehWeaponStats_t, ammoRechargeMS)), VF_INT),
+    vf(
+        c"weap1AmmoRechargeMS",
+        weap_ofs(0, offset_of!(vehWeaponStats_t, ammoRechargeMS)),
+        VF_INT,
+    ),
+    vf(
+        c"weap2AmmoRechargeMS",
+        weap_ofs(1, offset_of!(vehWeaponStats_t, ammoRechargeMS)),
+        VF_INT,
+    ),
     //sound to play when out of ammo (plays default "no ammo" sound if none specified)
-    vf(c"weap1SoundNoAmmo", weap_ofs(0, offset_of!(vehWeaponStats_t, soundNoAmmo)), VF_SOUND_CLIENT), //sound to play when try to fire weapon 1 with no ammo
-    vf(c"weap2SoundNoAmmo", weap_ofs(1, offset_of!(vehWeaponStats_t, soundNoAmmo)), VF_SOUND_CLIENT), //sound to play when try to fire weapon 2 with no ammo
+    vf(
+        c"weap1SoundNoAmmo",
+        weap_ofs(0, offset_of!(vehWeaponStats_t, soundNoAmmo)),
+        VF_SOUND_CLIENT,
+    ), //sound to play when try to fire weapon 1 with no ammo
+    vf(
+        c"weap2SoundNoAmmo",
+        weap_ofs(1, offset_of!(vehWeaponStats_t, soundNoAmmo)),
+        VF_SOUND_CLIENT,
+    ), //sound to play when try to fire weapon 2 with no ammo
     // Which weapon a muzzle fires (has to match one of the weapons this vehicle has).
     vf(c"weapMuzzle1", muzzle_ofs(0), VF_WEAPON),
     vf(c"weapMuzzle2", muzzle_ofs(1), VF_WEAPON),
@@ -358,79 +682,295 @@ pub static mut vehicleFields: [vehField_t; 175] = [
     vf(c"weapMuzzle9", muzzle_ofs(8), VF_WEAPON),
     vf(c"weapMuzzle10", muzzle_ofs(9), VF_WEAPON),
     // The max height before this ship (?) starts (auto)landing.
-    vf(c"landingHeight", offset_of!(vehicleInfo_t, landingHeight), VF_FLOAT),
+    vf(
+        c"landingHeight",
+        offset_of!(vehicleInfo_t, landingHeight),
+        VF_FLOAT,
+    ),
     //other misc stats
     vf(c"gravity", offset_of!(vehicleInfo_t, gravity), VF_INT), //normal is 800
-    vf(c"hoverHeight", offset_of!(vehicleInfo_t, hoverHeight), VF_FLOAT), //if 0, it's a ground vehicle
-    vf(c"hoverStrength", offset_of!(vehicleInfo_t, hoverStrength), VF_FLOAT), //how hard it pushes off ground when less than hover height... causes "bounce", like shocks
-    vf(c"waterProof", offset_of!(vehicleInfo_t, waterProof), VF_BOOL), //can drive underwater if it has to
+    vf(
+        c"hoverHeight",
+        offset_of!(vehicleInfo_t, hoverHeight),
+        VF_FLOAT,
+    ), //if 0, it's a ground vehicle
+    vf(
+        c"hoverStrength",
+        offset_of!(vehicleInfo_t, hoverStrength),
+        VF_FLOAT,
+    ), //how hard it pushes off ground when less than hover height... causes "bounce", like shocks
+    vf(
+        c"waterProof",
+        offset_of!(vehicleInfo_t, waterProof),
+        VF_BOOL,
+    ), //can drive underwater if it has to
     vf(c"bouyancy", offset_of!(vehicleInfo_t, bouyancy), VF_FLOAT), //when in water, how high it floats (1 is neutral bouyancy)
     vf(c"fuelMax", offset_of!(vehicleInfo_t, fuelMax), VF_INT), //how much fuel it can hold (capacity)
     vf(c"fuelRate", offset_of!(vehicleInfo_t, fuelRate), VF_INT), //how quickly is uses up fuel
-    vf(c"turboDuration", offset_of!(vehicleInfo_t, turboDuration), VF_INT), //how long turbo lasts
-    vf(c"turboRecharge", offset_of!(vehicleInfo_t, turboRecharge), VF_INT), //how long turbo takes to recharge
+    vf(
+        c"turboDuration",
+        offset_of!(vehicleInfo_t, turboDuration),
+        VF_INT,
+    ), //how long turbo lasts
+    vf(
+        c"turboRecharge",
+        offset_of!(vehicleInfo_t, turboRecharge),
+        VF_INT,
+    ), //how long turbo takes to recharge
     vf(c"visibility", offset_of!(vehicleInfo_t, visibility), VF_INT), //for sight alerts
     vf(c"loudness", offset_of!(vehicleInfo_t, loudness), VF_INT), //for sound alerts
-    vf(c"explosionRadius", offset_of!(vehicleInfo_t, explosionRadius), VF_FLOAT), //range of explosion
-    vf(c"explosionDamage", offset_of!(vehicleInfo_t, explosionDamage), VF_INT), //damage of explosion
+    vf(
+        c"explosionRadius",
+        offset_of!(vehicleInfo_t, explosionRadius),
+        VF_FLOAT,
+    ), //range of explosion
+    vf(
+        c"explosionDamage",
+        offset_of!(vehicleInfo_t, explosionDamage),
+        VF_INT,
+    ), //damage of explosion
     //new stuff
-    vf(c"maxPassengers", offset_of!(vehicleInfo_t, maxPassengers), VF_INT), // The max number of passengers this vehicle may have (Default = 0).
+    vf(
+        c"maxPassengers",
+        offset_of!(vehicleInfo_t, maxPassengers),
+        VF_INT,
+    ), // The max number of passengers this vehicle may have (Default = 0).
     vf(c"hideRider", offset_of!(vehicleInfo_t, hideRider), VF_BOOL), // rider (and passengers?) should not be drawn
-    vf(c"killRiderOnDeath", offset_of!(vehicleInfo_t, killRiderOnDeath), VF_BOOL), //if rider is on vehicle when it dies, they should die
+    vf(
+        c"killRiderOnDeath",
+        offset_of!(vehicleInfo_t, killRiderOnDeath),
+        VF_BOOL,
+    ), //if rider is on vehicle when it dies, they should die
     vf(c"flammable", offset_of!(vehicleInfo_t, flammable), VF_BOOL), //whether or not the vehicle should catch on fire before it explodes
-    vf(c"explosionDelay", offset_of!(vehicleInfo_t, explosionDelay), VF_INT), //how long the vehicle should be on fire/dying before it explodes
+    vf(
+        c"explosionDelay",
+        offset_of!(vehicleInfo_t, explosionDelay),
+        VF_INT,
+    ), //how long the vehicle should be on fire/dying before it explodes
     //camera stuff
-    vf(c"cameraOverride", offset_of!(vehicleInfo_t, cameraOverride), VF_BOOL), //override the third person camera with the below values - normal is 0 (off)
-    vf(c"cameraRange", offset_of!(vehicleInfo_t, cameraRange), VF_FLOAT), //how far back the camera should be - normal is 80
-    vf(c"cameraVertOffset", offset_of!(vehicleInfo_t, cameraVertOffset), VF_FLOAT), //how high over the vehicle origin the camera should be - normal is 16
-    vf(c"cameraHorzOffset", offset_of!(vehicleInfo_t, cameraHorzOffset), VF_FLOAT), //how far to left/right (negative/positive) of of the vehicle origin the camera should be - normal is 0
-    vf(c"cameraPitchOffset", offset_of!(vehicleInfo_t, cameraPitchOffset), VF_FLOAT), //a modifier on the camera's pitch (up/down angle) to the vehicle - normal is 0
+    vf(
+        c"cameraOverride",
+        offset_of!(vehicleInfo_t, cameraOverride),
+        VF_BOOL,
+    ), //override the third person camera with the below values - normal is 0 (off)
+    vf(
+        c"cameraRange",
+        offset_of!(vehicleInfo_t, cameraRange),
+        VF_FLOAT,
+    ), //how far back the camera should be - normal is 80
+    vf(
+        c"cameraVertOffset",
+        offset_of!(vehicleInfo_t, cameraVertOffset),
+        VF_FLOAT,
+    ), //how high over the vehicle origin the camera should be - normal is 16
+    vf(
+        c"cameraHorzOffset",
+        offset_of!(vehicleInfo_t, cameraHorzOffset),
+        VF_FLOAT,
+    ), //how far to left/right (negative/positive) of of the vehicle origin the camera should be - normal is 0
+    vf(
+        c"cameraPitchOffset",
+        offset_of!(vehicleInfo_t, cameraPitchOffset),
+        VF_FLOAT,
+    ), //a modifier on the camera's pitch (up/down angle) to the vehicle - normal is 0
     vf(c"cameraFOV", offset_of!(vehicleInfo_t, cameraFOV), VF_FLOAT), //third person camera FOV, default is 80
-    vf(c"cameraAlpha", offset_of!(vehicleInfo_t, cameraAlpha), VF_FLOAT), //fade out the vehicle to this alpha (0.1-1.0f) if it's in the way of the crosshair
-    vf(c"cameraPitchDependantVertOffset", offset_of!(vehicleInfo_t, cameraPitchDependantVertOffset), VF_BOOL), //use the hacky AT-ST pitch dependant vertical offset
+    vf(
+        c"cameraAlpha",
+        offset_of!(vehicleInfo_t, cameraAlpha),
+        VF_FLOAT,
+    ), //fade out the vehicle to this alpha (0.1-1.0f) if it's in the way of the crosshair
+    vf(
+        c"cameraPitchDependantVertOffset",
+        offset_of!(vehicleInfo_t, cameraPitchDependantVertOffset),
+        VF_BOOL,
+    ), //use the hacky AT-ST pitch dependant vertical offset
     //===TURRETS===========================================================================
     //Turret 1
-    vf(c"turret1Weap", turret_ofs(0, offset_of!(turretStats_t, iWeapon)), VF_WEAPON),
-    vf(c"turret1Delay", turret_ofs(0, offset_of!(turretStats_t, iDelay)), VF_INT),
-    vf(c"turret1AmmoMax", turret_ofs(0, offset_of!(turretStats_t, iAmmoMax)), VF_INT),
-    vf(c"turret1AmmoRechargeMS", turret_ofs(0, offset_of!(turretStats_t, iAmmoRechargeMS)), VF_INT),
-    vf(c"turret1YawBone", turret_ofs(0, offset_of!(turretStats_t, yawBone)), VF_LSTRING),
-    vf(c"turret1PitchBone", turret_ofs(0, offset_of!(turretStats_t, pitchBone)), VF_LSTRING),
-    vf(c"turret1YawAxis", turret_ofs(0, offset_of!(turretStats_t, yawAxis)), VF_INT),
-    vf(c"turret1PitchAxis", turret_ofs(0, offset_of!(turretStats_t, pitchAxis)), VF_INT),
-    vf(c"turret1ClampYawL", turret_ofs(0, offset_of!(turretStats_t, yawClampLeft)), VF_FLOAT), //how far the turret is allowed to turn left
-    vf(c"turret1ClampYawR", turret_ofs(0, offset_of!(turretStats_t, yawClampRight)), VF_FLOAT), //how far the turret is allowed to turn right
-    vf(c"turret1ClampPitchU", turret_ofs(0, offset_of!(turretStats_t, pitchClampUp)), VF_FLOAT), //how far the turret is allowed to title up
-    vf(c"turret1ClampPitchD", turret_ofs(0, offset_of!(turretStats_t, pitchClampDown)), VF_FLOAT), //how far the turret is allowed to tilt down
+    vf(
+        c"turret1Weap",
+        turret_ofs(0, offset_of!(turretStats_t, iWeapon)),
+        VF_WEAPON,
+    ),
+    vf(
+        c"turret1Delay",
+        turret_ofs(0, offset_of!(turretStats_t, iDelay)),
+        VF_INT,
+    ),
+    vf(
+        c"turret1AmmoMax",
+        turret_ofs(0, offset_of!(turretStats_t, iAmmoMax)),
+        VF_INT,
+    ),
+    vf(
+        c"turret1AmmoRechargeMS",
+        turret_ofs(0, offset_of!(turretStats_t, iAmmoRechargeMS)),
+        VF_INT,
+    ),
+    vf(
+        c"turret1YawBone",
+        turret_ofs(0, offset_of!(turretStats_t, yawBone)),
+        VF_LSTRING,
+    ),
+    vf(
+        c"turret1PitchBone",
+        turret_ofs(0, offset_of!(turretStats_t, pitchBone)),
+        VF_LSTRING,
+    ),
+    vf(
+        c"turret1YawAxis",
+        turret_ofs(0, offset_of!(turretStats_t, yawAxis)),
+        VF_INT,
+    ),
+    vf(
+        c"turret1PitchAxis",
+        turret_ofs(0, offset_of!(turretStats_t, pitchAxis)),
+        VF_INT,
+    ),
+    vf(
+        c"turret1ClampYawL",
+        turret_ofs(0, offset_of!(turretStats_t, yawClampLeft)),
+        VF_FLOAT,
+    ), //how far the turret is allowed to turn left
+    vf(
+        c"turret1ClampYawR",
+        turret_ofs(0, offset_of!(turretStats_t, yawClampRight)),
+        VF_FLOAT,
+    ), //how far the turret is allowed to turn right
+    vf(
+        c"turret1ClampPitchU",
+        turret_ofs(0, offset_of!(turretStats_t, pitchClampUp)),
+        VF_FLOAT,
+    ), //how far the turret is allowed to title up
+    vf(
+        c"turret1ClampPitchD",
+        turret_ofs(0, offset_of!(turretStats_t, pitchClampDown)),
+        VF_FLOAT,
+    ), //how far the turret is allowed to tilt down
     vf(c"turret1Muzzle1", turret_muzzle_ofs(0, 0), VF_INT),
     vf(c"turret1Muzzle2", turret_muzzle_ofs(0, 1), VF_INT),
-    vf(c"turret1TurnSpeed", turret_ofs(0, offset_of!(turretStats_t, fTurnSpeed)), VF_FLOAT),
-    vf(c"turret1AI", turret_ofs(0, offset_of!(turretStats_t, bAI)), VF_BOOL),
-    vf(c"turret1AILead", turret_ofs(0, offset_of!(turretStats_t, bAILead)), VF_BOOL),
-    vf(c"turret1AIRange", turret_ofs(0, offset_of!(turretStats_t, fAIRange)), VF_FLOAT),
-    vf(c"turret1PassengerNum", turret_ofs(0, offset_of!(turretStats_t, passengerNum)), VF_INT), //which number passenger can control this turret
-    vf(c"turret1GunnerViewTag", turret_ofs(0, offset_of!(turretStats_t, gunnerViewTag)), VF_LSTRING),
+    vf(
+        c"turret1TurnSpeed",
+        turret_ofs(0, offset_of!(turretStats_t, fTurnSpeed)),
+        VF_FLOAT,
+    ),
+    vf(
+        c"turret1AI",
+        turret_ofs(0, offset_of!(turretStats_t, bAI)),
+        VF_BOOL,
+    ),
+    vf(
+        c"turret1AILead",
+        turret_ofs(0, offset_of!(turretStats_t, bAILead)),
+        VF_BOOL,
+    ),
+    vf(
+        c"turret1AIRange",
+        turret_ofs(0, offset_of!(turretStats_t, fAIRange)),
+        VF_FLOAT,
+    ),
+    vf(
+        c"turret1PassengerNum",
+        turret_ofs(0, offset_of!(turretStats_t, passengerNum)),
+        VF_INT,
+    ), //which number passenger can control this turret
+    vf(
+        c"turret1GunnerViewTag",
+        turret_ofs(0, offset_of!(turretStats_t, gunnerViewTag)),
+        VF_LSTRING,
+    ),
     //Turret 2
-    vf(c"turret2Weap", turret_ofs(1, offset_of!(turretStats_t, iWeapon)), VF_WEAPON),
-    vf(c"turret2Delay", turret_ofs(1, offset_of!(turretStats_t, iDelay)), VF_INT),
-    vf(c"turret2AmmoMax", turret_ofs(1, offset_of!(turretStats_t, iAmmoMax)), VF_INT),
-    vf(c"turret2AmmoRechargeMS", turret_ofs(1, offset_of!(turretStats_t, iAmmoRechargeMS)), VF_INT),
-    vf(c"turret2YawBone", turret_ofs(1, offset_of!(turretStats_t, yawBone)), VF_LSTRING),
-    vf(c"turret2PitchBone", turret_ofs(1, offset_of!(turretStats_t, pitchBone)), VF_LSTRING),
-    vf(c"turret2YawAxis", turret_ofs(1, offset_of!(turretStats_t, yawAxis)), VF_INT),
-    vf(c"turret2PitchAxis", turret_ofs(1, offset_of!(turretStats_t, pitchAxis)), VF_INT),
-    vf(c"turret2ClampYawL", turret_ofs(1, offset_of!(turretStats_t, yawClampLeft)), VF_FLOAT), //how far the turret is allowed to turn left
-    vf(c"turret2ClampYawR", turret_ofs(1, offset_of!(turretStats_t, yawClampRight)), VF_FLOAT), //how far the turret is allowed to turn right
-    vf(c"turret2ClampPitchU", turret_ofs(1, offset_of!(turretStats_t, pitchClampUp)), VF_FLOAT), //how far the turret is allowed to title up
-    vf(c"turret2ClampPitchD", turret_ofs(1, offset_of!(turretStats_t, pitchClampDown)), VF_FLOAT), //how far the turret is allowed to tilt down
+    vf(
+        c"turret2Weap",
+        turret_ofs(1, offset_of!(turretStats_t, iWeapon)),
+        VF_WEAPON,
+    ),
+    vf(
+        c"turret2Delay",
+        turret_ofs(1, offset_of!(turretStats_t, iDelay)),
+        VF_INT,
+    ),
+    vf(
+        c"turret2AmmoMax",
+        turret_ofs(1, offset_of!(turretStats_t, iAmmoMax)),
+        VF_INT,
+    ),
+    vf(
+        c"turret2AmmoRechargeMS",
+        turret_ofs(1, offset_of!(turretStats_t, iAmmoRechargeMS)),
+        VF_INT,
+    ),
+    vf(
+        c"turret2YawBone",
+        turret_ofs(1, offset_of!(turretStats_t, yawBone)),
+        VF_LSTRING,
+    ),
+    vf(
+        c"turret2PitchBone",
+        turret_ofs(1, offset_of!(turretStats_t, pitchBone)),
+        VF_LSTRING,
+    ),
+    vf(
+        c"turret2YawAxis",
+        turret_ofs(1, offset_of!(turretStats_t, yawAxis)),
+        VF_INT,
+    ),
+    vf(
+        c"turret2PitchAxis",
+        turret_ofs(1, offset_of!(turretStats_t, pitchAxis)),
+        VF_INT,
+    ),
+    vf(
+        c"turret2ClampYawL",
+        turret_ofs(1, offset_of!(turretStats_t, yawClampLeft)),
+        VF_FLOAT,
+    ), //how far the turret is allowed to turn left
+    vf(
+        c"turret2ClampYawR",
+        turret_ofs(1, offset_of!(turretStats_t, yawClampRight)),
+        VF_FLOAT,
+    ), //how far the turret is allowed to turn right
+    vf(
+        c"turret2ClampPitchU",
+        turret_ofs(1, offset_of!(turretStats_t, pitchClampUp)),
+        VF_FLOAT,
+    ), //how far the turret is allowed to title up
+    vf(
+        c"turret2ClampPitchD",
+        turret_ofs(1, offset_of!(turretStats_t, pitchClampDown)),
+        VF_FLOAT,
+    ), //how far the turret is allowed to tilt down
     vf(c"turret2Muzzle1", turret_muzzle_ofs(1, 0), VF_INT),
     vf(c"turret2Muzzle2", turret_muzzle_ofs(1, 1), VF_INT),
-    vf(c"turret2TurnSpeed", turret_ofs(1, offset_of!(turretStats_t, fTurnSpeed)), VF_FLOAT),
-    vf(c"turret2AI", turret_ofs(1, offset_of!(turretStats_t, bAI)), VF_BOOL),
-    vf(c"turret2AILead", turret_ofs(1, offset_of!(turretStats_t, bAILead)), VF_BOOL),
-    vf(c"turret2AIRange", turret_ofs(1, offset_of!(turretStats_t, fAIRange)), VF_FLOAT),
-    vf(c"turret2PassengerNum", turret_ofs(1, offset_of!(turretStats_t, passengerNum)), VF_INT), //which number passenger can control this turret
-    vf(c"turret2GunnerViewTag", turret_ofs(1, offset_of!(turretStats_t, gunnerViewTag)), VF_LSTRING),
+    vf(
+        c"turret2TurnSpeed",
+        turret_ofs(1, offset_of!(turretStats_t, fTurnSpeed)),
+        VF_FLOAT,
+    ),
+    vf(
+        c"turret2AI",
+        turret_ofs(1, offset_of!(turretStats_t, bAI)),
+        VF_BOOL,
+    ),
+    vf(
+        c"turret2AILead",
+        turret_ofs(1, offset_of!(turretStats_t, bAILead)),
+        VF_BOOL,
+    ),
+    vf(
+        c"turret2AIRange",
+        turret_ofs(1, offset_of!(turretStats_t, fAIRange)),
+        VF_FLOAT,
+    ),
+    vf(
+        c"turret2PassengerNum",
+        turret_ofs(1, offset_of!(turretStats_t, passengerNum)),
+        VF_INT,
+    ), //which number passenger can control this turret
+    vf(
+        c"turret2GunnerViewTag",
+        turret_ofs(1, offset_of!(turretStats_t, gunnerViewTag)),
+        VF_LSTRING,
+    ),
     //===END TURRETS===========================================================================
     //terminating entry
     VEHFIELD_TERMINATOR,
@@ -439,7 +979,10 @@ pub static mut vehicleFields: [vehField_t; 175] = [
 /// Builds one `stringID_table_t` row from the C `ENUM2STRING(arg)` macro
 /// (`#arg, arg`): the stringized enumerator name paired with its value.
 const fn enum2string(name: &'static CStr, id: vehicleType_t) -> stringID_table_t {
-    stringID_table_t { name: name.as_ptr(), id }
+    stringID_table_t {
+        name: name.as_ptr(),
+        id,
+    }
 }
 
 /// `stringID_table_t VehicleTable[VH_NUM_VEHICLES+1]` (bg_vehicleLoad.c:680) -- the
@@ -452,9 +995,12 @@ pub static mut VehicleTable: [stringID_table_t; (VH_NUM_VEHICLES + 1) as usize] 
     enum2string(c"VH_WALKER", VH_WALKER), //something you ride inside of, it walks like you, like an AT-ST
     enum2string(c"VH_FIGHTER", VH_FIGHTER), //something you fly inside of, like an X-Wing or TIE fighter
     enum2string(c"VH_SPEEDER", VH_SPEEDER), //something you ride on that hovers, like a speeder or swoop
-    enum2string(c"VH_ANIMAL", VH_ANIMAL), //animal you ride on top of that walks, like a tauntaun
-    enum2string(c"VH_FLIER", VH_FLIER),   //animal you ride on top of that flies, like a giant mynoc?
-    stringID_table_t { name: core::ptr::null(), id: -1 }, // 0, -1
+    enum2string(c"VH_ANIMAL", VH_ANIMAL),   //animal you ride on top of that walks, like a tauntaun
+    enum2string(c"VH_FLIER", VH_FLIER), //animal you ride on top of that flies, like a giant mynoc?
+    stringID_table_t {
+        name: core::ptr::null(),
+        id: -1,
+    }, // 0, -1
 ];
 
 /// `BG_SetSharedVehicleFunctions( vehicleInfo_t *pVehInfo )` (bg_vehicleLoad.c:692) — install
@@ -668,7 +1214,7 @@ pub fn BG_VehicleLoadParms() {
         BG_TempFree(MAX_VEHICLE_DATA_SIZE as c_int);
 
         *addr_of_mut!(numVehicles) = 1; //first one is null/default
-        //set the first vehicle to default data
+                                        //set the first vehicle to default data
         BG_VehicleSetDefaults(
             (addr_of_mut!(g_vehicleInfo) as *mut vehicleInfo_t).add(VEHICLE_BASE as usize),
         );
@@ -777,9 +1323,10 @@ pub unsafe fn BG_ParseVehWeaponParm(
                         (atof(value.as_ptr()) != 0.0) as qboolean;
                 }
                 VF_VEHTYPE => {
-                    let vehType =
-                        GetIDForString(addr_of!(VehicleTable) as *const stringID_table_t, value.as_ptr())
-                            as vehicleType_t;
+                    let vehType = GetIDForString(
+                        addr_of!(VehicleTable) as *const stringID_table_t,
+                        value.as_ptr(),
+                    ) as vehicleType_t;
                     *(b.add(f.ofs as usize) as *mut vehicleType_t) = vehType;
                 }
                 VF_ANIM => {
@@ -1083,7 +1630,11 @@ pub unsafe fn VEH_LoadVehicle(vehicleName: *const c_char) -> c_int {
         } else if Q_stricmp(c"weapMuzzle9".as_ptr(), parmName.as_ptr()) == 0 {
             Q_strncpyz(weapMuzzle9.as_mut_ptr(), value, weapMuzzle9.len() as c_int);
         } else if Q_stricmp(c"weapMuzzle10".as_ptr(), parmName.as_ptr()) == 0 {
-            Q_strncpyz(weapMuzzle10.as_mut_ptr(), value, weapMuzzle10.len() as c_int);
+            Q_strncpyz(
+                weapMuzzle10.as_mut_ptr(),
+                value,
+                weapMuzzle10.len() as c_int,
+            );
         } else if BG_ParseVehicleParm(vehicle, parmName.as_ptr(), value) == QFALSE {
             // #ifndef FINAL_BUILD
             Com_Printf(&format!(
@@ -1682,7 +2233,9 @@ mod tests {
         // id -> name, round-tripped back through GetIDForString to compare values
         // (the returned pointers index the same table, so they match by construction;
         // re-looking-up the C string is the meaningful check).
-        for id in [VH_NONE, VH_WALKER, VH_FIGHTER, VH_SPEEDER, VH_ANIMAL, VH_FLIER] {
+        for id in [
+            VH_NONE, VH_WALKER, VH_FIGHTER, VH_SPEEDER, VH_ANIMAL, VH_FLIER,
+        ] {
             let s = unsafe { oracle::GetStringForID(tbl, id) };
             assert!(!s.is_null(), "GetStringForID({id}) null");
             let back = unsafe { oracle::GetIDForString(tbl, s) };
@@ -1715,11 +2268,11 @@ mod tests {
             ("g2MarkSize", "1.5", QTRUE),
             ("damage", "-100", QTRUE),
             ("lockOnTime", "2500", QTRUE),
-            ("muzzleFX", "effect/path", QTRUE),   // VF_EFFECT_CLIENT -> no-op (QAGAME)
-            ("model", "models/foo.md3", QTRUE),    // VF_MODEL_CLIENT  -> no-op
-            ("g2MarkShader", "gfx/mark", QTRUE),   // VF_SHADER        -> no-op
+            ("muzzleFX", "effect/path", QTRUE), // VF_EFFECT_CLIENT -> no-op (QAGAME)
+            ("model", "models/foo.md3", QTRUE), // VF_MODEL_CLIENT  -> no-op
+            ("g2MarkShader", "gfx/mark", QTRUE), // VF_SHADER        -> no-op
             ("loopSound", "sound/loop.wav", QTRUE), // VF_SOUND_CLIENT -> no-op
-            ("nosuchkey", "x", QFALSE),            // unmatched -> qfalse, struct untouched
+            ("nosuchkey", "x", QFALSE),         // unmatched -> qfalse, struct untouched
         ];
 
         // SAFETY: identical `vehWeaponInfo_t` layout (104 bytes, 64-bit asserted) both
@@ -1732,11 +2285,7 @@ mod tests {
             for &(k, v, expect) in kvs {
                 let key = CString::new(k).unwrap();
                 let val = CString::new(v).unwrap();
-                let r = BG_ParseVehWeaponParm(
-                    addr_of_mut!(rust_vw),
-                    key.as_ptr(),
-                    val.as_ptr(),
-                );
+                let r = BG_ParseVehWeaponParm(addr_of_mut!(rust_vw), key.as_ptr(), val.as_ptr());
                 let o = jka_BG_ParseVehWeaponParm(
                     addr_of_mut!(orac_vw) as *mut u8,
                     key.as_ptr(),
@@ -1752,7 +2301,10 @@ mod tests {
             assert_eq!(rb[8..], ob[8..], "vehWeaponInfo_t scalar region");
 
             // The `name` VF_LSTRING slot: compare the strings the two pointers point at.
-            assert!(!rust_vw.name.is_null() && !orac_vw.name.is_null(), "name allocated");
+            assert!(
+                !rust_vw.name.is_null() && !orac_vw.name.is_null(),
+                "name allocated"
+            );
             assert_eq!(
                 CStr::from_ptr(rust_vw.name).to_bytes(),
                 CStr::from_ptr(orac_vw.name).to_bytes(),
@@ -1796,9 +2348,17 @@ speed 16000\n\
             // First reference loads into slot 1 (slot 0 is the null/default).
             let i_laser = VEH_VehWeaponIndexForName(c"laser".as_ptr());
             assert_eq!(i_laser, 1, "laser loaded at index 1");
-            assert_eq!(*addr_of!(numVehicleWeapons), 2, "numVehicleWeapons after first load");
+            assert_eq!(
+                *addr_of!(numVehicleWeapons),
+                2,
+                "numVehicleWeapons after first load"
+            );
             let laser = &*(addr_of!(g_vehWeaponInfo) as *const vehWeaponInfo_t).add(1);
-            assert_eq!(CStr::from_ptr(laser.name).to_bytes(), b"laser", "laser name");
+            assert_eq!(
+                CStr::from_ptr(laser.name).to_bytes(),
+                b"laser",
+                "laser name"
+            );
             assert_eq!(laser.fSpeed, 16000.0, "laser speed");
 
             // Re-reference hits the dedup-by-name fast path (no new load).
@@ -1809,9 +2369,17 @@ speed 16000\n\
             // A second distinct weapon loads into slot 2, decoded by BG_ParseVehWeaponParm.
             let i_conc = VEH_VehWeaponIndexForName(c"concussion".as_ptr());
             assert_eq!(i_conc, 2, "concussion loaded at index 2");
-            assert_eq!(*addr_of!(numVehicleWeapons), 3, "numVehicleWeapons after second load");
+            assert_eq!(
+                *addr_of!(numVehicleWeapons),
+                3,
+                "numVehicleWeapons after second load"
+            );
             let conc = &*(addr_of!(g_vehWeaponInfo) as *const vehWeaponInfo_t).add(2);
-            assert_eq!(CStr::from_ptr(conc.name).to_bytes(), b"concussion", "concussion name");
+            assert_eq!(
+                CStr::from_ptr(conc.name).to_bytes(),
+                b"concussion",
+                "concussion name"
+            );
             assert_eq!(conc.bIsProjectile, QTRUE, "concussion projectile");
             assert_eq!(conc.fSpeed, 8000.0, "concussion speed");
             assert_eq!(conc.iDamage, 100, "concussion damage");
@@ -1852,10 +2420,10 @@ speed 16000\n\
     fn veh_clamp_data_matches_oracle() {
         // (centerOfGravity, maxPassengers): exercise both clamp directions + pass-through.
         let cases: &[([f32; 3], c_int)] = &[
-            ([2.0, -3.0, 0.5], 15),    // cog: high/low/in; pass: over max -> 10
-            ([-1.5, 1.25, 0.0], -5),   // pass: negative -> 0
-            ([1.0, -1.0, 0.999], 7),   // boundary + in-range pass-through
-            ([0.0, 0.0, 0.0], 0),      // all no-ops
+            ([2.0, -3.0, 0.5], 15),  // cog: high/low/in; pass: over max -> 10
+            ([-1.5, 1.25, 0.0], -5), // pass: negative -> 0
+            ([1.0, -1.0, 0.999], 7), // boundary + in-range pass-through
+            ([0.0, 0.0, 0.0], 0),    // all no-ops
         ];
 
         // SAFETY: identical `vehicleInfo_t` layout (64-bit asserted in bg_vehicles_h) both
@@ -1876,7 +2444,10 @@ speed 16000\n\
 
                 let rb = core::slice::from_raw_parts(addr_of!(rust_v) as *const u8, sz);
                 let ob = core::slice::from_raw_parts(addr_of!(orac_v) as *const u8, sz);
-                assert_eq!(rb, ob, "BG_VehicleClampData bytes for cog={cog:?} maxp={maxp}");
+                assert_eq!(
+                    rb, ob,
+                    "BG_VehicleClampData bytes for cog={cog:?} maxp={maxp}"
+                );
             }
         }
     }
@@ -1901,21 +2472,45 @@ speed 16000\n\
             };
 
             // VF_INT
-            assert_eq!(parse(addr_of_mut!(v), c"mass", c"200"), QTRUE, "mass return");
+            assert_eq!(
+                parse(addr_of_mut!(v), c"mass", c"200"),
+                QTRUE,
+                "mass return"
+            );
             assert_eq!(v.mass, 200, "VF_INT mass");
             // VF_FLOAT (exactly f32-representable so the vm atof shim agrees)
-            assert_eq!(parse(addr_of_mut!(v), c"speedMax", c"800.5"), QTRUE, "speedMax return");
+            assert_eq!(
+                parse(addr_of_mut!(v), c"speedMax", c"800.5"),
+                QTRUE,
+                "speedMax return"
+            );
             assert_eq!(v.speedMax, 800.5, "VF_FLOAT speedMax");
             // VF_BOOL
-            assert_eq!(parse(addr_of_mut!(v), c"turnWhenStopped", c"1"), QTRUE, "bool return");
+            assert_eq!(
+                parse(addr_of_mut!(v), c"turnWhenStopped", c"1"),
+                QTRUE,
+                "bool return"
+            );
             assert_eq!(v.turnWhenStopped, QTRUE, "VF_BOOL turnWhenStopped");
             // VF_VEHTYPE (GetIDForString over VehicleTable, itself oracle-verified)
-            assert_eq!(parse(addr_of_mut!(v), c"type", c"VH_FIGHTER"), QTRUE, "vehtype return");
+            assert_eq!(
+                parse(addr_of_mut!(v), c"type", c"VH_FIGHTER"),
+                QTRUE,
+                "vehtype return"
+            );
             assert_eq!(v.r#type, VH_FIGHTER, "VF_VEHTYPE type");
             // VF_LSTRING (BG_Alloc'd copy)
-            assert_eq!(parse(addr_of_mut!(v), c"name", c"swoop"), QTRUE, "name return");
+            assert_eq!(
+                parse(addr_of_mut!(v), c"name", c"swoop"),
+                QTRUE,
+                "name return"
+            );
             assert!(!v.name.is_null(), "VF_LSTRING allocated");
-            assert_eq!(CStr::from_ptr(v.name).to_bytes(), b"swoop", "VF_LSTRING name");
+            assert_eq!(
+                CStr::from_ptr(v.name).to_bytes(),
+                b"swoop",
+                "VF_LSTRING name"
+            );
 
             // VF_VECTOR: the faithful bug stores via vehWeaponFields[8].ofs == 36, which
             // equals vehicleFields[8].ofs (centerOfGravity) == 36 -- so it lands correctly.
@@ -1925,10 +2520,18 @@ speed 16000\n\
                 QTRUE,
                 "vector return"
             );
-            assert_eq!(v.centerOfGravity, [0.5, 0.25, -0.75], "VF_VECTOR centerOfGravity (benign bug)");
+            assert_eq!(
+                v.centerOfGravity,
+                [0.5, 0.25, -0.75],
+                "VF_VECTOR centerOfGravity (benign bug)"
+            );
 
             // Loop terminates on ofs == -1: an unknown key returns qfalse.
-            assert_eq!(parse(addr_of_mut!(v), c"nosuchkey", c"x"), QFALSE, "unknown key -> qfalse");
+            assert_eq!(
+                parse(addr_of_mut!(v), c"nosuchkey", c"x"),
+                QFALSE,
+                "unknown key -> qfalse"
+            );
         }
     }
 }

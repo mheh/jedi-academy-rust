@@ -16,44 +16,46 @@
 use core::ffi::{c_char, c_int, CStr};
 use core::ptr::{addr_of, addr_of_mut, null_mut};
 
+use crate::codemp::game::b_public_h::{
+    spot_t, SPOT_CHEST, SPOT_GROUND, SPOT_HEAD, SPOT_HEAD_LEAN, SPOT_LEGS, SPOT_ORIGIN, SPOT_WEAPON,
+};
+use crate::codemp::game::b_public_h::{BS_DEFAULT, BS_FOLLOW_LEADER, SCF_DONT_FIRE};
 use crate::codemp::game::bg_misc::bgToggleableSurfaces;
 use crate::codemp::game::bg_public::{
     BG_GiveMeVectorFromMatrix, BG_NUM_TOGGLEABLE_SURFACES, EF2_HELD_BY_MONSTER, TEAM_NUM_TEAMS,
 };
-use crate::codemp::game::b_public_h::{
-    spot_t, SPOT_CHEST, SPOT_GROUND, SPOT_HEAD, SPOT_HEAD_LEAN, SPOT_LEGS, SPOT_ORIGIN, SPOT_WEAPON,
-};
 use crate::codemp::game::bg_public::{
-    ET_NPC, GT_TEAM, TEAM_BLUE, TEAM_FREE, TEAM_RED, TEAM_SPECTATOR, MASK_PLAYERSOLID,
+    ET_NPC, GT_TEAM, MASK_PLAYERSOLID, TEAM_BLUE, TEAM_FREE, TEAM_RED, TEAM_SPECTATOR,
 };
-use crate::codemp::game::g_local::{gentity_t, FL_NOTARGET};
-use crate::codemp::game::g_local::AEL_DISCOVERED;
-use crate::codemp::game::g_main::{g_entities, g_gametype, level, Com_Printf};
-use crate::codemp::game::g_public_h::{Q3_INFINITE, TID_ANGLE_FACE};
-use crate::codemp::game::npc::{client, ucmd, NPC, NPCInfo};
-use crate::codemp::game::npc_combat::{G_AddVoiceEvent, G_ClearEnemy, G_SetEnemy, NPC_ClearShot};
-use crate::codemp::game::npc_senses::{
-    InFOV, NPC_CheckAlertEvents, G_ClearLOS, G_ClearLOS2, G_ClearLOS3, G_ClearLOS4, G_ClearLOS5,
-};
-use crate::codemp::game::b_public_h::{BS_DEFAULT, BS_FOLLOW_LEADER, SCF_DONT_FIRE};
 use crate::codemp::game::bg_public::{EV_CONFUSE1, EV_CONFUSE3, PMF_FOLLOW};
 use crate::codemp::game::bg_weapons_h::{WP_EMPLACED_GUN, WP_NONE, WP_SABER};
-use crate::codemp::game::q_math::Q_irand;
-use crate::codemp::game::teams_h::{
-    CLASS_GALAKMECH, CLASS_RANCOR, CLASS_WAMPA, NPCTEAM_ENEMY, NPCTEAM_FREE, NPCTEAM_NEUTRAL,
-    NPCTEAM_PLAYER,
-};
-use crate::codemp::game::g_utils::{GetAnglesForDirection, G_BoneIndex};
+use crate::codemp::game::g_local::AEL_DISCOVERED;
+use crate::codemp::game::g_local::{gentity_t, FL_NOTARGET};
+use crate::codemp::game::g_main::{g_entities, g_gametype, level, Com_Printf};
+use crate::codemp::game::g_public_h::{Q3_INFINITE, TID_ANGLE_FACE};
+use crate::codemp::game::g_utils::{G_BoneIndex, GetAnglesForDirection};
 use crate::codemp::game::g_weapon::CalcMuzzlePoint;
+use crate::codemp::game::npc::{client, ucmd, NPCInfo, NPC};
+use crate::codemp::game::npc_combat::{G_AddVoiceEvent, G_ClearEnemy, G_SetEnemy, NPC_ClearShot};
+use crate::codemp::game::npc_senses::{
+    G_ClearLOS, G_ClearLOS2, G_ClearLOS3, G_ClearLOS4, G_ClearLOS5, InFOV, NPC_CheckAlertEvents,
+};
+use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_math::{
-    vec3_origin, AngleDelta, AngleVectors, Distance, DistanceSquared, VectorCompare, VectorCopy, VectorLengthSquared, VectorMA, VectorSet, VectorSubtract, flrand, VectorAdd, AngleNormalize360,
+    flrand, vec3_origin, AngleDelta, AngleNormalize360, AngleVectors, Distance, DistanceSquared,
+    VectorAdd, VectorCompare, VectorCopy, VectorLengthSquared, VectorMA, VectorSet, VectorSubtract,
 };
 use crate::codemp::game::q_shared::{va, Q_stricmp};
 use crate::codemp::game::q_shared_h::{
     mdxaBone_t, vec3_t, ANGLE2SHORT, ENTITYNUM_NONE, ENTITYNUM_WORLD, FP_SPEED, MAX_CLIENTS,
-    NEGATIVE_Y, NEGATIVE_Z, ORIGIN, PITCH, POSITIVE_X, Q3_SCRIPT_DIR, ROLL, SHORT2ANGLE, WORLD_SIZE, YAW,
+    NEGATIVE_Y, NEGATIVE_Z, ORIGIN, PITCH, POSITIVE_X, Q3_SCRIPT_DIR, ROLL, SHORT2ANGLE,
+    WORLD_SIZE, YAW,
 };
 use crate::codemp::game::teams_h::CLASS_ATST;
+use crate::codemp::game::teams_h::{
+    CLASS_GALAKMECH, CLASS_RANCOR, CLASS_WAMPA, NPCTEAM_ENEMY, NPCTEAM_FREE, NPCTEAM_NEUTRAL,
+    NPCTEAM_PLAYER,
+};
 use crate::codemp::ghoul2::g2_h::BONE_ANGLES_POSTMULT;
 use crate::ffi::types::{qboolean, QFALSE, QTRUE};
 use crate::trap;
@@ -240,10 +242,7 @@ pub unsafe fn CalcEntitySpot(ent: *const gentity_t, spot: spot_t, point: *mut ve
         SPOT_WEAPON => {
             if !(*ent).NPC.is_null()
                 && VectorCompare(&(*(*ent).NPC).shootAngles, &vec3_origin) == 0
-                && VectorCompare(
-                    &(*(*ent).NPC).shootAngles,
-                    &(*(*ent).client).ps.viewangles,
-                ) == 0
+                && VectorCompare(&(*(*ent).NPC).shootAngles, &(*(*ent).client).ps.viewangles) == 0
             {
                 AngleVectors(
                     &(*(*ent).NPC).shootAngles,
@@ -328,12 +327,7 @@ pub unsafe fn G_GetBoltPosition(
 
     if !(*self_).client.is_null() {
         //clients don't actually even keep r.currentAngles maintained
-        VectorSet(
-            &mut angles,
-            0.0,
-            (*(*self_).client).ps.viewangles[YAW],
-            0.0,
-        );
+        VectorSet(&mut angles, 0.0, (*(*self_).client).ps.viewangles[YAW], 0.0);
     } else {
         VectorSet(&mut angles, 0.0, (*self_).r.currentAngles[YAW], 0.0);
     }
@@ -850,8 +844,8 @@ pub unsafe fn NPC_UpdateAngles(doPitch: qboolean, doYaw: qboolean) -> qboolean {
 
     // if angle changes are locked; just keep the current angles
     // aimTime isn't even set anymore... so this code was never reached, but I need a way to lock NPC's yaw, so instead of making a new SCF_ flag, just use the existing render flag... - dmv
-    if (*NPC).enemy.is_null() && (level.time < (*NPCInfo).aimTime
-        /*|| NPC->client->renderInfo.renderFlags & RF_LOCKEDANGLE*/)
+    if (*NPC).enemy.is_null()
+        && (level.time < (*NPCInfo).aimTime/*|| NPC->client->renderInfo.renderFlags & RF_LOCKEDANGLE*/)
     {
         if doPitch != QFALSE {
             targetPitch = (*NPCInfo).lockedDesiredPitch;
@@ -916,8 +910,7 @@ pub unsafe fn NPC_UpdateAngles(doPitch: qboolean, doYaw: qboolean) -> qboolean {
             }
         }
 
-        ucmd.angles[YAW] =
-            ANGLE2SHORT(targetYaw + error) - (*client).ps.delta_angles[YAW];
+        ucmd.angles[YAW] = ANGLE2SHORT(targetYaw + error) - (*client).ps.delta_angles[YAW];
     }
 
     //FIXME: have a pitchSpeed?
@@ -945,8 +938,7 @@ pub unsafe fn NPC_UpdateAngles(doPitch: qboolean, doYaw: qboolean) -> qboolean {
             }
         }
 
-        ucmd.angles[PITCH] =
-            ANGLE2SHORT(targetPitch + error) - (*client).ps.delta_angles[PITCH];
+        ucmd.angles[PITCH] = ANGLE2SHORT(targetPitch + error) - (*client).ps.delta_angles[PITCH];
     }
 
     ucmd.angles[ROLL] =
@@ -1132,10 +1124,8 @@ pub unsafe fn NPC_AimWiggle(enemy_org: *mut vec3_t) {
     //shoot for somewhere between the head and torso
     //NOTE: yes, I know this looks weird, but it works
     if (*NPCInfo).aimErrorDebounceTime < level.time {
-        (*NPCInfo).aimOfs[0] =
-            0.3 * flrand((*(*NPC).enemy).r.mins[0], (*(*NPC).enemy).r.maxs[0]);
-        (*NPCInfo).aimOfs[1] =
-            0.3 * flrand((*(*NPC).enemy).r.mins[1], (*(*NPC).enemy).r.maxs[1]);
+        (*NPCInfo).aimOfs[0] = 0.3 * flrand((*(*NPC).enemy).r.mins[0], (*(*NPC).enemy).r.maxs[0]);
+        (*NPCInfo).aimOfs[1] = 0.3 * flrand((*(*NPC).enemy).r.mins[1], (*(*NPC).enemy).r.maxs[1]);
         if (*(*NPC).enemy).r.maxs[2] > 0.0 {
             (*NPCInfo).aimOfs[2] = (*(*NPC).enemy).r.maxs[2] * flrand(0.0, -1.0);
         }
@@ -1193,12 +1183,10 @@ pub unsafe fn NPC_UpdateFiringAngles(doPitch: qboolean, doYaw: qboolean) -> qboo
 
     if (*NPCInfo).aimErrorDebounceTime < level.time {
         if Q_irand(0, 1) != 0 {
-            (*NPCInfo).lastAimErrorYaw =
-                ((6 - (*NPCInfo).stats.aim) as f32) * flrand(-1.0, 1.0);
+            (*NPCInfo).lastAimErrorYaw = ((6 - (*NPCInfo).stats.aim) as f32) * flrand(-1.0, 1.0);
         }
         if Q_irand(0, 1) != 0 {
-            (*NPCInfo).lastAimErrorPitch =
-                ((6 - (*NPCInfo).stats.aim) as f32) * flrand(-1.0, 1.0);
+            (*NPCInfo).lastAimErrorPitch = ((6 - (*NPCInfo).stats.aim) as f32) * flrand(-1.0, 1.0);
         }
         (*NPCInfo).aimErrorDebounceTime = level.time + Q_irand(250, 2000);
     }
@@ -1235,8 +1223,7 @@ pub unsafe fn NPC_UpdateFiringAngles(doPitch: qboolean, doYaw: qboolean) -> qboo
         }
         */
 
-        ucmd.angles[YAW] =
-            ANGLE2SHORT(targetYaw + diff + error) - (*client).ps.delta_angles[YAW];
+        ucmd.angles[YAW] = ANGLE2SHORT(targetYaw + diff + error) - (*client).ps.delta_angles[YAW];
     }
 
     if doPitch != QFALSE {
@@ -1367,8 +1354,7 @@ pub unsafe fn NPC_FacePosition(position: *mut vec3_t, doPitch: qboolean) -> qboo
 
     //Get the positions
     if !(*NPC).client.is_null()
-        && ((*(*NPC).client).NPC_class == CLASS_RANCOR
-            || (*(*NPC).client).NPC_class == CLASS_WAMPA)
+        && ((*(*NPC).client).NPC_class == CLASS_RANCOR || (*(*NPC).client).NPC_class == CLASS_WAMPA)
     // || NPC->client->NPC_class == CLASS_SAND_CREATURE) )
     {
         CalcEntitySpot(NPC, SPOT_ORIGIN, addr_of_mut!(muzzle));
@@ -1409,8 +1395,7 @@ pub unsafe fn NPC_FacePosition(position: *mut vec3_t, doPitch: qboolean) -> qboo
 
     if doPitch != QFALSE {
         //Find the delta between our goal and our current facing
-        let currentAngles =
-            SHORT2ANGLE(ucmd.angles[PITCH] + (*client).ps.delta_angles[PITCH]);
+        let currentAngles = SHORT2ANGLE(ucmd.angles[PITCH] + (*client).ps.delta_angles[PITCH]);
         let pitchDelta = (*NPCInfo).desiredPitch - currentAngles;
 
         //See if we are facing properly
@@ -1566,7 +1551,8 @@ pub unsafe fn NPC_FindNearestEnemy(ent: *mut gentity_t) -> c_int {
     numEnts = trap::EntitiesInBox(&mins, &maxs, &mut iradiusEnts);
 
     for i in 0..numEnts {
-        radEnt = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(iradiusEnts[i as usize] as isize);
+        radEnt = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .offset(iradiusEnts[i as usize] as isize);
         //Don't consider self
         if radEnt == ent {
             continue;
@@ -1645,7 +1631,9 @@ pub unsafe fn NPC_PickEnemyExt(checkAlerts: qboolean) -> *mut gentity_t {
 
             if (*event).level >= AEL_DISCOVERED {
                 //If it's the player, attack him
-                if (*event).owner == (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(0) {
+                if (*event).owner
+                    == (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(0)
+                {
                     return (*event).owner;
                 }
 

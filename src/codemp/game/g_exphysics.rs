@@ -104,7 +104,8 @@ pub unsafe fn G_RunExPhys(
             if tr.startsolid != 0 || tr.allsolid != 0 {
                 touch(
                     ent,
-                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(tr.entityNum as usize),
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add(tr.entityNum as usize),
                     &mut tr,
                 );
             }
@@ -281,7 +282,8 @@ pub unsafe fn G_RunExPhys(
                 //then call the touch function
                 touch(
                     ent,
-                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(tr.entityNum as usize),
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add(tr.entityNum as usize),
                     &mut tr,
                 );
             }

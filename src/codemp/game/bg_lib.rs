@@ -1533,7 +1533,9 @@ mod tests {
             (9, 10, 5),  // dst < src, 1-byte overlap stride
             (0, 0, 32),  // whole buffer onto itself
         ];
-        let template: Vec<u8> = (0..32u8).map(|b| b.wrapping_mul(7).wrapping_add(3)).collect();
+        let template: Vec<u8> = (0..32u8)
+            .map(|b| b.wrapping_mul(7).wrapping_add(3))
+            .collect();
         for &(dst_off, src_off, count) in cases {
             let mut a = template.clone();
             let mut b = template.clone();
@@ -1754,7 +1756,11 @@ mod tests {
             -2_000_000_000,
             2_000_000_000,
         ] {
-            assert_eq!(super::abs(n), unsafe { oracle::jka_abs(n) }, "abs mismatch at n={n}");
+            assert_eq!(
+                super::abs(n),
+                unsafe { oracle::jka_abs(n) },
+                "abs mismatch at n={n}"
+            );
         }
     }
 
@@ -1789,7 +1795,18 @@ mod tests {
         // bit-exact: both call the SAME libm sin/cos, so the single divide must agree.
         // Includes points near pi/2 where cos is tiny (large tan) but never exactly zero.
         for &x in &[
-            0.0, 0.5, 1.0, -1.0, 0.785_398_163_4, 1.5, 1.57, -2.3, 3.0, -3.0, 100.0, -0.0,
+            0.0,
+            0.5,
+            1.0,
+            -1.0,
+            0.785_398_163_4,
+            1.5,
+            1.57,
+            -2.3,
+            3.0,
+            -3.0,
+            100.0,
+            -0.0,
         ] {
             let got = super::tan(x);
             let want = unsafe { oracle::jka_tan(x) };
@@ -1889,7 +1906,10 @@ mod tests {
                 }
                 let adv_a = pa as usize - a.as_ptr() as usize;
                 let adv_b = pb as usize - b.as_ptr() as usize;
-                assert_eq!(a, b, "AddInt buffer mismatch val={val} width={width} flags={flags:#x}");
+                assert_eq!(
+                    a, b,
+                    "AddInt buffer mismatch val={val} width={width} flags={flags:#x}"
+                );
                 assert_eq!(
                     adv_a, adv_b,
                     "AddInt advance mismatch val={val} width={width} flags={flags:#x}"
@@ -1904,20 +1924,8 @@ mod tests {
         // In-range magnitudes (Rust saturating float->int `as` == C truncation here).
         // Output is a decimal string, so the buffers are compared byte-for-byte.
         let fvals: &[f32] = &[
-            0.0,
-            -0.0,
-            1.0,
-            0.5,
-            2.5,
-            3.14159,
-            -3.14159,
-            123.456,
-            -0.001,
-            99.999,
-            1000.0,
-            0.30000001,
-            -42.0,
-            0.999999,
+            0.0, -0.0, 1.0, 0.5, 2.5, 3.14159, -3.14159, 123.456, -0.001, 99.999, 1000.0,
+            0.30000001, -42.0, 0.999999,
         ];
         // (width, prec): default prec (-1 -> 6), no fraction (0), and a few explicit precs.
         let combos: &[(c_int, c_int)] = &[(0, -1), (0, 0), (0, 2), (8, 3), (0, 6), (0, 10)];
@@ -1963,7 +1971,10 @@ mod tests {
                     super::AddString(&mut pa, cs.as_ptr(), width, prec);
                     oracle::jka_AddString(&mut pb, cs.as_ptr(), width, prec);
                 }
-                assert_eq!(a, b, "AddString buffer mismatch s={s:?} width={width} prec={prec}");
+                assert_eq!(
+                    a, b,
+                    "AddString buffer mismatch s={s:?} width={width} prec={prec}"
+                );
                 assert_eq!(
                     pa as usize - a.as_ptr() as usize,
                     pb as usize - b.as_ptr() as usize,
@@ -1981,7 +1992,10 @@ mod tests {
                 super::AddString(&mut pa, core::ptr::null(), width, prec);
                 oracle::jka_AddString(&mut pb, core::ptr::null(), width, prec);
             }
-            assert_eq!(a, b, "AddString(NULL) buffer mismatch width={width} prec={prec}");
+            assert_eq!(
+                a, b,
+                "AddString(NULL) buffer mismatch width={width} prec={prec}"
+            );
             assert_eq!(
                 pa as usize - a.as_ptr() as usize,
                 pb as usize - b.as_ptr() as usize,
@@ -2023,8 +2037,22 @@ mod tests {
         // negative width — i.e. when the field is *narrower* than the value (a UB the C shares;
         // cf. the AddInt parity test, which holds LADJUST widths >= the max field for the same
         // reason). So no `%-5d`-style narrow left-adjust here.
-        let ints = [0, 1, -1, 7, -7, 42, -42, 12345, -12345, c_int::MAX, c_int::MIN];
-        for f in [c"%d", c"%i", c"%5d", c"%05d", c"%1d", c"%12d", c"%-12d", c"%-012d", c"v=%d!"] {
+        let ints = [
+            0,
+            1,
+            -1,
+            7,
+            -7,
+            42,
+            -42,
+            12345,
+            -12345,
+            c_int::MAX,
+            c_int::MIN,
+        ];
+        for f in [
+            c"%d", c"%i", c"%5d", c"%05d", c"%1d", c"%12d", c"%-12d", c"%-012d", c"v=%d!",
+        ] {
             for &v in &ints {
                 check(f, &[VsArg::Int(v)], |b| unsafe {
                     oracle::jka_vsprintf(b, f.as_ptr(), v)
@@ -2035,7 +2063,9 @@ mod tests {
         // %f — C reads va_arg(double); both sides narrow the *same* f64 to f32 for AddFloat.
         // Magnitudes kept in range (saturating float->int `as` == C truncation), matching the
         // AddFloat parity test's domain.
-        let floats = [0.0_f64, -0.0, 1.0, 0.5, 2.5, 3.14159, -3.14159, 123.456, -42.0, 99.999];
+        let floats = [
+            0.0_f64, -0.0, 1.0, 0.5, 2.5, 3.14159, -3.14159, 123.456, -42.0, 99.999,
+        ];
         for f in [c"%f", c"%.0f", c"%.2f", c"%8.3f", c"%-8.2f", c"%.10f"] {
             for &v in &floats {
                 check(f, &[VsArg::Double(v)], |b| unsafe {
@@ -2073,7 +2103,12 @@ mod tests {
         let (d, fl, c) = (5_i32, 2.5_f64, '*' as c_int);
         check(
             f,
-            &[VsArg::Int(d), VsArg::Double(fl), VsArg::Str(s.as_ptr()), VsArg::Int(c)],
+            &[
+                VsArg::Int(d),
+                VsArg::Double(fl),
+                VsArg::Str(s.as_ptr()),
+                VsArg::Int(c),
+            ],
             |b| unsafe { oracle::jka_vsprintf(b, f.as_ptr(), d, fl, s.as_ptr(), c) },
         );
     }
@@ -2177,7 +2212,11 @@ mod tests {
             let fmt = std::ffi::CString::new("val=%f").unwrap();
             let mut v: f32 = 0.0;
             unsafe {
-                super::sscanf(buf.as_ptr(), fmt.as_ptr(), &[&mut v as *mut f32 as *mut c_void]);
+                super::sscanf(
+                    buf.as_ptr(),
+                    fmt.as_ptr(),
+                    &[&mut v as *mut f32 as *mut c_void],
+                );
             }
             assert_eq!(v, 42.0f32);
         }
@@ -2196,6 +2235,9 @@ mod tests {
         let (mut x, mut y, mut z): (f32, f32, f32) = (0.0, 0.0, 0.0);
         let n = unsafe { super::sscanf(buf.as_ptr(), fmt.as_ptr(), &mut x, &mut y, &mut z) };
         assert_eq!((x, y, z), (1.5f32, -2.25f32, 10.0f32));
-        assert_eq!(n, 3, "full libc sscanf returns the match count (not the VM shim's 0)");
+        assert_eq!(
+            n, 3,
+            "full libc sscanf returns the match count (not the VM shim's 0)"
+        );
     }
 }

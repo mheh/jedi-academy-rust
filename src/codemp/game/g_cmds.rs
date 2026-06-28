@@ -59,99 +59,93 @@ static mut g_preventTeamBegin: qboolean = QFALSE;
 // ports living in g_saga.rs / g_combat.rs; re-exported / imported here for `SetTeam`'s
 // GT_SIEGE and kill-on-team-change paths. `SetTeamQuick` stays reachable as
 // `g_cmds::SetTeamQuick` (g_client.rs imports it via this module).
-pub(crate) use crate::codemp::game::g_saga::SetTeamQuick;
 use crate::codemp::game::g_combat::player_die;
+pub(crate) use crate::codemp::game::g_saga::SetTeamQuick;
 
+use crate::codemp::cgame::animtable::animTable;
+use crate::codemp::game::anims::{BOTH_KYLE_GRAB, MAX_ANIMATIONS};
 use crate::codemp::game::bg_misc::vectoyaw;
-use crate::codemp::game::bg_pmove::BG_KnockDownable;
-use crate::codemp::game::bg_vehicles_h::SHIPSURF_FRONT;
-use crate::codemp::game::surfaceflags_h::CONTENTS_SOLID;
 use crate::codemp::game::bg_misc::{
     bg_customSiegeSoundNames, bg_itemlist, BG_FindItem, BG_IsItemSelectable,
 };
-use crate::codemp::game::g_items::{FinishSpawningItem, G_SpawnItem, Touch_Item};
+use crate::codemp::game::bg_pmove::BG_KnockDownable;
 use crate::codemp::game::bg_public::{
-    CS_TEAMVOTE_NO, CS_TEAMVOTE_STRING, CS_TEAMVOTE_TIME, CS_TEAMVOTE_YES,
-    CS_VOTE_NO, CS_VOTE_STRING, CS_VOTE_TIME, CS_VOTE_YES,
-    DUELTEAM_DOUBLE, DUELTEAM_FREE, DUELTEAM_LONE, EF_SEEKERDRONE, EV_ITEMUSEFAIL, EV_PRIVATE_DUEL,
-    gitem_t,
-    EV_PLAYER_TELEPORT_OUT, GT_DUEL, GT_FFA, GT_MAX_GAME_TYPE, GT_POWERDUEL, GT_SINGLE_PLAYER,
-    GT_SIEGE, GT_TEAM, HANDEXTEND_DUELCHALLENGE,
-    HANDEXTEND_KNOCKDOWN, HANDEXTEND_NONE, HANDEXTEND_PRETHROW, HANDEXTEND_PRETHROWN, HI_MEDPAC,
-    MOD_TEAM_CHANGE,
-    EV_VOICECMD_SOUND, HI_MEDPAC_BIG, HI_SEEKER, HI_SENTRY_GUN,
+    gitem_t, CS_TEAMVOTE_NO, CS_TEAMVOTE_STRING, CS_TEAMVOTE_TIME, CS_TEAMVOTE_YES, CS_VOTE_NO,
+    CS_VOTE_STRING, CS_VOTE_TIME, CS_VOTE_YES, DUELTEAM_DOUBLE, DUELTEAM_FREE, DUELTEAM_LONE,
+    EF_SEEKERDRONE, EV_ITEMUSEFAIL, EV_PLAYER_TELEPORT_OUT, EV_PRIVATE_DUEL, EV_VOICECMD_SOUND,
+    GT_DUEL, GT_FFA, GT_MAX_GAME_TYPE, GT_POWERDUEL, GT_SIEGE, GT_SINGLE_PLAYER, GT_TEAM,
+    HANDEXTEND_DUELCHALLENGE, HANDEXTEND_KNOCKDOWN, HANDEXTEND_NONE, HANDEXTEND_PRETHROW,
+    HANDEXTEND_PRETHROWN, HI_MEDPAC, HI_MEDPAC_BIG, HI_NUM_HOLDABLE, HI_SEEKER, HI_SENTRY_GUN,
     HI_SHIELD, LS_MOVE_MAX, MASK_PLAYERSOLID, MASK_SHOT, MASK_SOLID, MAX_CLIENT_SCORE_SEND,
-    MAX_CUSTOM_SIEGE_SOUNDS, PERS_ASSIST_COUNT,
-    PERS_CAPTURES, PERS_DEFEND_COUNT, PERS_EXCELLENT_COUNT, PERS_GAUNTLET_FRAG_COUNT,
-    PERS_IMPRESSIVE_COUNT, PERS_KILLED, PERS_RANK, PERS_SCORE, PERS_TEAM, PMF_FOLLOW,
-    MOD_SUICIDE, PMF_USE_ITEM_HELD, SETANIM_BOTH, STAT_ARMOR, STAT_HEALTH, STAT_HOLDABLE_ITEM,
-    SETANIM_FLAG_HOLD, SETANIM_FLAG_OVERRIDE,
-    STAT_HOLDABLE_ITEMS, STAT_MAX_HEALTH, STAT_WEAPONS,
-    TEAM_BLUE, TEAM_FREE, TEAM_NUM_TEAMS, TEAM_RED, TEAM_SPECTATOR,
-    HI_NUM_HOLDABLE,
+    MAX_CUSTOM_SIEGE_SOUNDS, MOD_SUICIDE, MOD_TEAM_CHANGE, PERS_ASSIST_COUNT, PERS_CAPTURES,
+    PERS_DEFEND_COUNT, PERS_EXCELLENT_COUNT, PERS_GAUNTLET_FRAG_COUNT, PERS_IMPRESSIVE_COUNT,
+    PERS_KILLED, PERS_RANK, PERS_SCORE, PERS_TEAM, PMF_FOLLOW, PMF_USE_ITEM_HELD, SETANIM_BOTH,
+    SETANIM_FLAG_HOLD, SETANIM_FLAG_OVERRIDE, STAT_ARMOR, STAT_HEALTH, STAT_HOLDABLE_ITEM,
+    STAT_HOLDABLE_ITEMS, STAT_MAX_HEALTH, STAT_WEAPONS, TEAM_BLUE, TEAM_FREE, TEAM_NUM_TEAMS,
+    TEAM_RED, TEAM_SPECTATOR,
 };
+use crate::codemp::game::bg_saber::saberMoveData;
 use crate::codemp::game::bg_saberLoad::{
     WP_SaberStyleValidForSaber, WP_SetSaber, WP_UseFirstValidSaberStyle,
 };
-use crate::codemp::game::bg_saga::{bgSiegeClasses, BG_SiegeCheckClassLegality, BG_SiegeFindThemeForTeam};
+use crate::codemp::game::bg_saga::{
+    bgSiegeClasses, BG_SiegeCheckClassLegality, BG_SiegeFindThemeForTeam,
+};
 use crate::codemp::game::bg_saga_h::{
     siegeClass_t, siegeTeam_t, MAX_SIEGE_CLASSES, SIEGETEAM_TEAM1, SIEGETEAM_TEAM2,
 };
+use crate::codemp::game::bg_vehicles_h::SHIPSURF_FRONT;
 use crate::codemp::game::bg_weapons_h::{LAST_USEABLE_WEAPON, WP_MELEE, WP_NONE, WP_SABER};
-use crate::codemp::game::g_local::{
-    gclient_t, CON_CONNECTED, CON_CONNECTING, CON_DISCONNECTED, DAMAGE_NO_PROTECTION, FL_GODMODE,
-    spectatorState_t, FL_NOTARGET, MAX_NETNAME, MAX_VOTE_COUNT, PSG_TEAMVOTED, PSG_VOTED,
-    SPECTATOR_FOLLOW, SPECTATOR_FREE, SPECTATOR_NOT, SPECTATOR_SCOREBOARD, TEAM_BEGIN,
-};
-use crate::codemp::game::g_combat::{DismembermentByNum, G_Damage};
+use crate::codemp::game::g_bot::{G_DoesMapSupportGametype, G_GetArenaInfoByMap};
+use crate::codemp::game::g_client::ClientUserinfoChanged;
 use crate::codemp::game::g_client::SetClientViewAngle;
-use crate::codemp::game::w_saber::saberKnockDown;
-use crate::codemp::game::g_utils::{G_EntitySound, G_Find};
+use crate::codemp::game::g_client::{
+    ClientBegin, MaintainBodyQueue, PickTeam, TeamCount, TeamLeader,
+};
+use crate::codemp::game::g_combat::g_dontPenalizeTeam;
+use crate::codemp::game::g_combat::{DismembermentByNum, G_Damage};
+use crate::codemp::game::g_items::{FinishSpawningItem, G_SpawnItem, Touch_Item};
+use crate::codemp::game::g_local::gentity_t;
+use crate::codemp::game::g_local::{
+    gclient_t, spectatorState_t, CON_CONNECTED, CON_CONNECTING, CON_DISCONNECTED,
+    DAMAGE_NO_PROTECTION, FL_GODMODE, FL_NOTARGET, MAX_NETNAME, MAX_VOTE_COUNT, PSG_TEAMVOTED,
+    PSG_VOTED, SPECTATOR_FOLLOW, SPECTATOR_FREE, SPECTATOR_NOT, SPECTATOR_SCOREBOARD, TEAM_BEGIN,
+};
+use crate::codemp::game::g_main::{
+    d_saberStanceDebug, g_allowDuelSuicide, g_allowVote, g_autoBanKillSpammers,
+    g_autoBanTKSpammers, g_autoKickKillSpammers, g_autoKickTKSpammers, g_cheats, g_dedicated,
+    g_entities, g_gametype, g_maxGameClients, g_privateDuel, g_teamForceBalance, g_trueJedi, level,
+    BeginIntermission, CheckTeamLeader, Com_Printf, G_Error, G_GetStringEdString, G_LogPrintf,
+    G_PowerDuelCount, G_Printf,
+};
 use crate::codemp::game::g_misc::{gEscaping, TeleportPlayer};
 use crate::codemp::game::g_public_h::{SVF_BOT, SVF_BROADCAST};
-use crate::codemp::game::q_math::{
-    vec3_origin, AngleVectors, VectorClear, VectorCopy, VectorMA, VectorNormalize, VectorSet,
-    VectorSubtract,
-};
-use crate::codemp::game::q_shared_h::{
-    playerState_t, trace_t, vec3_t, BLOCKED_BOUNCE_MOVE, CHAN_AUTO, CHAN_VOICE, COLOR_CYAN, COLOR_GREEN,
-    COLOR_MAGENTA,
-    COLOR_WHITE, FORCE_LEVEL_1, FP_SABER_OFFENSE,
-    MAX_CLIENTS, MAX_GENTITIES, MAX_INFO_STRING, MAX_NAME_LENGTH, MAX_WEAPONS, Q_COLOR_ESCAPE,
-    SAY_ALL, SAY_TEAM,
-    SAY_TELL,
-    ENTITYNUM_NONE,
-    MAX_STRING_CHARS, MAX_TOKEN_CHARS, PITCH, ROLL, SEEKER_ALREADYDEPLOYED, SENTRY_ALREADYPLACED,
-    SENTRY_NOROOM, SHIELD_NOROOM, SS_DUAL, SS_FAST, SS_NONE, SS_NUM_SABER_STYLES, YAW,
-};
-use crate::codemp::game::g_local::gentity_t;
-use crate::codemp::cgame::animtable::animTable;
-use crate::codemp::game::anims::{BOTH_KYLE_GRAB, MAX_ANIMATIONS};
-use crate::codemp::game::bg_saber::saberMoveData;
-use crate::codemp::game::g_main::{
-    d_saberStanceDebug, g_allowDuelSuicide, g_allowVote, g_autoBanKillSpammers, g_autoBanTKSpammers,
-    g_autoKickKillSpammers, g_autoKickTKSpammers,
-    g_cheats, g_dedicated, g_entities,
-    g_gametype,
-    g_maxGameClients, g_privateDuel, g_teamForceBalance, g_trueJedi, level, BeginIntermission,
-    CheckTeamLeader, Com_Printf, G_Error, G_GetStringEdString, G_LogPrintf, G_PowerDuelCount,
-    G_Printf,
-};
+use crate::codemp::game::g_saga::SiegeClearSwitchData;
 use crate::codemp::game::g_svcmds::AddIP;
-use crate::codemp::game::g_client::{ClientBegin, MaintainBodyQueue, PickTeam, TeamCount, TeamLeader};
-use crate::codemp::game::g_combat::g_dontPenalizeTeam;
 use crate::codemp::game::g_team::{OnSameTeam, TeamName, Team_GetLocationMsg};
 use crate::codemp::game::g_utils::{
     vtos, G_AddEvent, G_FreeEntity, G_SetAnim, G_Sound, G_SoundIndex, G_Spawn, G_TempEntity,
 };
+use crate::codemp::game::g_utils::{G_EntitySound, G_Find};
+use crate::codemp::game::npc_spawn::Cmd_NPC_f;
+use crate::codemp::game::q_math::{
+    vec3_origin, AngleVectors, VectorClear, VectorCopy, VectorMA, VectorNormalize, VectorSet,
+    VectorSubtract,
+};
 use crate::codemp::game::q_shared::{
     va, Com_sprintf, Info_SetValueForKey, Info_ValueForKey, Q_CleanStr, Q_stricmp, Q_strncpyz, Sz,
 };
-use crate::codemp::game::g_client::ClientUserinfoChanged;
-use crate::codemp::game::npc_spawn::Cmd_NPC_f;
-use crate::codemp::game::g_bot::{G_DoesMapSupportGametype, G_GetArenaInfoByMap};
-use crate::codemp::game::g_saga::SiegeClearSwitchData;
+use crate::codemp::game::q_shared_h::{
+    playerState_t, trace_t, vec3_t, BLOCKED_BOUNCE_MOVE, CHAN_AUTO, CHAN_VOICE, COLOR_CYAN,
+    COLOR_GREEN, COLOR_MAGENTA, COLOR_WHITE, ENTITYNUM_NONE, FORCE_LEVEL_1, FP_SABER_OFFENSE,
+    MAX_CLIENTS, MAX_GENTITIES, MAX_INFO_STRING, MAX_NAME_LENGTH, MAX_STRING_CHARS,
+    MAX_TOKEN_CHARS, MAX_WEAPONS, PITCH, Q_COLOR_ESCAPE, ROLL, SAY_ALL, SAY_TEAM, SAY_TELL,
+    SEEKER_ALREADYDEPLOYED, SENTRY_ALREADYPLACED, SENTRY_NOROOM, SHIELD_NOROOM, SS_DUAL, SS_FAST,
+    SS_NONE, SS_NUM_SABER_STYLES, YAW,
+};
+use crate::codemp::game::surfaceflags_h::CONTENTS_SOLID;
 use crate::codemp::game::w_force::WP_InitForcePowers;
+use crate::codemp::game::w_saber::saberKnockDown;
 use crate::ffi::types::{qboolean, QFALSE, QTRUE};
 use crate::trap;
 
@@ -241,8 +235,7 @@ pub unsafe fn BroadcastTeamChange(client: *mut gclient_t, old_team: c_int) {
 
     // G_LogPrintf("setteam:  %i %s %s\n", client - &level.clients[0],
     //             TeamName(oldTeam), TeamName(client->sess.sessionTeam));
-    let client_num =
-        client.offset_from((*addr_of!(level)).clients) as c_int;
+    let client_num = client.offset_from((*addr_of!(level)).clients) as c_int;
     G_LogPrintf(&format!(
         "setteam:  {} {} {}\n",
         client_num,
@@ -302,10 +295,7 @@ pub unsafe fn Cmd_TeamTask_f(ent: *mut gentity_t) {
         c"teamtask".as_ptr(),
         va(format_args!("{}", task)),
     );
-    trap::SetUserinfo(
-        client,
-        &CStr::from_ptr(userinfo.as_ptr()).to_string_lossy(),
-    );
+    trap::SetUserinfo(client, &CStr::from_ptr(userinfo.as_ptr()).to_string_lossy());
     ClientUserinfoChanged(client);
 }
 
@@ -331,7 +321,8 @@ pub unsafe fn Cmd_Team_f(ent: *mut gentity_t) {
 
     if trap::Argc() != 2 {
         old_team = (*(*ent).client).sess.sessionTeam;
-        let ent_num = ent.offset_from(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()) as c_int;
+        let ent_num =
+            ent.offset_from(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()) as c_int;
         match old_team {
             TEAM_BLUE => {
                 trap::SendServerCommand(
@@ -405,8 +396,7 @@ pub unsafe fn Cmd_Team_f(ent: *mut gentity_t) {
     }
 
     // if they are playing a tournement game, count as a loss
-    if (*addr_of!(g_gametype)).integer == GT_DUEL
-        && (*(*ent).client).sess.sessionTeam == TEAM_FREE
+    if (*addr_of!(g_gametype)).integer == GT_DUEL && (*(*ent).client).sess.sessionTeam == TEAM_FREE
     {
         //in a tournament game
         //disallow changing teams
@@ -613,7 +603,8 @@ pub unsafe fn Cmd_DuelTeam_f(ent: *mut gentity_t) {
 
     if trap::Argc() != 2 {
         //No arg so tell what team we're currently on.
-        let ent_num = ent.offset_from(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()) as c_int;
+        let ent_num =
+            ent.offset_from(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()) as c_int;
         match (*(*ent).client).sess.duelTeam {
             DUELTEAM_FREE => {
                 trap::SendServerCommand(ent_num, "print \"None\n\"");
@@ -752,8 +743,7 @@ pub unsafe fn Cmd_Vote_f(ent: *mut gentity_t) {
         );
         return;
     }
-    if (*addr_of!(g_gametype)).integer != GT_DUEL
-        && (*addr_of!(g_gametype)).integer != GT_POWERDUEL
+    if (*addr_of!(g_gametype)).integer != GT_DUEL && (*addr_of!(g_gametype)).integer != GT_POWERDUEL
     {
         if (*(*ent).client).sess.sessionTeam == TEAM_SPECTATOR {
             trap::SendServerCommand(
@@ -1032,7 +1022,8 @@ pub unsafe fn Cmd_CallTeamVote_f(ent: *mut gentity_t) {
     }
     arg2[0] = b'\0' as c_char;
     // `strlen` over the c_char buffer: index of the first NUL.
-    let cstrlen = |buf: &[c_char]| -> usize { buf.iter().position(|&b| b == 0).unwrap_or(buf.len()) };
+    let cstrlen =
+        |buf: &[c_char]| -> usize { buf.iter().position(|&b| b == 0).unwrap_or(buf.len()) };
     let argc = trap::Argc();
     let mut i: c_int = 2;
     while i < argc {
@@ -1082,14 +1073,14 @@ pub unsafe fn Cmd_CallTeamVote_f(ent: *mut gentity_t) {
             if j >= 3 || arg2[j] == 0 {
                 i = atoi(arg2.as_ptr());
                 if i < 0 || i >= (*addr_of!(level)).maxclients {
-                    trap::SendServerCommand(
-                        ent_num,
-                        &format!("print \"Bad client slot: {i}\n\""),
-                    );
+                    trap::SendServerCommand(ent_num, &format!("print \"Bad client slot: {i}\n\""));
                     return;
                 }
 
-                if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize)).inuse == QFALSE {
+                if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize))
+                    .inuse
+                    == QFALSE
+                {
                     trap::SendServerCommand(
                         ent_num,
                         &format!("print \"Client {i} is not active\n\""),
@@ -1379,7 +1370,8 @@ pub unsafe fn G_GetDuelWinner(client: *mut gclient_t) -> *mut gentity_t {
             && (*w_cl).pers.connected == CON_CONNECTED
             && (*w_cl).sess.sessionTeam != TEAM_SPECTATOR
         {
-            return (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset((*w_cl).ps.clientNum as isize);
+            return (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .offset((*w_cl).ps.clientNum as isize);
         }
         i += 1;
     }
@@ -1669,7 +1661,8 @@ pub unsafe fn G_ItemUsable(ps: *mut playerState_t, mut forcedUse: c_int) -> c_in
         HI_SEEKER => {
             if (*ps).eFlags & EF_SEEKERDRONE != 0 {
                 G_AddEvent(
-                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*ps).clientNum as usize),
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*ps).clientNum as usize),
                     EV_ITEMUSEFAIL,
                     SEEKER_ALREADYDEPLOYED,
                 );
@@ -1681,7 +1674,8 @@ pub unsafe fn G_ItemUsable(ps: *mut playerState_t, mut forcedUse: c_int) -> c_in
         HI_SENTRY_GUN => {
             if (*ps).fd.sentryDeployed != QFALSE {
                 G_AddEvent(
-                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*ps).clientNum as usize),
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*ps).clientNum as usize),
                     EV_ITEMUSEFAIL,
                     SENTRY_ALREADYPLACED,
                 );
@@ -1719,7 +1713,8 @@ pub unsafe fn G_ItemUsable(ps: *mut playerState_t, mut forcedUse: c_int) -> c_in
                 || tr.allsolid != 0
             {
                 G_AddEvent(
-                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*ps).clientNum as usize),
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*ps).clientNum as usize),
                     EV_ITEMUSEFAIL,
                     SENTRY_NOROOM,
                 );
@@ -1757,7 +1752,8 @@ pub unsafe fn G_ItemUsable(ps: *mut playerState_t, mut forcedUse: c_int) -> c_in
                 }
             }
             G_AddEvent(
-                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*ps).clientNum as usize),
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*ps).clientNum as usize),
                 EV_ITEMUSEFAIL,
                 SHIELD_NOROOM,
             );
@@ -1832,7 +1828,9 @@ pub unsafe fn DeathmatchScoreboardMessage(ent: *mut gentity_t) {
             ping,
             ((*addr_of!(level)).time - (*cl).pers.enterTime) / 60000,
             score_flags,
-            (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(sorted as usize)).s.powerups,
+            (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(sorted as usize))
+                .s
+                .powerups,
             accuracy,
             (*cl).ps.persistant[PERS_IMPRESSIVE_COUNT as usize],
             (*cl).ps.persistant[PERS_EXCELLENT_COUNT as usize],
@@ -2350,10 +2348,8 @@ pub unsafe fn SetTeam(ent: *mut gentity_t, s: *mut c_char) {
         if (*addr_of!(g_teamForceBalance)).integer != 0 && (*addr_of!(g_trueJedi)).integer == 0 {
             let mut counts = [0 as c_int; TEAM_NUM_TEAMS as usize];
 
-            counts[TEAM_BLUE as usize] =
-                TeamCount((*(*ent).client).ps.clientNum, TEAM_BLUE);
-            counts[TEAM_RED as usize] =
-                TeamCount((*(*ent).client).ps.clientNum, TEAM_RED);
+            counts[TEAM_BLUE as usize] = TeamCount((*(*ent).client).ps.clientNum, TEAM_BLUE);
+            counts[TEAM_RED as usize] = TeamCount((*(*ent).client).ps.clientNum, TEAM_RED);
 
             // We allow a spread of two
             if team == TEAM_RED && counts[TEAM_RED as usize] - counts[TEAM_BLUE as usize] > 1 {
@@ -2479,8 +2475,7 @@ pub unsafe fn SetTeam(ent: *mut gentity_t, s: *mut c_char) {
     }
 
     // override decision if limiting the players
-    if (*addr_of!(g_gametype)).integer == GT_DUEL
-        && (*addr_of!(level)).numNonSpectatorClients >= 2
+    if (*addr_of!(g_gametype)).integer == GT_DUEL && (*addr_of!(level)).numNonSpectatorClients >= 2
     {
         team = TEAM_SPECTATOR;
     } else if (*addr_of!(g_gametype)).integer == GT_POWERDUEL
@@ -2512,8 +2507,7 @@ pub unsafe fn SetTeam(ent: *mut gentity_t, s: *mut c_char) {
     //	}
 
     // if the player was dead leave the body
-    if (*client).ps.stats[STAT_HEALTH as usize] <= 0
-        && (*client).sess.sessionTeam != TEAM_SPECTATOR
+    if (*client).ps.stats[STAT_HEALTH as usize] <= 0 && (*client).sess.sessionTeam != TEAM_SPECTATOR
     {
         MaintainBodyQueue(ent);
     }
@@ -2546,8 +2540,18 @@ pub unsafe fn SetTeam(ent: *mut gentity_t, s: *mut c_char) {
         team_leader = TeamLeader(team);
         // if there is no team leader or the team leader is a bot and this client is not a bot
         if team_leader == -1
-            || ((*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(client_num as usize)).r.svFlags & SVF_BOT) == 0
-                && ((*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(team_leader as usize)).r.svFlags & SVF_BOT) != 0
+            || ((*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add(client_num as usize))
+            .r
+            .svFlags
+                & SVF_BOT)
+                == 0
+                && ((*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add(team_leader as usize))
+                .r
+                .svFlags
+                    & SVF_BOT)
+                    != 0
         {
             //SetLeader( team, clientNum );
         }
@@ -2592,7 +2596,8 @@ pub unsafe fn StopFollowing(ent: *mut gentity_t) {
     (*client).sess.spectatorState = SPECTATOR_FREE;
     (*client).ps.pm_flags &= !PMF_FOLLOW;
     (*ent).r.svFlags &= !SVF_BOT;
-    (*client).ps.clientNum = ent.offset_from(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()) as c_int;
+    (*client).ps.clientNum =
+        ent.offset_from(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()) as c_int;
     (*client).ps.weapon = WP_NONE;
     (*client).ps.m_iVehicleNum = 0;
     (*client).ps.viewangles[ROLL as usize] = 0.0;
@@ -2648,20 +2653,22 @@ pub unsafe fn Cmd_Follow_f(ent: *mut gentity_t) {
     }
 
     // can't follow self
-    if core::ptr::eq(
-        (*addr_of!(level)).clients.offset(i as isize),
-        (*ent).client,
-    ) {
+    if core::ptr::eq((*addr_of!(level)).clients.offset(i as isize), (*ent).client) {
         return;
     }
 
     // can't follow another spectator
-    if (*(*addr_of!(level)).clients.offset(i as isize)).sess.sessionTeam == TEAM_SPECTATOR {
+    if (*(*addr_of!(level)).clients.offset(i as isize))
+        .sess
+        .sessionTeam
+        == TEAM_SPECTATOR
+    {
         return;
     }
 
     // if they are playing a tournement game, count as a loss
-    if ((*addr_of!(g_gametype)).integer == GT_DUEL || (*addr_of!(g_gametype)).integer == GT_POWERDUEL)
+    if ((*addr_of!(g_gametype)).integer == GT_DUEL
+        || (*addr_of!(g_gametype)).integer == GT_POWERDUEL)
         && (*(*ent).client).sess.sessionTeam == TEAM_FREE
     {
         //WTF???
@@ -2695,7 +2702,8 @@ pub unsafe fn Cmd_FollowCycle_f(ent: *mut gentity_t, dir: c_int) {
     let original: c_int;
 
     // if they are playing a tournement game, count as a loss
-    if ((*addr_of!(g_gametype)).integer == GT_DUEL || (*addr_of!(g_gametype)).integer == GT_POWERDUEL)
+    if ((*addr_of!(g_gametype)).integer == GT_DUEL
+        || (*addr_of!(g_gametype)).integer == GT_POWERDUEL)
         && (*(*ent).client).sess.sessionTeam == TEAM_FREE
     {
         //WTF???
@@ -2725,9 +2733,15 @@ pub unsafe fn Cmd_FollowCycle_f(ent: *mut gentity_t, dir: c_int) {
         }
 
         // can only follow connected clients
-        if (*(*addr_of!(level)).clients.offset(clientnum as isize)).pers.connected != CON_CONNECTED {
+        if (*(*addr_of!(level)).clients.offset(clientnum as isize))
+            .pers
+            .connected
+            != CON_CONNECTED
+        {
             // continue;
-        } else if (*(*addr_of!(level)).clients.offset(clientnum as isize)).sess.sessionTeam
+        } else if (*(*addr_of!(level)).clients.offset(clientnum as isize))
+            .sess
+            .sessionTeam
             == TEAM_SPECTATOR
         {
             // can't follow another spectator
@@ -3123,7 +3137,8 @@ pub unsafe fn Cmd_SaberAttackCycle_f(ent: *mut gentity_t) {
                 //can't turn second blade back on if it's in the air, you naughty boy!
                 if (*addr_of!(d_saberStanceDebug)).integer != 0 {
                     trap::SendServerCommand(
-                        ent.offset_from(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()) as c_int,
+                        ent.offset_from(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                            as c_int,
                         "print \"SABERSTANCEDEBUG: Attempted to toggle staff blade in air.\n\"",
                     );
                 }
@@ -3272,8 +3287,7 @@ pub unsafe fn Cmd_EngageDuel_f(ent: *mut gentity_t) {
         return;
     }
 
-    if (*addr_of!(g_gametype)).integer == GT_DUEL
-        || (*addr_of!(g_gametype)).integer == GT_POWERDUEL
+    if (*addr_of!(g_gametype)).integer == GT_DUEL || (*addr_of!(g_gametype)).integer == GT_POWERDUEL
     {
         //rather pointless in this mode..
         trap::SendServerCommand(
@@ -3359,7 +3373,12 @@ pub unsafe fn Cmd_EngageDuel_f(ent: *mut gentity_t) {
     }
 
     let mut forward: vec3_t = [0.0; 3];
-    AngleVectors(&(*(*ent).client).ps.viewangles, Some(&mut forward), None, None);
+    AngleVectors(
+        &(*(*ent).client).ps.viewangles,
+        Some(&mut forward),
+        None,
+        None,
+    );
 
     let mut fwd_org: vec3_t = [0.0; 3];
     fwd_org[0] = (*(*ent).client).ps.origin[0] + forward[0] * 256.0;
@@ -3377,7 +3396,8 @@ pub unsafe fn Cmd_EngageDuel_f(ent: *mut gentity_t) {
     );
 
     if tr.fraction != 1.0 && (tr.entityNum as c_int) < MAX_CLIENTS as c_int {
-        let challenged = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(tr.entityNum as isize);
+        let challenged =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(tr.entityNum as isize);
 
         if challenged.is_null()
             || (*challenged).client.is_null()
@@ -3426,7 +3446,8 @@ pub unsafe fn Cmd_EngageDuel_f(ent: *mut gentity_t) {
                 if (*(*ent).client).saber[0].soundOff != 0 {
                     G_Sound(ent, CHAN_AUTO, (*(*ent).client).saber[0].soundOff);
                 }
-                if (*(*ent).client).saber[1].soundOff != 0 && (*(*ent).client).saber[1].model[0] != 0
+                if (*(*ent).client).saber[1].soundOff != 0
+                    && (*(*ent).client).saber[1].model[0] != 0
                 {
                     G_Sound(ent, CHAN_AUTO, (*(*ent).client).saber[1].soundOff);
                 }
@@ -3435,12 +3456,20 @@ pub unsafe fn Cmd_EngageDuel_f(ent: *mut gentity_t) {
             }
             if (*(*challenged).client).ps.saberHolstered == 0 {
                 if (*(*challenged).client).saber[0].soundOff != 0 {
-                    G_Sound(challenged, CHAN_AUTO, (*(*challenged).client).saber[0].soundOff);
+                    G_Sound(
+                        challenged,
+                        CHAN_AUTO,
+                        (*(*challenged).client).saber[0].soundOff,
+                    );
                 }
                 if (*(*challenged).client).saber[1].soundOff != 0
                     && (*(*challenged).client).saber[1].model[0] != 0
                 {
-                    G_Sound(challenged, CHAN_AUTO, (*(*challenged).client).saber[1].soundOff);
+                    G_Sound(
+                        challenged,
+                        CHAN_AUTO,
+                        (*(*challenged).client).saber[1].soundOff,
+                    );
                 }
                 (*(*challenged).client).ps.weaponTime = 400;
                 (*(*challenged).client).ps.saberHolstered = 2;
@@ -3448,7 +3477,8 @@ pub unsafe fn Cmd_EngageDuel_f(ent: *mut gentity_t) {
         } else {
             //Print the message that a player has been challenged in private, only announce the actual duel initiation in private
             trap::SendServerCommand(
-                challenged.offset_from(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()) as c_int,
+                challenged.offset_from(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    as c_int,
                 &format!(
                     "cp \"{} {}\n\"",
                     Sz((*(*ent).client).pers.netname.as_ptr()),
@@ -3651,8 +3681,7 @@ pub unsafe fn Cmd_VoiceCommand_f(ent: *mut gentity_t) {
 
     let te = G_TempEntity(&vec3_origin, EV_VOICECMD_SOUND);
     (*te).s.groundEntityNum = (*ent).s.number;
-    (*te).s.eventParm =
-        G_SoundIndex(&core::ffi::CStr::from_ptr(names[i]).to_string_lossy());
+    (*te).s.eventParm = G_SoundIndex(&core::ffi::CStr::from_ptr(names[i]).to_string_lossy());
     (*te).r.svFlags |= SVF_BROADCAST;
 }
 
@@ -3783,7 +3812,15 @@ pub unsafe fn G_Say(
     Q_strncpyz(text.as_mut_ptr(), chatText, text.len() as c_int);
 
     if !target.is_null() {
-        G_SayTo(ent, target, mode, color, name.as_ptr(), text.as_ptr(), locMsg);
+        G_SayTo(
+            ent,
+            target,
+            mode,
+            color,
+            name.as_ptr(),
+            text.as_ptr(),
+            locMsg,
+        );
         return;
     }
 
@@ -3796,7 +3833,15 @@ pub unsafe fn G_Say(
     let mut j = 0;
     while j < (*addr_of!(level)).maxclients {
         let other = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(j as usize);
-        G_SayTo(ent, other, mode, color, name.as_ptr(), text.as_ptr(), locMsg);
+        G_SayTo(
+            ent,
+            other,
+            mode,
+            color,
+            name.as_ptr(),
+            text.as_ptr(),
+            locMsg,
+        );
         j += 1;
     }
 }
@@ -4026,7 +4071,8 @@ pub(crate) unsafe fn Cmd_ToggleSaber_f(ent: *mut gentity_t) {
         if (*(*ent).client).ps.saberEntityNum != 0 {
             //turn it off in midair
             saberKnockDown(
-                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*ent).client).ps.saberEntityNum as usize),
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*(*ent).client).ps.saberEntityNum as usize),
                 ent,
                 ent,
             );
@@ -4078,7 +4124,6 @@ pub(crate) unsafe fn Cmd_ToggleSaber_f(ent: *mut gentity_t) {
         }
     }
 }
-
 
 /// `static const char *gameNames[]` (g_cmds.c:1798) — display names for the
 /// gametypes, indexed by `g_gametype` value for the `g_gametype` vote-display string.
@@ -4141,7 +4186,9 @@ unsafe fn Cmd_CallVote_f(ent: *mut gentity_t) {
         return;
     }
 
-    if (*addr_of!(level)).voteTime != 0 || (*addr_of!(level)).voteExecuteTime >= (*addr_of!(level)).time {
+    if (*addr_of!(level)).voteTime != 0
+        || (*addr_of!(level)).voteExecuteTime >= (*addr_of!(level)).time
+    {
         trap::SendServerCommand(
             ent_num,
             &format!(
@@ -4323,14 +4370,15 @@ unsafe fn Cmd_CallVote_f(ent: *mut gentity_t) {
         let n = atoi(arg2.as_ptr());
 
         if n < 0 || n >= MAX_CLIENTS as c_int {
-            trap::SendServerCommand(
-                ent_num,
-                &format!("print \"invalid client number {n}.\n\""),
-            );
+            trap::SendServerCommand(ent_num, &format!("print \"invalid client number {n}.\n\""));
             return;
         }
 
-        if (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(n as usize)).client).pers.connected == CON_DISCONNECTED {
+        if (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(n as usize)).client)
+            .pers
+            .connected
+            == CON_DISCONNECTED
+        {
             trap::SendServerCommand(
                 ent_num,
                 &format!("print \"there is no client with the client number {n}.\n\""),
@@ -4348,7 +4396,13 @@ unsafe fn Cmd_CallVote_f(ent: *mut gentity_t) {
             (*addr_of!(level)).voteDisplayString.len() as c_int,
             format_args!(
                 "kick {}",
-                Sz((*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(n as usize)).client).pers.netname.as_ptr())
+                Sz(
+                    (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(n as usize))
+                        .client)
+                        .pers
+                        .netname
+                        .as_ptr()
+                )
             ),
         );
     } else if Q_stricmp(arg1.as_ptr(), c"kick".as_ptr()) == 0 {
@@ -4379,7 +4433,14 @@ unsafe fn Cmd_CallVote_f(ent: *mut gentity_t) {
             (*addr_of!(level)).voteDisplayString.len() as c_int,
             format_args!(
                 "kick {}",
-                Sz((*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(clientid as usize)).client).pers.netname.as_ptr())
+                Sz(
+                    (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add(clientid as usize))
+                    .client)
+                        .pers
+                        .netname
+                        .as_ptr()
+                )
             ),
         );
     } else if Q_stricmp(arg1.as_ptr(), c"nextmap".as_ptr()) == 0 {
@@ -4610,7 +4671,8 @@ unsafe fn Cmd_SiegeClass_f(ent: *mut gentity_t) {
                 || (*(*ent).client).sess.siegeDesiredTeam != team
             {
                 trap::SendServerCommand(
-                    ent.offset_from(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()) as c_int,
+                    ent.offset_from(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        as c_int,
                     &format!(
                         "print \"{}\n\"",
                         Sz(G_GetStringEdString(
@@ -4755,7 +4817,8 @@ ClientCommand
 /// `clientNum` must index a valid `g_entities[]` slot; `level`/`g_gametype` must be
 /// initialized.
 pub unsafe fn ClientCommand(clientNum: c_int) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(clientNum as isize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(clientNum as isize);
     if (*ent).client.is_null() {
         return; // not fully in game yet
     }
@@ -4956,7 +5019,8 @@ pub unsafe fn ClientCommand(clientNum: c_int) {
             let entNum = G_ClientNumFromNetname(s_arg_c.as_ptr() as *mut c_char);
 
             if entNum >= 0 && entNum < MAX_GENTITIES as c_int {
-                let kEnt = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(entNum as isize);
+                let kEnt = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .offset(entNum as isize);
 
                 if (*kEnt).inuse != QFALSE && !(*kEnt).client.is_null() {
                     (*kEnt).flags &= !FL_GODMODE;
@@ -5055,7 +5119,8 @@ pub unsafe fn ClientCommand(clientNum: c_int) {
             && (*(*ent).client).ps.saberInFlight == QFALSE
         {
             saberKnockOutOfHand(
-                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset((*(*ent).client).ps.saberEntityNum as isize),
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .offset((*(*ent).client).ps.saberEntityNum as isize),
                 ent,
                 &vec3_origin,
             );
@@ -5083,7 +5148,8 @@ pub unsafe fn ClientCommand(clientNum: c_int) {
                 let x = atoi(arg_c.as_ptr());
 
                 if x >= 0 && x < MAX_CLIENTS as c_int {
-                    targ = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(x as isize);
+                    targ = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .offset(x as isize);
                 }
             }
         }
@@ -5102,7 +5168,8 @@ pub unsafe fn ClientCommand(clientNum: c_int) {
                 let x = atoi(arg_c.as_ptr());
 
                 if x >= 0 && x < MAX_CLIENTS as c_int {
-                    targ = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(x as isize);
+                    targ = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .offset(x as isize);
                 }
             }
         }
@@ -5125,7 +5192,8 @@ pub unsafe fn ClientCommand(clientNum: c_int) {
                 let x = atoi(arg_c.as_ptr());
 
                 if x >= 0 && x < MAX_CLIENTS as c_int {
-                    targ = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(x as isize);
+                    targ = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .offset(x as isize);
                 }
             }
         }
@@ -5148,7 +5216,8 @@ pub unsafe fn ClientCommand(clientNum: c_int) {
                 let x = atoi(arg_c.as_ptr());
 
                 if x >= 0 && x < MAX_CLIENTS as c_int {
-                    targ = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(x as isize);
+                    targ = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .offset(x as isize);
                 }
             }
         }
@@ -5183,14 +5252,16 @@ pub unsafe fn ClientCommand(clientNum: c_int) {
         );
 
         if tr.fraction != 1.0 {
-            let other = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(tr.entityNum as isize);
+            let other = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .offset(tr.entityNum as isize);
 
             if (*other).inuse != QFALSE
                 && !(*other).client.is_null()
                 && (*(*other).client).ps.forceHandExtend == HANDEXTEND_NONE
                 && (*(*other).client).ps.groundEntityNum != ENTITYNUM_NONE
                 && (*other).health > 0
-                && (*(*ent).client).ps.origin[2] as c_int == (*(*other).client).ps.origin[2] as c_int
+                && (*(*ent).client).ps.origin[2] as c_int
+                    == (*(*other).client).ps.origin[2] as c_int
             {
                 let pDif: f32 = 40.0;
                 let mut entAngles: vec3_t = [0.0; 3];
@@ -5334,7 +5405,8 @@ pub unsafe fn ClientCommand(clientNum: c_int) {
         let damageLevel = atoi(arg2_c.as_ptr());
 
         G_SetVehDamageFlags(
-            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset((*ent).s.m_iVehicleNum as isize),
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .offset((*ent).s.m_iVehicleNum as isize),
             shipSurf,
             damageLevel,
         );
@@ -5376,8 +5448,7 @@ pub unsafe fn G_CheckTKAutoKickBan(ent: *mut gentity_t) {
         return;
     }
 
-    if (*addr_of!(g_autoKickTKSpammers)).integer > 0
-        || (*addr_of!(g_autoBanTKSpammers)).integer > 0
+    if (*addr_of!(g_autoKickTKSpammers)).integer > 0 || (*addr_of!(g_autoBanTKSpammers)).integer > 0
     {
         let client = (*ent).client;
         (*client).sess.TKCount += 1;
@@ -5474,13 +5545,13 @@ mod tests {
             b"\0",
             b"Hello World\0",
             b"MixedCASE123\0",
-            b"\x1b1Red\x1b7White\0",     // two color codes
-            b"tab\there\0",              // embedded control char (9 < 32)
-            b"trailing\x1b\0",           // escape with one byte after (the NUL)
-            b"\x1b\0",                   // lone escape then NUL
-            b"\x01\x02\x1f visible\0",   // run of control chars
+            b"\x1b1Red\x1b7White\0",   // two color codes
+            b"tab\there\0",            // embedded control char (9 < 32)
+            b"trailing\x1b\0",         // escape with one byte after (the NUL)
+            b"\x1b\0",                 // lone escape then NUL
+            b"\x01\x02\x1f visible\0", // run of control chars
             b"ALLCAPS\0",
-            b"sym!@#$%^&*()\0",          // '^' (94) is NOT the escape (27); passes
+            b"sym!@#$%^&*()\0", // '^' (94) is NOT the escape (27); passes
         ];
 
         for case in cases {
@@ -5491,9 +5562,15 @@ mod tests {
 
             unsafe {
                 let rin = input.clone();
-                SanitizeString(rin.as_ptr() as *const c_char, rust_out.as_mut_ptr() as *mut c_char);
+                SanitizeString(
+                    rin.as_ptr() as *const c_char,
+                    rust_out.as_mut_ptr() as *mut c_char,
+                );
                 let mut cin = input.clone();
-                jka_SanitizeString(cin.as_mut_ptr() as *mut c_char, c_out.as_mut_ptr() as *mut c_char);
+                jka_SanitizeString(
+                    cin.as_mut_ptr() as *mut c_char,
+                    c_out.as_mut_ptr() as *mut c_char,
+                );
             }
 
             let r = unsafe { CStr::from_ptr(rust_out.as_ptr() as *const c_char) };
@@ -5509,13 +5586,13 @@ mod tests {
         let cases: &[&[u8]] = &[
             b"\0",
             b"Hello World\0",
-            b"MixedCASE123\0",            // case preserved, unlike SanitizeString
-            b"^1Red^7White\0",            // two color codes (digit after ^)
-            b"a^bc\0",                    // lone ^ (no digit) -> skip just the ^
-            b"^\0",                       // trailing ^ then NUL
-            b"tab\there\0",               // embedded control char (9 < 32)
-            b"\x01\x02\x1f visible\0",    // run of control chars
-            b"^9end^\0",                  // color code then trailing lone ^
+            b"MixedCASE123\0",         // case preserved, unlike SanitizeString
+            b"^1Red^7White\0",         // two color codes (digit after ^)
+            b"a^bc\0",                 // lone ^ (no digit) -> skip just the ^
+            b"^\0",                    // trailing ^ then NUL
+            b"tab\there\0",            // embedded control char (9 < 32)
+            b"\x01\x02\x1f visible\0", // run of control chars
+            b"^9end^\0",               // color code then trailing lone ^
             b"0123456789012345678901234567890123456789\0", // > MAX_NAME_LENGTH, truncates
             b"^1^2^3^4^5^6^7^8^9^0abc\0", // many color codes (indices count toward cap)
         ];
@@ -5527,9 +5604,15 @@ mod tests {
 
             unsafe {
                 let mut rin = input.clone();
-                SanitizeString2(rin.as_mut_ptr() as *mut c_char, rust_out.as_mut_ptr() as *mut c_char);
+                SanitizeString2(
+                    rin.as_mut_ptr() as *mut c_char,
+                    rust_out.as_mut_ptr() as *mut c_char,
+                );
                 let mut cin = input.clone();
-                jka_SanitizeString2(cin.as_mut_ptr() as *mut c_char, c_out.as_mut_ptr() as *mut c_char);
+                jka_SanitizeString2(
+                    cin.as_mut_ptr() as *mut c_char,
+                    c_out.as_mut_ptr() as *mut c_char,
+                );
             }
 
             let r = unsafe { CStr::from_ptr(rust_out.as_ptr() as *const c_char) };

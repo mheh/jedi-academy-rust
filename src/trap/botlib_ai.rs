@@ -57,7 +57,15 @@ pub fn Characteristic_Integer(character: i32, index: i32) -> i32 {
 /// `trap_Characteristic_BInteger` — read integer characteristic `index` of `character`,
 /// clamped to `min`..`max`.
 pub fn Characteristic_BInteger(character: i32, index: i32, min: i32, max: i32) -> i32 {
-    unsafe { syscall!(BOTLIB_AI_CHARACTERISTIC_BINTEGER, character, index, min, max) as i32 }
+    unsafe {
+        syscall!(
+            BOTLIB_AI_CHARACTERISTIC_BINTEGER,
+            character,
+            index,
+            min,
+            max
+        ) as i32
+    }
 }
 
 /// `trap_Characteristic_String` — read string characteristic `index` of `character`
@@ -134,7 +142,12 @@ pub fn BotDumpGoalStack(goalstate: i32) {
 /// `trap_BotGoalName` — write goal `number`'s name into `name` (whose length supplies `size`).
 pub fn BotGoalName(number: i32, name: &mut [c_char]) {
     unsafe {
-        syscall!(BOTLIB_AI_GOAL_NAME, number, name.as_mut_ptr(), name.len() as i32);
+        syscall!(
+            BOTLIB_AI_GOAL_NAME,
+            number,
+            name.as_mut_ptr(),
+            name.len() as i32
+        );
     }
 }
 
@@ -145,7 +158,13 @@ pub fn BotGetTopGoal(goalstate: i32, goal: &mut bot_goal_t) -> i32 {
 
 /// `trap_BotGetSecondGoal` — read the second goal into `goal` (engine fills it).
 pub fn BotGetSecondGoal(goalstate: i32, goal: &mut bot_goal_t) -> i32 {
-    unsafe { syscall!(BOTLIB_AI_GET_SECOND_GOAL, goalstate, goal as *mut bot_goal_t) as i32 }
+    unsafe {
+        syscall!(
+            BOTLIB_AI_GET_SECOND_GOAL,
+            goalstate,
+            goal as *mut bot_goal_t
+        ) as i32
+    }
 }
 
 /// `trap_BotChooseLTGItem`.
@@ -191,7 +210,13 @@ pub fn BotChooseNBGItem(
 
 /// `trap_BotTouchingGoal`.
 pub fn BotTouchingGoal(origin: &vec3_t, goal: &bot_goal_t) -> i32 {
-    unsafe { syscall!(BOTLIB_AI_TOUCHING_GOAL, origin.as_ptr(), goal as *const bot_goal_t) as i32 }
+    unsafe {
+        syscall!(
+            BOTLIB_AI_TOUCHING_GOAL,
+            origin.as_ptr(),
+            goal as *const bot_goal_t
+        ) as i32
+    }
 }
 
 /// `trap_BotItemGoalInVisButNotVisible`.
@@ -229,7 +254,11 @@ pub fn BotGetLevelItemGoal(index: i32, classname: &str, goal: &mut bot_goal_t) -
 /// `trap_BotGetNextCampSpotGoal` — read camp spot goal `num` into `goal` (engine fills it).
 pub fn BotGetNextCampSpotGoal(num: i32, goal: &mut bot_goal_t) -> i32 {
     unsafe {
-        syscall!(BOTLIB_AI_GET_NEXT_CAMP_SPOT_GOAL, num, goal as *mut bot_goal_t) as i32
+        syscall!(
+            BOTLIB_AI_GET_NEXT_CAMP_SPOT_GOAL,
+            num,
+            goal as *mut bot_goal_t
+        ) as i32
     }
 }
 
@@ -238,7 +267,11 @@ pub fn BotGetNextCampSpotGoal(num: i32, goal: &mut bot_goal_t) -> i32 {
 pub fn BotGetMapLocationGoal(name: &str, goal: &mut bot_goal_t) -> i32 {
     let c = cstr(name);
     unsafe {
-        syscall!(BOTLIB_AI_GET_MAP_LOCATION_GOAL, c.as_ptr(), goal as *mut bot_goal_t) as i32
+        syscall!(
+            BOTLIB_AI_GET_MAP_LOCATION_GOAL,
+            c.as_ptr(),
+            goal as *mut bot_goal_t
+        ) as i32
     }
 }
 
@@ -290,7 +323,12 @@ pub fn BotFreeItemWeights(goalstate: i32) {
 /// `trap_BotInterbreedGoalFuzzyLogic`.
 pub fn BotInterbreedGoalFuzzyLogic(parent1: i32, parent2: i32, child: i32) {
     unsafe {
-        syscall!(BOTLIB_AI_INTERBREED_GOAL_FUZZY_LOGIC, parent1, parent2, child);
+        syscall!(
+            BOTLIB_AI_INTERBREED_GOAL_FUZZY_LOGIC,
+            parent1,
+            parent2,
+            child
+        );
     }
 }
 
@@ -452,7 +490,11 @@ pub fn BotFreeMoveState(handle: i32) {
 /// `void* /* struct bot_initmove_s */`); given its faithful [`bot_initmove_t`] type.
 pub fn BotInitMoveState(handle: i32, initmove: &bot_initmove_t) {
     unsafe {
-        syscall!(BOTLIB_AI_INIT_MOVE_STATE, handle, initmove as *const bot_initmove_t);
+        syscall!(
+            BOTLIB_AI_INIT_MOVE_STATE,
+            handle,
+            initmove as *const bot_initmove_t
+        );
     }
 }
 

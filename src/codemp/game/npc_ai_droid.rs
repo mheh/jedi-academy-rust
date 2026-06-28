@@ -27,11 +27,13 @@
 use core::ffi::c_int;
 use core::ptr::addr_of;
 
-use crate::codemp::game::anims::{BOTH_PAIN1, BOTH_PAIN2, BOTH_RUN1, BOTH_STAND2, BOTH_TURN_LEFT1,
-    BOTH_TURN_RIGHT1};
-use crate::codemp::game::bg_public::{MOD_DEMP2, MOD_DEMP2_ALT, SETANIM_BOTH, SETANIM_FLAG_HOLD,
-    SETANIM_FLAG_OVERRIDE};
+use crate::codemp::game::anims::{
+    BOTH_PAIN1, BOTH_PAIN2, BOTH_RUN1, BOTH_STAND2, BOTH_TURN_LEFT1, BOTH_TURN_RIGHT1,
+};
 use crate::codemp::game::b_public_h::SCF_LOOK_FOR_ENEMIES;
+use crate::codemp::game::bg_public::{
+    MOD_DEMP2, MOD_DEMP2_ALT, SETANIM_BOTH, SETANIM_FLAG_HOLD, SETANIM_FLAG_OVERRIDE,
+};
 use crate::codemp::game::g_combat::gPainMOD;
 use crate::codemp::game::g_local::gentity_t;
 use crate::codemp::game::g_main::level;
@@ -42,13 +44,16 @@ use crate::codemp::game::npc_goal::UpdateGoal;
 use crate::codemp::game::npc_move::NPC_MoveToGoal;
 use crate::codemp::game::npc_reactions::{NPC_GetPainChance, NPC_Pain};
 use crate::codemp::game::npc_utils::{NPC_SetBoneAngles, NPC_SetSurfaceOnOff, NPC_UpdateAngles};
-use crate::codemp::game::q_math::{AngleDelta, AngleNormalize360, AngleVectors, vec3_origin,
-    VectorCopy, VectorMA, VectorNormalize, VectorSubtract};
-use crate::codemp::game::q_shared::{crandom, random};
 use crate::codemp::game::q_math::Q_irand;
+use crate::codemp::game::q_math::{
+    vec3_origin, AngleDelta, AngleNormalize360, AngleVectors, VectorCopy, VectorMA,
+    VectorNormalize, VectorSubtract,
+};
+use crate::codemp::game::q_shared::{crandom, random};
 use crate::codemp::game::q_shared_h::{vec3_t, BUTTON_WALKING, CHAN_AUTO, YAW};
-use crate::codemp::game::teams_h::{CLASS_GONK, CLASS_INTERROGATOR, CLASS_MOUSE, CLASS_R2D2,
-    CLASS_R5D2};
+use crate::codemp::game::teams_h::{
+    CLASS_GONK, CLASS_INTERROGATOR, CLASS_MOUSE, CLASS_R2D2, CLASS_R5D2,
+};
 use crate::ffi::types::{QFALSE, QTRUE};
 use crate::trap;
 
@@ -112,7 +117,8 @@ pub unsafe fn R2D2_TurnAnims() {
     turndelta = AngleDelta((*NPC).r.currentAngles[YAW], (*NPCInfo).desiredYaw);
 
     if (turndelta.abs() > 20.0)
-        && (((*(*NPC).client).NPC_class == CLASS_R2D2) || ((*(*NPC).client).NPC_class == CLASS_R5D2))
+        && (((*(*NPC).client).NPC_class == CLASS_R2D2)
+            || ((*(*NPC).client).NPC_class == CLASS_R5D2))
     {
         anim = (*(*NPC).client).ps.legsAnim;
         if turndelta < 0.0 {
@@ -309,7 +315,11 @@ pub unsafe fn Droid_Spin() {
 ///
 /// # Safety
 /// `self_`/`self_->client`/`self_->NPC` must be valid; `attacker` may be null.
-pub unsafe extern "C" fn NPC_Droid_Pain(self_: *mut gentity_t, attacker: *mut gentity_t, damage: c_int) {
+pub unsafe extern "C" fn NPC_Droid_Pain(
+    self_: *mut gentity_t,
+    attacker: *mut gentity_t,
+    damage: c_int,
+) {
     let other = attacker;
     let anim: c_int;
     let mod_ = *addr_of!(gPainMOD);
