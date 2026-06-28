@@ -12,6 +12,7 @@ pub mod l3init;
 pub mod l3_h;
 pub mod mhead;
 pub mod mhead_h;
+pub mod msis;
 pub mod mp3struct_h;
 pub mod port_h;
 pub mod small_header_h;
