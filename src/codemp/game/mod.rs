@@ -85,6 +85,7 @@ pub mod g_vehicleTurret;
 pub mod g_vehicles;
 pub mod g_weapon;
 pub mod inv_h;
+pub mod match_h;
 pub mod npc;
 pub mod npc_ai_atst;
 pub mod npc_ai_default;
