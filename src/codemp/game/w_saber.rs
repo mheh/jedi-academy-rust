@@ -9206,7 +9206,7 @@ pub unsafe fn G_CheckLookTarget(
                     VectorCopy( cg.refdef.vieworg, lookOrg );
                 }
                 */
- //No no no!
+                //No no no!
                 if !(*lookCent).client.is_null() {
                     VectorCopy(&(*(*lookCent).client).renderInfo.eyePoint, &mut lookOrg);
                 } else if (*lookCent).inuse != QFALSE

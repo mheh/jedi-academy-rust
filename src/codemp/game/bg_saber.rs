@@ -4087,7 +4087,7 @@ pub unsafe fn PM_SaberLocked() {
         return;
     }
     /*if ( ( (pm->ps->torsoAnim) == BOTH_BF2LOCK || ... ) && ( ... ) ) */
- //yeah..
+    //yeah..
     if (*ps).saberLockFrame != 0
         && (*genemy).saberLockFrame != 0
         && BG_InSaberLock((*ps).torsoAnim) != QFALSE
