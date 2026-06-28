@@ -16,6 +16,7 @@ pub mod anims;
 pub mod b_local_h;
 pub mod b_public_h;
 pub mod be_aas_h;
+pub mod be_ai_chat_h;
 pub mod be_ai_char_h;
 pub mod be_ai_gen_h;
 pub mod be_ai_goal_h;
