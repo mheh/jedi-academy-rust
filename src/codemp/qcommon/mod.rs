@@ -2,6 +2,8 @@
 
 #[allow(non_snake_case)]
 pub mod INetProfile_h;
+#[allow(non_snake_case)]
+pub mod MiniHeap_h;
 pub mod disablewarnings_h;
 pub mod exe_headers_h;
 pub mod game_version_h;
