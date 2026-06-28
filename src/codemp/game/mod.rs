@@ -43,6 +43,7 @@ pub mod chars_h;
 pub mod fighternpc;
 pub mod g_ICARUScb;
 pub mod g_active;
+pub mod g_headers_h;
 pub mod g_bot;
 pub mod g_client;
 pub mod g_cmds;
