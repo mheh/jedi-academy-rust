@@ -23,3 +23,4 @@ pub mod sstring_h;
 pub mod tags_h;
 pub mod timing_h;
 pub mod unzip_h;
+pub mod vm_local_h;
