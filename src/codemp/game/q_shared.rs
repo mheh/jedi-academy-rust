@@ -245,7 +245,11 @@ pub unsafe fn COM_DefaultExtension(path: *mut c_char, maxSize: c_int, extension:
     }
 
     Q_strncpyz(old_path.as_mut_ptr(), path, old_path.len() as c_int);
-    Com_sprintf(path, maxSize, format_args!("{}{}", Sz(old_path.as_ptr()), Sz(extension)));
+    Com_sprintf(
+        path,
+        maxSize,
+        format_args!("{}{}", Sz(old_path.as_ptr()), Sz(extension)),
+    );
 }
 
 // ============================================================================
@@ -363,7 +367,11 @@ fn com_token_ptr() -> *mut c_char {
 pub unsafe fn COM_BeginParseSession(name: *const c_char) {
     COM_LINES.store(0, Ordering::Relaxed);
     let parsename = core::ptr::addr_of_mut!(COM_PARSENAME) as *mut c_char;
-    Com_sprintf(parsename, MAX_TOKEN_CHARS as c_int, format_args!("{}", Sz(name)));
+    Com_sprintf(
+        parsename,
+        MAX_TOKEN_CHARS as c_int,
+        format_args!("{}", Sz(name)),
+    );
 }
 
 /// `int COM_GetCurrentParseLine( void )`.
@@ -776,7 +784,10 @@ pub unsafe fn COM_ParseVec4(buffer: *mut *const c_char, c: *mut vec4_t) -> qbool
 pub unsafe fn COM_MatchToken(buf_p: *mut *const c_char, match_: *const c_char) {
     let token = COM_Parse(buf_p);
     if c_strcmp(token, match_) != 0 {
-        Com_Error(ERR_DROP, &format!("MatchToken: {} != {}", Sz(token), Sz(match_)));
+        Com_Error(
+            ERR_DROP,
+            &format!("MatchToken: {} != {}", Sz(token), Sz(match_)),
+        );
     }
 }
 
@@ -1511,7 +1522,11 @@ pub unsafe fn Info_SetValueForKey(s: *mut c_char, key: *const c_char, value: *co
         return;
     }
 
-    Com_sprintf(newi.as_mut_ptr(), newi.len() as c_int, format_args!("\\{}\\{}", Sz(key), Sz(value)));
+    Com_sprintf(
+        newi.as_mut_ptr(),
+        newi.len() as c_int,
+        format_args!("\\{}\\{}", Sz(key), Sz(value)),
+    );
 
     // NOTE: carried-over off-by-one — the original uses `>` (not `>=`) here, so an
     // exact MAX_INFO_STRING total writes one byte past `newi`. Faithful; callers
@@ -1558,7 +1573,11 @@ pub unsafe fn Info_SetValueForKey_Big(s: *mut c_char, key: *const c_char, value:
         return;
     }
 
-    Com_sprintf(newi.as_mut_ptr(), newi.len() as c_int, format_args!("\\{}\\{}", Sz(key), Sz(value)));
+    Com_sprintf(
+        newi.as_mut_ptr(),
+        newi.len() as c_int,
+        format_args!("\\{}\\{}", Sz(key), Sz(value)),
+    );
 
     if c_strlen(newi.as_ptr()) + c_strlen(s) > BIG_INFO_STRING {
         Com_Printf("BIG Info string length exceeded\n");
@@ -1647,28 +1666,44 @@ mod oracle_tests {
     #[test]
     fn Q_isprint_matches_oracle() {
         for c in char_inputs() {
-            assert_eq!(Q_isprint(c), unsafe { oracle::Q_isprint(c) }, "Q_isprint({c})");
+            assert_eq!(
+                Q_isprint(c),
+                unsafe { oracle::Q_isprint(c) },
+                "Q_isprint({c})"
+            );
         }
     }
 
     #[test]
     fn Q_islower_matches_oracle() {
         for c in char_inputs() {
-            assert_eq!(Q_islower(c), unsafe { oracle::Q_islower(c) }, "Q_islower({c})");
+            assert_eq!(
+                Q_islower(c),
+                unsafe { oracle::Q_islower(c) },
+                "Q_islower({c})"
+            );
         }
     }
 
     #[test]
     fn Q_isupper_matches_oracle() {
         for c in char_inputs() {
-            assert_eq!(Q_isupper(c), unsafe { oracle::Q_isupper(c) }, "Q_isupper({c})");
+            assert_eq!(
+                Q_isupper(c),
+                unsafe { oracle::Q_isupper(c) },
+                "Q_isupper({c})"
+            );
         }
     }
 
     #[test]
     fn Q_isalpha_matches_oracle() {
         for c in char_inputs() {
-            assert_eq!(Q_isalpha(c), unsafe { oracle::Q_isalpha(c) }, "Q_isalpha({c})");
+            assert_eq!(
+                Q_isalpha(c),
+                unsafe { oracle::Q_isalpha(c) },
+                "Q_isalpha({c})"
+            );
         }
     }
 
@@ -1690,7 +1725,16 @@ mod oracle_tests {
 
     #[test]
     fn Com_Clamp_matches_oracle() {
-        let vals = [-100.0f32, -1.5, 0.0, 1.5, 5.25, 100.0, f32::NAN, f32::INFINITY];
+        let vals = [
+            -100.0f32,
+            -1.5,
+            0.0,
+            1.5,
+            5.25,
+            100.0,
+            f32::NAN,
+            f32::INFINITY,
+        ];
         for &min in &vals {
             for &max in &vals {
                 for &v in &vals {
@@ -1705,8 +1749,16 @@ mod oracle_tests {
     #[test]
     fn ShortSwap_matches_oracle_exhaustive() {
         for l in i16::MIN..=i16::MAX {
-            assert_eq!(ShortSwap(l), unsafe { oracle::ShortSwap(l) }, "ShortSwap({l})");
-            assert_eq!(ShortNoSwap(l), unsafe { oracle::ShortNoSwap(l) }, "ShortNoSwap({l})");
+            assert_eq!(
+                ShortSwap(l),
+                unsafe { oracle::ShortSwap(l) },
+                "ShortSwap({l})"
+            );
+            assert_eq!(
+                ShortNoSwap(l),
+                unsafe { oracle::ShortNoSwap(l) },
+                "ShortNoSwap({l})"
+            );
         }
     }
 
@@ -1729,7 +1781,11 @@ mod oracle_tests {
         ];
         for &l in &samples {
             assert_eq!(LongSwap(l), unsafe { oracle::LongSwap(l) }, "LongSwap({l})");
-            assert_eq!(LongNoSwap(l), unsafe { oracle::LongNoSwap(l) }, "LongNoSwap({l})");
+            assert_eq!(
+                LongNoSwap(l),
+                unsafe { oracle::LongNoSwap(l) },
+                "LongNoSwap({l})"
+            );
         }
     }
 
@@ -1737,19 +1793,60 @@ mod oracle_tests {
     fn Long64Swap_matches_oracle() {
         let samples = [
             qint64::default(),
-            qint64 { b0: 1, b1: 2, b2: 3, b3: 4, b4: 5, b5: 6, b6: 7, b7: 8 },
-            qint64 { b0: 0xFF, b1: 0, b2: 0xAA, b3: 0x55, b4: 0xDE, b5: 0xAD, b6: 0xBE, b7: 0xEF },
+            qint64 {
+                b0: 1,
+                b1: 2,
+                b2: 3,
+                b3: 4,
+                b4: 5,
+                b5: 6,
+                b6: 7,
+                b7: 8,
+            },
+            qint64 {
+                b0: 0xFF,
+                b1: 0,
+                b2: 0xAA,
+                b3: 0x55,
+                b4: 0xDE,
+                b5: 0xAD,
+                b6: 0xBE,
+                b7: 0xEF,
+            },
         ];
         for &ll in &samples {
-            assert_eq!(Long64Swap(ll), unsafe { oracle::Long64Swap(ll) }, "Long64Swap({ll:?})");
-            assert_eq!(Long64NoSwap(ll), unsafe { oracle::Long64NoSwap(ll) }, "Long64NoSwap({ll:?})");
+            assert_eq!(
+                Long64Swap(ll),
+                unsafe { oracle::Long64Swap(ll) },
+                "Long64Swap({ll:?})"
+            );
+            assert_eq!(
+                Long64NoSwap(ll),
+                unsafe { oracle::Long64NoSwap(ll) },
+                "Long64NoSwap({ll:?})"
+            );
         }
     }
 
     #[test]
     fn Q_strrchr_matches_oracle() {
-        let cases = ["", "a", "hello", "abracadabra", "a/b/c/d", "trailing/", "^1color"];
-        let chars = [b'a' as c_int, b'/' as c_int, b'z' as c_int, 0, b'r' as c_int, 256 + b'a' as c_int];
+        let cases = [
+            "",
+            "a",
+            "hello",
+            "abracadabra",
+            "a/b/c/d",
+            "trailing/",
+            "^1color",
+        ];
+        let chars = [
+            b'a' as c_int,
+            b'/' as c_int,
+            b'z' as c_int,
+            0,
+            b'r' as c_int,
+            256 + b'a' as c_int,
+        ];
         for s in cases {
             let buf = cbuf(s);
             for &c in &chars {
@@ -1816,8 +1913,14 @@ mod oracle_tests {
         let nul = core::ptr::null();
         unsafe {
             assert_eq!(Q_stricmpn(nul, nul, 5), oracle::Q_stricmpn(nul, nul, 5));
-            assert_eq!(Q_stricmpn(nul, s.as_ptr(), 5), oracle::Q_stricmpn(nul, s.as_ptr(), 5));
-            assert_eq!(Q_stricmpn(s.as_ptr(), nul, 5), oracle::Q_stricmpn(s.as_ptr(), nul, 5));
+            assert_eq!(
+                Q_stricmpn(nul, s.as_ptr(), 5),
+                oracle::Q_stricmpn(nul, s.as_ptr(), 5)
+            );
+            assert_eq!(
+                Q_stricmpn(s.as_ptr(), nul, 5),
+                oracle::Q_stricmpn(s.as_ptr(), nul, 5)
+            );
         }
     }
 
@@ -1844,8 +1947,14 @@ mod oracle_tests {
         let s = cbuf("x");
         let nul = core::ptr::null();
         unsafe {
-            assert_eq!(Q_stricmp(nul, s.as_ptr()), oracle::Q_stricmp(nul, s.as_ptr()));
-            assert_eq!(Q_stricmp(s.as_ptr(), nul), oracle::Q_stricmp(s.as_ptr(), nul));
+            assert_eq!(
+                Q_stricmp(nul, s.as_ptr()),
+                oracle::Q_stricmp(nul, s.as_ptr())
+            );
+            assert_eq!(
+                Q_stricmp(s.as_ptr(), nul),
+                oracle::Q_stricmp(s.as_ptr(), nul)
+            );
         }
     }
 
@@ -1854,7 +1963,13 @@ mod oracle_tests {
         // ASCII only: tolower/toupper on the negative args a signed char yields for
         // high-bit bytes is UB in libc; the port calls the same libc as the oracle,
         // so that region is identical by construction and need not be exercised.
-        let cases: [&[u8]; 5] = [b"", b"Hello World", b"ALLCAPS", b"already lower", b"MiXeD123!@#"];
+        let cases: [&[u8]; 5] = [
+            b"",
+            b"Hello World",
+            b"ALLCAPS",
+            b"already lower",
+            b"MiXeD123!@#",
+        ];
         for c in cases {
             let mut a = cbuf_b(c);
             let mut b = cbuf_b(c);
@@ -1867,7 +1982,13 @@ mod oracle_tests {
 
     #[test]
     fn Q_strupr_matches_oracle() {
-        let cases: [&[u8]; 5] = [b"", b"Hello World", b"ALLCAPS", b"already lower", b"MiXeD123!@#"];
+        let cases: [&[u8]; 5] = [
+            b"",
+            b"Hello World",
+            b"ALLCAPS",
+            b"already lower",
+            b"MiXeD123!@#",
+        ];
         for c in cases {
             let mut a = cbuf_b(c);
             let mut b = cbuf_b(c);
@@ -1934,7 +2055,10 @@ mod oracle_tests {
         }
         // NULL
         unsafe {
-            assert_eq!(Q_PrintStrlen(core::ptr::null()), oracle::Q_PrintStrlen(core::ptr::null()));
+            assert_eq!(
+                Q_PrintStrlen(core::ptr::null()),
+                oracle::Q_PrintStrlen(core::ptr::null())
+            );
         }
     }
 
@@ -1967,14 +2091,23 @@ mod oracle_tests {
         // varargs->format_args! deviation). size kept above the rendered length so
         // the overflow path (Com_Printf, which needs the engine) is not hit.
         let fmt2 = cbuf("%s%s");
-        let pairs = [("", ""), ("foo", "bar"), ("path/file", ".ext"), ("a", "bcdef")];
+        let pairs = [
+            ("", ""),
+            ("foo", "bar"),
+            ("path/file", ".ext"),
+            ("a", "bcdef"),
+        ];
         for (a, b) in pairs {
             let ca = cbuf(a);
             let cb = cbuf(b);
             let mut da = vec![0xAAu8 as c_char; 80];
             let mut db = vec![0xAAu8 as c_char; 80];
             unsafe {
-                Com_sprintf(da.as_mut_ptr(), 64, format_args!("{}{}", Sz(ca.as_ptr()), Sz(cb.as_ptr())));
+                Com_sprintf(
+                    da.as_mut_ptr(),
+                    64,
+                    format_args!("{}{}", Sz(ca.as_ptr()), Sz(cb.as_ptr())),
+                );
                 oracle::Com_sprintf(db.as_mut_ptr(), 64, fmt2.as_ptr(), ca.as_ptr(), cb.as_ptr());
             }
             assert_eq!(da, db, "Com_sprintf(\"%s%s\", {a:?}, {b:?})");
@@ -1986,7 +2119,11 @@ mod oracle_tests {
         let mut da = vec![0xAAu8 as c_char; 64];
         let mut db = vec![0xAAu8 as c_char; 64];
         unsafe {
-            Com_sprintf(da.as_mut_ptr(), 64, format_args!("hp={} name={}", 100i32, Sz(name.as_ptr())));
+            Com_sprintf(
+                da.as_mut_ptr(),
+                64,
+                format_args!("hp={} name={}", 100i32, Sz(name.as_ptr())),
+            );
             oracle::Com_sprintf(db.as_mut_ptr(), 64, fmt.as_ptr(), 100i32, name.as_ptr());
         }
         assert_eq!(da, db, "Com_sprintf int+str");
@@ -2017,9 +2154,15 @@ mod oracle_tests {
         let ids = [10i32, 20, 30, 40];
         let mut table: Vec<stringID_table_t> = Vec::new();
         for (buf, &id) in bufs.iter().zip(ids.iter()) {
-            table.push(stringID_table_t { name: buf.as_ptr(), id });
+            table.push(stringID_table_t {
+                name: buf.as_ptr(),
+                id,
+            });
         }
-        table.push(stringID_table_t { name: core::ptr::null(), id: 0 }); // terminator
+        table.push(stringID_table_t {
+            name: core::ptr::null(),
+            id: 0,
+        }); // terminator
 
         for q in ["alpha", "Beta", "gamma", "missing", "DELTA", ""] {
             let cq = cbuf(q);
@@ -2060,7 +2203,11 @@ mod oracle_tests {
             for i in 0..100_000 {
                 let r = crandom();
                 let o = unsafe { oracle::jka_crandom() };
-                assert_eq!(r.to_bits(), o.to_bits(), "crandom() seed={seed:#x} iter={i}");
+                assert_eq!(
+                    r.to_bits(),
+                    o.to_bits(),
+                    "crandom() seed={seed:#x} iter={i}"
+                );
             }
         }
     }
@@ -2075,7 +2222,9 @@ mod oracle_tests {
             "\\empty\\\\next\\x",
             "\\onlykey",
         ];
-        let keys = ["name", "team", "key2", "missing", "empty", "onlykey", "Name", ""];
+        let keys = [
+            "name", "team", "key2", "missing", "empty", "onlykey", "Name", "",
+        ];
         for info in infos {
             let ci = cbuf(info);
             for k in keys {
@@ -2093,7 +2242,13 @@ mod oracle_tests {
 
     #[test]
     fn Info_NextPair_matches_oracle() {
-        let infos = ["\\a\\1\\b\\2\\c\\3", "a\\1\\b\\2", "", "\\solo\\val", "\\k\\\\next\\v"];
+        let infos = [
+            "\\a\\1\\b\\2\\c\\3",
+            "a\\1\\b\\2",
+            "",
+            "\\solo\\val",
+            "\\k\\\\next\\v",
+        ];
         for info in infos {
             let ci = cbuf(info);
             let mut head_r: *const c_char = ci.as_ptr();
@@ -2121,7 +2276,14 @@ mod oracle_tests {
 
     #[test]
     fn Info_Validate_matches_oracle() {
-        let cases = ["", "\\name\\bob", "has\"quote", "has;semi", "both\";", "clean-123"];
+        let cases = [
+            "",
+            "\\name\\bob",
+            "has\"quote",
+            "has;semi",
+            "both\";",
+            "clean-123",
+        ];
         for s in cases {
             let cs = cbuf(s);
             let r = unsafe { Info_Validate(cs.as_ptr()) };
@@ -2144,7 +2306,13 @@ mod oracle_tests {
 
     #[test]
     fn Info_RemoveKey_matches_oracle() {
-        let infos = ["\\name\\bob\\team\\red", "\\name\\bob", "name\\bob\\team\\red", "\\a\\1\\b\\2\\c\\3", ""];
+        let infos = [
+            "\\name\\bob\\team\\red",
+            "\\name\\bob",
+            "name\\bob\\team\\red",
+            "\\a\\1\\b\\2\\c\\3",
+            "",
+        ];
         let keys = ["name", "team", "a", "c", "missing", "bad\\key"];
         for info in infos {
             for k in keys {
@@ -2161,7 +2329,13 @@ mod oracle_tests {
 
     #[test]
     fn Info_RemoveKey_Big_matches_oracle() {
-        let infos = ["\\name\\bob\\team\\red", "\\name\\bob", "name\\bob\\team\\red", "\\a\\1\\b\\2\\c\\3", ""];
+        let infos = [
+            "\\name\\bob\\team\\red",
+            "\\name\\bob",
+            "name\\bob\\team\\red",
+            "\\a\\1\\b\\2\\c\\3",
+            "",
+        ];
         let keys = ["name", "team", "a", "c", "missing", "bad\\key"];
         for info in infos {
             for k in keys {
@@ -2179,7 +2353,14 @@ mod oracle_tests {
     #[test]
     fn Info_SetValueForKey_matches_oracle() {
         let infos = ["", "\\name\\bob", "\\name\\bob\\team\\red", "\\a\\1\\b\\2"];
-        let kvs = [("name", "alice"), ("team", "blue"), ("new", "val"), ("name", ""), ("a", "99"), ("x", "y")];
+        let kvs = [
+            ("name", "alice"),
+            ("team", "blue"),
+            ("new", "val"),
+            ("name", ""),
+            ("a", "99"),
+            ("x", "y"),
+        ];
         for info in infos {
             for (k, v) in kvs {
                 let (mut a, mut b) = info_pair(info, 1100);
@@ -2197,7 +2378,14 @@ mod oracle_tests {
     #[test]
     fn Info_SetValueForKey_Big_matches_oracle() {
         let infos = ["", "\\name\\bob", "\\name\\bob\\team\\red", "\\a\\1\\b\\2"];
-        let kvs = [("name", "alice"), ("team", "blue"), ("new", "val"), ("name", ""), ("a", "99"), ("x", "y")];
+        let kvs = [
+            ("name", "alice"),
+            ("team", "blue"),
+            ("new", "val"),
+            ("name", ""),
+            ("a", "99"),
+            ("x", "y"),
+        ];
         for info in infos {
             for (k, v) in kvs {
                 let (mut a, mut b) = info_pair(info, 1100);
@@ -2207,7 +2395,10 @@ mod oracle_tests {
                     Info_SetValueForKey_Big(a.as_mut_ptr(), ck.as_ptr(), cv.as_ptr());
                     oracle::Info_SetValueForKey_Big(b.as_mut_ptr(), ck.as_ptr(), cv.as_ptr());
                 }
-                assert_eq!(a, b, "Info_SetValueForKey_Big(info={info:?}, k={k:?}, v={v:?})");
+                assert_eq!(
+                    a, b,
+                    "Info_SetValueForKey_Big(info={info:?}, k={k:?}, v={v:?})"
+                );
             }
         }
     }
@@ -2246,8 +2437,16 @@ mod oracle_tests {
                         unsafe { read_cstr(to) },
                         "token input={input:?} allow={allow}"
                     );
-                    let off_r = if cur_r.is_null() { -1 } else { unsafe { cur_r.offset_from(buf.as_ptr()) } };
-                    let off_o = if cur_o.is_null() { -1 } else { unsafe { cur_o.offset_from(buf.as_ptr()) } };
+                    let off_r = if cur_r.is_null() {
+                        -1
+                    } else {
+                        unsafe { cur_r.offset_from(buf.as_ptr()) }
+                    };
+                    let off_o = if cur_o.is_null() {
+                        -1
+                    } else {
+                        unsafe { cur_o.offset_from(buf.as_ptr()) }
+                    };
                     assert_eq!(off_r, off_o, "cursor input={input:?} allow={allow}");
                     assert_eq!(
                         COM_GetCurrentParseLine(),
@@ -2319,8 +2518,16 @@ mod oracle_tests {
             let rr = unsafe { COM_ParseString(&mut cur_r, &mut sr) };
             let ro = unsafe { oracle::COM_ParseString(&mut cur_o, &mut so) };
             assert_eq!(rr, ro, "COM_ParseString ret");
-            assert_eq!(unsafe { read_cstr(sr) }, unsafe { read_cstr(so) }, "COM_ParseString tok");
-            assert_eq!(cur_r.is_null(), cur_o.is_null(), "COM_ParseString cursor null");
+            assert_eq!(
+                unsafe { read_cstr(sr) },
+                unsafe { read_cstr(so) },
+                "COM_ParseString tok"
+            );
+            assert_eq!(
+                cur_r.is_null(),
+                cur_o.is_null(),
+                "COM_ParseString cursor null"
+            );
             if cur_r.is_null() {
                 break;
             }
@@ -2402,14 +2609,20 @@ mod oracle_tests {
             unsafe { cur_o.offset_from(buf.as_ptr()) },
             "COM_MatchToken cursor"
         );
-        assert_eq!(COM_GetCurrentParseLine(), unsafe { oracle::COM_GetCurrentParseLine() });
+        assert_eq!(COM_GetCurrentParseLine(), unsafe {
+            oracle::COM_GetCurrentParseLine()
+        });
     }
 
     #[test]
     fn SkipBracedSection_matches_oracle() {
         let _g = parse_lock();
         let name = cbuf("t");
-        let cases = ["{ a { b } c } after", "{ } trailing", "{nested{deeper{x}}} end"];
+        let cases = [
+            "{ a { b } c } after",
+            "{ } trailing",
+            "{nested{deeper{x}}} end",
+        ];
         for input in cases {
             let buf = cbuf(input);
             unsafe {
@@ -2422,8 +2635,16 @@ mod oracle_tests {
                 SkipBracedSection(&mut cur_r);
                 oracle::SkipBracedSection(&mut cur_o);
             }
-            let off_r = if cur_r.is_null() { -1 } else { unsafe { cur_r.offset_from(buf.as_ptr()) } };
-            let off_o = if cur_o.is_null() { -1 } else { unsafe { cur_o.offset_from(buf.as_ptr()) } };
+            let off_r = if cur_r.is_null() {
+                -1
+            } else {
+                unsafe { cur_r.offset_from(buf.as_ptr()) }
+            };
+            let off_o = if cur_o.is_null() {
+                -1
+            } else {
+                unsafe { cur_o.offset_from(buf.as_ptr()) }
+            };
             assert_eq!(off_r, off_o, "SkipBracedSection cursor input={input:?}");
             assert_eq!(
                 COM_GetCurrentParseLine(),
@@ -2437,7 +2658,12 @@ mod oracle_tests {
     fn SkipRestOfLine_matches_oracle() {
         let _g = parse_lock();
         let name = cbuf("t");
-        let cases = ["rest of line\nnext line", "no newline here", "\nimmediate", "a\nb\nc"];
+        let cases = [
+            "rest of line\nnext line",
+            "no newline here",
+            "\nimmediate",
+            "a\nb\nc",
+        ];
         for input in cases {
             let buf = cbuf(input);
             unsafe {
@@ -2483,7 +2709,9 @@ mod oracle_tests {
         for k in 0..3 {
             assert_eq!(mr[k].to_bits(), mo[k].to_bits(), "Parse1DMatrix[{k}]");
         }
-        assert_eq!(unsafe { cur_r.offset_from(buf.as_ptr()) }, unsafe { cur_o.offset_from(buf.as_ptr()) });
+        assert_eq!(unsafe { cur_r.offset_from(buf.as_ptr()) }, unsafe {
+            cur_o.offset_from(buf.as_ptr())
+        });
     }
 
     #[test]
@@ -2506,7 +2734,9 @@ mod oracle_tests {
         for k in 0..6 {
             assert_eq!(mr[k].to_bits(), mo[k].to_bits(), "Parse2DMatrix[{k}]");
         }
-        assert_eq!(unsafe { cur_r.offset_from(buf.as_ptr()) }, unsafe { cur_o.offset_from(buf.as_ptr()) });
+        assert_eq!(unsafe { cur_r.offset_from(buf.as_ptr()) }, unsafe {
+            cur_o.offset_from(buf.as_ptr())
+        });
     }
 
     #[test]
@@ -2529,7 +2759,9 @@ mod oracle_tests {
         for k in 0..8 {
             assert_eq!(mr[k].to_bits(), mo[k].to_bits(), "Parse3DMatrix[{k}]");
         }
-        assert_eq!(unsafe { cur_r.offset_from(buf.as_ptr()) }, unsafe { cur_o.offset_from(buf.as_ptr()) });
+        assert_eq!(unsafe { cur_r.offset_from(buf.as_ptr()) }, unsafe {
+            cur_o.offset_from(buf.as_ptr())
+        });
     }
 
     #[test]
@@ -2569,7 +2801,15 @@ mod oracle_tests {
 
     #[test]
     fn COM_StripExtension_matches_oracle() {
-        let cases = ["", "file", "file.ext", "a.b.c", ".hidden", "no_dot", "path/to/file.tga"];
+        let cases = [
+            "",
+            "file",
+            "file.ext",
+            "a.b.c",
+            ".hidden",
+            "no_dot",
+            "path/to/file.tga",
+        ];
         for s in cases {
             let in_buf = cbuf(s);
             let mut a = vec![0xAAu8 as c_char; 64];

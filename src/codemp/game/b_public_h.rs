@@ -134,7 +134,7 @@ pub const BS_WANDER: bState_t = 6; // Wander down random waypoint paths
 pub const BS_NOCLIP: bState_t = 7; // Moves through walls, etc.
 pub const BS_REMOVE: bState_t = 8; // Waits for player to leave PVS then removes itself
 pub const BS_CINEMATIC: bState_t = 9; // Does nothing but face it's angles and move to a goal if it has one
-// internal bStates only
+                                      // internal bStates only
 pub const BS_WAIT: bState_t = 10; // Does nothing but face it's angles
 pub const BS_STAND_GUARD: bState_t = 11;
 pub const BS_PATROL: bState_t = 12;
@@ -156,10 +156,10 @@ pub struct gNPCstats_t {
     pub evasion: c_int,
     pub hfov: c_int, // horizontal field of view
     pub intelligence: c_int,
-    pub move_: c_int, // `move` (Rust keyword)
-    pub reactions: c_int, // 1-5, higher is better
+    pub move_: c_int,       // `move` (Rust keyword)
+    pub reactions: c_int,   // 1-5, higher is better
     pub shootDistance: f32, // Maximum range- overrides range set for weapon if nonzero
-    pub vfov: c_int, // vertical field of view
+    pub vfov: c_int,        // vertical field of view
     pub vigilance: f32,
     pub visrange: f32,
     // Movement
@@ -227,7 +227,7 @@ pub struct gNPC_t {
     // Behavior state info
     pub behaviorState: bState_t, // determines what actions he should be doing
     pub defaultBehavior: bState_t, // State bot will default to if none other set
-    pub tempBehavior: bState_t, // While valid, overrides other behavior
+    pub tempBehavior: bState_t,  // While valid, overrides other behavior
 
     pub ignorePain: qboolean, // only play pain scripts when take pain
 
@@ -252,10 +252,10 @@ pub struct gNPC_t {
     pub lastGoalEntity: *mut gentity_t,
     pub eventualGoal: *mut gentity_t,
     pub captureGoal: *mut gentity_t, // Where we should try to capture
-    pub defendEnt: *mut gentity_t, // Who we're trying to protect
-    pub greetEnt: *mut gentity_t, // Who we're greeting
-    pub goalTime: c_int, // FIXME: This is never actually used
-    pub straightToGoal: qboolean, // move straight at navgoals
+    pub defendEnt: *mut gentity_t,   // Who we're trying to protect
+    pub greetEnt: *mut gentity_t,    // Who we're greeting
+    pub goalTime: c_int,             // FIXME: This is never actually used
+    pub straightToGoal: qboolean,    // move straight at navgoals
     pub distToGoal: f32,
     pub navTime: c_int,
     pub blockingEntNum: c_int,
@@ -292,8 +292,8 @@ pub struct gNPC_t {
 
     pub combatPoint: c_int, // NPCs in bState BS_COMBAT_POINT will find their closest empty combat_point
     pub lastFailedCombatPoint: c_int, // NPCs in bState BS_COMBAT_POINT will find their closest empty combat_point
-    pub movementSpeech: c_int, // what to say when you first successfully move
-    pub movementSpeechChance: f32, // how likely you are to say it
+    pub movementSpeech: c_int,        // what to say when you first successfully move
+    pub movementSpeechChance: f32,    // how likely you are to say it
 
     // Testing physics at 20fps
     pub nextBStateThink: c_int,
@@ -311,7 +311,7 @@ pub struct gNPC_t {
     pub squadState: c_int, // Tracking information for team level interaction
     // JWEIER ADDITIONS END
     pub confusionTime: c_int, // Doesn't respond to alerts or pick up enemies (unless shot) until this time is up
-    pub charmedTime: c_int, // charmed to enemy team
+    pub charmedTime: c_int,   // charmed to enemy team
     pub controlledTime: c_int, // controlled by player
     pub surrenderTime: c_int, // Hands up
 
@@ -356,21 +356,36 @@ mod tests {
     fn gnpc_layout_matches_c() {
         unsafe {
             assert_eq!(size_of::<gNPCstats_t>(), jka_bp_sizeof_gNPCstats_t());
-            assert_eq!(offset_of!(gNPCstats_t, aggression), jka_bp_off_stats_aggression());
-            assert_eq!(offset_of!(gNPCstats_t, runSpeed), jka_bp_off_stats_runSpeed());
-            assert_eq!(offset_of!(gNPCstats_t, acceleration), jka_bp_off_stats_acceleration());
+            assert_eq!(
+                offset_of!(gNPCstats_t, aggression),
+                jka_bp_off_stats_aggression()
+            );
+            assert_eq!(
+                offset_of!(gNPCstats_t, runSpeed),
+                jka_bp_off_stats_runSpeed()
+            );
+            assert_eq!(
+                offset_of!(gNPCstats_t, acceleration),
+                jka_bp_off_stats_acceleration()
+            );
 
             #[cfg(target_pointer_width = "64")]
             {
                 assert_eq!(size_of::<gNPC_t>(), jka_bp_sizeof_gNPC_t());
                 // first field
-                assert_eq!(offset_of!(gNPC_t, timeOfDeath), jka_bp_off_npc_timeOfDeath());
+                assert_eq!(
+                    offset_of!(gNPC_t, timeOfDeath),
+                    jka_bp_off_npc_timeOfDeath()
+                );
                 // a middle field (embedded gNPCstats_t)
                 assert_eq!(offset_of!(gNPC_t, stats), jka_bp_off_npc_stats());
                 // the embedded usercmd_t
                 assert_eq!(offset_of!(gNPC_t, last_ucmd), jka_bp_off_npc_last_ucmd());
                 // last field
-                assert_eq!(offset_of!(gNPC_t, ffireFadeDebounce), jka_bp_off_npc_ffireFadeDebounce());
+                assert_eq!(
+                    offset_of!(gNPC_t, ffireFadeDebounce),
+                    jka_bp_off_npc_ffireFadeDebounce()
+                );
             }
         }
     }

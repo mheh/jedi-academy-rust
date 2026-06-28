@@ -42,7 +42,6 @@ use crate::codemp::game::q_shared_h::{
 
 // QAGAME-only static bodies (the server build always has QAGAME defined).
 
-
 pub unsafe extern "C" fn RegisterAssets(pVeh: *mut Vehicle_t) {
     //atst uses turret weapon
     RegisterItem(BG_FindItemForWeapon(WP_TURRET));
@@ -180,16 +179,13 @@ pub unsafe extern "C" fn ProcessMoveCommands(pVeh: *mut Vehicle_t) {
     /********************************************************************************/
 }
 
-
 pub unsafe extern "C" fn WalkerYawAdjust(
     pVeh: *mut Vehicle_t,
     riderPS: *mut playerState_t,
     parentPS: *mut playerState_t,
 ) {
-    let mut angDif: f32 = AngleSubtract(
-        *(*pVeh).m_vOrientation.add(YAW),
-        (*riderPS).viewangles[YAW],
-    );
+    let mut angDif: f32 =
+        AngleSubtract(*(*pVeh).m_vOrientation.add(YAW), (*riderPS).viewangles[YAW]);
 
     if !parentPS.is_null() && (*parentPS).speed != 0.0 {
         let mut s: f32 = (*parentPS).speed;
@@ -460,13 +456,15 @@ pub unsafe extern "C" fn G_SetWalkerVehicleFunctions(pVehInfo: *mut vehicleInfo_
     //	pVehInfo->Inhabited					=		Inhabited;
 }
 
-
 // Create/Allocate a new Animal Vehicle (initializing it as well).
 //this is a BG function too in MP so don't un-bg-compatibilify it -rww
 //
 // No-oracle: allocates from the module-static vehicle pool via
 // `G_AllocateVehicleObject` and zeroes/initialises `Vehicle_t` through pointers.
-pub unsafe extern "C" fn G_CreateWalkerNPC(pVeh: *mut *mut Vehicle_t, strAnimalType: *const c_char) {
+pub unsafe extern "C" fn G_CreateWalkerNPC(
+    pVeh: *mut *mut Vehicle_t,
+    strAnimalType: *const c_char,
+) {
     // Allocate the Vehicle.
     // #ifdef _JK2MP / #ifdef QAGAME (server build):
     //these will remain on entities on the client once allocated because the pointer is
@@ -474,6 +472,6 @@ pub unsafe extern "C" fn G_CreateWalkerNPC(pVeh: *mut *mut Vehicle_t, strAnimalT
     //memset to 0, so this memory would be lost..
     G_AllocateVehicleObject(pVeh);
     write_bytes(*pVeh, 0, 1); // memset(*pVeh, 0, sizeof(Vehicle_t))
-    (**pVeh).m_pVehicleInfo =
-        (addr_of_mut!(g_vehicleInfo) as *mut vehicleInfo_t).add(BG_VehicleGetIndex(strAnimalType) as usize);
+    (**pVeh).m_pVehicleInfo = (addr_of_mut!(g_vehicleInfo) as *mut vehicleInfo_t)
+        .add(BG_VehicleGetIndex(strAnimalType) as usize);
 }

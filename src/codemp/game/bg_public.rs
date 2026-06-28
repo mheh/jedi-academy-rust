@@ -28,15 +28,15 @@
 #![allow(non_camel_case_types, non_upper_case_globals)]
 
 use crate::codemp::game::bg_vehicles_h::Vehicle_t;
-use crate::codemp::game::surfaceflags_h::{
-    CONTENTS_BODY, CONTENTS_CORPSE, CONTENTS_LAVA, CONTENTS_MONSTERCLIP, CONTENTS_PLAYERCLIP,
-    CONTENTS_SLIME, CONTENTS_SOLID, CONTENTS_TERRAIN, CONTENTS_WATER,
-};
 use crate::codemp::game::q_shared_h::{
     entityState_t, mdxaBone_t, playerState_t, qboolean, trace_t, usercmd_t, vec3_t, vec_t,
     MAX_AMBIENT_SETS, MAX_CLIENTS, MAX_CONFIGSTRINGS, MAX_FX, MAX_G2BONES, MAX_ICONS,
     MAX_LIGHT_STYLES, MAX_LOCATIONS, MAX_MODELS, MAX_QPATH, MAX_SOUNDS, MAX_TERRAINS, NEGATIVE_X,
     NEGATIVE_Y, NEGATIVE_Z, ORIGIN, POSITIVE_X, POSITIVE_Y, POSITIVE_Z,
+};
+use crate::codemp::game::surfaceflags_h::{
+    CONTENTS_BODY, CONTENTS_CORPSE, CONTENTS_LAVA, CONTENTS_MONSTERCLIP, CONTENTS_PLAYERCLIP,
+    CONTENTS_SLIME, CONTENTS_SOLID, CONTENTS_TERRAIN, CONTENTS_WATER,
 };
 use core::ffi::{c_char, c_int, c_uint, c_void};
 
@@ -218,7 +218,6 @@ const _: () = assert!(CS_MAX <= MAX_CONFIGSTRINGS as c_int);
 /// `g2ModelParts_t` (bg_public.h).
 pub type g2ModelParts_t = c_int;
 
-
 pub const G2_MODELPART_HEAD: g2ModelParts_t = 10;
 pub const G2_MODELPART_WAIST: g2ModelParts_t = 11;
 pub const G2_MODELPART_LARM: g2ModelParts_t = 12;
@@ -232,7 +231,6 @@ pub const G2_MODELPART_RLEG: g2ModelParts_t = 16;
 // ---------------------------------------------------------------------------
 /// `forceHandAnims_t` (bg_public.h).
 pub type forceHandAnims_t = c_int;
-
 
 pub const HANDEXTEND_NONE: forceHandAnims_t = 0;
 pub const HANDEXTEND_FORCEPUSH: forceHandAnims_t = 1;
@@ -261,7 +259,6 @@ pub const HANDEXTEND_JEDITAUNT: forceHandAnims_t = 16;
 /// `brokenLimb_t` (bg_public.h).
 pub type brokenLimb_t = c_int;
 
-
 pub const BROKENLIMB_NONE: brokenLimb_t = 0;
 pub const BROKENLIMB_LARM: brokenLimb_t = 1;
 pub const BROKENLIMB_RARM: brokenLimb_t = 2;
@@ -272,7 +269,6 @@ pub const NUM_BROKENLIMBS: brokenLimb_t = 3;
 // ---------------------------------------------------------------------------
 /// `gametype_t` (bg_public.h).
 pub type gametype_t = c_int;
-
 
 pub const GT_FFA: gametype_t = 0; // free for all
 pub const GT_HOLOCRON: gametype_t = 1; // holocron ffa
@@ -326,7 +322,6 @@ pub const DIR_BACK: c_int = 3;
 /// `footstepType_t` (bg_public.h).
 pub type footstepType_t = c_int;
 
-
 pub const FOOTSTEP_R: footstepType_t = 0;
 pub const FOOTSTEP_L: footstepType_t = 1;
 pub const FOOTSTEP_HEAVY_R: footstepType_t = 2;
@@ -347,8 +342,8 @@ pub const AEV_EFFECT: animEventType_t = 3; //# animID AEV_EFFECT framenum effect
 pub const AEV_FIRE: animEventType_t = 4; //# animID AEV_FIRE framenum altfire chancetofire
 pub const AEV_MOVE: animEventType_t = 5; //# animID AEV_MOVE framenum forwardpush rightpush uppush
 pub const AEV_SOUNDCHAN: animEventType_t = 6; //# animID AEV_SOUNDCHAN framenum CHANNEL soundpath randomlow randomhi chancetoplay
-// Retail PC (raven-jediacademy) adds these two saber anim events (absent in Xbox),
-// shifting AEV_NUM_AEV 7 -> 9.
+                                              // Retail PC (raven-jediacademy) adds these two saber anim events (absent in Xbox),
+                                              // shifting AEV_NUM_AEV 7 -> 9.
 pub const AEV_SABER_SWING: animEventType_t = 7; //# animID AEV_SABER_SWING framenum CHANNEL randomlow randomhi chancetoplay
 pub const AEV_SABER_SPIN: animEventType_t = 8; //# animID AEV_SABER_SPIN framenum CHANNEL chancetoplay
 pub const AEV_NUM_AEV: animEventType_t = 9;
@@ -358,7 +353,6 @@ pub const AEV_NUM_AEV: animEventType_t = 9;
 // ---------------------------------------------------------------------------
 /// `pmtype_t` (bg_public.h).
 pub type pmtype_t = c_int;
-
 
 pub const PM_NORMAL: pmtype_t = 0; // can accelerate and turn
 pub const PM_JETPACK: pmtype_t = 1; // special jetpack movement
@@ -375,7 +369,6 @@ pub const PM_SPINTERMISSION: pmtype_t = 8; // no movement or status bar
 // ---------------------------------------------------------------------------
 /// `weaponstate_t` (bg_public.h).
 pub type weaponstate_t = c_int;
-
 
 pub const WEAPON_READY: weaponstate_t = 0;
 pub const WEAPON_RAISING: weaponstate_t = 1;
@@ -405,7 +398,6 @@ pub const NUM_FORCE_MASTERY_LEVELS: c_int = 8;
 /// `statIndex_t` (bg_public.h).
 pub type statIndex_t = c_int;
 
-
 pub const STAT_HEALTH: statIndex_t = 0;
 pub const STAT_HOLDABLE_ITEM: statIndex_t = 1;
 pub const STAT_HOLDABLE_ITEMS: statIndex_t = 2;
@@ -424,7 +416,6 @@ pub const STAT_MAX_HEALTH: statIndex_t = 8; // health / armor limit, changable b
 /// `persEnum_t` (bg_public.h).
 pub type persEnum_t = c_int;
 
-
 pub const PERS_SCORE: persEnum_t = 0; // !!! MUST NOT CHANGE, SERVER AND GAME BOTH REFERENCE !!!
 pub const PERS_HITS: persEnum_t = 1; // total points damage inflicted so damage beeps can sound on change
 pub const PERS_RANK: persEnum_t = 2; // player rank or team rank
@@ -434,7 +425,7 @@ pub const PERS_PLAYEREVENTS: persEnum_t = 5; // 16 bits that can be flipped for 
 pub const PERS_ATTACKER: persEnum_t = 6; // clientnum of last damage inflicter
 pub const PERS_ATTACKEE_ARMOR: persEnum_t = 7; // health/armor of last person we attacked
 pub const PERS_KILLED: persEnum_t = 8; // count of the number of times you died
-// player awards tracking
+                                       // player awards tracking
 pub const PERS_IMPRESSIVE_COUNT: persEnum_t = 9; // two railgun hits in a row
 pub const PERS_EXCELLENT_COUNT: persEnum_t = 10; // two successive kills in a short amount of time
 pub const PERS_DEFEND_COUNT: persEnum_t = 11; // defend awards
@@ -447,7 +438,6 @@ pub const PERS_CAPTURES: persEnum_t = 14; // captures
 // ---------------------------------------------------------------------------
 /// `effectTypes_t` (bg_public.h).
 pub type effectTypes_t = c_int;
-
 
 pub const EFFECT_NONE: effectTypes_t = 0;
 pub const EFFECT_SMOKE: effectTypes_t = 1;
@@ -476,7 +466,6 @@ pub const EFFECT_MAX: effectTypes_t = 20;
 // ---------------------------------------------------------------------------
 /// `powerup_t` (bg_public.h).
 pub type powerup_t = c_int;
-
 
 pub const PW_NONE: powerup_t = 0;
 
@@ -508,13 +497,11 @@ pub const PW_YSALAMIRI: powerup_t = 15;
 
 pub const PW_NUM_POWERUPS: powerup_t = 16;
 
-
 // ---------------------------------------------------------------------------
 // `holdable_t` (bg_public.h) -- anonymous enum + `typedef int`.
 // ---------------------------------------------------------------------------
 /// `holdable_t` (bg_public.h).
 pub type holdable_t = c_int;
-
 
 pub const HI_NONE: holdable_t = 0;
 
@@ -539,7 +526,6 @@ pub const HI_NUM_HOLDABLE: holdable_t = 12;
 /// `ctfMsg_t` (bg_public.h).
 pub type ctfMsg_t = c_int;
 
-
 pub const CTFMESSAGE_FRAGGED_FLAG_CARRIER: ctfMsg_t = 0;
 pub const CTFMESSAGE_FLAG_RETURNED: ctfMsg_t = 1;
 pub const CTFMESSAGE_PLAYER_RETURNED_FLAG: ctfMsg_t = 2;
@@ -551,7 +537,6 @@ pub const CTFMESSAGE_PLAYER_GOT_FLAG: ctfMsg_t = 4;
 // ---------------------------------------------------------------------------
 /// `pdSounds_t` (bg_public.h).
 pub type pdSounds_t = c_int;
-
 
 pub const PDSOUND_NONE: pdSounds_t = 0;
 pub const PDSOUND_PROTECTHIT: pdSounds_t = 1;
@@ -566,7 +551,6 @@ pub const PDSOUND_FORCEGRIP: pdSounds_t = 6;
 // ---------------------------------------------------------------------------
 /// `entity_event_t` (bg_public.h). There is a maximum of 256 events (8 bits transmission, 2 high bits for uniqueness)
 pub type entity_event_t = c_int;
-
 
 pub const EV_NONE: entity_event_t = 0;
 
@@ -812,13 +796,11 @@ pub const EV_PUSHFAIL: entity_event_t = 190;
 
 pub const EV_SIEGESPEC: entity_event_t = 191;
 
-
 // ---------------------------------------------------------------------------
 // `global_team_sound_t` (bg_public.h) -- typedef enum.
 // ---------------------------------------------------------------------------
 /// `global_team_sound_t` (bg_public.h).
 pub type global_team_sound_t = c_int;
-
 
 pub const GTS_RED_CAPTURE: global_team_sound_t = 0;
 pub const GTS_BLUE_CAPTURE: global_team_sound_t = 1;
@@ -838,7 +820,6 @@ pub const GTS_TEAMS_ARE_TIED: global_team_sound_t = 10;
 /// `team_t` (bg_public.h).
 pub type team_t = c_int;
 
-
 pub const TEAM_FREE: team_t = 0;
 pub const TEAM_RED: team_t = 1;
 pub const TEAM_BLUE: team_t = 2;
@@ -852,7 +833,6 @@ pub const TEAM_NUM_TEAMS: team_t = 4;
 /// `duelTeam_t` (bg_public.h).
 pub type duelTeam_t = c_int;
 
-
 pub const DUELTEAM_FREE: duelTeam_t = 0;
 pub const DUELTEAM_LONE: duelTeam_t = 1;
 pub const DUELTEAM_DOUBLE: duelTeam_t = 2;
@@ -864,7 +844,6 @@ pub const DUELTEAM_SINGLE: duelTeam_t = 3; // for regular duel matches (not powe
 // ---------------------------------------------------------------------------
 /// `teamtask_t` (bg_public.h).
 pub type teamtask_t = c_int;
-
 
 pub const TEAMTASK_NONE: teamtask_t = 0;
 pub const TEAMTASK_OFFENSE: teamtask_t = 1;
@@ -880,7 +859,6 @@ pub const TEAMTASK_CAMP: teamtask_t = 7;
 // ---------------------------------------------------------------------------
 /// `meansOfDeath_t` (bg_public.h).
 pub type meansOfDeath_t = c_int;
-
 
 pub const MOD_UNKNOWN: meansOfDeath_t = 0;
 pub const MOD_STUN_BATON: meansOfDeath_t = 1;
@@ -943,16 +921,15 @@ pub const MOD_MAX: meansOfDeath_t = 45;
 /// `itemType_t` (bg_public.h).
 pub type itemType_t = c_int;
 
-
 pub const IT_BAD: itemType_t = 0;
 pub const IT_WEAPON: itemType_t = 1; // EFX: rotate + upscale + minlight
 pub const IT_AMMO: itemType_t = 2; // EFX: rotate
 pub const IT_ARMOR: itemType_t = 3; // EFX: rotate + minlight
 pub const IT_HEALTH: itemType_t = 4; // EFX: static external sphere + rotating internal
 pub const IT_POWERUP: itemType_t = 5; // instant on, timer based
-// EFX: rotate + external ring that rotates
+                                      // EFX: rotate + external ring that rotates
 pub const IT_HOLDABLE: itemType_t = 6; // single use, holdable item
-// EFX: rotate + bob
+                                       // EFX: rotate + bob
 pub const IT_PERSISTANT_POWERUP: itemType_t = 7;
 pub const IT_TEAM: itemType_t = 8;
 
@@ -961,7 +938,6 @@ pub const IT_TEAM: itemType_t = 8;
 // ---------------------------------------------------------------------------
 /// `entityType_t` (bg_public.h).
 pub type entityType_t = c_int;
-
 
 pub const ET_GENERAL: entityType_t = 0;
 pub const ET_PLAYER: entityType_t = 1;
@@ -983,8 +959,8 @@ pub const ET_TERRAIN: entityType_t = 16;
 pub const ET_FX: entityType_t = 17;
 
 pub const ET_EVENTS: entityType_t = 18; // any of the EV_* events can be added freestanding
-// by setting eType to ET_EVENTS + eventNum
-// this avoids having to set eFlags and eventNum
+                                        // by setting eType to ET_EVENTS + eventNum
+                                        // this avoids having to set eFlags and eventNum
 
 // ---------------------------------------------------------------------------
 // `fieldtype_t` (bg_public.h) -- typedef enum.
@@ -995,7 +971,6 @@ pub const ET_EVENTS: entityType_t = 18; // any of the EV_* events can be added f
 /// `fieldtype_t` (bg_public.h) — under `#ifdef _GAME_SIDE` in C (always on for the
 /// game module). Spawn-field type tags (`F_INT`/`F_FLOAT`/… consumed by g_spawn).
 pub type fieldtype_t = c_int;
-
 
 pub const F_INT: fieldtype_t = 0;
 pub const F_FLOAT: fieldtype_t = 1;
@@ -1029,7 +1004,6 @@ pub const F_IGNORE: fieldtype_t = 25;
 // ---------------------------------------------------------------------------
 /// `saberMoveName_t` (bg_public.h).
 pub type saberMoveName_t = c_int;
-
 
 // totally invalid (retail PC / raven-jediacademy only; absent in Xbox)
 pub const LS_INVALID: saberMoveName_t = -1;
@@ -1228,7 +1202,6 @@ pub const LS_MOVE_MAX: saberMoveName_t = 162; //
 // ---------------------------------------------------------------------------
 /// `saberQuadrant_t` (bg_public.h).
 pub type saberQuadrant_t = c_int;
-
 
 pub const Q_BR: saberQuadrant_t = 0;
 pub const Q_R: saberQuadrant_t = 1;
@@ -1547,7 +1520,7 @@ pub struct saberMoveData_t {
     pub animSetFlags: c_uint,
     pub blendTime: c_int,
     pub blocking: c_int,
-    pub chain_idle: saberMoveName_t,   // move if attack not pressed at end of this anim
+    pub chain_idle: saberMoveName_t, // move if attack not pressed at end of this anim
     pub chain_attack: saberMoveName_t, // move if attack (and nothing else) pressed
     pub trailLength: qboolean,
 }
@@ -1588,7 +1561,7 @@ pub struct bgEntity_t {
     pub localAnimIndex: c_int,      //index locally (game/cgame) to anim data for this skel
     pub modelScale: vec3_t,         //needed for g2 collision
 
-    //Data type(s) must directly correspond to the head of the gentity and centity structures
+                                    //Data type(s) must directly correspond to the head of the gentity and centity structures
 }
 const _: () = assert!(offset_of!(bgEntity_t, s) == 0); // arch-independent anchor
 #[cfg(target_pointer_width = "64")]
@@ -1621,8 +1594,8 @@ pub struct pmove_t {
 
     // command (in)
     pub cmd: usercmd_t,
-    pub tracemask: c_int,    // collide against these types of surfaces
-    pub debugLevel: c_int,   // if set, diagnostic output will be printed
+    pub tracemask: c_int,      // collide against these types of surfaces
+    pub debugLevel: c_int,     // if set, diagnostic output will be printed
     pub noFootsteps: qboolean, // if the game is setup for no footsteps by the server
     pub gauntletHit: qboolean, // true if a gauntlet attack would actually hit something
 
@@ -1805,14 +1778,42 @@ mod tests {
     #[test]
     fn shared_enum_values_match_c() {
         unsafe {
-            assert_eq!(G2_MODELPART_HEAD, jka_bge_G2_MODELPART_HEAD(), "G2_MODELPART_HEAD");
-            assert_eq!(G2_MODELPART_RLEG, jka_bge_G2_MODELPART_RLEG(), "G2_MODELPART_RLEG");
-            assert_eq!(HANDEXTEND_NONE, jka_bge_HANDEXTEND_NONE(), "HANDEXTEND_NONE");
-            assert_eq!(HANDEXTEND_JEDITAUNT, jka_bge_HANDEXTEND_JEDITAUNT(), "HANDEXTEND_JEDITAUNT");
-            assert_eq!(BROKENLIMB_NONE, jka_bge_BROKENLIMB_NONE(), "BROKENLIMB_NONE");
-            assert_eq!(NUM_BROKENLIMBS, jka_bge_NUM_BROKENLIMBS(), "NUM_BROKENLIMBS");
+            assert_eq!(
+                G2_MODELPART_HEAD,
+                jka_bge_G2_MODELPART_HEAD(),
+                "G2_MODELPART_HEAD"
+            );
+            assert_eq!(
+                G2_MODELPART_RLEG,
+                jka_bge_G2_MODELPART_RLEG(),
+                "G2_MODELPART_RLEG"
+            );
+            assert_eq!(
+                HANDEXTEND_NONE,
+                jka_bge_HANDEXTEND_NONE(),
+                "HANDEXTEND_NONE"
+            );
+            assert_eq!(
+                HANDEXTEND_JEDITAUNT,
+                jka_bge_HANDEXTEND_JEDITAUNT(),
+                "HANDEXTEND_JEDITAUNT"
+            );
+            assert_eq!(
+                BROKENLIMB_NONE,
+                jka_bge_BROKENLIMB_NONE(),
+                "BROKENLIMB_NONE"
+            );
+            assert_eq!(
+                NUM_BROKENLIMBS,
+                jka_bge_NUM_BROKENLIMBS(),
+                "NUM_BROKENLIMBS"
+            );
             assert_eq!(GT_FFA, jka_bge_GT_FFA(), "GT_FFA");
-            assert_eq!(GT_MAX_GAME_TYPE, jka_bge_GT_MAX_GAME_TYPE(), "GT_MAX_GAME_TYPE");
+            assert_eq!(
+                GT_MAX_GAME_TYPE,
+                jka_bge_GT_MAX_GAME_TYPE(),
+                "GT_MAX_GAME_TYPE"
+            );
             assert_eq!(GENDER_MALE, jka_bge_GENDER_MALE(), "GENDER_MALE");
             assert_eq!(GENDER_NEUTER, jka_bge_GENDER_NEUTER(), "GENDER_NEUTER");
             assert_eq!(SABERLOCK_TOP, jka_bge_SABERLOCK_TOP(), "SABERLOCK_TOP");
@@ -1820,41 +1821,93 @@ mod tests {
             assert_eq!(DIR_RIGHT, jka_bge_DIR_RIGHT(), "DIR_RIGHT");
             assert_eq!(DIR_BACK, jka_bge_DIR_BACK(), "DIR_BACK");
             assert_eq!(FOOTSTEP_R, jka_bge_FOOTSTEP_R(), "FOOTSTEP_R");
-            assert_eq!(NUM_FOOTSTEP_TYPES, jka_bge_NUM_FOOTSTEP_TYPES(), "NUM_FOOTSTEP_TYPES");
+            assert_eq!(
+                NUM_FOOTSTEP_TYPES,
+                jka_bge_NUM_FOOTSTEP_TYPES(),
+                "NUM_FOOTSTEP_TYPES"
+            );
             assert_eq!(AEV_NONE, jka_bge_AEV_NONE(), "AEV_NONE");
             assert_eq!(AEV_NUM_AEV, jka_bge_AEV_NUM_AEV(), "AEV_NUM_AEV");
             assert_eq!(PM_NORMAL, jka_bge_PM_NORMAL(), "PM_NORMAL");
-            assert_eq!(PM_SPINTERMISSION, jka_bge_PM_SPINTERMISSION(), "PM_SPINTERMISSION");
+            assert_eq!(
+                PM_SPINTERMISSION,
+                jka_bge_PM_SPINTERMISSION(),
+                "PM_SPINTERMISSION"
+            );
             assert_eq!(WEAPON_READY, jka_bge_WEAPON_READY(), "WEAPON_READY");
             assert_eq!(WEAPON_IDLE, jka_bge_WEAPON_IDLE(), "WEAPON_IDLE");
-            assert_eq!(FORCE_MASTERY_UNINITIATED, jka_bge_FORCE_MASTERY_UNINITIATED(), "FORCE_MASTERY_UNINITIATED");
-            assert_eq!(NUM_FORCE_MASTERY_LEVELS, jka_bge_NUM_FORCE_MASTERY_LEVELS(), "NUM_FORCE_MASTERY_LEVELS");
+            assert_eq!(
+                FORCE_MASTERY_UNINITIATED,
+                jka_bge_FORCE_MASTERY_UNINITIATED(),
+                "FORCE_MASTERY_UNINITIATED"
+            );
+            assert_eq!(
+                NUM_FORCE_MASTERY_LEVELS,
+                jka_bge_NUM_FORCE_MASTERY_LEVELS(),
+                "NUM_FORCE_MASTERY_LEVELS"
+            );
             assert_eq!(STAT_HEALTH, jka_bge_STAT_HEALTH(), "STAT_HEALTH");
             assert_eq!(STAT_WEAPONS, jka_bge_STAT_WEAPONS(), "STAT_WEAPONS");
-            assert_eq!(STAT_MAX_HEALTH, jka_bge_STAT_MAX_HEALTH(), "STAT_MAX_HEALTH");
+            assert_eq!(
+                STAT_MAX_HEALTH,
+                jka_bge_STAT_MAX_HEALTH(),
+                "STAT_MAX_HEALTH"
+            );
             assert_eq!(PERS_SCORE, jka_bge_PERS_SCORE(), "PERS_SCORE");
             assert_eq!(PERS_CAPTURES, jka_bge_PERS_CAPTURES(), "PERS_CAPTURES");
             assert_eq!(EFFECT_NONE, jka_bge_EFFECT_NONE(), "EFFECT_NONE");
             assert_eq!(EFFECT_MAX, jka_bge_EFFECT_MAX(), "EFFECT_MAX");
             assert_eq!(PW_NONE, jka_bge_PW_NONE(), "PW_NONE");
-            assert_eq!(PW_NUM_POWERUPS, jka_bge_PW_NUM_POWERUPS(), "PW_NUM_POWERUPS");
+            assert_eq!(
+                PW_NUM_POWERUPS,
+                jka_bge_PW_NUM_POWERUPS(),
+                "PW_NUM_POWERUPS"
+            );
             assert_eq!(HI_NONE, jka_bge_HI_NONE(), "HI_NONE");
-            assert_eq!(HI_NUM_HOLDABLE, jka_bge_HI_NUM_HOLDABLE(), "HI_NUM_HOLDABLE");
-            assert_eq!(CTFMESSAGE_FRAGGED_FLAG_CARRIER, jka_bge_CTFMESSAGE_FRAGGED_FLAG_CARRIER(), "CTFMESSAGE_FRAGGED_FLAG_CARRIER");
-            assert_eq!(CTFMESSAGE_PLAYER_GOT_FLAG, jka_bge_CTFMESSAGE_PLAYER_GOT_FLAG(), "CTFMESSAGE_PLAYER_GOT_FLAG");
+            assert_eq!(
+                HI_NUM_HOLDABLE,
+                jka_bge_HI_NUM_HOLDABLE(),
+                "HI_NUM_HOLDABLE"
+            );
+            assert_eq!(
+                CTFMESSAGE_FRAGGED_FLAG_CARRIER,
+                jka_bge_CTFMESSAGE_FRAGGED_FLAG_CARRIER(),
+                "CTFMESSAGE_FRAGGED_FLAG_CARRIER"
+            );
+            assert_eq!(
+                CTFMESSAGE_PLAYER_GOT_FLAG,
+                jka_bge_CTFMESSAGE_PLAYER_GOT_FLAG(),
+                "CTFMESSAGE_PLAYER_GOT_FLAG"
+            );
             assert_eq!(PDSOUND_NONE, jka_bge_PDSOUND_NONE(), "PDSOUND_NONE");
-            assert_eq!(PDSOUND_FORCEGRIP, jka_bge_PDSOUND_FORCEGRIP(), "PDSOUND_FORCEGRIP");
+            assert_eq!(
+                PDSOUND_FORCEGRIP,
+                jka_bge_PDSOUND_FORCEGRIP(),
+                "PDSOUND_FORCEGRIP"
+            );
             assert_eq!(EV_NONE, jka_bge_EV_NONE(), "EV_NONE");
             assert_eq!(EV_USE_ITEM5, jka_bge_EV_USE_ITEM5(), "EV_USE_ITEM5");
             assert_eq!(EV_BODYFADE, jka_bge_EV_BODYFADE(), "EV_BODYFADE");
             assert_eq!(EV_ESCAPING2, jka_bge_EV_ESCAPING2(), "EV_ESCAPING2");
             assert_eq!(EV_SIEGESPEC, jka_bge_EV_SIEGESPEC(), "EV_SIEGESPEC");
-            assert_eq!(GTS_RED_CAPTURE, jka_bge_GTS_RED_CAPTURE(), "GTS_RED_CAPTURE");
-            assert_eq!(GTS_TEAMS_ARE_TIED, jka_bge_GTS_TEAMS_ARE_TIED(), "GTS_TEAMS_ARE_TIED");
+            assert_eq!(
+                GTS_RED_CAPTURE,
+                jka_bge_GTS_RED_CAPTURE(),
+                "GTS_RED_CAPTURE"
+            );
+            assert_eq!(
+                GTS_TEAMS_ARE_TIED,
+                jka_bge_GTS_TEAMS_ARE_TIED(),
+                "GTS_TEAMS_ARE_TIED"
+            );
             assert_eq!(TEAM_FREE, jka_bge_TEAM_FREE(), "TEAM_FREE");
             assert_eq!(TEAM_NUM_TEAMS, jka_bge_TEAM_NUM_TEAMS(), "TEAM_NUM_TEAMS");
             assert_eq!(DUELTEAM_FREE, jka_bge_DUELTEAM_FREE(), "DUELTEAM_FREE");
-            assert_eq!(DUELTEAM_SINGLE, jka_bge_DUELTEAM_SINGLE(), "DUELTEAM_SINGLE");
+            assert_eq!(
+                DUELTEAM_SINGLE,
+                jka_bge_DUELTEAM_SINGLE(),
+                "DUELTEAM_SINGLE"
+            );
             assert_eq!(TEAMTASK_NONE, jka_bge_TEAMTASK_NONE(), "TEAMTASK_NONE");
             assert_eq!(TEAMTASK_CAMP, jka_bge_TEAMTASK_CAMP(), "TEAMTASK_CAMP");
             assert_eq!(MOD_UNKNOWN, jka_bge_MOD_UNKNOWN(), "MOD_UNKNOWN");
@@ -1866,7 +1919,11 @@ mod tests {
             assert_eq!(F_INT, jka_bge_F_INT(), "F_INT");
             assert_eq!(F_IGNORE, jka_bge_F_IGNORE(), "F_IGNORE");
             assert_eq!(LS_NONE, jka_bge_LS_NONE(), "LS_NONE");
-            assert_eq!(LS_DUAL_SPIN_PROTECT, jka_bge_LS_DUAL_SPIN_PROTECT(), "LS_DUAL_SPIN_PROTECT");
+            assert_eq!(
+                LS_DUAL_SPIN_PROTECT,
+                jka_bge_LS_DUAL_SPIN_PROTECT(),
+                "LS_DUAL_SPIN_PROTECT"
+            );
             assert_eq!(LS_T1_TL_BR, jka_bge_LS_T1_TL_BR(), "LS_T1_TL_BR");
             assert_eq!(LS_K1_BR, jka_bge_LS_K1_BR(), "LS_K1_BR");
             assert_eq!(LS_MOVE_MAX, jka_bge_LS_MOVE_MAX(), "LS_MOVE_MAX");
@@ -1923,7 +1980,10 @@ mod tests {
                 jka_bgs_off_gitem_world_model()
             );
             assert_eq!(offset_of!(gitem_t, quantity), jka_bgs_off_gitem_quantity());
-            assert_eq!(offset_of!(gitem_t, precaches), jka_bgs_off_gitem_precaches());
+            assert_eq!(
+                offset_of!(gitem_t, precaches),
+                jka_bgs_off_gitem_precaches()
+            );
 
             assert_eq!(
                 size_of::<saberMoveData_t>(),

@@ -33,6 +33,22 @@
 
 #![allow(non_upper_case_globals, non_snake_case)]
 
+use crate::codemp::cgame::animtable::animTable;
+use crate::codemp::game::anims::MAX_ANIMATIONS;
+use crate::codemp::game::bg_public::{
+    LS_A1_SPECIAL, LS_A2_SPECIAL, LS_A3_SPECIAL, LS_A_BACK, LS_A_BACKFLIP_ATK, LS_A_BACKSTAB,
+    LS_A_BACK_CR, LS_A_BL2TR, LS_A_BR2TL, LS_A_FLIP_SLASH, LS_A_FLIP_STAB, LS_A_JUMP_T__B_,
+    LS_A_L2R, LS_A_LUNGE, LS_A_R2L, LS_A_T2B, LS_A_TL2BR, LS_A_TR2BL, LS_BUTTERFLY_LEFT,
+    LS_BUTTERFLY_RIGHT, LS_DUAL_FB, LS_DUAL_LR, LS_DUAL_SPIN_PROTECT, LS_HILT_BASH, LS_INVALID,
+    LS_JUMPATTACK_ARIAL_LEFT, LS_JUMPATTACK_ARIAL_RIGHT, LS_JUMPATTACK_CART_LEFT,
+    LS_JUMPATTACK_CART_RIGHT, LS_JUMPATTACK_DUAL, LS_JUMPATTACK_STAFF_LEFT,
+    LS_JUMPATTACK_STAFF_RIGHT, LS_KICK_B, LS_KICK_BF, LS_KICK_B_AIR, LS_KICK_F, LS_KICK_F_AIR,
+    LS_KICK_L, LS_KICK_L_AIR, LS_KICK_R, LS_KICK_RL, LS_KICK_R_AIR, LS_KICK_S, LS_LEAP_ATTACK,
+    LS_MOVE_MAX, LS_NONE, LS_PULL_ATTACK_STAB, LS_PULL_ATTACK_SWING, LS_ROLL_STAB, LS_SPINATTACK,
+    LS_SPINATTACK_ALORA, LS_SPINATTACK_DUAL, LS_STABDOWN, LS_STABDOWN_DUAL, LS_STABDOWN_STAFF,
+    LS_STAFF_SOULCAL, LS_SWOOP_ATTACK_LEFT, LS_SWOOP_ATTACK_RIGHT, LS_TAUNTAUN_ATTACK_LEFT,
+    LS_TAUNTAUN_ATTACK_RIGHT, LS_UPSIDE_DOWN_ATTACK,
+};
 use crate::codemp::game::bg_saga::FPTable;
 use crate::codemp::game::g_main::{Com_Error, Com_Printf};
 use crate::codemp::game::g_utils::G_SoundIndex;
@@ -43,41 +59,23 @@ use crate::codemp::game::q_shared::{
     SkipRestOfLine, Sz,
 };
 use crate::codemp::game::q_shared_h::{
-    bladeInfo_t, qboolean, saber_colors_t, saber_styles_t, saberInfo_t, saberType_t,
-    stringID_table_t, ERR_DROP, FP_FIRST, FS_READ,
-    MAX_BLADES, MAX_CLIENTS, NUM_FORCE_POWERS, NUM_SABERS, SABER_ARC, SABER_BLUE, SABER_BROAD,
-    SABER_CLAW,
-    SABER_DAGGER, SABER_GREEN, SABER_LANCE, SABER_NONE, SABER_ORANGE, SABER_PRONG, SABER_PURPLE,
-    SABER_RED, SABER_SAI, SABER_SINGLE, SABER_STAFF, SABER_STAR, SABER_TRIDENT, SABER_YELLOW,
-    QFALSE, QTRUE, SS_DESANN, SS_DUAL, SS_FAST, SS_MEDIUM, SS_NONE, SS_STAFF, SS_STRONG, SS_TAVION,
+    bladeInfo_t, qboolean, saberInfo_t, saberType_t, saber_colors_t, saber_styles_t,
+    stringID_table_t, ERR_DROP, FP_FIRST, FS_READ, MAX_BLADES, MAX_CLIENTS, NUM_FORCE_POWERS,
+    NUM_SABERS, QFALSE, QTRUE, SABER_ARC, SABER_BLUE, SABER_BROAD, SABER_CLAW, SABER_DAGGER,
+    SABER_GREEN, SABER_LANCE, SABER_NONE, SABER_ORANGE, SABER_PRONG, SABER_PURPLE, SABER_RED,
+    SABER_SAI, SABER_SINGLE, SABER_STAFF, SABER_STAR, SABER_TRIDENT, SABER_YELLOW, SS_DESANN,
+    SS_DUAL, SS_FAST, SS_MEDIUM, SS_NONE, SS_STAFF, SS_STRONG, SS_TAVION,
 };
-use crate::codemp::game::bg_public::{
-    LS_INVALID, LS_MOVE_MAX, LS_NONE, LS_A_TL2BR, LS_A_L2R, LS_A_BL2TR, LS_A_BR2TL, LS_A_R2L,
-    LS_A_TR2BL, LS_A_T2B, LS_A_BACKSTAB, LS_A_BACK, LS_A_BACK_CR, LS_ROLL_STAB, LS_A_LUNGE,
-    LS_A_JUMP_T__B_, LS_A_FLIP_STAB, LS_A_FLIP_SLASH, LS_JUMPATTACK_DUAL, LS_JUMPATTACK_ARIAL_LEFT,
-    LS_JUMPATTACK_ARIAL_RIGHT, LS_JUMPATTACK_CART_LEFT, LS_JUMPATTACK_CART_RIGHT,
-    LS_JUMPATTACK_STAFF_LEFT, LS_JUMPATTACK_STAFF_RIGHT, LS_BUTTERFLY_LEFT, LS_BUTTERFLY_RIGHT,
-    LS_A_BACKFLIP_ATK, LS_SPINATTACK_DUAL, LS_SPINATTACK, LS_LEAP_ATTACK, LS_SWOOP_ATTACK_RIGHT,
-    LS_SWOOP_ATTACK_LEFT, LS_TAUNTAUN_ATTACK_RIGHT, LS_TAUNTAUN_ATTACK_LEFT, LS_KICK_F, LS_KICK_B,
-    LS_KICK_R, LS_KICK_L, LS_KICK_S, LS_KICK_BF, LS_KICK_RL, LS_KICK_F_AIR, LS_KICK_B_AIR,
-    LS_KICK_R_AIR, LS_KICK_L_AIR, LS_STABDOWN, LS_STABDOWN_STAFF, LS_STABDOWN_DUAL,
-    LS_DUAL_SPIN_PROTECT, LS_STAFF_SOULCAL, LS_A1_SPECIAL, LS_A2_SPECIAL, LS_A3_SPECIAL,
-    LS_UPSIDE_DOWN_ATTACK, LS_PULL_ATTACK_STAB, LS_PULL_ATTACK_SWING, LS_SPINATTACK_ALORA,
-    LS_DUAL_FB, LS_DUAL_LR, LS_HILT_BASH,
-};
-use crate::codemp::cgame::animtable::animTable;
-use crate::codemp::game::anims::MAX_ANIMATIONS;
 use crate::codemp::game::q_shared_h::{
-    SFL_NOT_ACTIVE_BLOCKING, SFL_NOT_DISARMABLE, SFL_NOT_LOCKABLE, SFL_NOT_THROWABLE,
-    SFL_RETURN_DAMAGE, SFL_SINGLE_BLADE_THROWABLE, SFL_TWO_HANDED, SFL_BOLT_TO_WRIST,
-    SFL_BOUNCE_ON_WALLS, SFL_NO_BACK_ATTACK, SFL_NO_CARTWHEELS, SFL_NO_FLIPS, SFL_NO_KICKS,
-    SFL_NO_MIRROR_ATTACKS, SFL_NO_PULL_ATTACK, SFL_NO_ROLLS, SFL_NO_ROLL_STAB, SFL_NO_STABDOWN,
-    SFL_NO_WALL_FLIPS, SFL_NO_WALL_GRAB, SFL_NO_WALL_RUNS, SFL2_NO_BLADE, SFL2_NO_BLADE2,
-    SFL2_NO_CLASH_FLARE, SFL2_NO_CLASH_FLARE2, SFL2_NO_DISMEMBERMENT, SFL2_NO_DISMEMBERMENT2,
-    SFL2_NO_DLIGHT, SFL2_NO_DLIGHT2, SFL2_NO_IDLE_EFFECT, SFL2_NO_IDLE_EFFECT2, SFL2_NO_WALL_MARKS,
-    SFL2_NO_WALL_MARKS2, SFL2_ALWAYS_BLOCK, SFL2_ALWAYS_BLOCK2, SFL2_NO_MANUAL_DEACTIVATE,
-    SFL2_NO_MANUAL_DEACTIVATE2, SFL2_TRANSITION_DAMAGE, SFL2_TRANSITION_DAMAGE2,
-    SS_NUM_SABER_STYLES,
+    SFL2_ALWAYS_BLOCK, SFL2_ALWAYS_BLOCK2, SFL2_NO_BLADE, SFL2_NO_BLADE2, SFL2_NO_CLASH_FLARE,
+    SFL2_NO_CLASH_FLARE2, SFL2_NO_DISMEMBERMENT, SFL2_NO_DISMEMBERMENT2, SFL2_NO_DLIGHT,
+    SFL2_NO_DLIGHT2, SFL2_NO_IDLE_EFFECT, SFL2_NO_IDLE_EFFECT2, SFL2_NO_MANUAL_DEACTIVATE,
+    SFL2_NO_MANUAL_DEACTIVATE2, SFL2_NO_WALL_MARKS, SFL2_NO_WALL_MARKS2, SFL2_TRANSITION_DAMAGE,
+    SFL2_TRANSITION_DAMAGE2, SFL_BOLT_TO_WRIST, SFL_BOUNCE_ON_WALLS, SFL_NOT_ACTIVE_BLOCKING,
+    SFL_NOT_DISARMABLE, SFL_NOT_LOCKABLE, SFL_NOT_THROWABLE, SFL_NO_BACK_ATTACK, SFL_NO_CARTWHEELS,
+    SFL_NO_FLIPS, SFL_NO_KICKS, SFL_NO_MIRROR_ATTACKS, SFL_NO_PULL_ATTACK, SFL_NO_ROLLS,
+    SFL_NO_ROLL_STAB, SFL_NO_STABDOWN, SFL_NO_WALL_FLIPS, SFL_NO_WALL_GRAB, SFL_NO_WALL_RUNS,
+    SFL_RETURN_DAMAGE, SFL_SINGLE_BLADE_THROWABLE, SFL_TWO_HANDED, SS_NUM_SABER_STYLES,
 };
 use crate::codemp::game::w_saber_h::SABER_RADIUS_STANDARD;
 use crate::trap;
@@ -131,7 +129,10 @@ pub fn BG_SoundIndex(sound: &str) -> c_int {
 /// never writes through it, so the field's `*const c_char` is sound. (The
 /// `bg_vehicleLoad::VehicleTable` `enum2string` precedent.)
 const fn enum2string(name: &'static CStr, id: saberType_t) -> stringID_table_t {
-    stringID_table_t { name: name.as_ptr(), id }
+    stringID_table_t {
+        name: name.as_ptr(),
+        id,
+    }
 }
 
 /// `stringID_table_t SaberTable[]` (bg_saberLoad.c:53) — the saber-hilt-type name
@@ -152,7 +153,10 @@ pub static mut SaberTable: [stringID_table_t; 13] = [
     enum2string(c"SABER_LANCE", SABER_LANCE),
     enum2string(c"SABER_STAR", SABER_STAR),
     enum2string(c"SABER_TRIDENT", SABER_TRIDENT),
-    stringID_table_t { name: c"".as_ptr(), id: -1 },
+    stringID_table_t {
+        name: c"".as_ptr(),
+        id: -1,
+    },
 ];
 
 /// `stringID_table_t SaberMoveTable[]` (bg_saberLoad.c:63) — the saber-move name table,
@@ -222,7 +226,10 @@ pub static mut SaberMoveTable: [stringID_table_t; 60] = [
     enum2string(c"LS_DUAL_FB", LS_DUAL_FB),
     enum2string(c"LS_DUAL_LR", LS_DUAL_LR),
     enum2string(c"LS_HILT_BASH", LS_HILT_BASH),
-    stringID_table_t { name: c"".as_ptr(), id: -1 },
+    stringID_table_t {
+        name: c"".as_ptr(),
+        id: -1,
+    },
 ];
 
 /// `qboolean BG_ParseLiteral( const char **data, const char *string )`
@@ -337,7 +344,10 @@ pub unsafe fn WP_SaberBladeUseSecondBladeStyle(
 ///
 /// # Safety
 /// `saber` must point at a valid `saberInfo_t`.
-pub unsafe fn WP_SaberBladeDoTransitionDamage(saber: *mut saberInfo_t, bladeNum: c_int) -> qboolean {
+pub unsafe fn WP_SaberBladeDoTransitionDamage(
+    saber: *mut saberInfo_t,
+    bladeNum: c_int,
+) -> qboolean {
     if WP_SaberBladeUseSecondBladeStyle(saber, bladeNum) == QFALSE
         && ((*saber).saberFlags2 & SFL2_TRANSITION_DAMAGE) != 0
     {
@@ -614,10 +624,10 @@ pub unsafe fn WP_SaberSetDefaults(saber: *mut saberInfo_t) {
     (*saber).disarmBonus = 0;
     (*saber).disarmBonus2 = 0;
     (*saber).singleBladeStyle = SS_NONE; // makes it so that you use a different style if you only have the first blade active
-    // saber->brokenSaber1 = NULL; // if saber is actually hit by another saber, it can be cut in half/broken and will be replaced with this saber in your right hand
-    // saber->brokenSaber2 = NULL; // ...left hand
-    //===NEW========================================================================================
-    //done in cgame (client-side code)
+                                         // saber->brokenSaber1 = NULL; // if saber is actually hit by another saber, it can be cut in half/broken and will be replaced with this saber in your right hand
+                                         // saber->brokenSaber2 = NULL; // ...left hand
+                                         //===NEW========================================================================================
+                                         //done in cgame (client-side code)
     (*saber).saberFlags = 0; // see all the SFL_ flags
     (*saber).saberFlags2 = 0; // see all the SFL2_ flags
 
@@ -654,8 +664,8 @@ pub unsafe fn WP_SaberSetDefaults(saber: *mut saberInfo_t) {
     (*saber).trailStyle = 0; // 0 - default (0) is normal, 1 is a motion blur and 2 is no trail at all
     (*saber).g2MarksShader = 0; // none - if set, the game will use this shader for marks on enemies
     (*saber).g2WeaponMarkShader = 0; // none - if set, projects this shader onto the weapon when it damages a person
-    //saber->bladeShader = 0; // none - if set, overrides the shader used for the saber blade?
-    //saber->trailShader = 0; // none - if set, overrides the shader used for the saber trail?
+                                     //saber->bladeShader = 0; // none - if set, overrides the shader used for the saber blade?
+                                     //saber->trailShader = 0; // none - if set, overrides the shader used for the saber trail?
     (*saber).hitSound[0] = 0; // none - if set, plays one of these 3 sounds when saber hits a person - NOTE: must provide all 3!!!
     (*saber).hitSound[1] = 0;
     (*saber).hitSound[2] = 0;
@@ -2465,7 +2475,8 @@ pub unsafe fn WP_SetSaber(
     if sabers.is_null() {
         return;
     }
-    if Q_stricmp(c"none".as_ptr(), saberName) == 0 || Q_stricmp(c"remove".as_ptr(), saberName) == 0 {
+    if Q_stricmp(c"none".as_ptr(), saberName) == 0 || Q_stricmp(c"remove".as_ptr(), saberName) == 0
+    {
         if saberNum != 0 {
             // can't remove saber 0 ever
             WP_RemoveSaber(sabers, saberNum);
@@ -2503,7 +2514,8 @@ pub unsafe fn WP_SaberSetColor(
     if sabers.is_null() {
         return;
     }
-    (*sabers.add(saberNum as usize)).blade[bladeNum as usize].color = TranslateSaberColor(colorName);
+    (*sabers.add(saberNum as usize)).blade[bladeNum as usize].color =
+        TranslateSaberColor(colorName);
 }
 
 /// `void WP_SaberLoadParms( void )` (bg_saberLoad.c:1228) — concatenate every
@@ -2568,18 +2580,27 @@ pub fn WP_SaberLoadParms() {
                     Com_Error(ERR_DROP, "Saber extensions (*.sab) are too large");
                 }
 
-                let buf = core::slice::from_raw_parts_mut(bgSaberParseTBuffer as *mut u8, len as usize);
+                let buf =
+                    core::slice::from_raw_parts_mut(bgSaberParseTBuffer as *mut u8, len as usize);
                 trap::FS_Read(buf, f);
                 *bgSaberParseTBuffer.add(len as usize) = 0;
 
                 len = COM_Compress(bgSaberParseTBuffer);
 
-                Q_strcat(marker, MAX_SABER_DATA_SIZE as c_int - totallen, bgSaberParseTBuffer);
+                Q_strcat(
+                    marker,
+                    MAX_SABER_DATA_SIZE as c_int - totallen,
+                    bgSaberParseTBuffer,
+                );
                 trap::FS_FCloseFile(f);
 
                 // get around the stupid problem of not having an endline at the bottom
                 // of a sab file -rww
-                Q_strcat(marker, MAX_SABER_DATA_SIZE as c_int - totallen, c"\n".as_ptr());
+                Q_strcat(
+                    marker,
+                    MAX_SABER_DATA_SIZE as c_int - totallen,
+                    c"\n".as_ptr(),
+                );
                 len += 1;
 
                 totallen += len;
@@ -2881,9 +2902,18 @@ mod tests {
     #[test]
     fn translate_saber_color_matches_c() {
         let deterministic: &[&CStr] = &[
-            c"red", c"orange", c"yellow", c"green", c"blue", c"purple", // named
-            c"RED", c"Orange", c"PuRpLe", // case-fold (Q_stricmp)
-            c"", c"nonsense", c"bluish", // misses → SABER_BLUE
+            c"red",
+            c"orange",
+            c"yellow",
+            c"green",
+            c"blue",
+            c"purple", // named
+            c"RED",
+            c"Orange",
+            c"PuRpLe", // case-fold (Q_stricmp)
+            c"",
+            c"nonsense",
+            c"bluish", // misses → SABER_BLUE
         ];
         for &name in deterministic {
             let r = unsafe { TranslateSaberColor(name.as_ptr()) };
@@ -2897,10 +2927,16 @@ mod tests {
         {
             let _g = crate::codemp::game::bg_lib::rand_lock();
             let r = unsafe { TranslateSaberColor(c"random".as_ptr()) };
-            assert!((SABER_ORANGE..=SABER_PURPLE).contains(&r), "random rust in range");
+            assert!(
+                (SABER_ORANGE..=SABER_PURPLE).contains(&r),
+                "random rust in range"
+            );
         }
         let c = unsafe { oracle::TranslateSaberColor(c"random".as_ptr()) };
-        assert!((SABER_ORANGE..=SABER_PURPLE).contains(&c), "random C in range");
+        assert!(
+            (SABER_ORANGE..=SABER_PURPLE).contains(&c),
+            "random C in range"
+        );
     }
 
     /// Build a NUL-terminated C buffer (`Vec<c_char>`) from a Rust string.
@@ -2938,13 +2974,13 @@ mod tests {
 
         // (input stream, required keyword)
         let cases: &[(&str, &str)] = &[
-            ("weapon foo", "weapon"), // match
-            ("Weapon foo", "weapon"), // case-fold match
-            ("foo bar", "weapon"),    // mismatch
-            ("", "weapon"),           // EOF (empty)
+            ("weapon foo", "weapon"),  // match
+            ("Weapon foo", "weapon"),  // case-fold match
+            ("foo bar", "weapon"),     // mismatch
+            ("", "weapon"),            // EOF (empty)
             ("   weapon x", "weapon"), // leading whitespace
-            ("{ weapon", "weapon"),   // punctuation token first → mismatch
-            ("name", "name"),         // exact single token, then EOF
+            ("{ weapon", "weapon"),    // punctuation token first → mismatch
+            ("name", "name"),          // exact single token, then EOF
         ];
         for &(input, req) in cases {
             let reqbuf = cbuf(req);
@@ -2963,7 +2999,11 @@ mod tests {
             // COM_ParseExt sets the cursor to NULL at EOF; otherwise it points into
             // its (distinct) buffer, so compare null-ness, then the advance offset
             // only when both advanced within their buffers.
-            assert_eq!(rptr.is_null(), cptr.is_null(), "cursor null-ness for {input:?}/{req:?}");
+            assert_eq!(
+                rptr.is_null(),
+                cptr.is_null(),
+                "cursor null-ness for {input:?}/{req:?}"
+            );
             if !rptr.is_null() {
                 let roff = unsafe { rptr.offset_from(rbuf.as_ptr()) };
                 let coff = unsafe { cptr.offset_from(cbuf2.as_ptr()) };
@@ -3066,15 +3106,33 @@ mod tests {
 
             // BladeActivate across in-range, boundary and out-of-range indices.
             for ib in [-1, 0, 1, 2, 7, 8] {
-                check_mut!(s, BG_SI_BladeActivate, oracle::BG_SI_BladeActivate, ib, QTRUE);
-                check_mut!(s, BG_SI_BladeActivate, oracle::BG_SI_BladeActivate, ib, QFALSE);
+                check_mut!(
+                    s,
+                    BG_SI_BladeActivate,
+                    oracle::BG_SI_BladeActivate,
+                    ib,
+                    QTRUE
+                );
+                check_mut!(
+                    s,
+                    BG_SI_BladeActivate,
+                    oracle::BG_SI_BladeActivate,
+                    ib,
+                    QFALSE
+                );
             }
 
             // Float setters — include a fractional value (trail.duration truncates).
             for len in [0.0f32, 7.5, 24.0, 33.0] {
                 check_mut!(s, BG_SI_SetLength, oracle::BG_SI_SetLength, len);
                 for bn in [-1, 0, 1, 9] {
-                    check_mut!(s, BG_SI_SetDesiredLength, oracle::BG_SI_SetDesiredLength, len, bn);
+                    check_mut!(
+                        s,
+                        BG_SI_SetDesiredLength,
+                        oracle::BG_SI_SetDesiredLength,
+                        len,
+                        bn
+                    );
                 }
             }
             for dur in [0.0f32, 9.0, 60.7, 250.9] {
@@ -3084,7 +3142,12 @@ mod tests {
 
             // SetLengthGradual across several time stamps (hits every branch).
             for time in [0, 1, 50, 100, 300, 1000] {
-                check_mut!(s, BG_SI_SetLengthGradual, oracle::BG_SI_SetLengthGradual, time);
+                check_mut!(
+                    s,
+                    BG_SI_SetLengthGradual,
+                    oracle::BG_SI_SetLengthGradual,
+                    time
+                );
             }
         }
 
@@ -3184,7 +3247,14 @@ mod tests {
             mk_saber(3, 1, 0, 0, 0, true),
             mk_saber(3, 2, SFL2_TRANSITION_DAMAGE, 0, 0, true),
             mk_saber(3, 2, SFL2_TRANSITION_DAMAGE2, 0, 0, true),
-            mk_saber(3, 2, SFL2_TRANSITION_DAMAGE | SFL2_TRANSITION_DAMAGE2, 0, 0, true),
+            mk_saber(
+                3,
+                2,
+                SFL2_TRANSITION_DAMAGE | SFL2_TRANSITION_DAMAGE2,
+                0,
+                0,
+                true,
+            ),
             mk_saber(3, 0, SFL2_NO_MANUAL_DEACTIVATE, 0, 0, true),
             mk_saber(3, 2, SFL2_NO_MANUAL_DEACTIVATE, 0, 0, true),
             mk_saber(
@@ -3195,7 +3265,14 @@ mod tests {
                 0,
                 true,
             ),
-            mk_saber(2, 2, SFL2_NO_MANUAL_DEACTIVATE | SFL2_NO_MANUAL_DEACTIVATE2, 0, 0, true),
+            mk_saber(
+                2,
+                2,
+                SFL2_NO_MANUAL_DEACTIVATE | SFL2_NO_MANUAL_DEACTIVATE2,
+                0,
+                0,
+                true,
+            ),
         ];
         for v in variants.iter_mut() {
             let p = v as *mut saberInfo_t;
@@ -3229,8 +3306,8 @@ mod tests {
     #[test]
     fn saber_valid_style_predicates_match_c() {
         let mut variants = [
-            mk_saber(1, 0, 0, 0, 0, true),                    // single, no restrictions
-            mk_saber(1, 0, 0, 1 << SS_FAST, 0, true),         // single, forbids fast
+            mk_saber(1, 0, 0, 0, 0, true),            // single, no restrictions
+            mk_saber(1, 0, 0, 1 << SS_FAST, 0, true), // single, forbids fast
             mk_saber(2, 0, 0, 1 << SS_MEDIUM, 1 << SS_TAVION, true), // staff, forbids medium, learned tavion
             mk_saber(
                 1,

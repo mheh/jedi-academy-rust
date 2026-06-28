@@ -149,8 +149,8 @@ pub const PLANE_NON_AXIAL: byte = 3;
 pub struct cplane_t {
     pub normal: vec3_t,
     pub dist: f32,
-    pub r#type: byte,     // for fast side tests: 0,1,2 = axial, 3 = nonaxial
-    pub signbits: byte,   // signx + (signy<<1) + (signz<<2), used as lookup during collision
+    pub r#type: byte,   // for fast side tests: 0,1,2 = axial, 3 = nonaxial
+    pub signbits: byte, // signx + (signy<<1) + (signz<<2), used as lookup during collision
     pub pad: [byte; 2],
 }
 
@@ -522,14 +522,14 @@ const _: () = assert!(core::mem::align_of::<usercmd_t>() == 4);
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub struct trace_t {
-    pub allsolid: byte,    // if true, plane is not valid
-    pub startsolid: byte,  // if true, the initial point was in a solid area
-    pub entityNum: i16,    // entity the contacted sirface is a part of
-    pub fraction: f32,     // time completed, 1.0 = didn't hit anything
-    pub endpos: vec3_t,    // final position
-    pub plane: cplane_t,   // surface normal at impact, transformed to world space
+    pub allsolid: byte,      // if true, plane is not valid
+    pub startsolid: byte,    // if true, the initial point was in a solid area
+    pub entityNum: i16,      // entity the contacted sirface is a part of
+    pub fraction: f32,       // time completed, 1.0 = didn't hit anything
+    pub endpos: vec3_t,      // final position
+    pub plane: cplane_t,     // surface normal at impact, transformed to world space
     pub surfaceFlags: c_int, // surface hit
-    pub contents: c_int,   // contents on other side of surface hit
+    pub contents: c_int,     // contents on other side of surface hit
 }
 
 const _: () = assert!(core::mem::size_of::<trace_t>() == 48);
@@ -561,9 +561,9 @@ pub struct forcedata_t {
     pub forceJumpCharge: f32, // you're current forceJump charge-up level, increases the longer you hold the force jump button down
     pub forceJumpSound: c_int,
     pub forceJumpAddTime: c_int,
-    pub forceGripEntityNum: c_int,         // what entity I'm gripping
+    pub forceGripEntityNum: c_int,          // what entity I'm gripping
     pub forceGripDamageDebounceTime: c_int, // debounce for grip damage
-    pub forceGripBeingGripped: f32,        // if > level.time then client is in someone's grip
+    pub forceGripBeingGripped: f32,         // if > level.time then client is in someone's grip
     pub forceGripCripple: c_int, // if != 0 then make it so this client can't move quickly (he's being gripped)
     pub forceGripUseTime: c_int, // can't use if > level.time
     pub forceGripSoundTime: f32,
@@ -661,8 +661,8 @@ pub struct entityState_t {
 
     pub groundEntityNum: c_int, // -1 = in air
 
-    pub constantLight: c_int,    // r + (g<<8) + (b<<16) + (intensity<<24)
-    pub loopSound: c_int,        // constantly loop this sound
+    pub constantLight: c_int,     // r + (g<<8) + (b<<16) + (intensity<<24)
+    pub loopSound: c_int,         // constantly loop this sound
     pub loopIsSoundset: qboolean, // qtrue if the loopSound index is actually a soundset index
 
     pub soundSetIndex: c_int,
@@ -740,7 +740,7 @@ pub struct entityState_t {
     pub csSounds_Extra: c_int,
     pub csSounds_Jedi: c_int,
 
-    pub surfacesOn: c_int,  // a bitflag of corresponding surfaces from a lookup table. These surfaces will be forced on.
+    pub surfacesOn: c_int, // a bitflag of corresponding surfaces from a lookup table. These surfaces will be forced on.
     pub surfacesOff: c_int, // same as above, but forced off instead.
 
     // Allow up to 4 PCJ lookup values to be stored here.
@@ -824,8 +824,7 @@ pub struct playerState_t {
     pub speed: f32,
     pub basespeed: c_int, // used in prediction to know base server g_speed value when modifying speed between updates
     pub delta_angles: [c_int; 3], // add to command angles to get view direction
-                                  // changed by spawns, rotating objects, and teleporters
-
+    // changed by spawns, rotating objects, and teleporters
     pub slopeRecalcTime: c_int, // this is NOT sent across the net and is maintained seperately on game and cgame in pmove code.
 
     pub useTime: c_int,
@@ -842,10 +841,9 @@ pub struct playerState_t {
     pub torsoFlip: qboolean,
 
     pub movementDir: c_int, // a number 0 to 7 that represents the reletive angle
-                            // of movement to the view angle (axial and diagonals)
-                            // when at rest, the value will remain unchanged
-                            // used to twist the legs during strafing
-
+    // of movement to the view angle (axial and diagonals)
+    // when at rest, the value will remain unchanged
+    // used to twist the legs during strafing
     pub eFlags: c_int,  // copied to entityState_t->eFlags
     pub eFlags2: c_int, // copied to entityState_t->eFlags2, EF2_??? used much less frequently
 
@@ -871,12 +869,12 @@ pub struct playerState_t {
     pub damageCount: c_int,
     pub damageType: c_int,
 
-    pub painTime: c_int,      // used for both game and client side to process the pain twitch - NOT sent across the network
+    pub painTime: c_int, // used for both game and client side to process the pain twitch - NOT sent across the network
     pub painDirection: c_int, // NOT sent across the network
-    pub yawAngle: f32,        // NOT sent across the network
-    pub yawing: qboolean,     // NOT sent across the network
-    pub pitchAngle: f32,      // NOT sent across the network
-    pub pitching: qboolean,   // NOT sent across the network
+    pub yawAngle: f32,   // NOT sent across the network
+    pub yawing: qboolean, // NOT sent across the network
+    pub pitchAngle: f32, // NOT sent across the network
+    pub pitching: qboolean, // NOT sent across the network
 
     pub stats: [c_int; MAX_STATS],
     pub persistant: [c_int; MAX_PERSISTANT], // stats that aren't cleared on death
@@ -904,7 +902,7 @@ pub struct playerState_t {
     pub saberLockTime: c_int,
     pub saberLockEnemy: c_int,
     pub saberLockFrame: c_int, // since we don't actually have the ability to get the current anim frame
-    pub saberLockHits: c_int,  // every x number of buttons hits, allow one push forward in a saber lock (server only)
+    pub saberLockHits: c_int, // every x number of buttons hits, allow one push forward in a saber lock (server only)
     pub saberLockHitCheckTime: c_int, // so we don't allow more than 1 push per server frame
     pub saberLockHitIncrementTime: c_int, // so we don't add a hit per attack button press more than once per server frame
     pub saberLockAdvance: qboolean,       // do an advance (sent across net as 1 bit)
@@ -1363,11 +1361,11 @@ pub const SFL_NOT_ACTIVE_BLOCKING: c_int = 1 << 3; // don't try to block incomin
 pub const SFL_TWO_HANDED: c_int = 1 << 4; // uses both hands
 pub const SFL_SINGLE_BLADE_THROWABLE: c_int = 1 << 5; // can throw if only the first blade is on
 pub const SFL_RETURN_DAMAGE: c_int = 1 << 6; // keeps spinning and doing damage on return
-// NEW FLAGS
+                                             // NEW FLAGS
 pub const SFL_ON_IN_WATER: c_int = 1 << 7; // weapon stays active even in water
 pub const SFL_BOUNCE_ON_WALLS: c_int = 1 << 8; // saber bounces back when it hits solid architecture
 pub const SFL_BOLT_TO_WRIST: c_int = 1 << 9; // saber model is bolted to wrist, not in hand
-// Move Restrictions
+                                             // Move Restrictions
 pub const SFL_NO_PULL_ATTACK: c_int = 1 << 10; // cannot do pull+attack move
 pub const SFL_NO_BACK_ATTACK: c_int = 1 << 11; // cannot do back-stab moves
 pub const SFL_NO_STABDOWN: c_int = 1 << 12; // cannot do stabdown move
@@ -1393,7 +1391,7 @@ pub const SFL2_NO_IDLE_EFFECT: c_int = 1 << 5; // no damage/effects when idle
 pub const SFL2_ALWAYS_BLOCK: c_int = 1 << 6; // blades will always be blocking
 pub const SFL2_NO_MANUAL_DEACTIVATE: c_int = 1 << 7; // blades cannot be manually toggled on/off
 pub const SFL2_TRANSITION_DAMAGE: c_int = 1 << 8; // blade does damage in start/transition/return anims
-// Secondary Blade Style
+                                                  // Secondary Blade Style
 pub const SFL2_NO_WALL_MARKS2: c_int = 1 << 9;
 pub const SFL2_NO_DLIGHT2: c_int = 1 << 10;
 pub const SFL2_NO_BLADE2: c_int = 1 << 11;
@@ -1496,24 +1494,24 @@ const _: () = assert!(core::mem::offset_of!(bladeInfo_t, hitWallDebounceTime) ==
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct saberInfo_t {
-    pub name: [c_char; 64],     // entry in sabers.cfg, if any
-    pub fullName: [c_char; 64], // the "Proper Name" of the saber, shown in UI
-    pub r#type: saberType_t,    // none, single or staff
+    pub name: [c_char; 64],         // entry in sabers.cfg, if any
+    pub fullName: [c_char; 64],     // the "Proper Name" of the saber, shown in UI
+    pub r#type: saberType_t,        // none, single or staff
     pub model: [c_char; MAX_QPATH], // hilt model
-    pub skin: qhandle_t,        // registered skin id
-    pub soundOn: c_int,         // game soundindex for turning on sound
-    pub soundLoop: c_int,       // game soundindex for hum/loop sound
-    pub soundOff: c_int,        // game soundindex for turning off sound
+    pub skin: qhandle_t,            // registered skin id
+    pub soundOn: c_int,             // game soundindex for turning on sound
+    pub soundLoop: c_int,           // game soundindex for hum/loop sound
+    pub soundOff: c_int,            // game soundindex for turning off sound
     pub numBlades: c_int,
     pub blade: [bladeInfo_t; MAX_BLADES], // blade info - like length, trail, origin, dir, etc.
-    pub stylesLearned: c_int,   // styles you get when you get this saber, if any
-    pub stylesForbidden: c_int, // styles you cannot use with this saber, if any
+    pub stylesLearned: c_int,             // styles you get when you get this saber, if any
+    pub stylesForbidden: c_int,           // styles you cannot use with this saber, if any
     pub maxChain: c_int, // how many moves can be chained in a row with this weapon (-1 is infinite, 0 is use default behavior)
     pub forceRestrictions: c_int, // force powers that cannot be used while this saber is on (bitfield) - FIXME: maybe make this a limit on the max level, per force power, that can be used with this type?
-    pub lockBonus: c_int, // in saberlocks, this type of saber pushes harder or weaker
-    pub parryBonus: c_int, // added to strength of parry with this saber
-    pub breakParryBonus: c_int, // added to strength when hit a parry
-    pub breakParryBonus2: c_int, // for bladeStyle2 (see bladeStyle2Start below)
+    pub lockBonus: c_int,         // in saberlocks, this type of saber pushes harder or weaker
+    pub parryBonus: c_int,        // added to strength of parry with this saber
+    pub breakParryBonus: c_int,   // added to strength when hit a parry
+    pub breakParryBonus2: c_int,  // for bladeStyle2 (see bladeStyle2Start below)
     pub disarmBonus: c_int, // added to disarm chance when win saberlock or have a good parry (knockaway)
     pub disarmBonus2: c_int, // for bladeStyle2 (see bladeStyle2Start below)
     pub singleBladeStyle: saber_styles_t, // makes it so that you use a different style if you only have the first blade active
@@ -1538,14 +1536,14 @@ pub struct saberInfo_t {
     pub jumpAtkBackMove: c_int, // LS_INVALID - if set, player will execute this move when they jump+back+attack
     pub jumpAtkRightMove: c_int, // LS_INVALID - if set, player will execute this move when they jump+rightattack
     pub jumpAtkLeftMove: c_int, // LS_INVALID - if set, player will execute this move when they jump+left+attack
-    pub readyAnim: c_int,   // -1 - anim to use when standing idle
-    pub drawAnim: c_int,    // -1 - anim to use when drawing weapon
-    pub putawayAnim: c_int, // -1 - anim to use when putting weapon away
-    pub tauntAnim: c_int,   // -1 - anim to use when hit "taunt"
-    pub bowAnim: c_int,     // -1 - anim to use when hit "bow"
-    pub meditateAnim: c_int, // -1 - anim to use when hit "meditate"
-    pub flourishAnim: c_int, // -1 - anim to use when hit "flourish"
-    pub gloatAnim: c_int,   // -1 - anim to use when hit "gloat"
+    pub readyAnim: c_int,       // -1 - anim to use when standing idle
+    pub drawAnim: c_int,        // -1 - anim to use when drawing weapon
+    pub putawayAnim: c_int,     // -1 - anim to use when putting weapon away
+    pub tauntAnim: c_int,       // -1 - anim to use when hit "taunt"
+    pub bowAnim: c_int,         // -1 - anim to use when hit "bow"
+    pub meditateAnim: c_int,    // -1 - anim to use when hit "meditate"
+    pub flourishAnim: c_int,    // -1 - anim to use when hit "flourish"
+    pub gloatAnim: c_int,       // -1 - anim to use when hit "gloat"
 
     //***NOTE: you can only have a maximum of 2 "styles" of blades, so this next value, "bladeStyle2Start" is the number of the first blade to use these value on... all blades before this use the normal values above, all blades at and after this number use the secondary values below***
     pub bladeStyle2Start: c_int, // 0 - if set, blades from this number and higher use the following values
@@ -1563,7 +1561,7 @@ pub struct saberInfo_t {
     pub blockEffect: c_int, // none - if set, plays this effect when the saber/sword hits another saber/sword
     pub hitPersonEffect: c_int, // none - if set, plays this effect when the saber/sword hits a person
     pub hitOtherEffect: c_int, // none - if set, plays this effect when the saber/sword hits something else damagable
-    pub bladeEffect: c_int, // none - if set, plays this effect at the blade tag
+    pub bladeEffect: c_int,    // none - if set, plays this effect at the blade tag
 
     // done in game (server-side code)
     pub knockbackScale: f32, // 0 - if non-zero, uses damage done to calculate an appropriate amount of knockback
@@ -1583,7 +1581,7 @@ pub struct saberInfo_t {
     pub blockEffect2: c_int, // none - if set, plays this effect when the saber/sword hits another saber/sword
     pub hitPersonEffect2: c_int, // none - if set, plays this effect when the saber/sword hits a person
     pub hitOtherEffect2: c_int, // none - if set, plays this effect when the saber/sword hits something else damagable
-    pub bladeEffect2: c_int, // none - if set, plays this effect at the blade tag
+    pub bladeEffect2: c_int,    // none - if set, plays this effect at the blade tag
 
     // done in game (server-side code)
     pub knockbackScale2: f32, // 0 - if non-zero, uses damage done to calculate an appropriate amount of knockback
@@ -1946,7 +1944,10 @@ mod tests {
 
             // usercmd_t
             assert_eq!(offset_of!(usercmd_t, weapon), jka_off_cmd_weapon());
-            assert_eq!(offset_of!(usercmd_t, forwardmove), jka_off_cmd_forwardmove());
+            assert_eq!(
+                offset_of!(usercmd_t, forwardmove),
+                jka_off_cmd_forwardmove()
+            );
 
             // trace_t
             assert_eq!(offset_of!(trace_t, plane), jka_off_trace_plane());
@@ -1969,15 +1970,24 @@ mod tests {
             // entityState_t
             assert_eq!(offset_of!(entityState_t, pos), jka_off_es_pos());
             assert_eq!(offset_of!(entityState_t, speed), jka_off_es_speed());
-            assert_eq!(offset_of!(entityState_t, customRGBA), jka_off_es_customRGBA());
-            assert_eq!(offset_of!(entityState_t, boneAngles1), jka_off_es_boneAngles1());
+            assert_eq!(
+                offset_of!(entityState_t, customRGBA),
+                jka_off_es_customRGBA()
+            );
+            assert_eq!(
+                offset_of!(entityState_t, boneAngles1),
+                jka_off_es_boneAngles1()
+            );
             assert_eq!(offset_of!(entityState_t, userVec2), jka_off_es_userVec2());
 
             // playerState_t
             assert_eq!(offset_of!(playerState_t, origin), jka_off_ps_origin());
             assert_eq!(offset_of!(playerState_t, stats), jka_off_ps_stats());
             assert_eq!(offset_of!(playerState_t, fd), jka_off_ps_fd());
-            assert_eq!(offset_of!(playerState_t, lastHitLoc), jka_off_ps_lastHitLoc());
+            assert_eq!(
+                offset_of!(playerState_t, lastHitLoc),
+                jka_off_ps_lastHitLoc()
+            );
             assert_eq!(
                 offset_of!(playerState_t, vehOrientation),
                 jka_off_ps_vehOrientation()
@@ -1997,7 +2007,10 @@ mod tests {
 
         unsafe {
             assert_eq!(size_of::<saberTrail_t>(), jka_sizeof_saberTrail_t());
-            assert_eq!(offset_of!(saberTrail_t, oldPos), jka_off_saberTrail_oldPos());
+            assert_eq!(
+                offset_of!(saberTrail_t, oldPos),
+                jka_off_saberTrail_oldPos()
+            );
             assert_eq!(
                 offset_of!(saberTrail_t, oldNormal),
                 jka_off_saberTrail_oldNormal()

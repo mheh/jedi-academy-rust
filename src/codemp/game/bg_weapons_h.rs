@@ -82,7 +82,7 @@ pub struct weaponData_t {
     pub altFireTime: c_int,      // Amount of time between alt-firings
     pub altRange: c_int,         // Range of alt-fire
 
-    pub chargeSubTime: c_int,    // ms interval for subtracting ammo during charge
+    pub chargeSubTime: c_int, // ms interval for subtracting ammo during charge
     pub altChargeSubTime: c_int, // above for secondary
 
     pub chargeSub: c_int,    // amount to subtract during charge on each interval

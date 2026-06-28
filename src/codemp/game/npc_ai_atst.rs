@@ -33,11 +33,13 @@ use crate::codemp::game::npc_combat::NPC_ChangeWeapon;
 use crate::codemp::game::npc_goal::UpdateGoal;
 use crate::codemp::game::npc_move::NPC_MoveToGoal;
 use crate::codemp::game::npc_reactions::NPC_Pain;
-use crate::codemp::game::npc_utils::{NPC_CheckEnemyExt, NPC_ClearLOS4, NPC_FaceEnemy,
-    NPC_UpdateAngles};
+use crate::codemp::game::npc_utils::{
+    NPC_CheckEnemyExt, NPC_ClearLOS4, NPC_FaceEnemy, NPC_UpdateAngles,
+};
 use crate::codemp::game::q_math::{DistanceHorizontalSquared, Q_irand};
-use crate::codemp::game::q_shared_h::{BUTTON_ALT_ATTACK, BUTTON_ATTACK, BUTTON_WALKING,
-    CHAN_LESS_ATTEN};
+use crate::codemp::game::q_shared_h::{
+    BUTTON_ALT_ATTACK, BUTTON_ATTACK, BUTTON_WALKING, CHAN_LESS_ATTEN,
+};
 use crate::ffi::types::{qboolean, QFALSE, QTRUE};
 use crate::trap;
 
@@ -101,7 +103,11 @@ pub unsafe fn G_ATSTCheckPain(self_: *mut gentity_t, _other: *mut gentity_t, _da
 NPC_ATST_Pain
 -------------------------
 */
-pub unsafe extern "C" fn NPC_ATST_Pain(self_: *mut gentity_t, attacker: *mut gentity_t, damage: c_int) {
+pub unsafe extern "C" fn NPC_ATST_Pain(
+    self_: *mut gentity_t,
+    attacker: *mut gentity_t,
+    damage: c_int,
+) {
     G_ATSTCheckPain(self_, attacker, damage);
     NPC_Pain(self_, attacker, damage);
 }
@@ -235,10 +241,16 @@ pub unsafe fn ATST_Attack() {
             //rwwFIXMEFIXME: make atst weaps work.
 
             // See if the side weapons are there
-            blasterTest =
-                trap::G2API_GetSurfaceRenderStatus((*NPC).ghoul2, 0, c"head_light_blaster_cann".as_ptr());
-            chargerTest =
-                trap::G2API_GetSurfaceRenderStatus((*NPC).ghoul2, 0, c"head_concussion_charger".as_ptr());
+            blasterTest = trap::G2API_GetSurfaceRenderStatus(
+                (*NPC).ghoul2,
+                0,
+                c"head_light_blaster_cann".as_ptr(),
+            );
+            chargerTest = trap::G2API_GetSurfaceRenderStatus(
+                (*NPC).ghoul2,
+                0,
+                c"head_concussion_charger".as_ptr(),
+            );
 
             // It has both side weapons
             if blasterTest != -1

@@ -22,56 +22,53 @@ use crate::codemp::game::anims::{
 };
 use crate::codemp::game::b_public_h::{BS_CINEMATIC, NPCAI_CUSTOM_GRAVITY};
 use crate::codemp::game::bg_misc::vectoyaw;
-use crate::codemp::game::bg_vehicleLoad::AttachRidersGeneric;
 use crate::codemp::game::bg_panimate::{
     bgAllAnims, BG_AnimLength, BG_SetAnim, BG_SetLegsAnimTimer, BG_SetTorsoAnimTimer,
 };
 use crate::codemp::game::bg_pmove::{BG_UnrestrainedPitchRoll, PM_BGEntForNum};
+use crate::codemp::game::bg_public::{
+    bgEntity_t, BG_GiveMeVectorFromMatrix, DEFAULT_MAXS_2, DEFAULT_MINS_2, EF_NODRAW, EV_JUMP,
+    EV_ROLL, JUMP_VELOCITY, MOD_SUICIDE, MOD_UNKNOWN, MOD_VEH_EXPLOSION, SETANIM_BOTH,
+    SETANIM_FLAG_HOLD, SETANIM_FLAG_HOLDLESS, SETANIM_FLAG_NORMAL, SETANIM_FLAG_OVERRIDE,
+    STAT_ARMOR, STAT_HEALTH, STAT_MAX_HEALTH, STAT_WEAPONS, WEAPON_READY,
+};
+use crate::codemp::game::bg_vehicleLoad::AttachRidersGeneric;
 use crate::codemp::game::bg_vehicles_h::{
     vehicleInfo_t, Vehicle_t, MAX_VEHICLE_EXHAUSTS, MAX_VEHICLE_MUZZLES, MAX_VEHICLE_TURRETS,
     MAX_VEHICLE_WEAPONS, SHIPSURF_BACK, SHIPSURF_BROKEN_A, SHIPSURF_BROKEN_B, SHIPSURF_BROKEN_C,
     SHIPSURF_BROKEN_D, SHIPSURF_BROKEN_E, SHIPSURF_BROKEN_F, SHIPSURF_BROKEN_G,
-    SHIPSURF_DAMAGE_FRONT_HEAVY, SHIPSURF_DAMAGE_FRONT_LIGHT, SHIPSURF_FRONT,
-    SHIPSURF_LEFT, SHIPSURF_RIGHT, VEH_BUCKING, VEH_EJECT_BOTTOM, VEH_EJECT_FRONT, VEH_EJECT_LEFT,
-    VEH_EJECT_REAR, VEH_EJECT_RIGHT, VEH_EJECT_TOP, VEH_FLYING, VEH_GEARSOPEN,
-    VEH_MOUNT_THROW_LEFT, VEH_MOUNT_THROW_RIGHT, VEH_WEAPON_BASE, VH_ANIMAL, VH_FIGHTER, VH_SPEEDER,
-    VH_WALKER,
-};
-use crate::codemp::game::bg_public::{
-    bgEntity_t, BG_GiveMeVectorFromMatrix, DEFAULT_MAXS_2, DEFAULT_MINS_2, EF_NODRAW, EV_JUMP,
-    EV_ROLL, JUMP_VELOCITY, MOD_SUICIDE, MOD_UNKNOWN, MOD_VEH_EXPLOSION, SETANIM_BOTH,
-    SETANIM_FLAG_HOLD,
-    SETANIM_FLAG_HOLDLESS, SETANIM_FLAG_NORMAL, SETANIM_FLAG_OVERRIDE, STAT_ARMOR, STAT_HEALTH,
-    STAT_MAX_HEALTH, STAT_WEAPONS, WEAPON_READY,
+    SHIPSURF_DAMAGE_FRONT_HEAVY, SHIPSURF_DAMAGE_FRONT_LIGHT, SHIPSURF_FRONT, SHIPSURF_LEFT,
+    SHIPSURF_RIGHT, VEH_BUCKING, VEH_EJECT_BOTTOM, VEH_EJECT_FRONT, VEH_EJECT_LEFT, VEH_EJECT_REAR,
+    VEH_EJECT_RIGHT, VEH_EJECT_TOP, VEH_FLYING, VEH_GEARSOPEN, VEH_MOUNT_THROW_LEFT,
+    VEH_MOUNT_THROW_RIGHT, VEH_WEAPON_BASE, VH_ANIMAL, VH_FIGHTER, VH_SPEEDER, VH_WALKER,
 };
 use crate::codemp::game::bg_weapons_h::{WP_BLASTER, WP_NONE};
-use crate::codemp::game::g_combat::{G_Damage, G_DamageFromKiller, G_RadiusDamage};
 use crate::codemp::game::g_client::SetClientViewAngle;
+use crate::codemp::game::g_combat::{G_Damage, G_DamageFromKiller, G_RadiusDamage};
 use crate::codemp::game::g_local::{
     gentity_t, CON_CONNECTED, DAMAGE_NO_ARMOR, DAMAGE_NO_HIT_LOC, DAMAGE_NO_PROTECTION,
     DAMAGE_NO_SELF_PROTECTION, FL_UNDYING, FL_VEH_BOARDING, FRAMETIME,
 };
 use crate::codemp::game::g_main::{g_entities, g_gravity, level};
-use crate::codemp::game::g_vehicleTurret::VEH_TurretThink;
 use crate::codemp::game::g_public_h::{SVF_NOCLIENT, TID_CHAN_VOICE};
 use crate::codemp::game::g_utils::{
     G_AddEvent, G_EffectIndex, G_EntitySound, G_FreeEntity, G_MuteSound, G_PlayEffectID,
     G_SetAngles, G_SetOrigin, G_Sound, G_SoundIndex,
 };
+use crate::codemp::game::g_vehicleTurret::VEH_TurretThink;
 use crate::codemp::game::npc::NPC_SetAnim;
 use crate::codemp::game::npc_spawn::NPC_Spawn_Do;
 use crate::codemp::game::npc_utils::NPC_SetSurfaceOnOff;
-use crate::codemp::game::q_math::{
-    vec3_origin, vectoangles, AngleSubtract, AngleVectors, DotProduct, VectorAdd,
-    VectorClear, VectorCopy, VectorLength, VectorMA, VectorNormalize, VectorScale, VectorSet,
-    VectorSubtract,
-};
-use crate::codemp::game::q_shared::{Q_strncmp};
 use crate::codemp::game::q_math::Q_irand;
+use crate::codemp::game::q_math::{
+    vec3_origin, vectoangles, AngleSubtract, AngleVectors, DotProduct, VectorAdd, VectorClear,
+    VectorCopy, VectorLength, VectorMA, VectorNormalize, VectorScale, VectorSet, VectorSubtract,
+};
+use crate::codemp::game::q_shared::Q_strncmp;
 use crate::codemp::game::q_shared_h::{
     mdxaBone_t, qboolean, trace_t, usercmd_t, vec3_t, BUTTON_TALK, BUTTON_USE, BUTTON_USE_HOLDABLE,
-    CHAN_AUTO, CHAN_VOICE, ENTITYNUM_NONE, MAX_CLIENTS, NEGATIVE_Y, ORIGIN, PITCH,
-    QFALSE, QTRUE, ROLL, YAW,
+    CHAN_AUTO, CHAN_VOICE, ENTITYNUM_NONE, MAX_CLIENTS, NEGATIVE_Y, ORIGIN, PITCH, QFALSE, QTRUE,
+    ROLL, YAW,
 };
 use crate::codemp::game::surfaceflags_h::{CONTENTS_BODY, CONTENTS_SOLID};
 use crate::codemp::game::teams_h::CLASS_VEHICLE;
@@ -345,7 +342,8 @@ pub unsafe extern "C" fn Initialize(pVeh: *mut Vehicle_t) -> qboolean {
     //initialize the ammo to max
     i = 0;
     while (i as usize) < MAX_VEHICLE_WEAPONS {
-        (*pVeh).weaponStatus[i as usize].ammo = (*(*pVeh).m_pVehicleInfo).weapon[i as usize].ammoMax;
+        (*pVeh).weaponStatus[i as usize].ammo =
+            (*(*pVeh).m_pVehicleInfo).weapon[i as usize].ammoMax;
         (*(*parent).client).ps.ammo[i as usize] = (*pVeh).weaponStatus[i as usize].ammo;
         i += 1;
     }
@@ -614,8 +612,7 @@ pub unsafe extern "C" fn ValidateBoard(pVeh: *mut Vehicle_t, pEnt: *mut bgEntity
             }
         } else if (*(*pVeh).m_pVehicleInfo).r#type == VH_WALKER {
             //I know, I know, this should by in the walker's validateboard()
-            if (*ent).client.is_null()
-                || (*(*ent).client).ps.groundEntityNum != (*parent).s.number
+            if (*ent).client.is_null() || (*(*ent).client).ps.groundEntityNum != (*parent).s.number
             {
                 //can only steal an occupied AT-ST if you're on top (by the hatch)
                 return QFALSE;
@@ -752,7 +749,9 @@ pub unsafe fn G_IsRidingVehicle(pEnt: *mut gentity_t) -> *mut Vehicle_t {
         && (*ent).s.m_iVehicleNum != 0
     //ent->client && ( ent->client->ps.eFlags & EF_IN_VEHICLE ) && ent->owner )
     {
-        return (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*ent).s.m_iVehicleNum as usize)).m_pVehicle;
+        return (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*ent).s.m_iVehicleNum as usize))
+        .m_pVehicle;
     }
     null_mut()
 }
@@ -809,7 +808,8 @@ pub unsafe fn G_AttachToVehicle(pEnt: *mut gentity_t, ucmd: *mut *mut usercmd_t)
 
     ent = pEnt;
 
-    vehEnt = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*ent).r.ownerNum as usize);
+    vehEnt =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*ent).r.ownerNum as usize);
     (*ent).waypoint = (*vehEnt).waypoint; // take the veh's waypoint as your own
 
     if (*vehEnt).m_pVehicle.is_null() {
@@ -1031,7 +1031,9 @@ pub unsafe fn G_FlyVehicleImpactDir(veh: *mut gentity_t, trace: *mut trace_t) ->
                 (*veh).s.number,
                 (*veh).clipmask,
             );
-            if localTrace.startsolid != 0 || localTrace.allsolid != 0 || localTrace.fraction != 1.0f32
+            if localTrace.startsolid != 0
+                || localTrace.allsolid != 0
+                || localTrace.fraction != 1.0f32
             {
                 //impact
                 return SHIPSURF_RIGHT;
@@ -1051,7 +1053,9 @@ pub unsafe fn G_FlyVehicleImpactDir(veh: *mut gentity_t, trace: *mut trace_t) ->
                 (*veh).s.number,
                 (*veh).clipmask,
             );
-            if localTrace.startsolid != 0 || localTrace.allsolid != 0 || localTrace.fraction != 1.0f32
+            if localTrace.startsolid != 0
+                || localTrace.allsolid != 0
+                || localTrace.fraction != 1.0f32
             {
                 //impact
                 return SHIPSURF_LEFT;
@@ -1428,7 +1432,8 @@ pub unsafe extern "C" fn Board(pVeh: *mut Vehicle_t, pEnt: *mut bgEntity_t) -> q
                 );
                 if (*gParent).fly_sound_debounce_time != 0 {
                     //we should drop like a rock for a few seconds
-                    (*pVeh).m_iDropTime = (*addr_of!(level)).time + (*gParent).fly_sound_debounce_time;
+                    (*pVeh).m_iDropTime =
+                        (*addr_of!(level)).time + (*gParent).fly_sound_debounce_time;
                 }
             }
         }
@@ -1516,10 +1521,7 @@ pub unsafe extern "C" fn Board(pVeh: *mut Vehicle_t, pEnt: *mut bgEntity_t) -> q
 
     // (PC: the VH_FIGHTER FighterStorePilotViewAngles "clear their angles" block
     // is under #ifdef VEH_CONTROL_SCHEME_4, never defined in the PC tree — excluded.)
-    VectorCopy(
-        &*((*pVeh).m_vOrientation as *const vec3_t),
-        &mut vPlayerDir,
-    );
+    VectorCopy(&*((*pVeh).m_vOrientation as *const vec3_t), &mut vPlayerDir);
     vPlayerDir[ROLL] = 0.0;
     SetClientViewAngle(ent, &vPlayerDir);
 
@@ -1803,12 +1805,18 @@ pub unsafe extern "C" fn Eject(
                     .s
                     .number;
                 (*parent).s.owner = (*parent).r.ownerNum; //for prediction
-                (*(*parent).client).ps.m_iVehicleNum =
-                    (*((*pVeh).m_ppPassengers[j as usize] as *mut gentity_t)).s.number + 1;
+                (*(*parent).client).ps.m_iVehicleNum = (*((*pVeh).m_ppPassengers[j as usize]
+                    as *mut gentity_t))
+                    .s
+                    .number
+                    + 1;
 
                 //rearrange the passenger slots now..
                 //Server just needs to tell client he's not a passenger anymore
-                if !(*((*pVeh).m_ppPassengers[j as usize] as *mut gentity_t)).client.is_null() {
+                if !(*((*pVeh).m_ppPassengers[j as usize] as *mut gentity_t))
+                    .client
+                    .is_null()
+                {
                     (*(*((*pVeh).m_ppPassengers[j as usize] as *mut gentity_t)).client)
                         .ps
                         .generic1 = 0;
@@ -1848,7 +1856,10 @@ pub unsafe extern "C" fn Eject(
             // If we found him...
             if (*pVeh).m_ppPassengers[i as usize] as *mut gentity_t == ent {
                 //Server just needs to tell client he's not a passenger anymore
-                if !(*((*pVeh).m_ppPassengers[i as usize] as *mut gentity_t)).client.is_null() {
+                if !(*((*pVeh).m_ppPassengers[i as usize] as *mut gentity_t))
+                    .client
+                    .is_null()
+                {
                     (*(*((*pVeh).m_ppPassengers[i as usize] as *mut gentity_t)).client)
                         .ps
                         .generic1 = 0;
@@ -2479,7 +2490,9 @@ pub unsafe extern "C" fn Update(pVeh: *mut Vehicle_t, pUcmd: *const usercmd_t) -
         // Instant kill.
         if (*(*pVeh).m_pVehicleInfo).r#type == VH_FIGHTER && (*pVeh).m_iLastImpactDmg > 500 {
             //explode instantly in inferno-y death
-            ((*(*pVeh).m_pVehicleInfo).StartDeathDelay.unwrap())(pVeh, -1 /* -1 causes instant death */);
+            ((*(*pVeh).m_pVehicleInfo).StartDeathDelay.unwrap())(
+                pVeh, -1, /* -1 causes instant death */
+            );
         } else {
             ((*(*pVeh).m_pVehicleInfo).StartDeathDelay.unwrap())(pVeh, 0);
         }
@@ -2497,7 +2510,9 @@ pub unsafe extern "C" fn Update(pVeh: *mut Vehicle_t, pUcmd: *const usercmd_t) -
             (*pVeh).m_iPilotTime = (*addr_of!(level)).time + (*parent).damage;
         } else if (*pVeh).m_iPilotTime != 0 {
             //die
-            let oldPilot: *mut gentity_t = core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add((*pVeh).m_iPilotLastIndex as usize);
+            let oldPilot: *mut gentity_t = core::ptr::addr_of_mut!(g_entities)
+                .cast::<gentity_t>()
+                .add((*pVeh).m_iPilotLastIndex as usize);
 
             if (*oldPilot).inuse == QFALSE
                 || (*oldPilot).client.is_null()
@@ -2607,7 +2622,11 @@ pub unsafe extern "C" fn Update(pVeh: *mut Vehicle_t, pUcmd: *const usercmd_t) -
                         || (*psngr).health <= 0
                         || (*(*psngr).client).pers.connected != CON_CONNECTED)
                 {
-                    ((*(*pVeh).m_pVehicleInfo).Eject.unwrap())(pVeh, (*pVeh).m_ppPassengers[i], QTRUE);
+                    ((*(*pVeh).m_pVehicleInfo).Eject.unwrap())(
+                        pVeh,
+                        (*pVeh).m_ppPassengers[i],
+                        QTRUE,
+                    );
                     (*pVeh).m_iNumPassengers -= 1;
                 }
                 i += 1;
@@ -2657,12 +2676,12 @@ pub unsafe extern "C" fn Update(pVeh: *mut Vehicle_t, pUcmd: *const usercmd_t) -
                     //okay to toggle
                     if (*(*pVeh).m_pVehicleInfo).weapon[i].linkable == 1 {
                         //link-toggleable
-                        (*pVeh).weaponStatus[i].linked =
-                            if (*pVeh).weaponStatus[i].linked != QFALSE {
-                                QFALSE
-                            } else {
-                                QTRUE
-                            };
+                        (*pVeh).weaponStatus[i].linked = if (*pVeh).weaponStatus[i].linked != QFALSE
+                        {
+                            QFALSE
+                        } else {
+                            QTRUE
+                        };
                     }
                 }
                 linkHeld = QTRUE;
@@ -2800,7 +2819,9 @@ pub unsafe extern "C" fn Update(pVeh: *mut Vehicle_t, pUcmd: *const usercmd_t) -
                 parent,
                 &mut (*(*parent).client).ps.origin,
                 dmg as c_int,
-                DAMAGE_NO_SELF_PROTECTION | DAMAGE_NO_HIT_LOC | DAMAGE_NO_PROTECTION
+                DAMAGE_NO_SELF_PROTECTION
+                    | DAMAGE_NO_HIT_LOC
+                    | DAMAGE_NO_PROTECTION
                     | DAMAGE_NO_ARMOR,
                 MOD_SUICIDE,
             );
@@ -3073,9 +3094,28 @@ mod oracle_tests {
     fn G_ShipSurfaceForSurfName_matches_oracle() {
         // Every recognised surface name plus near-miss prefixes, empty, and unrelated.
         let names: &[&core::ffi::CStr] = &[
-            c"nose", c"f_gear", c"glass", c"body", c"r_wing1", c"r_wing2", c"r_gear", c"l_wing1",
-            c"l_wing2", c"l_gear", c"nos", c"nosey", c"glas", c"bod", c"bodywork", c"r_win",
-            c"r_wing", c"l_gearx", c"", c"random", c"GLASS", c"Body",
+            c"nose",
+            c"f_gear",
+            c"glass",
+            c"body",
+            c"r_wing1",
+            c"r_wing2",
+            c"r_gear",
+            c"l_wing1",
+            c"l_wing2",
+            c"l_gear",
+            c"nos",
+            c"nosey",
+            c"glas",
+            c"bod",
+            c"bodywork",
+            c"r_win",
+            c"r_wing",
+            c"l_gearx",
+            c"",
+            c"random",
+            c"GLASS",
+            c"Body",
         ];
         for &n in names {
             let r = unsafe { G_ShipSurfaceForSurfName(n.as_ptr()) };

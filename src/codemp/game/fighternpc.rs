@@ -32,14 +32,14 @@ use crate::codemp::game::bg_pmove::{
     pm, BG_UnrestrainedPitchRoll, BG_VehicleTurnRateForSpeed, PM_BGEntForNum,
 };
 use crate::codemp::game::bg_public::{
-    bgEntity_t, EF2_HYPERSPACE, EF_DEAD, EF_JETPACK_ACTIVE, HYPERSPACE_SPEED, HYPERSPACE_TELEPORT_FRAC,
-    HYPERSPACE_TIME, MASK_NPCSOLID, MOD_SUICIDE, SETANIM_BOTH, SETANIM_FLAG_NORMAL,
+    bgEntity_t, EF2_HYPERSPACE, EF_DEAD, EF_JETPACK_ACTIVE, HYPERSPACE_SPEED,
+    HYPERSPACE_TELEPORT_FRAC, HYPERSPACE_TIME, MASK_NPCSOLID, MOD_SUICIDE, SETANIM_BOTH,
+    SETANIM_FLAG_NORMAL,
 };
-use crate::codemp::game::q_shared_h::CHAN_AUTO;
 use crate::codemp::game::bg_vehicleLoad::{g_vehicleInfo, BG_VehicleGetIndex};
 use crate::codemp::game::bg_vehicles_h::{
-    vehicleInfo_t, Vehicle_t, MAX_STRAFE_TIME, MIN_LANDING_SLOPE,
-    MIN_LANDING_SPEED, SHIPSURF_BROKEN_C, SHIPSURF_BROKEN_D, SHIPSURF_BROKEN_E, SHIPSURF_BROKEN_F,
+    vehicleInfo_t, Vehicle_t, MAX_STRAFE_TIME, MIN_LANDING_SLOPE, MIN_LANDING_SPEED,
+    SHIPSURF_BROKEN_C, SHIPSURF_BROKEN_D, SHIPSURF_BROKEN_E, SHIPSURF_BROKEN_F,
     SHIPSURF_DAMAGE_BACK_HEAVY, SHIPSURF_DAMAGE_BACK_LIGHT, SHIPSURF_DAMAGE_FRONT_HEAVY,
     SHIPSURF_DAMAGE_FRONT_LIGHT, SHIPSURF_DAMAGE_LEFT_HEAVY, SHIPSURF_DAMAGE_LEFT_LIGHT,
     SHIPSURF_DAMAGE_RIGHT_HEAVY, SHIPSURF_DAMAGE_RIGHT_LIGHT, VEHICLE_BASE, VEH_GEARSOPEN,
@@ -47,19 +47,20 @@ use crate::codemp::game::bg_vehicles_h::{
 };
 use crate::codemp::game::g_combat::G_DamageFromKiller;
 use crate::codemp::game::g_local::{gentity_t, DAMAGE_NO_ARMOR};
+use crate::codemp::game::g_main::Com_Error;
 use crate::codemp::game::g_main::{g_gravity, level};
 use crate::codemp::game::g_utils::{G_AllocateVehicleObject, G_EntitySound};
 use crate::codemp::game::g_vehicles::G_VehicleTrace;
 use crate::codemp::game::q_math::{
     AngleNormalize180, AngleNormalize360, AngleSubtract, AngleVectors, DotProduct, VectorClear,
-    VectorCopy, VectorMA, VectorScale, VectorLength,
+    VectorCopy, VectorLength, VectorMA, VectorScale,
 };
+use crate::codemp::game::q_shared_h::CHAN_AUTO;
 use crate::codemp::game::q_shared_h::{
     playerState_t, qboolean, trace_t, usercmd_t, vec3_t, ENTITYNUM_NONE, ENTITYNUM_WORLD, ERR_DROP,
     MAX_CLIENTS, PITCH, QFALSE, QTRUE, ROLL, YAW,
 };
 use crate::codemp::game::surfaceflags_h::CONTENTS_BODY;
-use crate::codemp::game::g_main::Com_Error;
 
 // SP-only `#define`s elided. The shared `FIGHTER_TURNING_*` magic numbers are the
 // `_JK2MP` (MP) values, which is the ABI target.
@@ -173,20 +174,20 @@ pub unsafe fn FighterRollAdjust(
         (*pVeh).m_vPrevRiderViewAngles[YAW],
         (*riderPS).viewangles[YAW],
     ); //2.0f;//AngleSubtract(pVeh->m_vPrevRiderViewAngles[YAW], riderPS->viewangles[YAW]);
-    /*
-    if ( fabs( angDif ) < FIGHTER_TURNING_DEADZONE )
-    {
-        angDif = 0.0f;
-    }
-    else if ( angDif >= FIGHTER_TURNING_DEADZONE )
-    {
-        angDif -= FIGHTER_TURNING_DEADZONE;
-    }
-    else if ( angDif <= -FIGHTER_TURNING_DEADZONE )
-    {
-        angDif += FIGHTER_TURNING_DEADZONE;
-    }
-    */
+       /*
+       if ( fabs( angDif ) < FIGHTER_TURNING_DEADZONE )
+       {
+           angDif = 0.0f;
+       }
+       else if ( angDif >= FIGHTER_TURNING_DEADZONE )
+       {
+           angDif -= FIGHTER_TURNING_DEADZONE;
+       }
+       else if ( angDif <= -FIGHTER_TURNING_DEADZONE )
+       {
+           angDif += FIGHTER_TURNING_DEADZONE;
+       }
+       */
 
     angDif *= 0.5;
     if angDif > 0.0 {
@@ -258,8 +259,10 @@ pub unsafe fn FighterPitchAdjust(
     riderPS: *mut playerState_t,
     parentPS: *mut playerState_t,
 ) {
-    let mut angDif =
-        AngleSubtract(*(*pVeh).m_vOrientation.add(PITCH), (*riderPS).viewangles[PITCH]);
+    let mut angDif = AngleSubtract(
+        *(*pVeh).m_vOrientation.add(PITCH),
+        (*riderPS).viewangles[PITCH],
+    );
 
     if !parentPS.is_null() && (*parentPS).speed != 0.0 {
         let mut s = (*parentPS).speed;
@@ -360,8 +363,11 @@ pub unsafe fn BG_FighterUpdate(
     }
 
     // isDead computed but only used in the elided land-trace skip block below; kept faithful.
-    let _isDead: qboolean =
-        if (*parentPS).eFlags & EF_DEAD != 0 { QTRUE } else { QFALSE };
+    let _isDead: qboolean = if (*parentPS).eFlags & EF_DEAD != 0 {
+        QTRUE
+    } else {
+        QFALSE
+    };
 
     /*
     if ( isDead ||
@@ -534,9 +540,7 @@ pub unsafe extern "C" fn ProcessMoveCommands(pVeh: *mut Vehicle_t) {
 
     let parentPS: *mut playerState_t = (*parent).playerState;
 
-    if (*parentPS).hyperSpaceTime != 0
-        && curTime - (*parentPS).hyperSpaceTime < HYPERSPACE_TIME
-    {
+    if (*parentPS).hyperSpaceTime != 0 && curTime - (*parentPS).hyperSpaceTime < HYPERSPACE_TIME {
         //Going to Hyperspace
         //totally override movement
         let timeFrac = (curTime - (*parentPS).hyperSpaceTime) as f32 / HYPERSPACE_TIME as f32;
@@ -559,10 +563,16 @@ pub unsafe extern "C" fn ProcessMoveCommands(pVeh: *mut Vehicle_t) {
         } else {
             //slow from top speed to 200...
             (*parentPS).speed = 200.0
-                + ((1.0 - timeFrac) * (1.0 / HYPERSPACE_TELEPORT_FRAC) * (HYPERSPACE_SPEED - 200.0));
+                + ((1.0 - timeFrac)
+                    * (1.0 / HYPERSPACE_TELEPORT_FRAC)
+                    * (HYPERSPACE_SPEED - 200.0));
             //don't mess with acceleration, just pop to the high velocity
             if VectorLength(&(*parentPS).velocity) < (*parentPS).speed {
-                VectorScale(&(*parentPS).moveDir, (*parentPS).speed, &mut (*parentPS).velocity);
+                VectorScale(
+                    &(*parentPS).moveDir,
+                    (*parentPS).speed,
+                    &mut (*parentPS).velocity,
+                );
             }
         }
         return;
@@ -602,10 +612,12 @@ pub unsafe extern "C" fn ProcessMoveCommands(pVeh: *mut Vehicle_t) {
                 );
             }
             (*parentPS).velocity[2] +=
-                (*(*pVeh).m_pVehicleInfo).acceleration * (*pVeh).m_fTimeModifier; // * ( /*fInvFrac **/ 1.5f );
+                (*(*pVeh).m_pVehicleInfo).acceleration * (*pVeh).m_fTimeModifier;
+        // * ( /*fInvFrac **/ 1.5f );
         } else if (*pVeh).m_ucmd.upmove < 0 {
             (*parentPS).velocity[2] -=
-                (*(*pVeh).m_pVehicleInfo).acceleration * (*pVeh).m_fTimeModifier; // * ( /*fInvFrac **/ 1.8f );
+                (*(*pVeh).m_pVehicleInfo).acceleration * (*pVeh).m_fTimeModifier;
+        // * ( /*fInvFrac **/ 1.8f );
         } else if (*pVeh).m_ucmd.forwardmove < 0 {
             if (*pVeh).m_LandTrace.fraction != 0.0 {
                 (*parentPS).velocity[2] -=
@@ -925,11 +937,8 @@ pub unsafe extern "C" fn ProcessMoveCommands(pVeh: *mut Vehicle_t) {
             if mult < 1.0 {
                 mult = 1.0;
             }
-            (*parentPS).speed = PredictedAngularDecrement(
-                mult,
-                (*pVeh).m_fTimeModifier * 10.0,
-                (*parentPS).speed,
-            );
+            (*parentPS).speed =
+                PredictedAngularDecrement(mult, (*pVeh).m_fTimeModifier * 10.0, (*parentPS).speed);
         }
     }
 
@@ -986,7 +995,12 @@ pub unsafe extern "C" fn FighterWingMalfunctionCheck(
 ) {
     let mut mPitchOverride: f32 = 1.0;
     let mut mYawOverride: f32 = 1.0;
-    BG_VehicleTurnRateForSpeed(pVeh, (*parentPS).speed, &mut mPitchOverride, &mut mYawOverride);
+    BG_VehicleTurnRateForSpeed(
+        pVeh,
+        (*parentPS).speed,
+        &mut mPitchOverride,
+        &mut mYawOverride,
+    );
     //check right wing damage
     if (*parentPS).brokenLimbs & (1 << SHIPSURF_DAMAGE_RIGHT_HEAVY) != 0 {
         //right wing has taken heavy damage
@@ -1028,24 +1042,29 @@ pub unsafe extern "C" fn FighterNoseMalfunctionCheck(
 ) {
     let mut mPitchOverride: f32 = 1.0;
     let mut mYawOverride: f32 = 1.0;
-    BG_VehicleTurnRateForSpeed(pVeh, (*parentPS).speed, &mut mPitchOverride, &mut mYawOverride);
+    BG_VehicleTurnRateForSpeed(
+        pVeh,
+        (*parentPS).speed,
+        &mut mPitchOverride,
+        &mut mYawOverride,
+    );
     //check nose damage
     if (*parentPS).brokenLimbs & (1 << SHIPSURF_DAMAGE_FRONT_HEAVY) != 0 {
         //nose has taken heavy damage
         //pitch up and down over time
-        *(*pVeh).m_vOrientation.add(PITCH) +=
-            ((*pVeh).m_ucmd.serverTime as f64 * 0.001).sin() as f32
-                * (*pVeh).m_fTimeModifier
-                * mPitchOverride
-                * 50.0;
+        *(*pVeh).m_vOrientation.add(PITCH) += ((*pVeh).m_ucmd.serverTime as f64 * 0.001).sin()
+            as f32
+            * (*pVeh).m_fTimeModifier
+            * mPitchOverride
+            * 50.0;
     } else if (*parentPS).brokenLimbs & (1 << SHIPSURF_DAMAGE_FRONT_LIGHT) != 0 {
         //nose has taken heavy damage
         //pitch up and down over time
-        *(*pVeh).m_vOrientation.add(PITCH) +=
-            ((*pVeh).m_ucmd.serverTime as f64 * 0.001).sin() as f32
-                * (*pVeh).m_fTimeModifier
-                * mPitchOverride
-                * 20.0;
+        *(*pVeh).m_vOrientation.add(PITCH) += ((*pVeh).m_ucmd.serverTime as f64 * 0.001).sin()
+            as f32
+            * (*pVeh).m_fTimeModifier
+            * mPitchOverride
+            * 20.0;
     }
 }
 
@@ -1242,13 +1261,18 @@ pub unsafe extern "C" fn ProcessOrientCommands(pVeh: *mut Vehicle_t) {
 
     parentPS = (*parent).playerState;
     riderPS = (*rider).playerState;
-    isDead = if (*parentPS).eFlags & EF_DEAD != 0 { QTRUE } else { QFALSE };
+    isDead = if (*parentPS).eFlags & EF_DEAD != 0 {
+        QTRUE
+    } else {
+        QFALSE
+    };
 
-    if (*parentPS).hyperSpaceTime != 0
-        && (curTime - (*parentPS).hyperSpaceTime) < HYPERSPACE_TIME
-    {
+    if (*parentPS).hyperSpaceTime != 0 && (curTime - (*parentPS).hyperSpaceTime) < HYPERSPACE_TIME {
         //Going to Hyperspace
-        VectorCopy(&(*riderPS).viewangles, &mut *(*pVeh).m_vOrientation.cast::<vec3_t>());
+        VectorCopy(
+            &(*riderPS).viewangles,
+            &mut *(*pVeh).m_vOrientation.cast::<vec3_t>(),
+        );
         VectorCopy(&(*riderPS).viewangles, &mut (*parentPS).viewangles);
         return;
     }
@@ -1278,20 +1302,16 @@ pub unsafe extern "C" fn ProcessOrientCommands(pVeh: *mut Vehicle_t) {
     }
 
     if BG_UnrestrainedPitchRoll(riderPS, pVeh) == QFALSE {
-        *(*pVeh).m_vOrientation.add(ROLL) = PredictedAngularDecrement(
-            0.95,
-            angleTimeMod * 2.0,
-            *(*pVeh).m_vOrientation.add(ROLL),
-        );
+        *(*pVeh).m_vOrientation.add(ROLL) =
+            PredictedAngularDecrement(0.95, angleTimeMod * 2.0, *(*pVeh).m_vOrientation.add(ROLL));
     }
 
-    isLandingOrLanded = if FighterIsLanding(pVeh, parentPS) == QTRUE
-        || FighterIsLanded(pVeh, parentPS) == QTRUE
-    {
-        QTRUE
-    } else {
-        QFALSE
-    };
+    isLandingOrLanded =
+        if FighterIsLanding(pVeh, parentPS) == QTRUE || FighterIsLanded(pVeh, parentPS) == QTRUE {
+            QTRUE
+        } else {
+            QFALSE
+        };
 
     if isLandingOrLanded == QFALSE {
         //don't do this stuff while landed.. I guess. I don't want ships spinning in place, looks silly.
@@ -1371,7 +1391,10 @@ pub unsafe extern "C" fn ProcessOrientCommands(pVeh: *mut Vehicle_t) {
     //&& !( pVeh->m_ucmd.forwardmove > 0 && pVeh->m_LandTrace.fraction != 1.0f )
     {
         if BG_UnrestrainedPitchRoll(riderPS, pVeh) == QTRUE {
-            VectorCopy(&(*riderPS).viewangles, &mut *(*pVeh).m_vOrientation.cast::<vec3_t>());
+            VectorCopy(
+                &(*riderPS).viewangles,
+                &mut *(*pVeh).m_vOrientation.cast::<vec3_t>(),
+            );
             VectorCopy(&(*riderPS).viewangles, &mut (*parentPS).viewangles);
             //BG_ExternThisSoICanRecompileInDebug( pVeh, riderPS );
 
@@ -1508,8 +1531,8 @@ pub unsafe extern "C" fn ProcessOrientCommands(pVeh: *mut Vehicle_t) {
         }
     } else {
         //add in strafing roll
-        let strafeRoll =
-            ((*parentPS).hackingTime as f32 / MAX_STRAFE_TIME) * (*(*pVeh).m_pVehicleInfo).rollLimit; //pVeh->m_pVehicleInfo->bankingSpeed*
+        let strafeRoll = ((*parentPS).hackingTime as f32 / MAX_STRAFE_TIME)
+            * (*(*pVeh).m_pVehicleInfo).rollLimit; //pVeh->m_pVehicleInfo->bankingSpeed*
         let strafeDif = AngleSubtract(strafeRoll, *(*pVeh).m_vOrientation.add(ROLL));
         *(*pVeh).m_vOrientation.add(ROLL) += (strafeDif * 0.1) * (*pVeh).m_fTimeModifier;
         if BG_UnrestrainedPitchRoll(riderPS, pVeh) == QFALSE {
@@ -1551,9 +1574,7 @@ pub unsafe extern "C" fn AnimateVehicle(pVeh: *mut Vehicle_t) {
     // #elif QAGAME//MP GAME
     let curTime: c_int = (*addr_of!(level)).time;
 
-    if (*parentPS).hyperSpaceTime != 0
-        && curTime - (*parentPS).hyperSpaceTime < HYPERSPACE_TIME
-    {
+    if (*parentPS).hyperSpaceTime != 0 && curTime - (*parentPS).hyperSpaceTime < HYPERSPACE_TIME {
         //Going to Hyperspace
         //close the wings (FIXME: makes sense on X-Wing, not Shuttle?)
         if (*pVeh).m_ulFlags & VEH_WINGSOPEN as c_ulong != 0 {
@@ -1675,6 +1696,6 @@ pub unsafe extern "C" fn G_CreateFighterNPC(pVeh: *mut *mut Vehicle_t, strType: 
     //memset to 0, so this memory would be lost..
     G_AllocateVehicleObject(pVeh);
     write_bytes(*pVeh, 0, 1); // memset(*pVeh, 0, sizeof(Vehicle_t))
-    (**pVeh).m_pVehicleInfo =
-        (addr_of_mut!(g_vehicleInfo) as *mut vehicleInfo_t).add(BG_VehicleGetIndex(strType) as usize);
+    (**pVeh).m_pVehicleInfo = (addr_of_mut!(g_vehicleInfo) as *mut vehicleInfo_t)
+        .add(BG_VehicleGetIndex(strType) as usize);
 }

@@ -32,10 +32,11 @@ use crate::codemp::game::ai_h::{
     AIGroupInfo_t, SQUAD_COVER, SQUAD_IDLE, SQUAD_POINT, SQUAD_RETREAT, SQUAD_SCOUT,
     SQUAD_STAND_AND_SHOOT, SQUAD_TRANSITION,
 };
+use crate::codemp::game::anims::BOTH_STAND4;
 use crate::codemp::game::b_local_h::{
-    CP_ANY, CP_APPROACH_ENEMY, CP_AVOID, CP_AVOID_ENEMY, CP_CLEAR, CP_CLOSEST, CP_COVER, CP_DUCK,
-    CP_FLANK, CP_FLEE, CP_HAS_ROUTE, CP_INVESTIGATE, CP_NEAREST, CP_RETREAT, CP_SAFE, CP_SQUAD,
-    CPF_DUCK, MIN_ROCKET_DIST_SQUARED,
+    CPF_DUCK, CP_ANY, CP_APPROACH_ENEMY, CP_AVOID, CP_AVOID_ENEMY, CP_CLEAR, CP_CLOSEST, CP_COVER,
+    CP_DUCK, CP_FLANK, CP_FLEE, CP_HAS_ROUTE, CP_INVESTIGATE, CP_NEAREST, CP_RETREAT, CP_SAFE,
+    CP_SQUAD, MIN_ROCKET_DIST_SQUARED,
 };
 use crate::codemp::game::b_public_h::{
     BS_DEFAULT, BS_INVESTIGATE, BS_SEARCH, NPCAI_BLOCKED, RANK_ENSIGN, RANK_LT, SCF_ALT_FIRE,
@@ -43,10 +44,10 @@ use crate::codemp::game::b_public_h::{
     SCF_RUNNING, SCF_USE_CP_NEAREST, SPOT_HEAD,
 };
 use crate::codemp::game::bg_public::{
-    EV_ANGER1, EV_ANGER3, EV_CHASE1, EV_CHASE3, EV_CONFUSE1, EV_CONFUSE3, EV_COVER1, EV_COVER5,
-    EV_DETECTED1, EV_DETECTED5, EV_ESCAPING1, EV_ESCAPING3, EV_GIVEUP1, EV_GIVEUP4, EV_LOOK1,
-    EV_LOOK2, EV_LOST1, EV_OUTFLANK1, EV_OUTFLANK2, EV_PUSHED1, EV_PUSHED3, EV_SIGHT1, EV_SIGHT3,
-    EV_SOUND1, EV_SOUND3, EV_SUSPICIOUS1, EV_SUSPICIOUS5, ET_ITEM, MASK_SHOT, PMF_DUCKED,
+    ET_ITEM, EV_ANGER1, EV_ANGER3, EV_CHASE1, EV_CHASE3, EV_CONFUSE1, EV_CONFUSE3, EV_COVER1,
+    EV_COVER5, EV_DETECTED1, EV_DETECTED5, EV_ESCAPING1, EV_ESCAPING3, EV_GIVEUP1, EV_GIVEUP4,
+    EV_LOOK1, EV_LOOK2, EV_LOST1, EV_OUTFLANK1, EV_OUTFLANK2, EV_PUSHED1, EV_PUSHED3, EV_SIGHT1,
+    EV_SIGHT3, EV_SOUND1, EV_SOUND3, EV_SUSPICIOUS1, EV_SUSPICIOUS5, MASK_SHOT, PMF_DUCKED,
     SETANIM_BOTH, SETANIM_FLAG_HOLD, SETANIM_FLAG_OVERRIDE, SETANIM_TORSO, TEAM_NUM_TEAMS,
     WEAPON_READY,
 };
@@ -54,7 +55,6 @@ use crate::codemp::game::bg_weapons_h::{
     WP_DET_PACK, WP_DISRUPTOR, WP_EMPLACED_GUN, WP_FLECHETTE, WP_NONE, WP_REPEATER,
     WP_ROCKET_LAUNCHER, WP_SABER, WP_THERMAL, WP_TRIP_MINE,
 };
-use crate::codemp::game::anims::BOTH_STAND4;
 use crate::codemp::game::g_local::{
     gentity_t, AEL_DANGER, AEL_DANGER_GREAT, AEL_DISCOVERED, AEL_MINOR, AET_SIGHT, AET_SOUND,
     FL_NAVGOAL, FL_NOTARGET,
@@ -64,44 +64,46 @@ use crate::codemp::game::g_nav::{
     navInfo_t, FlyingCreature, NAV_FindClosestWaypointForEnt, NAV_HitNavGoal, NPC_SetMoveGoal,
     NIF_COLLISION, WAYPOINT_NONE,
 };
+use crate::codemp::game::g_public_h::{BSET_AWAKE, Q3_INFINITE, SVF_GLASS_BRUSH, TID_MOVE_NAV};
 use crate::codemp::game::g_timer::{TIMER_Done, TIMER_Get, TIMER_Set};
 use crate::codemp::game::g_utils::{G_ExpandPointToBBox, GetAnglesForDirection};
 use crate::codemp::game::npc::{
-    ucmd, NPC_SetAnim, RestoreNPCGlobals, SaveNPCGlobals, SetNPCGlobals, NPC, NPCInfo,
+    ucmd, NPCInfo, NPC_SetAnim, RestoreNPCGlobals, SaveNPCGlobals, SetNPCGlobals, NPC,
 };
 use crate::codemp::game::npc_ai_default::NPC_BSPatrol;
 use crate::codemp::game::npc_ai_utils::{
     AI_GetGroup, AI_GroupContainsEntNum, AI_GroupUpdateClearShotTime, AI_GroupUpdateEnemyLastSeen,
     AI_GroupUpdateSquadstates,
 };
-use crate::codemp::game::npc_goal::{NPC_ReachedGoal, UpdateGoal};
-use crate::codemp::game::npc_move::{NAV_GetLastMove, NPC_MoveToGoal};
 use crate::codemp::game::npc_behavior::{G_StartFlee, NPC_BSSearchStart, NPC_StartFlee};
 use crate::codemp::game::npc_combat::{
     ChangeWeapon, G_AddVoiceEvent, G_ClearEnemy, G_SetEnemy, NPC_AimAdjust, NPC_ChangeWeapon,
     NPC_CheckGetNewWeapon, NPC_FindCombatPoint, NPC_FreeCombatPoint, NPC_SetCombatPoint,
     NPC_ShotEntity, WeaponThink,
 };
+use crate::codemp::game::npc_goal::{NPC_ReachedGoal, UpdateGoal};
+use crate::codemp::game::npc_move::{NAV_GetLastMove, NPC_MoveToGoal};
 use crate::codemp::game::npc_reactions::{NPC_Pain, NPC_TempLookTarget};
 use crate::codemp::game::npc_senses::{
     InFOV, NPC_CheckAlertEvents, NPC_CheckForDanger, NPC_GetHFOVPercentage, NPC_GetVFOVPercentage,
 };
-use crate::codemp::game::g_public_h::{BSET_AWAKE, Q3_INFINITE, SVF_GLASS_BRUSH, TID_MOVE_NAV};
 use crate::codemp::game::npc_utils::{
     CalcEntitySpot, G_ActivateBehavior, NPC_CheckEnemyExt, NPC_ClearLOS4, NPC_FaceEnemy,
     NPC_FacePosition, NPC_UpdateAngles, NPC_ValidEnemy,
 };
+use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_math::{
     vec3_origin, vectoangles, AngleVectors, Distance, DistanceSquared, DotProduct, VectorClear,
     VectorCompare, VectorCopy, VectorLength, VectorMA, VectorNormalize, VectorSet, VectorSubtract,
 };
-use crate::codemp::game::q_shared::{random};
-use crate::codemp::game::q_math::Q_irand;
+use crate::codemp::game::q_shared::random;
 use crate::codemp::game::q_shared_h::{
     trace_t, vec3_t, BUTTON_ALT_ATTACK, BUTTON_ATTACK, BUTTON_WALKING, ENTITYNUM_NONE,
     ENTITYNUM_WORLD, PITCH, YAW,
 };
-use crate::codemp::game::surfaceflags_h::{CONTENTS_BODY, CONTENTS_BOTCLIP, CONTENTS_FOG, CONTENTS_WATER};
+use crate::codemp::game::surfaceflags_h::{
+    CONTENTS_BODY, CONTENTS_BOTCLIP, CONTENTS_FOG, CONTENTS_WATER,
+};
 use crate::codemp::game::teams_h::{
     CLASS_ATST, CLASS_IMPERIAL, CLASS_IMPWORKER, CLASS_SWAMPTROOPER, NPCTEAM_PLAYER,
 };
@@ -109,8 +111,7 @@ use crate::ffi::types::{qboolean, QFALSE, QTRUE};
 use crate::trap;
 
 // used to stop several group AI from speaking all at once
-static mut groupSpeechDebounceTime: [c_int; TEAM_NUM_TEAMS as usize] =
-    [0; TEAM_NUM_TEAMS as usize];
+static mut groupSpeechDebounceTime: [c_int; TEAM_NUM_TEAMS as usize] = [0; TEAM_NUM_TEAMS as usize];
 
 // File-scope shared state for the NPC_BSST_Attack AI loop (set by the orchestrators,
 // read by ST_CheckMoveState / ST_CheckFireState / etc.).
@@ -241,8 +242,7 @@ unsafe fn ST_Speech(self_: *mut gentity_t, speechType: c_int, failChance: f32) {
     if !(*(*self_).NPC).group.is_null() {
         //So they don't all speak at once...
         //FIXME: if they're not yet mad, they have no group, so distracting a group of them makes them all speak!
-        (*(*(*self_).NPC).group).speechDebounceTime =
-            (*addr_of!(level)).time + Q_irand(2000, 4000);
+        (*(*(*self_).NPC).group).speechDebounceTime = (*addr_of!(level)).time + Q_irand(2000, 4000);
     } else {
         TIMER_Set(self_, c"chatter".as_ptr(), Q_irand(2000, 4000));
     }
@@ -358,7 +358,11 @@ NPC_ST_Pain
 -------------------------
 */
 
-pub unsafe extern "C" fn NPC_ST_Pain(self_: *mut gentity_t, attacker: *mut gentity_t, damage: c_int) {
+pub unsafe extern "C" fn NPC_ST_Pain(
+    self_: *mut gentity_t,
+    attacker: *mut gentity_t,
+    damage: c_int,
+) {
     (*(*self_).NPC).localState = LSTATE_UNDERFIRE;
 
     TIMER_Set(self_, c"duck".as_ptr(), -1);
@@ -391,7 +395,11 @@ pub unsafe fn NPC_ST_SayMovementSpeech() {
         );
     } else {
         //really don't want to say this unless we can actually get there...
-        ST_Speech(NPC, (*NPCInfo).movementSpeech, (*NPCInfo).movementSpeechChance);
+        ST_Speech(
+            NPC,
+            (*NPCInfo).movementSpeech,
+            (*NPCInfo).movementSpeechChance,
+        );
     }
 
     (*NPCInfo).movementSpeech = 0;
@@ -550,7 +558,10 @@ pub unsafe fn NPC_BSST_Sleep() {
             //rwwFIXMEFIXME: Care about all clients not just 0
             // (the C `&g_entities[0]` null-check can never hold — the array is static.)
             if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(0)).health > 0 {
-                G_SetEnemy(NPC, (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(0));
+                G_SetEnemy(
+                    NPC,
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(0),
+                );
                 return;
             }
         }
@@ -727,10 +738,8 @@ pub unsafe fn NPC_CheckEnemyStealth(target: *mut gentity_t) -> qboolean {
         //Now award any final bonuses to this number
         contents = crate::trap::PointContents(&targ_org, (*target).s.number);
         if contents & CONTENTS_WATER != 0 {
-            let myContents = crate::trap::PointContents(
-                &(*(*NPC).client).renderInfo.eyePoint,
-                (*NPC).s.number,
-            );
+            let myContents =
+                crate::trap::PointContents(&(*(*NPC).client).renderInfo.eyePoint, (*NPC).s.number);
             if myContents & CONTENTS_WATER == 0 {
                 //I'm not in water
                 if (*(*NPC).client).NPC_class == CLASS_SWAMPTROOPER {
@@ -837,7 +846,8 @@ pub unsafe fn NPC_CheckPlayerTeamStealth() -> qboolean {
 
     i = 0;
     while i < ENTITYNUM_WORLD {
-        let enemy: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
+        let enemy: *mut gentity_t =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
 
         if (*enemy).inuse == QFALSE {
             i += 1;
@@ -867,7 +877,9 @@ unsafe fn NPC_ST_InvestigateEvent(eventID: c_int, extraSuspicious: qboolean) -> 
             && (*NPCInfo).scriptFlags & SCF_LOOK_FOR_ENEMIES != 0
         {
             (*NPCInfo).lastAlertID = (*addr_of!(level)).alertEvents[eventID as usize].ID;
-            if (*addr_of!(level)).alertEvents[eventID as usize].owner.is_null()
+            if (*addr_of!(level)).alertEvents[eventID as usize]
+                .owner
+                .is_null()
                 || (*(*addr_of!(level)).alertEvents[eventID as usize].owner)
                     .client
                     .is_null()
@@ -961,7 +973,14 @@ unsafe fn NPC_ST_InvestigateEvent(eventID: c_int, extraSuspicious: qboolean) -> 
                 //FIXME: look at them???
             } else {
                 VectorCopy(&trace.endpos, &mut (*NPCInfo).investigateGoal);
-                NPC_SetMoveGoal(NPC, &(*NPCInfo).investigateGoal, 16, QTRUE, -1, core::ptr::null_mut());
+                NPC_SetMoveGoal(
+                    NPC,
+                    &(*NPCInfo).investigateGoal,
+                    16,
+                    QTRUE,
+                    -1,
+                    core::ptr::null_mut(),
+                );
                 (*NPCInfo).localState = LSTATE_INVESTIGATE;
             }
         } else {
@@ -1044,7 +1063,11 @@ unsafe fn ST_OffsetLook(offset: f32, out: &mut vec3_t) {
     let mut forward: vec3_t = [0.0; 3];
     let mut temp: vec3_t = [0.0; 3];
 
-    GetAnglesForDirection(&(*NPC).r.currentOrigin, &(*NPCInfo).investigateGoal, &mut angles);
+    GetAnglesForDirection(
+        &(*NPC).r.currentOrigin,
+        &(*NPCInfo).investigateGoal,
+        &mut angles,
+    );
     angles[YAW] += offset;
     AngleVectors(&angles, Some(&mut forward), None, None);
     VectorMA(&(*NPC).r.currentOrigin, 64.0, &forward, out);
@@ -1100,13 +1123,8 @@ pub unsafe fn NPC_BSST_Investigate() {
     }
 
     if (*NPCInfo).scriptFlags & SCF_IGNORE_ALERTS == 0 {
-        let alertEvent: c_int = NPC_CheckAlertEvents(
-            QTRUE,
-            QTRUE,
-            (*NPCInfo).lastAlertID,
-            QFALSE,
-            AEL_MINOR,
-        );
+        let alertEvent: c_int =
+            NPC_CheckAlertEvents(QTRUE, QTRUE, (*NPCInfo).lastAlertID, QFALSE, AEL_MINOR);
 
         //There is an event to look at
         if alertEvent >= 0 {
@@ -1229,8 +1247,7 @@ pub unsafe fn NPC_BSST_Patrol() {
 
     NPC_UpdateAngles(QTRUE, QTRUE);
     //TEMP hack for Imperial stand anim
-    if (*(*NPC).client).NPC_class == CLASS_IMPERIAL
-        || (*(*NPC).client).NPC_class == CLASS_IMPWORKER
+    if (*(*NPC).client).NPC_class == CLASS_IMPERIAL || (*(*NPC).client).NPC_class == CLASS_IMPWORKER
     {
         //hack
         if ucmd.forwardmove != 0 || ucmd.rightmove != 0 || ucmd.upmove != 0 {
@@ -1239,8 +1256,7 @@ pub unsafe fn NPC_BSST_Patrol() {
             if ((*(*NPC).client).ps.torsoTimer <= 0)
                 || ((*(*NPC).client).ps.torsoAnim == BOTH_STAND4)
             {
-                if (ucmd.buttons & BUTTON_WALKING) != 0
-                    && (*NPCInfo).scriptFlags & SCF_RUNNING == 0
+                if (ucmd.buttons & BUTTON_WALKING) != 0 && (*NPCInfo).scriptFlags & SCF_RUNNING == 0
                 {
                     //not running, only set upper anim
                     //  No longer overrides scripted anims
@@ -1342,13 +1358,9 @@ pub unsafe fn ST_HuntEnemy(self_: *mut gentity_t) {
 pub unsafe fn ST_GetCPFlags() -> c_int {
     let mut cpFlags: c_int = 0;
     if !NPC.is_null() && !(*NPCInfo).group.is_null() {
-        if NPC == (*(*NPCInfo).group).commander
-            && (*(*NPC).client).NPC_class == CLASS_IMPERIAL
-        {
+        if NPC == (*(*NPCInfo).group).commander && (*(*NPC).client).NPC_class == CLASS_IMPERIAL {
             //imperials hang back and give orders
-            if (*(*NPCInfo).group).numGroup > 1
-                && Q_irand(-3, (*(*NPCInfo).group).numGroup) > 1
-            {
+            if (*(*NPCInfo).group).numGroup > 1 && Q_irand(-3, (*(*NPCInfo).group).numGroup) > 1 {
                 //FIXME: make sure he;s giving orders with these lines
                 if Q_irand(0, 1) != 0 {
                     ST_Speech(NPC, SPEECH_CHASE, 0.5);
@@ -1428,7 +1440,8 @@ pub unsafe fn ST_ResolveBlockedShot(hit: c_int) {
     if TIMER_Done(NPC, c"duck".as_ptr()) != QFALSE {
         //we're not ducking
         if AI_GroupContainsEntNum((*NPCInfo).group, hit) != QFALSE {
-            let member: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(hit as usize);
+            let member: *mut gentity_t =
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(hit as usize);
             if TIMER_Done(member, c"duck".as_ptr()) != QFALSE {
                 //they aren't ducking
                 if TIMER_Done(member, c"stand".as_ptr()) != QFALSE {
@@ -1631,7 +1644,7 @@ unsafe fn ST_CheckMoveState() {
             NPC_ReachedGoal();
             //don't attack right away
             TIMER_Set(NPC, c"attackDelay".as_ptr(), Q_irand(250, 500)); //FIXME: Slant for difficulty levels
-            //don't do something else just yet
+                                                                        //don't do something else just yet
             TIMER_Set(NPC, c"roamTime".as_ptr(), Q_irand(1000, 4000));
             return;
         }
@@ -1693,7 +1706,12 @@ unsafe fn ST_CheckFireState() {
                     //vec3_t	mins = {-2,-2,-2}, maxs = {2,2,2};
                     let mut forward: vec3_t = [0.0; 3];
                     let mut end: vec3_t = [0.0; 3];
-                    AngleVectors(&(*(*NPC).client).ps.viewangles, Some(&mut forward), None, None);
+                    AngleVectors(
+                        &(*(*NPC).client).ps.viewangles,
+                        Some(&mut forward),
+                        None,
+                        None,
+                    );
                     VectorMA(&muzzle, 8192.0, &forward, &mut end);
                     let tr: trace_t = trap::Trace(
                         &muzzle,
@@ -1744,7 +1762,8 @@ unsafe fn ST_CheckFireState() {
                         }
                         _ => {}
                     }
-                    dist = DistanceSquared(&*addr_of!(impactPos), &(*NPCInfo).enemyLastSeenLocation);
+                    dist =
+                        DistanceSquared(&*addr_of!(impactPos), &(*NPCInfo).enemyLastSeenLocation);
                     if dist > distThreshold {
                         //impact would be too far from enemy
                         tooFar = QTRUE;
@@ -1816,10 +1835,10 @@ pub unsafe fn ST_Commander() {
     if (*group).lastSeenEnemyTime < (*addr_of!(level)).time - 180000 {
         //dissolve the group
         ST_Speech(NPC, SPEECH_LOST, 0.0);
-        (*(*group).enemy).waypoint =
-            NAV_FindClosestWaypointForEnt((*group).enemy, WAYPOINT_NONE);
+        (*(*group).enemy).waypoint = NAV_FindClosestWaypointForEnt((*group).enemy, WAYPOINT_NONE);
         for i in 0..(*group).numGroup {
-            member = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*group).member[i as usize].number as usize);
+            member = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*group).member[i as usize].number as usize);
             SetNPCGlobals(member);
             if trap::ICARUS_TaskIDPending(NPC, TID_MOVE_NAV) != QFALSE {
                 //running somewhere that a script requires us to go, don't break from that
@@ -1881,7 +1900,9 @@ pub unsafe fn ST_Commander() {
         runner = QTRUE;
     }
 
-    if /* !runner &&*/ (*group).lastSeenEnemyTime > (*addr_of!(level)).time - 32000
+    if
+    /* !runner &&*/
+    (*group).lastSeenEnemyTime > (*addr_of!(level)).time - 32000
         && (*group).lastSeenEnemyTime < (*addr_of!(level)).time - 30000
     {
         //no-one has seen the enemy for 30 seconds// and no-one is running after him
@@ -1928,7 +1949,8 @@ pub unsafe fn ST_Commander() {
         scouting = QFALSE;
 
         //get the next guy
-        member = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*group).member[i as usize].number as usize);
+        member = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*group).member[i as usize].number as usize);
         if (*member).enemy.is_null() {
             //don't include guys that aren't angry
             continue;
@@ -2004,10 +2026,8 @@ pub unsafe fn ST_Commander() {
             if TIMER_Done(NPC, c"roamTime".as_ptr()) != QFALSE
                 && TIMER_Done(NPC, c"hideTime".as_ptr()) != QFALSE
                 && (*NPC).health > 10
-                && trap::InPVS(
-                    &(*(*group).enemy).r.currentOrigin,
-                    &(*NPC).r.currentOrigin,
-                ) == QFALSE
+                && trap::InPVS(&(*(*group).enemy).r.currentOrigin, &(*NPC).r.currentOrigin)
+                    == QFALSE
             {
                 //cant even see enemy
                 //better go after him
@@ -2046,10 +2066,8 @@ pub unsafe fn ST_Commander() {
                 }
             } else {
                 //not hit, see if there are other reasons we should run
-                if trap::InPVS(
-                    &(*NPC).r.currentOrigin,
-                    &(*(*group).enemy).r.currentOrigin,
-                ) != QFALSE
+                if trap::InPVS(&(*NPC).r.currentOrigin, &(*(*group).enemy).r.currentOrigin)
+                    != QFALSE
                 {
                     //in the same room as enemy
                     if (*(*NPC).client).ps.weapon == WP_ROCKET_LAUNCHER
@@ -2152,8 +2170,7 @@ pub unsafe fn ST_Commander() {
                             //1 - 3 seconds have passed since you chose a CP, see if you're there since, for some reason, you've stopped running...
                             if DistanceSquared(
                                 &(*NPC).r.currentOrigin,
-                                &(*addr_of!(level)).combatPoints
-                                    [(*NPCInfo).combatPoint as usize]
+                                &(*addr_of!(level)).combatPoints[(*NPCInfo).combatPoint as usize]
                                     .origin,
                             ) > 64.0 * 64.0
                             {
@@ -2213,9 +2230,7 @@ pub unsafe fn ST_Commander() {
                             //we are already on a combat point
                             if i == 0 {
                                 //we're the closest
-                                if (*group).morale - (*group).numGroup > 0
-                                    && Q_irand(0, 4) == 0
-                                {
+                                if (*group).morale - (*group).numGroup > 0 && Q_irand(0, 4) == 0 {
                                     //try to outflank him
                                     cpFlags |= CP_CLEAR | CP_COVER | CP_FLANK | CP_APPROACH_ENEMY;
                                 } else if (*group).morale - (*group).numGroup < 0 {
@@ -2246,9 +2261,7 @@ pub unsafe fn ST_Commander() {
                                 }
                             } else {
                                 //someone in-between
-                                if (*group).morale - (*group).numGroup < 0
-                                    || Q_irand(0, 4) == 0
-                                {
+                                if (*group).morale - (*group).numGroup < 0 || Q_irand(0, 4) == 0 {
                                     //do something
                                     cpFlags |= ST_GetCPFlags();
                                 } else {
@@ -2562,8 +2575,7 @@ pub unsafe fn NPC_BSST_Attack() {
             ST_Commander();
         }
     } else if TIMER_Done(NPC, c"flee".as_ptr()) != QFALSE
-        && NPC_CheckForDanger(NPC_CheckAlertEvents(QTRUE, QTRUE, -1, QFALSE, AEL_DANGER))
-            != QFALSE
+        && NPC_CheckForDanger(NPC_CheckAlertEvents(QTRUE, QTRUE, -1, QFALSE, AEL_DANGER)) != QFALSE
     {
         //not already fleeing, and going to run
         ST_Speech(NPC, SPEECH_COVER, 0.0);
@@ -2593,7 +2605,12 @@ pub unsafe fn NPC_BSST_Attack() {
         &mut enemyDir,
     );
     VectorNormalize(&mut enemyDir);
-    AngleVectors(&(*(*NPC).client).ps.viewangles, Some(&mut shootDir), None, None);
+    AngleVectors(
+        &(*(*NPC).client).ps.viewangles,
+        Some(&mut shootDir),
+        None,
+        None,
+    );
     dot = DotProduct(&enemyDir, &shootDir);
     if dot > 0.5 || (enemyDist * (1.0 - dot)) < 10000.0 {
         //enemy is in front of me or they're very close and not behind me
@@ -2604,8 +2621,7 @@ pub unsafe fn NPC_BSST_Attack() {
     //128
     {
         //enemy within 128
-        if ((*(*NPC).client).ps.weapon == WP_FLECHETTE
-            || (*(*NPC).client).ps.weapon == WP_REPEATER)
+        if ((*(*NPC).client).ps.weapon == WP_FLECHETTE || (*(*NPC).client).ps.weapon == WP_REPEATER)
             && (*NPCInfo).scriptFlags & SCF_ALT_FIRE != 0
         {
             //shooting an explosive, but enemy too close, switch to primary fire
@@ -2651,7 +2667,8 @@ pub unsafe fn NPC_BSST_Attack() {
             } else if enemyInFOV != QFALSE {
                 //if enemy is FOV, go ahead and check for shooting
                 let hit: c_int = NPC_ShotEntity((*NPC).enemy, addr_of_mut!(impactPos));
-                let hitEnt: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(hit as usize);
+                let hitEnt: *mut gentity_t =
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(hit as usize);
 
                 if hit == (*(*NPC).enemy).s.number
                     || (!hitEnt.is_null()
@@ -2782,9 +2799,7 @@ pub unsafe fn NPC_BSST_Attack() {
     }
 
     if !(*NPC).enemy.is_null() && !(*(*NPC).enemy).enemy.is_null() {
-        if (*(*NPC).enemy).s.weapon == WP_SABER
-            && (*(*(*NPC).enemy).enemy).s.weapon == WP_SABER
-        {
+        if (*(*NPC).enemy).s.weapon == WP_SABER && (*(*(*NPC).enemy).enemy).s.weapon == WP_SABER {
             //don't shoot at an enemy jedi who is fighting another jedi, for fear of injuring one or causing rogue blaster deflections (a la Obi Wan/Vader duel at end of ANH)
             shoot = QFALSE;
         }

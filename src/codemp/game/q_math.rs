@@ -8,8 +8,8 @@
 #![allow(non_upper_case_globals)] // global tables keep their C names (vec3_origin, g_color_table, …)
 
 use super::q_shared_h::{
-    byte, cplane_t, qboolean, vec3_t, vec4_t, vec_t, DEG2RAD, M_PI, NUMVERTEXNORMALS, PITCH, QFALSE,
-    QTRUE, RAD2DEG, ROLL, YAW,
+    byte, cplane_t, qboolean, vec3_t, vec4_t, vec_t, DEG2RAD, M_PI, NUMVERTEXNORMALS, PITCH,
+    QFALSE, QTRUE, RAD2DEG, ROLL, YAW,
 };
 use core::ffi::c_int;
 use core::sync::atomic::{AtomicU32, Ordering};
@@ -45,87 +45,168 @@ pub static g_color_table: [vec4_t; 8] = [
 /// `bytedirs` — the 162 quantized unit normals used by [`DirToByte`]/[`ByteToDir`].
 /// Transcribed verbatim from q_math.c (the `f` float suffixes are implicit on `vec_t`).
 pub static bytedirs: [vec3_t; NUMVERTEXNORMALS] = [
-    [-0.525731, 0.000000, 0.850651], [-0.442863, 0.238856, 0.864188],
-    [-0.295242, 0.000000, 0.955423], [-0.309017, 0.500000, 0.809017],
-    [-0.162460, 0.262866, 0.951056], [0.000000, 0.000000, 1.000000],
-    [0.000000, 0.850651, 0.525731], [-0.147621, 0.716567, 0.681718],
-    [0.147621, 0.716567, 0.681718], [0.000000, 0.525731, 0.850651],
-    [0.309017, 0.500000, 0.809017], [0.525731, 0.000000, 0.850651],
-    [0.295242, 0.000000, 0.955423], [0.442863, 0.238856, 0.864188],
-    [0.162460, 0.262866, 0.951056], [-0.681718, 0.147621, 0.716567],
-    [-0.809017, 0.309017, 0.500000],[-0.587785, 0.425325, 0.688191],
-    [-0.850651, 0.525731, 0.000000],[-0.864188, 0.442863, 0.238856],
-    [-0.716567, 0.681718, 0.147621],[-0.688191, 0.587785, 0.425325],
-    [-0.500000, 0.809017, 0.309017], [-0.238856, 0.864188, 0.442863],
-    [-0.425325, 0.688191, 0.587785], [-0.716567, 0.681718, -0.147621],
-    [-0.500000, 0.809017, -0.309017], [-0.525731, 0.850651, 0.000000],
-    [0.000000, 0.850651, -0.525731], [-0.238856, 0.864188, -0.442863],
-    [0.000000, 0.955423, -0.295242], [-0.262866, 0.951056, -0.162460],
-    [0.000000, 1.000000, 0.000000], [0.000000, 0.955423, 0.295242],
-    [-0.262866, 0.951056, 0.162460], [0.238856, 0.864188, 0.442863],
-    [0.262866, 0.951056, 0.162460], [0.500000, 0.809017, 0.309017],
-    [0.238856, 0.864188, -0.442863],[0.262866, 0.951056, -0.162460],
-    [0.500000, 0.809017, -0.309017],[0.850651, 0.525731, 0.000000],
-    [0.716567, 0.681718, 0.147621], [0.716567, 0.681718, -0.147621],
-    [0.525731, 0.850651, 0.000000], [0.425325, 0.688191, 0.587785],
-    [0.864188, 0.442863, 0.238856], [0.688191, 0.587785, 0.425325],
-    [0.809017, 0.309017, 0.500000], [0.681718, 0.147621, 0.716567],
-    [0.587785, 0.425325, 0.688191], [0.955423, 0.295242, 0.000000],
-    [1.000000, 0.000000, 0.000000], [0.951056, 0.162460, 0.262866],
-    [0.850651, -0.525731, 0.000000],[0.955423, -0.295242, 0.000000],
-    [0.864188, -0.442863, 0.238856], [0.951056, -0.162460, 0.262866],
-    [0.809017, -0.309017, 0.500000], [0.681718, -0.147621, 0.716567],
-    [0.850651, 0.000000, 0.525731], [0.864188, 0.442863, -0.238856],
-    [0.809017, 0.309017, -0.500000], [0.951056, 0.162460, -0.262866],
-    [0.525731, 0.000000, -0.850651], [0.681718, 0.147621, -0.716567],
-    [0.681718, -0.147621, -0.716567],[0.850651, 0.000000, -0.525731],
-    [0.809017, -0.309017, -0.500000], [0.864188, -0.442863, -0.238856],
-    [0.951056, -0.162460, -0.262866], [0.147621, 0.716567, -0.681718],
-    [0.309017, 0.500000, -0.809017], [0.425325, 0.688191, -0.587785],
-    [0.442863, 0.238856, -0.864188], [0.587785, 0.425325, -0.688191],
-    [0.688191, 0.587785, -0.425325], [-0.147621, 0.716567, -0.681718],
-    [-0.309017, 0.500000, -0.809017], [0.000000, 0.525731, -0.850651],
-    [-0.525731, 0.000000, -0.850651], [-0.442863, 0.238856, -0.864188],
-    [-0.295242, 0.000000, -0.955423], [-0.162460, 0.262866, -0.951056],
-    [0.000000, 0.000000, -1.000000], [0.295242, 0.000000, -0.955423],
-    [0.162460, 0.262866, -0.951056], [-0.442863, -0.238856, -0.864188],
-    [-0.309017, -0.500000, -0.809017], [-0.162460, -0.262866, -0.951056],
-    [0.000000, -0.850651, -0.525731], [-0.147621, -0.716567, -0.681718],
-    [0.147621, -0.716567, -0.681718], [0.000000, -0.525731, -0.850651],
-    [0.309017, -0.500000, -0.809017], [0.442863, -0.238856, -0.864188],
-    [0.162460, -0.262866, -0.951056], [0.238856, -0.864188, -0.442863],
-    [0.500000, -0.809017, -0.309017], [0.425325, -0.688191, -0.587785],
-    [0.716567, -0.681718, -0.147621], [0.688191, -0.587785, -0.425325],
-    [0.587785, -0.425325, -0.688191], [0.000000, -0.955423, -0.295242],
-    [0.000000, -1.000000, 0.000000], [0.262866, -0.951056, -0.162460],
-    [0.000000, -0.850651, 0.525731], [0.000000, -0.955423, 0.295242],
-    [0.238856, -0.864188, 0.442863], [0.262866, -0.951056, 0.162460],
-    [0.500000, -0.809017, 0.309017], [0.716567, -0.681718, 0.147621],
-    [0.525731, -0.850651, 0.000000], [-0.238856, -0.864188, -0.442863],
-    [-0.500000, -0.809017, -0.309017], [-0.262866, -0.951056, -0.162460],
-    [-0.850651, -0.525731, 0.000000], [-0.716567, -0.681718, -0.147621],
-    [-0.716567, -0.681718, 0.147621], [-0.525731, -0.850651, 0.000000],
-    [-0.500000, -0.809017, 0.309017], [-0.238856, -0.864188, 0.442863],
-    [-0.262866, -0.951056, 0.162460], [-0.864188, -0.442863, 0.238856],
-    [-0.809017, -0.309017, 0.500000], [-0.688191, -0.587785, 0.425325],
-    [-0.681718, -0.147621, 0.716567], [-0.442863, -0.238856, 0.864188],
-    [-0.587785, -0.425325, 0.688191], [-0.309017, -0.500000, 0.809017],
-    [-0.147621, -0.716567, 0.681718], [-0.425325, -0.688191, 0.587785],
-    [-0.162460, -0.262866, 0.951056], [0.442863, -0.238856, 0.864188],
-    [0.162460, -0.262866, 0.951056], [0.309017, -0.500000, 0.809017],
-    [0.147621, -0.716567, 0.681718], [0.000000, -0.525731, 0.850651],
-    [0.425325, -0.688191, 0.587785], [0.587785, -0.425325, 0.688191],
-    [0.688191, -0.587785, 0.425325], [-0.955423, 0.295242, 0.000000],
-    [-0.951056, 0.162460, 0.262866], [-1.000000, 0.000000, 0.000000],
-    [-0.850651, 0.000000, 0.525731], [-0.955423, -0.295242, 0.000000],
-    [-0.951056, -0.162460, 0.262866], [-0.864188, 0.442863, -0.238856],
-    [-0.951056, 0.162460, -0.262866], [-0.809017, 0.309017, -0.500000],
-    [-0.864188, -0.442863, -0.238856], [-0.951056, -0.162460, -0.262866],
-    [-0.809017, -0.309017, -0.500000], [-0.681718, 0.147621, -0.716567],
-    [-0.681718, -0.147621, -0.716567], [-0.850651, 0.000000, -0.525731],
-    [-0.688191, 0.587785, -0.425325], [-0.587785, 0.425325, -0.688191],
-    [-0.425325, 0.688191, -0.587785], [-0.425325, -0.688191, -0.587785],
-    [-0.587785, -0.425325, -0.688191], [-0.688191, -0.587785, -0.425325],
+    [-0.525731, 0.000000, 0.850651],
+    [-0.442863, 0.238856, 0.864188],
+    [-0.295242, 0.000000, 0.955423],
+    [-0.309017, 0.500000, 0.809017],
+    [-0.162460, 0.262866, 0.951056],
+    [0.000000, 0.000000, 1.000000],
+    [0.000000, 0.850651, 0.525731],
+    [-0.147621, 0.716567, 0.681718],
+    [0.147621, 0.716567, 0.681718],
+    [0.000000, 0.525731, 0.850651],
+    [0.309017, 0.500000, 0.809017],
+    [0.525731, 0.000000, 0.850651],
+    [0.295242, 0.000000, 0.955423],
+    [0.442863, 0.238856, 0.864188],
+    [0.162460, 0.262866, 0.951056],
+    [-0.681718, 0.147621, 0.716567],
+    [-0.809017, 0.309017, 0.500000],
+    [-0.587785, 0.425325, 0.688191],
+    [-0.850651, 0.525731, 0.000000],
+    [-0.864188, 0.442863, 0.238856],
+    [-0.716567, 0.681718, 0.147621],
+    [-0.688191, 0.587785, 0.425325],
+    [-0.500000, 0.809017, 0.309017],
+    [-0.238856, 0.864188, 0.442863],
+    [-0.425325, 0.688191, 0.587785],
+    [-0.716567, 0.681718, -0.147621],
+    [-0.500000, 0.809017, -0.309017],
+    [-0.525731, 0.850651, 0.000000],
+    [0.000000, 0.850651, -0.525731],
+    [-0.238856, 0.864188, -0.442863],
+    [0.000000, 0.955423, -0.295242],
+    [-0.262866, 0.951056, -0.162460],
+    [0.000000, 1.000000, 0.000000],
+    [0.000000, 0.955423, 0.295242],
+    [-0.262866, 0.951056, 0.162460],
+    [0.238856, 0.864188, 0.442863],
+    [0.262866, 0.951056, 0.162460],
+    [0.500000, 0.809017, 0.309017],
+    [0.238856, 0.864188, -0.442863],
+    [0.262866, 0.951056, -0.162460],
+    [0.500000, 0.809017, -0.309017],
+    [0.850651, 0.525731, 0.000000],
+    [0.716567, 0.681718, 0.147621],
+    [0.716567, 0.681718, -0.147621],
+    [0.525731, 0.850651, 0.000000],
+    [0.425325, 0.688191, 0.587785],
+    [0.864188, 0.442863, 0.238856],
+    [0.688191, 0.587785, 0.425325],
+    [0.809017, 0.309017, 0.500000],
+    [0.681718, 0.147621, 0.716567],
+    [0.587785, 0.425325, 0.688191],
+    [0.955423, 0.295242, 0.000000],
+    [1.000000, 0.000000, 0.000000],
+    [0.951056, 0.162460, 0.262866],
+    [0.850651, -0.525731, 0.000000],
+    [0.955423, -0.295242, 0.000000],
+    [0.864188, -0.442863, 0.238856],
+    [0.951056, -0.162460, 0.262866],
+    [0.809017, -0.309017, 0.500000],
+    [0.681718, -0.147621, 0.716567],
+    [0.850651, 0.000000, 0.525731],
+    [0.864188, 0.442863, -0.238856],
+    [0.809017, 0.309017, -0.500000],
+    [0.951056, 0.162460, -0.262866],
+    [0.525731, 0.000000, -0.850651],
+    [0.681718, 0.147621, -0.716567],
+    [0.681718, -0.147621, -0.716567],
+    [0.850651, 0.000000, -0.525731],
+    [0.809017, -0.309017, -0.500000],
+    [0.864188, -0.442863, -0.238856],
+    [0.951056, -0.162460, -0.262866],
+    [0.147621, 0.716567, -0.681718],
+    [0.309017, 0.500000, -0.809017],
+    [0.425325, 0.688191, -0.587785],
+    [0.442863, 0.238856, -0.864188],
+    [0.587785, 0.425325, -0.688191],
+    [0.688191, 0.587785, -0.425325],
+    [-0.147621, 0.716567, -0.681718],
+    [-0.309017, 0.500000, -0.809017],
+    [0.000000, 0.525731, -0.850651],
+    [-0.525731, 0.000000, -0.850651],
+    [-0.442863, 0.238856, -0.864188],
+    [-0.295242, 0.000000, -0.955423],
+    [-0.162460, 0.262866, -0.951056],
+    [0.000000, 0.000000, -1.000000],
+    [0.295242, 0.000000, -0.955423],
+    [0.162460, 0.262866, -0.951056],
+    [-0.442863, -0.238856, -0.864188],
+    [-0.309017, -0.500000, -0.809017],
+    [-0.162460, -0.262866, -0.951056],
+    [0.000000, -0.850651, -0.525731],
+    [-0.147621, -0.716567, -0.681718],
+    [0.147621, -0.716567, -0.681718],
+    [0.000000, -0.525731, -0.850651],
+    [0.309017, -0.500000, -0.809017],
+    [0.442863, -0.238856, -0.864188],
+    [0.162460, -0.262866, -0.951056],
+    [0.238856, -0.864188, -0.442863],
+    [0.500000, -0.809017, -0.309017],
+    [0.425325, -0.688191, -0.587785],
+    [0.716567, -0.681718, -0.147621],
+    [0.688191, -0.587785, -0.425325],
+    [0.587785, -0.425325, -0.688191],
+    [0.000000, -0.955423, -0.295242],
+    [0.000000, -1.000000, 0.000000],
+    [0.262866, -0.951056, -0.162460],
+    [0.000000, -0.850651, 0.525731],
+    [0.000000, -0.955423, 0.295242],
+    [0.238856, -0.864188, 0.442863],
+    [0.262866, -0.951056, 0.162460],
+    [0.500000, -0.809017, 0.309017],
+    [0.716567, -0.681718, 0.147621],
+    [0.525731, -0.850651, 0.000000],
+    [-0.238856, -0.864188, -0.442863],
+    [-0.500000, -0.809017, -0.309017],
+    [-0.262866, -0.951056, -0.162460],
+    [-0.850651, -0.525731, 0.000000],
+    [-0.716567, -0.681718, -0.147621],
+    [-0.716567, -0.681718, 0.147621],
+    [-0.525731, -0.850651, 0.000000],
+    [-0.500000, -0.809017, 0.309017],
+    [-0.238856, -0.864188, 0.442863],
+    [-0.262866, -0.951056, 0.162460],
+    [-0.864188, -0.442863, 0.238856],
+    [-0.809017, -0.309017, 0.500000],
+    [-0.688191, -0.587785, 0.425325],
+    [-0.681718, -0.147621, 0.716567],
+    [-0.442863, -0.238856, 0.864188],
+    [-0.587785, -0.425325, 0.688191],
+    [-0.309017, -0.500000, 0.809017],
+    [-0.147621, -0.716567, 0.681718],
+    [-0.425325, -0.688191, 0.587785],
+    [-0.162460, -0.262866, 0.951056],
+    [0.442863, -0.238856, 0.864188],
+    [0.162460, -0.262866, 0.951056],
+    [0.309017, -0.500000, 0.809017],
+    [0.147621, -0.716567, 0.681718],
+    [0.000000, -0.525731, 0.850651],
+    [0.425325, -0.688191, 0.587785],
+    [0.587785, -0.425325, 0.688191],
+    [0.688191, -0.587785, 0.425325],
+    [-0.955423, 0.295242, 0.000000],
+    [-0.951056, 0.162460, 0.262866],
+    [-1.000000, 0.000000, 0.000000],
+    [-0.850651, 0.000000, 0.525731],
+    [-0.955423, -0.295242, 0.000000],
+    [-0.951056, -0.162460, 0.262866],
+    [-0.864188, 0.442863, -0.238856],
+    [-0.951056, 0.162460, -0.262866],
+    [-0.809017, 0.309017, -0.500000],
+    [-0.864188, -0.442863, -0.238856],
+    [-0.951056, -0.162460, -0.262866],
+    [-0.809017, -0.309017, -0.500000],
+    [-0.681718, 0.147621, -0.716567],
+    [-0.681718, -0.147621, -0.716567],
+    [-0.850651, 0.000000, -0.525731],
+    [-0.688191, 0.587785, -0.425325],
+    [-0.587785, 0.425325, -0.688191],
+    [-0.425325, 0.688191, -0.587785],
+    [-0.425325, -0.688191, -0.587785],
+    [-0.587785, -0.425325, -0.688191],
+    [-0.688191, -0.587785, -0.425325],
 ];
 
 //==============================================================
@@ -569,7 +650,7 @@ pub fn Q_rsqrt(number: f32) -> f32 {
     i = 0x5f3759df - (i >> 1); // what the fuck?
     y = f32::from_bits(i as u32);
     y = y * (threehalfs - (x2 * y * y)); // 1st iteration
-    // y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed
+                                         // y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed
 
     // Original: #ifndef Q3_VM / #ifdef __linux__  assert( !isnan(y) ); // bk010122 - FPE?
     // (OpenJK made this unconditional via assert(!Q_isnan(y)); debug_assert is the
@@ -1342,7 +1423,18 @@ mod oracle_tests {
     /// A spread of inputs across magnitudes for parity checks.
     fn scalar_samples() -> [f32; 12] {
         [
-            1.0, 2.0, 3.0, 4.0, 0.5, 0.25, 100.0, 0.01, 1234.5, 1.0e-3, 1.0e6, core::f32::consts::PI,
+            1.0,
+            2.0,
+            3.0,
+            4.0,
+            0.5,
+            0.25,
+            100.0,
+            0.01,
+            1234.5,
+            1.0e-3,
+            1.0e6,
+            core::f32::consts::PI,
         ]
     }
 
@@ -1431,7 +1523,11 @@ mod oracle_tests {
 
             VectorSubtract(&a, &b, &mut ro);
             unsafe { oracle::_VectorSubtract(a.as_ptr(), b.as_ptr(), co.as_mut_ptr()) };
-            assert_eq!(ro.map(f32::to_bits), co.map(f32::to_bits), "Subtract {a:?} {b:?}");
+            assert_eq!(
+                ro.map(f32::to_bits),
+                co.map(f32::to_bits),
+                "Subtract {a:?} {b:?}"
+            );
 
             VectorAdd(&a, &b, &mut ro);
             unsafe { oracle::_VectorAdd(a.as_ptr(), b.as_ptr(), co.as_mut_ptr()) };
@@ -1499,15 +1595,19 @@ mod oracle_tests {
             let mut cv = a;
             VectorNormalizeFast(&mut rv);
             unsafe { oracle::VectorNormalizeFast(cv.as_mut_ptr()) };
-            assert_eq!(rv.map(f32::to_bits), cv.map(f32::to_bits), "NormalizeFast {a:?}");
+            assert_eq!(
+                rv.map(f32::to_bits),
+                cv.map(f32::to_bits),
+                "NormalizeFast {a:?}"
+            );
         }
     }
 
     #[test]
     fn angle_fns_match_oracle_bit_exact() {
         let angles = [
-            0.0f32, 45.0, 90.0, 180.0, 270.0, 359.0, 360.0, 720.0, -45.0, -180.0, -360.0,
-            123.456, -777.7, 30.0, 1.5,
+            0.0f32, 45.0, 90.0, 180.0, 270.0, 359.0, 360.0, 720.0, -45.0, -180.0, -360.0, 123.456,
+            -777.7, 30.0, 1.5,
         ];
         for a in angles {
             assert_eq!(
@@ -1573,7 +1673,14 @@ mod oracle_tests {
             let (mut rf, mut rr, mut ru) = ([0.0f32; 3], [0.0f32; 3], [0.0f32; 3]);
             let (mut cf, mut cr, mut cu) = ([0.0f32; 3], [0.0f32; 3], [0.0f32; 3]);
             AngleVectors(&a, Some(&mut rf), Some(&mut rr), Some(&mut ru));
-            unsafe { oracle::AngleVectors(a.as_ptr(), cf.as_mut_ptr(), cr.as_mut_ptr(), cu.as_mut_ptr()) };
+            unsafe {
+                oracle::AngleVectors(
+                    a.as_ptr(),
+                    cf.as_mut_ptr(),
+                    cr.as_mut_ptr(),
+                    cu.as_mut_ptr(),
+                )
+            };
             assert_eq!(rf.map(f32::to_bits), cf.map(f32::to_bits), "forward {a:?}");
             assert_eq!(rr.map(f32::to_bits), cr.map(f32::to_bits), "right {a:?}");
             assert_eq!(ru.map(f32::to_bits), cu.map(f32::to_bits), "up {a:?}");
@@ -1594,7 +1701,11 @@ mod oracle_tests {
             let mut ca = [0.0f32; 3];
             vectoangles(&d, &mut ra);
             unsafe { oracle::vectoangles(d.as_ptr(), ca.as_mut_ptr()) };
-            assert_eq!(ra.map(f32::to_bits), ca.map(f32::to_bits), "vectoangles {d:?}");
+            assert_eq!(
+                ra.map(f32::to_bits),
+                ca.map(f32::to_bits),
+                "vectoangles {d:?}"
+            );
         }
     }
 
@@ -1635,22 +1746,38 @@ mod oracle_tests {
             let mut cd = [0.0f32; 3];
             ProjectPointOnPlane(&mut rd, &v, &n);
             unsafe { oracle::ProjectPointOnPlane(cd.as_mut_ptr(), v.as_ptr(), n.as_ptr()) };
-            assert_eq!(rd.map(f32::to_bits), cd.map(f32::to_bits), "ProjectPointOnPlane {v:?}");
+            assert_eq!(
+                rd.map(f32::to_bits),
+                cd.map(f32::to_bits),
+                "ProjectPointOnPlane {v:?}"
+            );
 
             // MakeNormalVectors (forward must be non-zero)
             let (mut rr, mut ru) = ([0.0f32; 3], [0.0f32; 3]);
             let (mut cr, mut cu) = ([0.0f32; 3], [0.0f32; 3]);
             MakeNormalVectors(&v, &mut rr, &mut ru);
             unsafe { oracle::MakeNormalVectors(v.as_ptr(), cr.as_mut_ptr(), cu.as_mut_ptr()) };
-            assert_eq!(rr.map(f32::to_bits), cr.map(f32::to_bits), "MakeNormalVectors right {v:?}");
-            assert_eq!(ru.map(f32::to_bits), cu.map(f32::to_bits), "MakeNormalVectors up {v:?}");
+            assert_eq!(
+                rr.map(f32::to_bits),
+                cr.map(f32::to_bits),
+                "MakeNormalVectors right {v:?}"
+            );
+            assert_eq!(
+                ru.map(f32::to_bits),
+                cu.map(f32::to_bits),
+                "MakeNormalVectors up {v:?}"
+            );
 
             // PerpendicularVector (src non-zero)
             let mut rp = [0.0f32; 3];
             let mut cp = [0.0f32; 3];
             PerpendicularVector(&mut rp, &v);
             unsafe { oracle::PerpendicularVector(cp.as_mut_ptr(), v.as_ptr()) };
-            assert_eq!(rp.map(f32::to_bits), cp.map(f32::to_bits), "PerpendicularVector {v:?}");
+            assert_eq!(
+                rp.map(f32::to_bits),
+                cp.map(f32::to_bits),
+                "PerpendicularVector {v:?}"
+            );
         }
 
         // VectorRotate
@@ -1659,7 +1786,9 @@ mod oracle_tests {
         let mut ro = [0.0f32; 3];
         let mut co = [0.0f32; 3];
         VectorRotate(&in_, &matrix, &mut ro);
-        unsafe { oracle::VectorRotate(in_.as_ptr(), matrix.as_ptr() as *const f32, co.as_mut_ptr()) };
+        unsafe {
+            oracle::VectorRotate(in_.as_ptr(), matrix.as_ptr() as *const f32, co.as_mut_ptr())
+        };
         assert_eq!(ro.map(f32::to_bits), co.map(f32::to_bits), "VectorRotate");
 
         // AxisClear / AxisCopy
@@ -1754,13 +1883,29 @@ mod oracle_tests {
         let (mut cmins, mut cmaxs) = ([0.0f32; 3], [0.0f32; 3]);
         ClearBounds(&mut rmins, &mut rmaxs);
         unsafe { oracle::ClearBounds(cmins.as_mut_ptr(), cmaxs.as_mut_ptr()) };
-        assert_eq!(rmins.map(f32::to_bits), cmins.map(f32::to_bits), "ClearBounds mins");
-        assert_eq!(rmaxs.map(f32::to_bits), cmaxs.map(f32::to_bits), "ClearBounds maxs");
+        assert_eq!(
+            rmins.map(f32::to_bits),
+            cmins.map(f32::to_bits),
+            "ClearBounds mins"
+        );
+        assert_eq!(
+            rmaxs.map(f32::to_bits),
+            cmaxs.map(f32::to_bits),
+            "ClearBounds maxs"
+        );
         for p in pts {
             AddPointToBounds(&p, &mut rmins, &mut rmaxs);
             unsafe { oracle::AddPointToBounds(p.as_ptr(), cmins.as_mut_ptr(), cmaxs.as_mut_ptr()) };
-            assert_eq!(rmins.map(f32::to_bits), cmins.map(f32::to_bits), "AddPointToBounds mins {p:?}");
-            assert_eq!(rmaxs.map(f32::to_bits), cmaxs.map(f32::to_bits), "AddPointToBounds maxs {p:?}");
+            assert_eq!(
+                rmins.map(f32::to_bits),
+                cmins.map(f32::to_bits),
+                "AddPointToBounds mins {p:?}"
+            );
+            assert_eq!(
+                rmaxs.map(f32::to_bits),
+                cmaxs.map(f32::to_bits),
+                "AddPointToBounds maxs {p:?}"
+            );
         }
     }
 
@@ -1781,7 +1926,11 @@ mod oracle_tests {
             let rmax = NormalizeColor(&c, &mut ro);
             let cmax = unsafe { oracle::NormalizeColor(c.as_ptr(), co.as_mut_ptr()) };
             assert_eq!(rmax.to_bits(), cmax.to_bits(), "NormalizeColor max {c:?}");
-            assert_eq!(ro.map(f32::to_bits), co.map(f32::to_bits), "NormalizeColor out {c:?}");
+            assert_eq!(
+                ro.map(f32::to_bits),
+                co.map(f32::to_bits),
+                "NormalizeColor out {c:?}"
+            );
 
             // ColorBytes4 — all four bytes defined, compare full word
             let alphas = [0.0f32, 0.5, 1.0];
@@ -1801,14 +1950,48 @@ mod oracle_tests {
     #[test]
     fn clamps_log2_vector4scale_match_oracle_bit_exact() {
         for i in [
-            i32::MIN, -100000, -32769, -32768, -129, -128, -1, 0, 1, 127, 128, 32767, 32768, 100000,
+            i32::MIN,
+            -100000,
+            -32769,
+            -32768,
+            -129,
+            -128,
+            -1,
+            0,
+            1,
+            127,
+            128,
+            32767,
+            32768,
+            100000,
             i32::MAX,
         ] {
-            assert_eq!(ClampChar(i), unsafe { oracle::ClampChar(i) }, "ClampChar({i})");
-            assert_eq!(ClampShort(i), unsafe { oracle::ClampShort(i) }, "ClampShort({i})");
+            assert_eq!(
+                ClampChar(i),
+                unsafe { oracle::ClampChar(i) },
+                "ClampChar({i})"
+            );
+            assert_eq!(
+                ClampShort(i),
+                unsafe { oracle::ClampShort(i) },
+                "ClampShort({i})"
+            );
         }
         // Q_log2 over non-negative inputs (negative loops forever in both — by design).
-        for v in [0i32, 1, 2, 3, 7, 8, 15, 16, 1023, 1024, 0x4000_0000, i32::MAX] {
+        for v in [
+            0i32,
+            1,
+            2,
+            3,
+            7,
+            8,
+            15,
+            16,
+            1023,
+            1024,
+            0x4000_0000,
+            i32::MAX,
+        ] {
             assert_eq!(Q_log2(v), unsafe { oracle::Q_log2(v) }, "Q_log2({v})");
         }
         let v4s = [
@@ -1822,7 +2005,11 @@ mod oracle_tests {
                 let mut co = [0.0f32; 4];
                 Vector4Scale(&v, s, &mut ro);
                 unsafe { oracle::Vector4Scale(v.as_ptr(), s, co.as_mut_ptr()) };
-                assert_eq!(ro.map(f32::to_bits), co.map(f32::to_bits), "Vector4Scale {v:?} s={s}");
+                assert_eq!(
+                    ro.map(f32::to_bits),
+                    co.map(f32::to_bits),
+                    "Vector4Scale {v:?} s={s}"
+                );
             }
         }
     }
@@ -1893,9 +2080,15 @@ mod oracle_tests {
             let mut rplane = [0.0f32; 4];
             let mut cplane = [0.0f32; 4];
             let rret = PlaneFromPoints(&mut rplane, &a, &b, &c);
-            let cret = unsafe { oracle::PlaneFromPoints(cplane.as_mut_ptr(), a.as_ptr(), b.as_ptr(), c.as_ptr()) };
+            let cret = unsafe {
+                oracle::PlaneFromPoints(cplane.as_mut_ptr(), a.as_ptr(), b.as_ptr(), c.as_ptr())
+            };
             assert_eq!(rret, cret, "PlaneFromPoints ret {a:?}");
-            assert_eq!(rplane.map(f32::to_bits), cplane.map(f32::to_bits), "PlaneFromPoints plane {a:?}");
+            assert_eq!(
+                rplane.map(f32::to_bits),
+                cplane.map(f32::to_bits),
+                "PlaneFromPoints plane {a:?}"
+            );
         }
 
         // RotatePointAroundVector
@@ -1911,8 +2104,19 @@ mod oracle_tests {
                     let mut rd = [0.0f32; 3];
                     let mut cd = [0.0f32; 3];
                     RotatePointAroundVector(&mut rd, &dir, &point, deg);
-                    unsafe { oracle::RotatePointAroundVector(cd.as_mut_ptr(), dir.as_ptr(), point.as_ptr(), deg) };
-                    assert_eq!(rd.map(f32::to_bits), cd.map(f32::to_bits), "RotatePointAroundVector dir={dir:?} pt={point:?} deg={deg}");
+                    unsafe {
+                        oracle::RotatePointAroundVector(
+                            cd.as_mut_ptr(),
+                            dir.as_ptr(),
+                            point.as_ptr(),
+                            deg,
+                        )
+                    };
+                    assert_eq!(
+                        rd.map(f32::to_bits),
+                        cd.map(f32::to_bits),
+                        "RotatePointAroundVector dir={dir:?} pt={point:?} deg={deg}"
+                    );
                 }
             }
         }
@@ -1924,7 +2128,11 @@ mod oracle_tests {
                 let mut caxis = [a0, [9.0; 3], [9.0; 3]];
                 RotateAroundDirection(&mut raxis, yaw);
                 unsafe { oracle::RotateAroundDirection(caxis.as_mut_ptr() as *mut f32, yaw) };
-                assert_eq!(bits3(&raxis), bits3(&caxis), "RotateAroundDirection a0={a0:?} yaw={yaw}");
+                assert_eq!(
+                    bits3(&raxis),
+                    bits3(&caxis),
+                    "RotateAroundDirection a0={a0:?} yaw={yaw}"
+                );
             }
         }
     }
@@ -1959,7 +2167,13 @@ mod oracle_tests {
         for seed in [0i32, 1, 42, -1, 1337, 0x1234_5678, i32::MIN, i32::MAX] {
             Rand_Init(seed);
             unsafe { oracle::Rand_Init(seed) };
-            let franges = [(0.0f32, 1.0), (-1.0, 1.0), (0.0, 100.0), (-50.0, 50.0), (10.0, 20.0)];
+            let franges = [
+                (0.0f32, 1.0),
+                (-1.0, 1.0),
+                (0.0, 100.0),
+                (-50.0, 50.0),
+                (10.0, 20.0),
+            ];
             for _ in 0..40 {
                 for &(min, max) in &franges {
                     let r = flrand(min, max);
@@ -2007,12 +2221,22 @@ mod oracle_tests {
         for seed in [0i32, 1, 42, -1, 1337, 0x1234_5678, i32::MIN, i32::MAX] {
             Rand_Init(seed);
             unsafe { oracle::Rand_Init(seed) };
-            let franges = [(0.0f32, 1.0), (-1.0, 1.0), (0.0, 100.0), (-50.0, 50.0), (10.0, 20.0)];
+            let franges = [
+                (0.0f32, 1.0),
+                (-1.0, 1.0),
+                (0.0, 100.0),
+                (-50.0, 50.0),
+                (10.0, 20.0),
+            ];
             for _ in 0..40 {
                 for &(min, max) in &franges {
                     let r = Q_flrand(min, max);
                     let c = unsafe { oracle::Q_flrand(min, max) };
-                    assert_eq!(r.to_bits(), c.to_bits(), "Q_flrand({min},{max}) seed={seed}");
+                    assert_eq!(
+                        r.to_bits(),
+                        c.to_bits(),
+                        "Q_flrand({min},{max}) seed={seed}"
+                    );
                 }
             }
         }
@@ -2077,7 +2301,10 @@ mod oracle_tests {
                         cr.as_mut_ptr(),
                     )
                 };
-                assert_eq!(rret, cret, "G_FindClosestPointOnLineSegment ret start={start:?} from={from:?}");
+                assert_eq!(
+                    rret, cret,
+                    "G_FindClosestPointOnLineSegment ret start={start:?} from={from:?}"
+                );
                 assert_eq!(
                     rr.map(f32::to_bits),
                     cr.map(f32::to_bits),
@@ -2086,8 +2313,14 @@ mod oracle_tests {
 
                 assert_eq!(
                     G_PointDistFromLineSegment(&start, &end, &from).to_bits(),
-                    unsafe { oracle::G_PointDistFromLineSegment(start.as_ptr(), end.as_ptr(), from.as_ptr()) }
-                        .to_bits(),
+                    unsafe {
+                        oracle::G_PointDistFromLineSegment(
+                            start.as_ptr(),
+                            end.as_ptr(),
+                            from.as_ptr(),
+                        )
+                    }
+                    .to_bits(),
                     "G_PointDistFromLineSegment start={start:?} from={from:?}"
                 );
             }
@@ -2099,16 +2332,40 @@ mod oracle_tests {
         // A spread of planes: 3 axial (type 0/1/2) + the 8 sign combinations of a
         // non-axial normal (type 3) to exercise every signbits case 0..7.
         let mut planes: Vec<cplane_t> = vec![
-            cplane_t { normal: [1.0, 0.0, 0.0], dist: 5.0, r#type: 0, signbits: 0, pad: [0, 0] },
-            cplane_t { normal: [0.0, 1.0, 0.0], dist: -3.0, r#type: 1, signbits: 0, pad: [0, 0] },
-            cplane_t { normal: [0.0, 0.0, 1.0], dist: 0.0, r#type: 2, signbits: 0, pad: [0, 0] },
+            cplane_t {
+                normal: [1.0, 0.0, 0.0],
+                dist: 5.0,
+                r#type: 0,
+                signbits: 0,
+                pad: [0, 0],
+            },
+            cplane_t {
+                normal: [0.0, 1.0, 0.0],
+                dist: -3.0,
+                r#type: 1,
+                signbits: 0,
+                pad: [0, 0],
+            },
+            cplane_t {
+                normal: [0.0, 0.0, 1.0],
+                dist: 0.0,
+                r#type: 2,
+                signbits: 0,
+                pad: [0, 0],
+            },
         ];
         for &sx in &[1.0f32, -1.0] {
             for &sy in &[1.0f32, -1.0] {
                 for &sz in &[1.0f32, -1.0] {
                     let mut n = [sx * 0.5, sy * 0.5, sz * 0.707_106_8];
                     VectorNormalize(&mut n);
-                    planes.push(cplane_t { normal: n, dist: 2.5, r#type: 3, signbits: 0, pad: [0, 0] });
+                    planes.push(cplane_t {
+                        normal: n,
+                        dist: 2.5,
+                        r#type: 3,
+                        signbits: 0,
+                        pad: [0, 0],
+                    });
                 }
             }
         }
@@ -2125,12 +2382,22 @@ mod oracle_tests {
             let mut cp = pl;
             SetPlaneSignbits(&mut pl);
             unsafe { oracle::SetPlaneSignbits(&mut cp as *mut cplane_t) };
-            assert_eq!(pl.signbits, cp.signbits, "SetPlaneSignbits normal={:?}", pl.normal);
+            assert_eq!(
+                pl.signbits, cp.signbits,
+                "SetPlaneSignbits normal={:?}",
+                pl.normal
+            );
 
             for (mins, maxs) in fboxes {
                 let r = BoxOnPlaneSide(&mins, &maxs, &pl);
-                let c = unsafe { oracle::BoxOnPlaneSide(mins.as_ptr(), maxs.as_ptr(), &pl as *const cplane_t) };
-                assert_eq!(r, c, "BoxOnPlaneSide normal={:?} type={} box=({mins:?},{maxs:?})", pl.normal, pl.r#type);
+                let c = unsafe {
+                    oracle::BoxOnPlaneSide(mins.as_ptr(), maxs.as_ptr(), &pl as *const cplane_t)
+                };
+                assert_eq!(
+                    r, c,
+                    "BoxOnPlaneSide normal={:?} type={} box=({mins:?},{maxs:?})",
+                    pl.normal, pl.r#type
+                );
             }
         }
     }

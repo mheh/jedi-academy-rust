@@ -19,9 +19,9 @@
 
 #![allow(non_snake_case)] // C function names (`G_InitWorldSession`, ...) kept verbatim
 
-use core::ffi::{c_char, c_int};
 #[cfg(feature = "vm")]
 use core::ffi::c_void;
+use core::ffi::{c_char, c_int};
 use core::ptr::{addr_of, addr_of_mut};
 use std::ffi::{CStr, CString};
 
@@ -32,7 +32,7 @@ use crate::codemp::game::bg_public::{
 };
 use crate::codemp::game::g_client::PickTeam;
 use crate::codemp::game::g_cmds::BroadcastTeamChange;
-use crate::codemp::game::g_local::{gclient_t, SPECTATOR_FREE, CON_CONNECTED};
+use crate::codemp::game::g_local::{gclient_t, CON_CONNECTED, SPECTATOR_FREE};
 use crate::codemp::game::g_main::{
     g_gametype, g_maxGameClients, g_teamAutoJoin, level, G_PowerDuelCount, G_Printf,
 };
@@ -200,13 +200,13 @@ pub unsafe fn G_ReadSessionData(client: *mut gclient_t) {
     sscanf(
         s.as_ptr(),
         c"%i %i %i %i %i %i %i %i %i %i %i %i %s %s %s".as_ptr(),
-        addr_of_mut!(sessionTeam),                       // bk010221 - format
+        addr_of_mut!(sessionTeam), // bk010221 - format
         addr_of_mut!((*client).sess.spectatorTime),
-        addr_of_mut!(spectatorState),                    // bk010221 - format
+        addr_of_mut!(spectatorState), // bk010221 - format
         addr_of_mut!((*client).sess.spectatorClient),
         addr_of_mut!((*client).sess.wins),
         addr_of_mut!((*client).sess.losses),
-        addr_of_mut!(teamLeader),                        // bk010221 - format
+        addr_of_mut!(teamLeader), // bk010221 - format
         addr_of_mut!((*client).sess.setForce),
         addr_of_mut!((*client).sess.saberLevel),
         addr_of_mut!((*client).sess.selectedFP),

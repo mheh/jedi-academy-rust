@@ -32,10 +32,13 @@ use crate::codemp::game::npc::{ucmd, NPCInfo, NPC};
 use crate::codemp::game::npc_ai_default::NPC_BSIdle;
 use crate::codemp::game::npc_ai_stormtrooper::NPC_CheckPlayerTeamStealth;
 use crate::codemp::game::npc_move::NPC_GetMoveDirection;
-use crate::codemp::game::npc_utils::{NPC_CheckEnemyExt, NPC_ClearLOS4, NPC_FaceEnemy,
-    NPC_SetBoneAngles, NPC_UpdateAngles};
-use crate::codemp::game::q_math::{AngleNormalize360, AngleVectors, DistanceHorizontalSquared,
-    Q_irand, VectorMA, VectorNormalize, VectorSubtract};
+use crate::codemp::game::npc_utils::{
+    NPC_CheckEnemyExt, NPC_ClearLOS4, NPC_FaceEnemy, NPC_SetBoneAngles, NPC_UpdateAngles,
+};
+use crate::codemp::game::q_math::{
+    AngleNormalize360, AngleVectors, DistanceHorizontalSquared, Q_irand, VectorMA, VectorNormalize,
+    VectorSubtract,
+};
 use crate::codemp::game::q_shared::random;
 use crate::codemp::game::q_shared_h::{vec3_t, CHAN_AUTO};
 use crate::ffi::types::{qboolean, QFALSE, QTRUE};
@@ -260,12 +263,22 @@ pub unsafe fn Interrogator_Strafe() {
     let tr;
     let mut dif: f32;
 
-    AngleVectors(&(*(*NPC).client).renderInfo.eyeAngles, None, Some(&mut right), None);
+    AngleVectors(
+        &(*(*NPC).client).renderInfo.eyeAngles,
+        None,
+        Some(&mut right),
+        None,
+    );
 
     // Pick a random strafe direction, then check to see if doing a strafe would be
     //	reasonable valid
     dir = if (rand() & 1) != 0 { -1 } else { 1 };
-    VectorMA(&(*NPC).r.currentOrigin, HUNTER_STRAFE_DIS * dir as f32, &right, &mut end);
+    VectorMA(
+        &(*NPC).r.currentOrigin,
+        HUNTER_STRAFE_DIS * dir as f32,
+        &right,
+        &mut end,
+    );
 
     tr = trap::Trace(
         &(*NPC).r.currentOrigin,
@@ -279,7 +292,12 @@ pub unsafe fn Interrogator_Strafe() {
     // Close enough
     if tr.fraction > 0.9 {
         let vel = (*(*NPC).client).ps.velocity;
-        VectorMA(&vel, HUNTER_STRAFE_VEL * dir as f32, &right, &mut (*(*NPC).client).ps.velocity);
+        VectorMA(
+            &vel,
+            HUNTER_STRAFE_VEL * dir as f32,
+            &right,
+            &mut (*(*NPC).client).ps.velocity,
+        );
 
         // Add a slight upward push
         if !(*NPC).enemy.is_null() {
@@ -288,7 +306,11 @@ pub unsafe fn Interrogator_Strafe() {
 
             // cap to prevent dramatic height shifts
             if dif.abs() > 8.0 {
-                dif = if dif < 0.0 { -HUNTER_UPWARD_PUSH } else { HUNTER_UPWARD_PUSH };
+                dif = if dif < 0.0 {
+                    -HUNTER_UPWARD_PUSH
+                } else {
+                    HUNTER_UPWARD_PUSH
+                };
             }
 
             (*(*NPC).client).ps.velocity[2] += dif;
@@ -346,7 +368,11 @@ pub unsafe fn Interrogator_Hunt(visible: qboolean, advance: qboolean) {
             return;
         }
     } else {
-        VectorSubtract(&(*(*NPC).enemy).r.currentOrigin, &(*NPC).r.currentOrigin, &mut forward);
+        VectorSubtract(
+            &(*(*NPC).enemy).r.currentOrigin,
+            &(*NPC).r.currentOrigin,
+            &mut forward,
+        );
         distance = VectorNormalize(&mut forward);
     }
     let _ = distance;
@@ -377,8 +403,16 @@ pub unsafe fn Interrogator_Melee(visible: qboolean, advance: qboolean) {
             //gentity_t *tent;
 
             TIMER_Set(NPC, c"attackDelay".as_ptr(), Q_irand(500, 3000));
-            G_Damage((*NPC).enemy, NPC, NPC, core::ptr::null_mut(), core::ptr::null_mut(), 2,
-                DAMAGE_NO_KNOCKBACK, MOD_MELEE);
+            G_Damage(
+                (*NPC).enemy,
+                NPC,
+                NPC,
+                core::ptr::null_mut(),
+                core::ptr::null_mut(),
+                2,
+                DAMAGE_NO_KNOCKBACK,
+                MOD_MELEE,
+            );
 
             //	NPC->enemy->client->poisonDamage = 18;
             //	NPC->enemy->client->poisonTime = level.time + 1000;
@@ -389,8 +423,11 @@ pub unsafe fn Interrogator_Melee(visible: qboolean, advance: qboolean) {
 
             //rwwFIXMEFIXME: poison damage
 
-            G_Sound(NPC, CHAN_AUTO,
-                G_SoundIndex("sound/chars/interrogator/misc/torture_droid_inject.mp3"));
+            G_Sound(
+                NPC,
+                CHAN_AUTO,
+                G_SoundIndex("sound/chars/interrogator/misc/torture_droid_inject.mp3"),
+            );
         }
     }
 

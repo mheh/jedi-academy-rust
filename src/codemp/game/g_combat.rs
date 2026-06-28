@@ -15,120 +15,8 @@
 use core::ffi::{c_char, c_int};
 use core::ptr::{addr_of, addr_of_mut, null, null_mut};
 
-use crate::codemp::game::bg_g2_utils::BG_GetRootSurfNameWithVariant;
-use crate::codemp::game::bg_panimate::BG_InDeathAnim;
-use crate::codemp::game::bg_pmove::BG_KnockDownable;
-use crate::codemp::game::bg_public::{
-    gitem_t, HANDEXTEND_KNOCKDOWN,
-    BG_GiveMeVectorFromMatrix, ARMOR_PROTECTION, ARMOR_REDUCTION_FACTOR, BROKENLIMB_LARM,
-    BROKENLIMB_RARM, EF_DEAD, EF_DISINTEGRATION, EF_INVULNERABLE, ET_GENERAL, ET_INVISIBLE,
-    ET_MISSILE, ET_MOVER, ET_NPC, ET_PLAYER,
-    EV_DESTROY_WEAPON_MODEL, EV_GHOUL2_MARK, EV_GIB_PLAYER, EV_NOAMMO, EV_POWERUP_BATTLESUIT,
-    EV_SABER_HIT, EV_SCOREPLUM, EV_SHIELD_HIT,
-    IT_WEAPON, PW_NUM_POWERUPS, STAT_WEAPONS, WEAPON_DROPPING,
-    GIB_HEALTH, GT_CTF, GT_CTY, GT_DUEL,
-    GT_POWERDUEL,
-    GT_SIEGE, GT_TEAM, G2_MODELPART_HEAD, G2_MODELPART_LARM, G2_MODELPART_LLEG, G2_MODELPART_RARM,
-    G2_MODELPART_RHAND, G2_MODELPART_RLEG, G2_MODELPART_WAIST, G2_MODEL_PART, MASK_SOLID,
-    MOD_BRYAR_PISTOL, MOD_BRYAR_PISTOL_ALT, MOD_CONC, MOD_CONC_ALT, MOD_CRUSH, MOD_DEMP2,
-    MOD_DEMP2_ALT, MOD_DET_PACK_SPLASH, MOD_FALLING, MOD_FLECHETTE_ALT_SPLASH, MOD_LAVA, MOD_MELEE,
-    MOD_REPEATER_ALT, MOD_REPEATER_ALT_SPLASH, MOD_ROCKET, MOD_ROCKET_HOMING,
-    MOD_ROCKET_HOMING_SPLASH, MOD_ROCKET_SPLASH, MOD_SABER, MOD_SLIME, MOD_SUICIDE, MOD_TARGET_LASER,
-    MOD_TELEFRAG, MOD_THERMAL,
-    MOD_THERMAL_SPLASH, MOD_TIMED_MINE_SPLASH, MOD_TRIGGER_HURT, MOD_TRIP_MINE_SPLASH, MOD_TURBLAST,
-    MOD_WATER,
-    MOD_UNKNOWN, MOD_VEHICLE, PDSOUND_PROTECTHIT, PERS_ATTACKEE_ARMOR, PERS_ATTACKER, PERS_HITS,
-    PERS_SCORE, PERS_TEAM,
-    PMF_STUCK_TO_WALL, PMF_TIME_KNOCKBACK, PW_BATTLESUIT, PW_FORCE_BOON, STAT_ARMOR, STAT_DEAD_YAW,
-    STAT_HEALTH,
-    STAT_MAX_HEALTH, TEAM_SPECTATOR, WEAPON_CHARGING, WEAPON_CHARGING_ALT, WEAPON_READY,
-    DUELTEAM_DOUBLE, DUELTEAM_LONE, EF2_SHIP_DEATH, EV_DEATH1, EV_OBITUARY, GT_JEDIMASTER,
-    MOD_COLLISION, MOD_VEH_EXPLOSION,
-    MOD_MAX, MOD_STUN_BATON, MOD_TEAM_CHANGE, PERS_EXCELLENT_COUNT, PERS_GAUNTLET_FRAG_COUNT,
-    PERS_KILLED, PERS_PLAYEREVENTS, PLAYEREVENT_GAUNTLETREWARD, PM_DEAD, PM_NORMAL,
-    PW_BLUEFLAG, PW_NEUTRALFLAG, PW_REDFLAG, SETANIM_BOTH, SETANIM_FLAG_HOLD,
-    SETANIM_FLAG_OVERRIDE, SETANIM_FLAG_RESTART, TEAM_BLUE, TEAM_FREE, TEAM_RED,
-};
-use crate::codemp::game::bg_misc::{
-    bg_itemlist, vectoyaw, BG_FindItemForPowerup, BG_FindItemForWeapon, BG_GetItemIndexByTag,
-};
-use crate::codemp::game::bg_public::bgEntity_t;
-use crate::codemp::game::bg_weapons::weaponData;
-use crate::codemp::game::g_client::{
-    ClientUserinfoChanged, G_BreakArm, G_UpdateClientAnims, ThrowSaberToAttacker,
-};
-use crate::codemp::game::g_cmds::{Cmd_Score_f, G_CheckTKAutoKickBan};
-use crate::codemp::game::bg_vehicleLoad::g_vehicleInfo;
-use crate::codemp::game::bg_saga::bgSiegeClasses;
-use crate::codemp::game::bg_saga_h::{CFL_HEAVYMELEE, CFL_STRONGAGAINSTPHYSICAL};
-use crate::codemp::game::bg_vehicles_h::{
-    SHIPSURF_BACK, SHIPSURF_FRONT, SHIPSURF_LEFT, SHIPSURF_RIGHT, VH_ANIMAL, VH_FIGHTER, VH_SPEEDER,
-    VH_WALKER,
-};
-use crate::codemp::game::bg_weapons_h::{
-    WP_BRYAR_PISTOL, WP_DET_PACK, WP_EMPLACED_GUN, WP_NONE, WP_NUM_WEAPONS, WP_ROCKET_LAUNCHER,
-    WP_SABER, WP_THERMAL, WP_TRIP_MINE, WP_TURRET,
-};
-use crate::codemp::game::g_log::{
-    G_LogWeaponDamage, G_LogWeaponDeath, G_LogWeaponFrag, G_LogWeaponKill,
-};
-use crate::codemp::game::g_local::{
-    gclient_t, gentity_t, CON_CONNECTED, DAMAGE_HALF_ABSORB, DAMAGE_HALF_ARMOR_REDUCTION, DAMAGE_NO_ARMOR,
-    DAMAGE_NO_DISMEMBER, DAMAGE_NO_HIT_LOC, DAMAGE_NO_KNOCKBACK, DAMAGE_NO_PROTECTION,
-    DAMAGE_NO_SELF_PROTECTION, DAMAGE_RADIUS, DAMAGE_SABER_KNOCKBACK1, DAMAGE_SABER_KNOCKBACK2,
-    FL_BBRUSH, FL_DMG_BY_HEAVY_WEAP_ONLY, FL_DMG_BY_SABER_ONLY, FL_GODMODE, FL_NO_KNOCKBACK,
-    FL_SHIELDED, FL_UNDYING, FRAMETIME, HL_ARM_LT, HL_ARM_RT, HL_BACK, HL_BACK_LT, HL_BACK_RT,
-    HL_CHEST, HL_CHEST_LT, HL_CHEST_RT, HL_FOOT_LT, HL_FOOT_RT, HL_GENERIC1, HL_GENERIC2,
-    HL_GENERIC3, HL_GENERIC4, HL_GENERIC5, HL_GENERIC6, HL_HAND_LT, HL_HAND_RT, HL_HEAD,
-    HL_LEG_LT, HL_LEG_RT, HL_MAX, HL_NONE, HL_WAIST, MOVER_POS1, CARNAGE_REWARD_TIME,
-    REWARD_SPRITE_TIME,
-};
-use crate::codemp::game::g_items::{Drop_Item, Jetpack_Off, LaunchItem};
-use crate::codemp::game::g_main::{
-    d_projectileGhoul2Collision, d_saberGhoul2Collision, g_armBreakage, g_austrian, g_debugDamage,
-    g_debugMelee, g_dismember, g_entities, g_ff_objectives, g_friendlyFire, g_gametype, g_gravity,
-    g_knockback,
-    g_dontFrickinCheck, g_locationBasedDamage, g_saberDmgVelocityScale, g_slowmoDuelEnd,
-    g_trueJedi, level, CalculateRanks, CheckExitRules, gDoSlowMoDuel, gSlowMoDuelTime, g_endPDuel, G_LogPrintf,
-    G_Printf,
-};
-use crate::codemp::game::q_math::{
-    vec3_origin, AngleVectors, DirToByte, DistanceSquared, DotProduct, VectorAdd, VectorClear,
-    VectorCompare, VectorCopy, VectorLength, VectorLengthSquared, VectorMA, VectorNormalize,
-    VectorScale, VectorSet, VectorSubtract,
-};
-use crate::codemp::game::q_shared::{Com_sprintf, Q_stricmp, Q_strncmp, Q_strncpyz, Sz};
-use crate::codemp::game::q_math::Q_irand;
-use crate::codemp::game::g_exphysics::G_RunExPhys;
-use crate::codemp::game::g_public_h::{
-    BSET_DEATH, BSET_FFDEATH, BSET_VICTORY, Q3_INFINITE, SVF_BROADCAST, SVF_GLASS_BRUSH,
-    SVF_SINGLECLIENT, SVF_USE_CURRENT_ORIGIN,
-};
-use crate::codemp::game::g_timer::{TIMER_Clear2, TIMER_Set};
-use crate::codemp::game::g_team::{
-    OnSameTeam, Team_CheckHurtCarrier, Team_FragBonuses, Team_ReturnFlag,
-};
-use crate::codemp::game::g_utils::{
-    G_AddEvent, G_EffectIndex, G_FreeEntity, G_MuteSound, G_PlayEffectID, G_ScaleNetHealth,
-    G_SetAnim, G_SetOrigin, G_Sound, G_SoundIndex, G_Spawn, G_TempEntity, G_UseTargets,
-    G_UseTargets2, GlobalUse,
-};
-use crate::codemp::game::g_weapon::{BlowDetpacks, LogAccuracyHit};
-use crate::codemp::game::npc_utils::{G_ActivateBehavior, NPC_ClearLOS2};
-use crate::codemp::game::npc_combat::{G_SetEnemy, NPC_FreeCombatPoint};
-use crate::codemp::game::npc_ai_utils::{AI_DeleteSelfFromGroup, AI_GroupMemberKilled};
-use crate::codemp::game::npc_ai_jedi::{Boba_FlyStop, Jedi_WaitingAmbush};
-use crate::codemp::game::npc_ai_rancor::Rancor_DropVictim;
-use crate::codemp::game::npc_senses::InFOV;
-use crate::codemp::game::b_public_h::{
-    SCF_FFDEATH, SCF_IGNORE_ALERTS, SCF_LOOK_FOR_ENEMIES, SCF_NO_GROUPS,
-};
 use crate::codemp::cgame::animtable::animTable;
-use crate::codemp::game::q_shared_h::{
-    mdxaBone_t, playerState_t, trace_t, vec3_t, CHAN_AUTO, CHAN_WEAPON, ENTITYNUM_NONE, ENTITYNUM_WORLD, FORCE_LEVEL_1,
-    FORCE_LEVEL_2, FORCE_LEVEL_3, FP_PROTECT, FP_RAGE, MAX_CLIENTS, MAX_GENTITIES, MAX_QPATH,
-    NEGATIVE_Y, ORIGIN, PITCH, ROLL, TR_LINEAR_STOP, TR_NONLINEAR_STOP, TR_STATIONARY, YAW,
-};
+use crate::codemp::game::ai_main::BotDamageNotification;
 use crate::codemp::game::anims::{
     BOTH_CHOKE3, BOTH_DEAD1, BOTH_DEAD10, BOTH_DEAD11, BOTH_DEAD12, BOTH_DEAD13, BOTH_DEAD14,
     BOTH_DEAD15, BOTH_DEAD16, BOTH_DEAD17, BOTH_DEAD18, BOTH_DEAD19, BOTH_DEAD2, BOTH_DEAD3,
@@ -139,31 +27,135 @@ use crate::codemp::game::anims::{
     BOTH_DEATH25, BOTH_DEATH3, BOTH_DEATH4, BOTH_DEATH5, BOTH_DEATH6, BOTH_DEATH7, BOTH_DEATH8,
     BOTH_DEATH9, BOTH_DEATHBACKWARD1, BOTH_DEATHBACKWARD2, BOTH_DEATHFORWARD1, BOTH_DEATHFORWARD2,
     BOTH_DEATHFORWARD3, BOTH_DEATH_CROUCHED, BOTH_DEATH_FALLING_DN, BOTH_DEATH_FALLING_UP,
-    BOTH_DEATH_FLIP, BOTH_DEATH_LYING_DN, BOTH_DEATH_LYING_UP, BOTH_DEATH_ROLL, BOTH_DEATH_SPIN_180,
-    BOTH_FALLDEAD1LAND, BOTH_FALLDEATH1, BOTH_FALLDEATH1INAIR, BOTH_FALLDEATH1LAND,
-    BOTH_FORCE_GETUP_B1, BOTH_FORCE_GETUP_B2, BOTH_FORCE_GETUP_B3, BOTH_FORCE_GETUP_B4,
-    BOTH_FORCE_GETUP_B5, BOTH_FORCE_GETUP_B6, BOTH_FORCE_GETUP_F1, BOTH_FORCE_GETUP_F2, BOTH_GETUP1,
-    BOTH_GETUP2, BOTH_GETUP3, BOTH_GETUP4, BOTH_GETUP5, BOTH_GETUP_CROUCH_B1, BOTH_GETUP_CROUCH_F1,
-    BOTH_KNOCKDOWN1, BOTH_KNOCKDOWN2, BOTH_KNOCKDOWN3, BOTH_KNOCKDOWN4, BOTH_KNOCKDOWN5,
-    BOTH_LYINGDEAD1, BOTH_LYINGDEATH1, BOTH_RIGHTHANDCHOPPEDOFF, BOTH_STUMBLEDEAD1,
-    BOTH_STUMBLEDEATH1,
+    BOTH_DEATH_FLIP, BOTH_DEATH_LYING_DN, BOTH_DEATH_LYING_UP, BOTH_DEATH_ROLL,
+    BOTH_DEATH_SPIN_180, BOTH_FALLDEAD1LAND, BOTH_FALLDEATH1, BOTH_FALLDEATH1INAIR,
+    BOTH_FALLDEATH1LAND, BOTH_FORCE_GETUP_B1, BOTH_FORCE_GETUP_B2, BOTH_FORCE_GETUP_B3,
+    BOTH_FORCE_GETUP_B4, BOTH_FORCE_GETUP_B5, BOTH_FORCE_GETUP_B6, BOTH_FORCE_GETUP_F1,
+    BOTH_FORCE_GETUP_F2, BOTH_GETUP1, BOTH_GETUP2, BOTH_GETUP3, BOTH_GETUP4, BOTH_GETUP5,
+    BOTH_GETUP_CROUCH_B1, BOTH_GETUP_CROUCH_F1, BOTH_KNOCKDOWN1, BOTH_KNOCKDOWN2, BOTH_KNOCKDOWN3,
+    BOTH_KNOCKDOWN4, BOTH_KNOCKDOWN5, BOTH_LYINGDEAD1, BOTH_LYINGDEATH1, BOTH_RIGHTHANDCHOPPEDOFF,
+    BOTH_STUMBLEDEAD1, BOTH_STUMBLEDEATH1,
 };
+use crate::codemp::game::b_public_h::{
+    SCF_FFDEATH, SCF_IGNORE_ALERTS, SCF_LOOK_FOR_ENEMIES, SCF_NO_GROUPS,
+};
+use crate::codemp::game::bg_g2_utils::BG_GetRootSurfNameWithVariant;
+use crate::codemp::game::bg_misc::{
+    bg_itemlist, vectoyaw, BG_FindItemForPowerup, BG_FindItemForWeapon, BG_GetItemIndexByTag,
+};
+use crate::codemp::game::bg_panimate::BG_InDeathAnim;
 use crate::codemp::game::bg_panimate::{
     bgAllAnims, bgHumanoidAnimations, BG_FlippingAnim, BG_HasAnimation, BG_InRoll, BG_PickAnim,
 };
-use crate::codemp::game::surfaceflags_h::{CONTENTS_CORPSE, CONTENTS_NODROP, CONTENTS_TRIGGER};
-use crate::codemp::game::teams_h::{
-    CLASS_ATST, CLASS_GALAKMECH, CLASS_GONK, CLASS_INTERROGATOR, CLASS_MARK1, CLASS_MARK2,
-    CLASS_MOUSE, CLASS_PROBE,
-    CLASS_PROTOCOL, CLASS_R2D2, CLASS_R5D2, CLASS_RANCOR, CLASS_REMOTE, CLASS_SEEKER, CLASS_SENTRY,
-    CLASS_VEHICLE,
+use crate::codemp::game::bg_pmove::BG_KnockDownable;
+use crate::codemp::game::bg_public::bgEntity_t;
+use crate::codemp::game::bg_public::{
+    gitem_t, BG_GiveMeVectorFromMatrix, ARMOR_PROTECTION, ARMOR_REDUCTION_FACTOR, BROKENLIMB_LARM,
+    BROKENLIMB_RARM, DUELTEAM_DOUBLE, DUELTEAM_LONE, EF2_SHIP_DEATH, EF_DEAD, EF_DISINTEGRATION,
+    EF_INVULNERABLE, ET_GENERAL, ET_INVISIBLE, ET_MISSILE, ET_MOVER, ET_NPC, ET_PLAYER, EV_DEATH1,
+    EV_DESTROY_WEAPON_MODEL, EV_GHOUL2_MARK, EV_GIB_PLAYER, EV_NOAMMO, EV_OBITUARY,
+    EV_POWERUP_BATTLESUIT, EV_SABER_HIT, EV_SCOREPLUM, EV_SHIELD_HIT, G2_MODELPART_HEAD,
+    G2_MODELPART_LARM, G2_MODELPART_LLEG, G2_MODELPART_RARM, G2_MODELPART_RHAND, G2_MODELPART_RLEG,
+    G2_MODELPART_WAIST, G2_MODEL_PART, GIB_HEALTH, GT_CTF, GT_CTY, GT_DUEL, GT_JEDIMASTER,
+    GT_POWERDUEL, GT_SIEGE, GT_TEAM, HANDEXTEND_KNOCKDOWN, IT_WEAPON, MASK_SOLID, MOD_BRYAR_PISTOL,
+    MOD_BRYAR_PISTOL_ALT, MOD_COLLISION, MOD_CONC, MOD_CONC_ALT, MOD_CRUSH, MOD_DEMP2,
+    MOD_DEMP2_ALT, MOD_DET_PACK_SPLASH, MOD_FALLING, MOD_FLECHETTE_ALT_SPLASH, MOD_LAVA, MOD_MAX,
+    MOD_MELEE, MOD_REPEATER_ALT, MOD_REPEATER_ALT_SPLASH, MOD_ROCKET, MOD_ROCKET_HOMING,
+    MOD_ROCKET_HOMING_SPLASH, MOD_ROCKET_SPLASH, MOD_SABER, MOD_SLIME, MOD_STUN_BATON, MOD_SUICIDE,
+    MOD_TARGET_LASER, MOD_TEAM_CHANGE, MOD_TELEFRAG, MOD_THERMAL, MOD_THERMAL_SPLASH,
+    MOD_TIMED_MINE_SPLASH, MOD_TRIGGER_HURT, MOD_TRIP_MINE_SPLASH, MOD_TURBLAST, MOD_UNKNOWN,
+    MOD_VEHICLE, MOD_VEH_EXPLOSION, MOD_WATER, PDSOUND_PROTECTHIT, PERS_ATTACKEE_ARMOR,
+    PERS_ATTACKER, PERS_EXCELLENT_COUNT, PERS_GAUNTLET_FRAG_COUNT, PERS_HITS, PERS_KILLED,
+    PERS_PLAYEREVENTS, PERS_SCORE, PERS_TEAM, PLAYEREVENT_GAUNTLETREWARD, PMF_STUCK_TO_WALL,
+    PMF_TIME_KNOCKBACK, PM_DEAD, PM_NORMAL, PW_BATTLESUIT, PW_BLUEFLAG, PW_FORCE_BOON,
+    PW_NEUTRALFLAG, PW_NUM_POWERUPS, PW_REDFLAG, SETANIM_BOTH, SETANIM_FLAG_HOLD,
+    SETANIM_FLAG_OVERRIDE, SETANIM_FLAG_RESTART, STAT_ARMOR, STAT_DEAD_YAW, STAT_HEALTH,
+    STAT_MAX_HEALTH, STAT_WEAPONS, TEAM_BLUE, TEAM_FREE, TEAM_RED, TEAM_SPECTATOR, WEAPON_CHARGING,
+    WEAPON_CHARGING_ALT, WEAPON_DROPPING, WEAPON_READY,
 };
-use crate::codemp::game::w_force::{G_LetGoOfWall, G_PreDefSound};
-use crate::codemp::game::ai_main::BotDamageNotification;
+use crate::codemp::game::bg_saga::bgSiegeClasses;
+use crate::codemp::game::bg_saga_h::{CFL_HEAVYMELEE, CFL_STRONGAGAINSTPHYSICAL};
+use crate::codemp::game::bg_vehicleLoad::g_vehicleInfo;
+use crate::codemp::game::bg_vehicles_h::{
+    SHIPSURF_BACK, SHIPSURF_FRONT, SHIPSURF_LEFT, SHIPSURF_RIGHT, VH_ANIMAL, VH_FIGHTER,
+    VH_SPEEDER, VH_WALKER,
+};
+use crate::codemp::game::bg_weapons::weaponData;
+use crate::codemp::game::bg_weapons_h::{
+    WP_BRYAR_PISTOL, WP_DET_PACK, WP_EMPLACED_GUN, WP_NONE, WP_NUM_WEAPONS, WP_ROCKET_LAUNCHER,
+    WP_SABER, WP_THERMAL, WP_TRIP_MINE, WP_TURRET,
+};
+use crate::codemp::game::g_client::{
+    ClientUserinfoChanged, G_BreakArm, G_UpdateClientAnims, ThrowSaberToAttacker,
+};
+use crate::codemp::game::g_cmds::{Cmd_Score_f, G_CheckTKAutoKickBan};
+use crate::codemp::game::g_exphysics::G_RunExPhys;
+use crate::codemp::game::g_items::{Drop_Item, Jetpack_Off, LaunchItem};
+use crate::codemp::game::g_local::{
+    gclient_t, gentity_t, CARNAGE_REWARD_TIME, CON_CONNECTED, DAMAGE_HALF_ABSORB,
+    DAMAGE_HALF_ARMOR_REDUCTION, DAMAGE_NO_ARMOR, DAMAGE_NO_DISMEMBER, DAMAGE_NO_HIT_LOC,
+    DAMAGE_NO_KNOCKBACK, DAMAGE_NO_PROTECTION, DAMAGE_NO_SELF_PROTECTION, DAMAGE_RADIUS,
+    DAMAGE_SABER_KNOCKBACK1, DAMAGE_SABER_KNOCKBACK2, FL_BBRUSH, FL_DMG_BY_HEAVY_WEAP_ONLY,
+    FL_DMG_BY_SABER_ONLY, FL_GODMODE, FL_NO_KNOCKBACK, FL_SHIELDED, FL_UNDYING, FRAMETIME,
+    HL_ARM_LT, HL_ARM_RT, HL_BACK, HL_BACK_LT, HL_BACK_RT, HL_CHEST, HL_CHEST_LT, HL_CHEST_RT,
+    HL_FOOT_LT, HL_FOOT_RT, HL_GENERIC1, HL_GENERIC2, HL_GENERIC3, HL_GENERIC4, HL_GENERIC5,
+    HL_GENERIC6, HL_HAND_LT, HL_HAND_RT, HL_HEAD, HL_LEG_LT, HL_LEG_RT, HL_MAX, HL_NONE, HL_WAIST,
+    MOVER_POS1, REWARD_SPRITE_TIME,
+};
+use crate::codemp::game::g_log::{
+    G_LogWeaponDamage, G_LogWeaponDeath, G_LogWeaponFrag, G_LogWeaponKill,
+};
+use crate::codemp::game::g_main::{
+    d_projectileGhoul2Collision, d_saberGhoul2Collision, gDoSlowMoDuel, gSlowMoDuelTime,
+    g_armBreakage, g_austrian, g_debugDamage, g_debugMelee, g_dismember, g_dontFrickinCheck,
+    g_endPDuel, g_entities, g_ff_objectives, g_friendlyFire, g_gametype, g_gravity, g_knockback,
+    g_locationBasedDamage, g_saberDmgVelocityScale, g_slowmoDuelEnd, g_trueJedi, level,
+    CalculateRanks, CheckExitRules, G_LogPrintf, G_Printf,
+};
+use crate::codemp::game::g_public_h::{
+    BSET_DEATH, BSET_FFDEATH, BSET_VICTORY, Q3_INFINITE, SVF_BROADCAST, SVF_GLASS_BRUSH,
+    SVF_SINGLECLIENT, SVF_USE_CURRENT_ORIGIN,
+};
+use crate::codemp::game::g_team::{
+    OnSameTeam, Team_CheckHurtCarrier, Team_FragBonuses, Team_ReturnFlag,
+};
+use crate::codemp::game::g_timer::{TIMER_Clear2, TIMER_Set};
+use crate::codemp::game::g_utils::{
+    G_AddEvent, G_EffectIndex, G_FreeEntity, G_MuteSound, G_PlayEffectID, G_ScaleNetHealth,
+    G_SetAnim, G_SetOrigin, G_Sound, G_SoundIndex, G_Spawn, G_TempEntity, G_UseTargets,
+    G_UseTargets2, GlobalUse,
+};
 use crate::codemp::game::g_vehicles::{
     G_FlyVehicleDestroySurface, G_ShipSurfaceForSurfName, G_VehUpdateShields,
     G_VehicleSetDamageLocFlags,
 };
+use crate::codemp::game::g_weapon::{BlowDetpacks, LogAccuracyHit};
+use crate::codemp::game::npc_ai_jedi::{Boba_FlyStop, Jedi_WaitingAmbush};
+use crate::codemp::game::npc_ai_rancor::Rancor_DropVictim;
+use crate::codemp::game::npc_ai_utils::{AI_DeleteSelfFromGroup, AI_GroupMemberKilled};
+use crate::codemp::game::npc_combat::{G_SetEnemy, NPC_FreeCombatPoint};
+use crate::codemp::game::npc_senses::InFOV;
+use crate::codemp::game::npc_utils::{G_ActivateBehavior, NPC_ClearLOS2};
+use crate::codemp::game::q_math::Q_irand;
+use crate::codemp::game::q_math::{
+    vec3_origin, AngleVectors, DirToByte, DistanceSquared, DotProduct, VectorAdd, VectorClear,
+    VectorCompare, VectorCopy, VectorLength, VectorLengthSquared, VectorMA, VectorNormalize,
+    VectorScale, VectorSet, VectorSubtract,
+};
+use crate::codemp::game::q_shared::{Com_sprintf, Q_stricmp, Q_strncmp, Q_strncpyz, Sz};
+use crate::codemp::game::q_shared_h::{
+    mdxaBone_t, playerState_t, trace_t, vec3_t, CHAN_AUTO, CHAN_WEAPON, ENTITYNUM_NONE,
+    ENTITYNUM_WORLD, FORCE_LEVEL_1, FORCE_LEVEL_2, FORCE_LEVEL_3, FP_PROTECT, FP_RAGE, MAX_CLIENTS,
+    MAX_GENTITIES, MAX_QPATH, NEGATIVE_Y, ORIGIN, PITCH, ROLL, TR_LINEAR_STOP, TR_NONLINEAR_STOP,
+    TR_STATIONARY, YAW,
+};
+use crate::codemp::game::surfaceflags_h::{CONTENTS_CORPSE, CONTENTS_NODROP, CONTENTS_TRIGGER};
+use crate::codemp::game::teams_h::{
+    CLASS_ATST, CLASS_GALAKMECH, CLASS_GONK, CLASS_INTERROGATOR, CLASS_MARK1, CLASS_MARK2,
+    CLASS_MOUSE, CLASS_PROBE, CLASS_PROTOCOL, CLASS_R2D2, CLASS_R5D2, CLASS_RANCOR, CLASS_REMOTE,
+    CLASS_SEEKER, CLASS_SENTRY, CLASS_VEHICLE,
+};
+use crate::codemp::game::w_force::{G_LetGoOfWall, G_PreDefSound};
 use crate::codemp::game::w_saber::UpdateClientRenderBolts;
 use crate::ffi::types::{qboolean, QFALSE, QTRUE};
 use crate::trap;
@@ -309,7 +301,11 @@ pub unsafe fn G_GetHitLocation(target: *mut gentity_t, ppoint: *const vec3_t) ->
         } else {
             return HL_LEG_LT;
         }
-    } else if hit_loc == 56 || hit_loc == 60 || hit_loc == 61 || hit_loc == 65 || hit_loc == 66
+    } else if hit_loc == 56
+        || hit_loc == 60
+        || hit_loc == 61
+        || hit_loc == 65
+        || hit_loc == 66
         || hit_loc == 70
     {
         // Hands.
@@ -318,7 +314,11 @@ pub unsafe fn G_GetHitLocation(target: *mut gentity_t, ppoint: *const vec3_t) ->
         } else {
             return HL_HAND_LT;
         }
-    } else if hit_loc == 83 || hit_loc == 87 || hit_loc == 88 || hit_loc == 92 || hit_loc == 93
+    } else if hit_loc == 83
+        || hit_loc == 87
+        || hit_loc == 88
+        || hit_loc == 92
+        || hit_loc == 93
         || hit_loc == 97
     {
         // Arms.
@@ -519,12 +519,12 @@ pub unsafe fn CheckAlmostCapture(_self_: *mut gentity_t, _attacker: *mut gentity
 /// `ps` must be a valid `playerState_t` (only `legsAnim` is read).
 pub unsafe fn G_InKnockDown(ps: *const playerState_t) -> qboolean {
     match (*ps).legsAnim {
-        BOTH_KNOCKDOWN1 | BOTH_KNOCKDOWN2 | BOTH_KNOCKDOWN3 | BOTH_KNOCKDOWN4
-        | BOTH_KNOCKDOWN5 => QTRUE,
+        BOTH_KNOCKDOWN1 | BOTH_KNOCKDOWN2 | BOTH_KNOCKDOWN3 | BOTH_KNOCKDOWN4 | BOTH_KNOCKDOWN5 => {
+            QTRUE
+        }
         BOTH_GETUP1 | BOTH_GETUP2 | BOTH_GETUP3 | BOTH_GETUP4 | BOTH_GETUP5
-        | BOTH_FORCE_GETUP_F1 | BOTH_FORCE_GETUP_F2 | BOTH_FORCE_GETUP_B1
-        | BOTH_FORCE_GETUP_B2 | BOTH_FORCE_GETUP_B3 | BOTH_FORCE_GETUP_B4
-        | BOTH_FORCE_GETUP_B5 => QTRUE,
+        | BOTH_FORCE_GETUP_F1 | BOTH_FORCE_GETUP_F2 | BOTH_FORCE_GETUP_B1 | BOTH_FORCE_GETUP_B2
+        | BOTH_FORCE_GETUP_B3 | BOTH_FORCE_GETUP_B4 | BOTH_FORCE_GETUP_B5 => QTRUE,
         _ => QFALSE,
     }
 }
@@ -565,10 +565,7 @@ pub unsafe fn G_GetJediMaster() -> *mut gentity_t {
     let mut i: c_int = 0;
     while i < MAX_CLIENTS as c_int {
         let ent = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
-        if (*ent).inuse != 0
-            && !(*ent).client.is_null()
-            && (*(*ent).client).ps.isJediMaster != 0
-        {
+        if (*ent).inuse != 0 && !(*ent).client.is_null() && (*(*ent).client).ps.isJediMaster != 0 {
             return ent;
         }
         i += 1;
@@ -691,7 +688,10 @@ pub unsafe fn G_BroadcastObit(
             (*ent).s.otherEntityNum2 = killer;
         }
         if !inflictor.is_null()
-            && Q_stricmp(c"vehicle_proj".as_ptr(), (*inflictor).classname as *const c_char) == 0
+            && Q_stricmp(
+                c"vehicle_proj".as_ptr(),
+                (*inflictor).classname as *const c_char,
+            ) == 0
         {
             //a vehicle missile
             (*ent).s.eventParm = MOD_VEHICLE;
@@ -709,7 +709,10 @@ pub unsafe fn G_BroadcastObit(
                 //target is in a vehicle, store the entnum
                 (*ent).s.brokenLimbs = (*attacker).s.m_iVehicleNum;
             } else if (*ent).s.lookTarget != 0
-                && Q_stricmp(c"func_rotating".as_ptr(), (*attacker).classname as *const c_char) == 0
+                && Q_stricmp(
+                    c"func_rotating".as_ptr(),
+                    (*attacker).classname as *const c_char,
+                ) == 0
             {
                 //my vehicle was killed by a func_rotating, probably an asteroid, so...
                 (*ent).s.saberInFlight = QTRUE;
@@ -1197,8 +1200,7 @@ pub unsafe fn G_PickDeathAnim(
     if !(*self_).client.is_null() {
         max_health = (*(*self_).client).ps.stats[STAT_MAX_HEALTH as usize];
 
-        if (*(*self_).client).inSpaceIndex != 0
-            && (*(*self_).client).inSpaceIndex != ENTITYNUM_NONE
+        if (*(*self_).client).inSpaceIndex != 0 && (*(*self_).client).inSpaceIndex != ENTITYNUM_NONE
         {
             return BOTH_CHOKE3;
         }
@@ -1238,9 +1240,9 @@ pub unsafe fn G_PickDeathAnim(
         | BOTH_DEAD12 | BOTH_DEAD17 | BOTH_DEAD18 | BOTH_DEAD19 | BOTH_LYINGDEAD1
         | BOTH_STUMBLEDEAD1 | BOTH_FALLDEAD1LAND | BOTH_DEATH3 | BOTH_DEATH4 | BOTH_DEATH5
         | BOTH_DEATH6 | BOTH_DEATH7 | BOTH_DEATH9 | BOTH_DEATH11 | BOTH_DEATH12 | BOTH_DEATH17
-        | BOTH_DEATH18 | BOTH_DEATH19 | BOTH_DEATHFORWARD1 | BOTH_DEATHFORWARD2 | BOTH_DEATH1IDLE
-        | BOTH_LYINGDEATH1 | BOTH_STUMBLEDEATH1 | BOTH_FALLDEATH1 | BOTH_FALLDEATH1INAIR
-        | BOTH_FALLDEATH1LAND => {
+        | BOTH_DEATH18 | BOTH_DEATH19 | BOTH_DEATHFORWARD1 | BOTH_DEATHFORWARD2
+        | BOTH_DEATH1IDLE | BOTH_LYINGDEATH1 | BOTH_STUMBLEDEATH1 | BOTH_FALLDEATH1
+        | BOTH_FALLDEATH1INAIR | BOTH_FALLDEATH1LAND => {
             death_anim = -2;
         }
         _ => {}
@@ -1583,7 +1585,11 @@ pub unsafe fn G_GetHitLocFromSurfName(
                 UpdateClientRenderBolts(ent, &(*client).ps.origin, &render_ang);
             }
 
-            VectorSubtract(&*point, &(*client).renderInfo.torsoPoint, &mut dir_to_impact);
+            VectorSubtract(
+                &*point,
+                &(*client).renderInfo.torsoPoint,
+                &mut dir_to_impact,
+            );
             let front_side = DotProduct(&t_fwd, &dir_to_impact);
             let right_side = DotProduct(&t_rt, &dir_to_impact);
             let up_side = DotProduct(&t_up, &dir_to_impact);
@@ -2272,7 +2278,11 @@ pub unsafe fn G_Dismember(
             MAX_QPATH as c_int,
         );
     } else if limb_type == G2_MODELPART_WAIST {
-        Q_strncpyz(limb_name.as_mut_ptr(), c"torso".as_ptr(), MAX_QPATH as c_int);
+        Q_strncpyz(
+            limb_name.as_mut_ptr(),
+            c"torso".as_ptr(),
+            MAX_QPATH as c_int,
+        );
         Q_strncpyz(
             stub_cap_name.as_mut_ptr(),
             c"hips_cap_torso".as_ptr(),
@@ -2539,7 +2549,16 @@ pub unsafe fn DismembermentTest(self_: *mut gentity_t) {
 
     while sect <= G2_MODELPART_RLEG {
         G_GetDismemberBolt(self_, &mut bolt_point, sect);
-        G_Dismember(self_, self_, &bolt_point, sect, 90.0, 0.0, BOTH_DEATH1, QFALSE);
+        G_Dismember(
+            self_,
+            self_,
+            &bolt_point,
+            sect,
+            90.0,
+            0.0,
+            BOTH_DEATH1,
+            QFALSE,
+        );
         sect += 1;
     }
 }
@@ -2567,7 +2586,16 @@ pub unsafe fn DismembermentByNum(self_: *mut gentity_t, num: c_int) {
     }
 
     G_GetDismemberBolt(self_, &mut bolt_point, sect);
-    G_Dismember(self_, self_, &bolt_point, sect, 90.0, 0.0, BOTH_DEATH1, QFALSE);
+    G_Dismember(
+        self_,
+        self_,
+        &bolt_point,
+        sect,
+        90.0,
+        0.0,
+        BOTH_DEATH1,
+        QFALSE,
+    );
 }
 
 /// when the precise per-surface hit location is unknown. Projects the eye→impact
@@ -2780,8 +2808,6 @@ pub unsafe fn G_CheckForDismemberment(
 // `G_VehicleSetDamageLocFlags`, `BotDamageNotification`, `G_PreDefSound`, `G_LetGoOfWall`)
 // are all ported in their home files and imported above.
 
-
-
 /// `int gPainMOD` (g_combat.c:4366) — module global caching the `MOD_*` of the last
 /// pain event; written by [`G_Damage`]'s pain path right before dispatching
 /// `targ->pain`, read by the (not-yet-ported) pain handlers. Joins [`gPainHitLoc`] above.
@@ -2829,7 +2855,10 @@ pub unsafe fn G_ApplyVehicleOtherKiller(
         (*(*targ).client).ps.otherKillerDebounceTime = (*addr_of!(level)).time + 25000;
         (*(*targ).client).otherKillerMOD = mod_;
         if !inflictor.is_null()
-            && Q_stricmp(c"vehicle_proj".as_ptr(), (*inflictor).classname as *const c_char) == 0
+            && Q_stricmp(
+                c"vehicle_proj".as_ptr(),
+                (*inflictor).classname as *const c_char,
+            ) == 0
         {
             (*(*targ).client).otherKillerVehWeapon = (*inflictor).s.otherEntityNum2 + 1;
             (*(*targ).client).otherKillerWeaponType = (*inflictor).s.weapon;
@@ -2845,7 +2874,8 @@ pub unsafe fn G_ApplyVehicleOtherKiller(
                         .add((*(*(*targ).m_pVehicle).m_pPilot).s.number as usize);
                     if !(*pilot).client.is_null() {
                         (*(*pilot).client).ps.otherKiller = (*(*targ).client).ps.otherKiller;
-                        (*(*pilot).client).ps.otherKillerTime = (*(*targ).client).ps.otherKillerTime;
+                        (*(*pilot).client).ps.otherKillerTime =
+                            (*(*targ).client).ps.otherKillerTime;
                         (*(*pilot).client).ps.otherKillerDebounceTime =
                             (*(*targ).client).ps.otherKillerDebounceTime;
                         (*(*pilot).client).otherKillerMOD = (*(*targ).client).otherKillerMOD;
@@ -2858,7 +2888,9 @@ pub unsafe fn G_ApplyVehicleOtherKiller(
                 let mut passNum: c_int = 0;
                 while passNum < (*(*targ).m_pVehicle).m_iNumPassengers {
                     let pass = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(
-                        (*(*(*targ).m_pVehicle).m_ppPassengers[passNum as usize]).s.number as usize,
+                        (*(*(*targ).m_pVehicle).m_ppPassengers[passNum as usize])
+                            .s
+                            .number as usize,
                     );
                     if !(*pass).client.is_null() {
                         (*(*pass).client).ps.otherKiller = (*(*targ).client).ps.otherKiller;
@@ -2941,7 +2973,8 @@ pub unsafe fn G_Damage(
 
     if !targ.is_null() && (*targ).damageRedirect != 0 {
         G_Damage(
-            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*targ).damageRedirectTo as usize),
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*targ).damageRedirectTo as usize),
             inflictor,
             attacker,
             dir,
@@ -2953,7 +2986,8 @@ pub unsafe fn G_Damage(
         return;
     }
 
-    if mod_ == MOD_DEMP2 && !targ.is_null() && (*targ).inuse != QFALSE && !(*targ).client.is_null() {
+    if mod_ == MOD_DEMP2 && !targ.is_null() && (*targ).inuse != QFALSE && !(*targ).client.is_null()
+    {
         if (*(*targ).client).ps.electrifyTime < (*addr_of!(level)).time {
             //electrocution effect
             if (*targ).s.eType == ET_NPC
@@ -2996,8 +3030,11 @@ pub unsafe fn G_Damage(
     if !(*targ).client.is_null() {
         //don't take damage when in a walker, or fighter
         //unless the walker/fighter is dead!!! -rww
-        if (*(*targ).client).ps.clientNum < MAX_CLIENTS as c_int && (*(*targ).client).ps.m_iVehicleNum != 0 {
-            let veh = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*targ).client).ps.m_iVehicleNum as usize);
+        if (*(*targ).client).ps.clientNum < MAX_CLIENTS as c_int
+            && (*(*targ).client).ps.m_iVehicleNum != 0
+        {
+            let veh = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*(*targ).client).ps.m_iVehicleNum as usize);
             if !(*veh).m_pVehicle.is_null() && (*veh).health > 0 {
                 if (*(*(*veh).m_pVehicle).m_pVehicleInfo).r#type == VH_WALKER
                     || (*(*(*veh).m_pVehicle).m_pVehicleInfo).r#type == VH_FIGHTER
@@ -3091,10 +3128,12 @@ pub unsafe fn G_Damage(
         return;
     }
     if inflictor.is_null() {
-        inflictor = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(ENTITYNUM_WORLD as usize);
+        inflictor =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(ENTITYNUM_WORLD as usize);
     }
     if attacker.is_null() {
-        attacker = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(ENTITYNUM_WORLD as usize);
+        attacker =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(ENTITYNUM_WORLD as usize);
     }
 
     // shootable doors / buttons don't actually have any health
@@ -3175,7 +3214,8 @@ pub unsafe fn G_Damage(
             if dflags & DAMAGE_SABER_KNOCKBACK1 != 0 || dflags & DAMAGE_SABER_KNOCKBACK2 != 0 {
                 //saber does knockback, scale it by the right number
                 if !attacker.is_null() && !(*attacker).client.is_null() {
-                    if dflags & DAMAGE_SABER_KNOCKBACK1 != 0 && dflags & DAMAGE_SABER_KNOCKBACK2 != 0
+                    if dflags & DAMAGE_SABER_KNOCKBACK1 != 0
+                        && dflags & DAMAGE_SABER_KNOCKBACK2 != 0
                     {
                         //hit with both
                         saber_knockback_scale *= ((*(*attacker).client).saber[0].knockbackScale
@@ -3259,10 +3299,19 @@ pub unsafe fn G_Damage(
         {
             //if the target is a trueJedi, reduce splash and explosive damage to 1/2
             match mod_ {
-                MOD_REPEATER_ALT | MOD_REPEATER_ALT_SPLASH | MOD_DEMP2_ALT
-                | MOD_FLECHETTE_ALT_SPLASH | MOD_ROCKET | MOD_ROCKET_SPLASH | MOD_ROCKET_HOMING
-                | MOD_ROCKET_HOMING_SPLASH | MOD_THERMAL | MOD_THERMAL_SPLASH
-                | MOD_TRIP_MINE_SPLASH | MOD_TIMED_MINE_SPLASH | MOD_DET_PACK_SPLASH => {
+                MOD_REPEATER_ALT
+                | MOD_REPEATER_ALT_SPLASH
+                | MOD_DEMP2_ALT
+                | MOD_FLECHETTE_ALT_SPLASH
+                | MOD_ROCKET
+                | MOD_ROCKET_SPLASH
+                | MOD_ROCKET_HOMING
+                | MOD_ROCKET_HOMING_SPLASH
+                | MOD_THERMAL
+                | MOD_THERMAL_SPLASH
+                | MOD_TRIP_MINE_SPLASH
+                | MOD_TIMED_MINE_SPLASH
+                | MOD_DET_PACK_SPLASH => {
                     damage = (damage as f64 * 0.75) as c_int;
                 }
                 _ => {}
@@ -3348,7 +3397,8 @@ pub unsafe fn G_Damage(
             && (*targ).s.owner >= 0
             && (*targ).s.owner < MAX_CLIENTS as c_int
         {
-            let targown = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*targ).s.owner as usize);
+            let targown = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*targ).s.owner as usize);
 
             if !targown.is_null()
                 && (*targown).inuse != QFALSE
@@ -3513,16 +3563,20 @@ pub unsafe fn G_Damage(
 
                             match surface {
                                 SHIPSURF_FRONT => {
-                                    death_point = (*(*(*targ).m_pVehicle).m_pVehicleInfo).health_front;
+                                    death_point =
+                                        (*(*(*targ).m_pVehicle).m_pVehicleInfo).health_front;
                                 }
                                 SHIPSURF_BACK => {
-                                    death_point = (*(*(*targ).m_pVehicle).m_pVehicleInfo).health_back;
+                                    death_point =
+                                        (*(*(*targ).m_pVehicle).m_pVehicleInfo).health_back;
                                 }
                                 SHIPSURF_RIGHT => {
-                                    death_point = (*(*(*targ).m_pVehicle).m_pVehicleInfo).health_right;
+                                    death_point =
+                                        (*(*(*targ).m_pVehicle).m_pVehicleInfo).health_right;
                                 }
                                 SHIPSURF_LEFT => {
-                                    death_point = (*(*(*targ).m_pVehicle).m_pVehicleInfo).health_left;
+                                    death_point =
+                                        (*(*(*targ).m_pVehicle).m_pVehicleInfo).health_left;
                                 }
                                 _ => {}
                             }
@@ -3757,14 +3811,16 @@ pub unsafe fn G_Damage(
                 if maxtake > 100 {
                     maxtake = 100;
                 }
-            } else if (*(*targ).client).ps.fd.forcePowerLevel[FP_PROTECT as usize] == FORCE_LEVEL_2 {
+            } else if (*(*targ).client).ps.fd.forcePowerLevel[FP_PROTECT as usize] == FORCE_LEVEL_2
+            {
                 famt = 0.5;
                 hamt = 0.60;
 
                 if maxtake > 200 {
                     maxtake = 200;
                 }
-            } else if (*(*targ).client).ps.fd.forcePowerLevel[FP_PROTECT as usize] == FORCE_LEVEL_3 {
+            } else if (*(*targ).client).ps.fd.forcePowerLevel[FP_PROTECT as usize] == FORCE_LEVEL_3
+            {
                 famt = 0.25;
                 hamt = 0.80;
 
@@ -4068,8 +4124,9 @@ pub unsafe fn G_DamageFromKiller(
     if (*(*pVehEnt).client).ps.otherKiller < ENTITYNUM_WORLD
         && (*(*pVehEnt).client).ps.otherKillerTime > (*addr_of!(level)).time
     {
-        let potentialKiller: *mut gentity_t =
-            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*pVehEnt).client).ps.otherKiller as usize);
+        let potentialKiller: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities)
+            .cast::<gentity_t>())
+        .add((*(*pVehEnt).client).ps.otherKiller as usize);
 
         if (*potentialKiller).inuse != QFALSE
         //&& potentialKiller->client)
@@ -4084,8 +4141,7 @@ pub unsafe fn G_DamageFromKiller(
                     //fake up the inflictor
                     tempInflictor = QTRUE;
                     (*inflictor).classname = c"vehicle_proj".as_ptr() as *mut c_char;
-                    (*inflictor).s.otherEntityNum2 =
-                        (*(*pVehEnt).client).otherKillerVehWeapon - 1;
+                    (*inflictor).s.otherEntityNum2 = (*(*pVehEnt).client).otherKillerVehWeapon - 1;
                     (*inflictor).s.weapon = (*(*pVehEnt).client).otherKillerWeaponType;
                 }
             }
@@ -4100,7 +4156,16 @@ pub unsafe fn G_DamageFromKiller(
     {
         killer = (*(*killer).m_pVehicle).m_pPilot as *mut gentity_t;
     }
-    G_Damage(pEnt, inflictor, killer, null_mut(), org, damage, dflags, mod_);
+    G_Damage(
+        pEnt,
+        inflictor,
+        killer,
+        null_mut(),
+        org,
+        damage,
+        dflags,
+        mod_,
+    );
     if tempInflictor != QFALSE {
         G_FreeEntity(inflictor);
     }
@@ -4124,7 +4189,14 @@ pub unsafe fn CanDamage(targ: *mut gentity_t, origin: &vec3_t) -> qboolean {
     VectorScale(&midpoint_in, 0.5, &mut midpoint);
 
     VectorCopy(&midpoint, &mut dest);
-    let tr = trap::Trace(origin, &vec3_origin, &vec3_origin, &dest, ENTITYNUM_NONE, MASK_SOLID);
+    let tr = trap::Trace(
+        origin,
+        &vec3_origin,
+        &vec3_origin,
+        &dest,
+        ENTITYNUM_NONE,
+        MASK_SOLID,
+    );
     if tr.fraction == 1.0 || tr.entityNum as c_int == (*targ).s.number {
         return QTRUE;
     }
@@ -4134,7 +4206,14 @@ pub unsafe fn CanDamage(targ: *mut gentity_t, origin: &vec3_t) -> qboolean {
     VectorCopy(&midpoint, &mut dest);
     dest[0] += 15.0;
     dest[1] += 15.0;
-    let tr = trap::Trace(origin, &vec3_origin, &vec3_origin, &dest, ENTITYNUM_NONE, MASK_SOLID);
+    let tr = trap::Trace(
+        origin,
+        &vec3_origin,
+        &vec3_origin,
+        &dest,
+        ENTITYNUM_NONE,
+        MASK_SOLID,
+    );
     if tr.fraction == 1.0 {
         return QTRUE;
     }
@@ -4142,7 +4221,14 @@ pub unsafe fn CanDamage(targ: *mut gentity_t, origin: &vec3_t) -> qboolean {
     VectorCopy(&midpoint, &mut dest);
     dest[0] += 15.0;
     dest[1] -= 15.0;
-    let tr = trap::Trace(origin, &vec3_origin, &vec3_origin, &dest, ENTITYNUM_NONE, MASK_SOLID);
+    let tr = trap::Trace(
+        origin,
+        &vec3_origin,
+        &vec3_origin,
+        &dest,
+        ENTITYNUM_NONE,
+        MASK_SOLID,
+    );
     if tr.fraction == 1.0 {
         return QTRUE;
     }
@@ -4150,7 +4236,14 @@ pub unsafe fn CanDamage(targ: *mut gentity_t, origin: &vec3_t) -> qboolean {
     VectorCopy(&midpoint, &mut dest);
     dest[0] -= 15.0;
     dest[1] += 15.0;
-    let tr = trap::Trace(origin, &vec3_origin, &vec3_origin, &dest, ENTITYNUM_NONE, MASK_SOLID);
+    let tr = trap::Trace(
+        origin,
+        &vec3_origin,
+        &vec3_origin,
+        &dest,
+        ENTITYNUM_NONE,
+        MASK_SOLID,
+    );
     if tr.fraction == 1.0 {
         return QTRUE;
     }
@@ -4158,7 +4251,14 @@ pub unsafe fn CanDamage(targ: *mut gentity_t, origin: &vec3_t) -> qboolean {
     VectorCopy(&midpoint, &mut dest);
     dest[0] -= 15.0;
     dest[1] -= 15.0;
-    let tr = trap::Trace(origin, &vec3_origin, &vec3_origin, &dest, ENTITYNUM_NONE, MASK_SOLID);
+    let tr = trap::Trace(
+        origin,
+        &vec3_origin,
+        &vec3_origin,
+        &dest,
+        ENTITYNUM_NONE,
+        MASK_SOLID,
+    );
     if tr.fraction == 1.0 {
         return QTRUE;
     }
@@ -4234,7 +4334,8 @@ pub unsafe fn G_RadiusDamage(
     num_listed_entities = trap::EntitiesInBox(&mins, &maxs, &mut entity_list);
 
     for e in 0..num_listed_entities {
-        ent = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entity_list[e as usize] as usize);
+        ent = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add(entity_list[e as usize] as usize);
 
         if ent == ignore {
             continue;
@@ -4521,7 +4622,8 @@ pub unsafe fn TossClientWeapon(self_: *mut gentity_t, direction: &vec3_t, speed:
         (*(*self_).client).ps.stats[STAT_WEAPONS as usize] &= !(1 << weapon);
 
         while i < WP_NUM_WEAPONS {
-            if ((*(*self_).client).ps.stats[STAT_WEAPONS as usize] & (1 << i)) != 0 && i != WP_NONE {
+            if ((*(*self_).client).ps.stats[STAT_WEAPONS as usize] & (1 << i)) != 0 && i != WP_NONE
+            {
                 //this one's good
                 weap = i;
                 break;
@@ -4837,7 +4939,8 @@ pub unsafe extern "C" fn player_die(
 
         if (*(*self_).client).ps.otherKillerTime >= (*addr_of!(level)).time {
             //use the last attacker
-            murderer = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*self_).client).ps.otherKiller as usize);
+            murderer = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*(*self_).client).ps.otherKiller as usize);
             if (*murderer).inuse == QFALSE || (*murderer).client.is_null() {
                 murderer = null_mut();
             } else if (*murderer).s.number >= MAX_CLIENTS as c_int
@@ -4865,7 +4968,9 @@ pub unsafe extern "C" fn player_die(
                     }
                 }
             }
-        } else if !attacker.is_null() && (*attacker).inuse != QFALSE && !(*attacker).client.is_null()
+        } else if !attacker.is_null()
+            && (*attacker).inuse != QFALSE
+            && !(*attacker).client.is_null()
         {
             if (*attacker).s.number >= MAX_CLIENTS as c_int
                 && (*attacker).s.eType == ET_NPC
@@ -4889,7 +4994,8 @@ pub unsafe extern "C" fn player_die(
                     murderer = null_mut();
                 }
             } else {
-                murderer = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*attacker).s.number as usize);
+                murderer = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*attacker).s.number as usize);
             }
         } else if !(*(*self_).m_pVehicle).m_pPilot.is_null() {
             murderer = (*(*self_).m_pVehicle).m_pPilot as *mut gentity_t;
@@ -4987,16 +5093,15 @@ pub unsafe extern "C" fn player_die(
 
     if (*(*self_).client).holdingObjectiveItem > 0 {
         //carrying a siege objective item - make sure it updates and removes itself from us now in case this is an instant death-respawn situation
-        let objectiveItem =
-            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*self_).client).holdingObjectiveItem as usize);
+        let objectiveItem = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*(*self_).client).holdingObjectiveItem as usize);
 
         if (*objectiveItem).inuse != QFALSE && (*objectiveItem).think.is_some() {
             ((*objectiveItem).think.unwrap())(objectiveItem);
         }
     }
 
-    if ((*(*self_).client).inSpaceIndex != 0
-        && (*(*self_).client).inSpaceIndex != ENTITYNUM_NONE)
+    if ((*(*self_).client).inSpaceIndex != 0 && (*(*self_).client).inSpaceIndex != ENTITYNUM_NONE)
         || ((*(*self_).client).ps.eFlags2 & EF2_SHIP_DEATH) != 0
     {
         (*(*self_).client).noCorpse = QTRUE;
@@ -5005,7 +5110,8 @@ pub unsafe extern "C" fn player_die(
     if (*(*self_).client).NPC_class != CLASS_VEHICLE && (*(*self_).client).ps.m_iVehicleNum != 0 {
         //I'm riding a vehicle
         //tell it I'm getting off
-        let veh = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*self_).client).ps.m_iVehicleNum as usize);
+        let veh = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*(*self_).client).ps.m_iVehicleNum as usize);
 
         if (*veh).inuse != QFALSE && !(*veh).client.is_null() && !(*veh).m_pVehicle.is_null() {
             //remember it for obit
@@ -5024,18 +5130,16 @@ pub unsafe extern "C" fn player_die(
 
                 //put me over where my vehicle exploded
                 G_SetOrigin(self_, &(*(*veh).client).ps.origin);
-                VectorCopy(&(*(*veh).client).ps.origin, &mut (*(*self_).client).ps.origin);
+                VectorCopy(
+                    &(*(*veh).client).ps.origin,
+                    &mut (*(*self_).client).ps.origin,
+                );
             }
         }
         //droids throw heads if they haven't yet
         match (*(*self_).client).NPC_class {
             x if x == CLASS_R2D2 => {
-                if trap::G2API_GetSurfaceRenderStatus(
-                    (*self_).ghoul2,
-                    0,
-                    c"head".as_ptr(),
-                ) == 0
-                {
+                if trap::G2API_GetSurfaceRenderStatus((*self_).ghoul2, 0, c"head".as_ptr()) == 0 {
                     let mut up: vec3_t = [0.0; 3];
                     AngleVectors(&(*self_).r.currentAngles, None, None, Some(&mut up));
                     G_PlayEffectID(
@@ -5046,12 +5150,7 @@ pub unsafe extern "C" fn player_die(
                 }
             }
             x if x == CLASS_R5D2 => {
-                if trap::G2API_GetSurfaceRenderStatus(
-                    (*self_).ghoul2,
-                    0,
-                    c"head".as_ptr(),
-                ) == 0
-                {
+                if trap::G2API_GetSurfaceRenderStatus((*self_).ghoul2, 0, c"head".as_ptr()) == 0 {
                     let mut up: vec3_t = [0.0; 3];
                     AngleVectors(&(*self_).r.currentAngles, None, None, Some(&mut up));
                     G_PlayEffectID(
@@ -5082,29 +5181,29 @@ pub unsafe extern "C" fn player_die(
             (*(*self_).NPC).tempGoal = null_mut();
         }
         /*
-        if ( self->s.eFlags & EF_LOCKED_TO_WEAPON )
-        {
-            // dumb, just get the NPC out of the chair
-    extern void RunEmplacedWeapon( gentity_t *ent, usercmd_t **ucmd );
-
-            usercmd_t cmd, *ad_cmd;
-
-            memset( &cmd, 0, sizeof( usercmd_t ));
-
-            //gentity_t *old = self->owner;
-
-            if ( self->owner )
+            if ( self->s.eFlags & EF_LOCKED_TO_WEAPON )
             {
-                self->owner->s.frame = self->owner->startFrame = self->owner->endFrame = 0;
-                self->owner->svFlags &= ~SVF_ANIMATING;
-            }
+                // dumb, just get the NPC out of the chair
+        extern void RunEmplacedWeapon( gentity_t *ent, usercmd_t **ucmd );
 
-            cmd.buttons |= BUTTON_USE;
-            ad_cmd = &cmd;
-            RunEmplacedWeapon( self, &ad_cmd );
-            //self->owner = old;
-        }
-        */
+                usercmd_t cmd, *ad_cmd;
+
+                memset( &cmd, 0, sizeof( usercmd_t ));
+
+                //gentity_t *old = self->owner;
+
+                if ( self->owner )
+                {
+                    self->owner->s.frame = self->owner->startFrame = self->owner->endFrame = 0;
+                    self->owner->svFlags &= ~SVF_ANIMATING;
+                }
+
+                cmd.buttons |= BUTTON_USE;
+                ad_cmd = &cmd;
+                RunEmplacedWeapon( self, &ad_cmd );
+                //self->owner = old;
+            }
+            */
         //if ( self->client->NPC_class == CLASS_BOBAFETT && self->client->moveType == MT_FLYSWIM )
         if false {
             Boba_FlyStop(self_);
@@ -5132,9 +5231,7 @@ pub unsafe extern "C" fn player_die(
         {
             G_Sound(self_, CHAN_AUTO, (*(*self_).client).saber[0].soundOff);
         }
-        if (*(*self_).client).saber[1].soundOff != 0
-            && (*(*self_).client).saber[1].model[0] != 0
-        {
+        if (*(*self_).client).saber[1].soundOff != 0 && (*(*self_).client).saber[1].model[0] != 0 {
             G_Sound(self_, CHAN_AUTO, (*(*self_).client).saber[1].soundOff);
         }
     }
@@ -5198,7 +5295,8 @@ pub unsafe extern "C" fn player_die(
         && (*(*self_).client).ps.otherKillerTime > (*addr_of!(level)).time
     {
         //remember who last attacked us
-        attacker = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*self_).client).ps.otherKiller as usize);
+        attacker = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*(*self_).client).ps.otherKiller as usize);
         if (*(*self_).client).otherKillerMOD != MOD_UNKNOWN {
             actualMOD = (*(*self_).client).otherKillerMOD;
         }
@@ -5257,15 +5355,20 @@ pub unsafe extern "C" fn player_die(
         && (*addr_of!(g_gametype)).integer == GT_DUEL
         && (*addr_of!(level)).numPlayingClients >= 2
     {
-        let r0 = (*(*addr_of!(level)).clients
+        let r0 = (*(*addr_of!(level))
+            .clients
             .add((*addr_of!(level)).sortedClients[0] as usize))
         .respawnTime;
-        let r1 = (*(*addr_of!(level)).clients
+        let r1 = (*(*addr_of!(level))
+            .clients
             .add((*addr_of!(level)).sortedClients[1] as usize))
         .respawnTime;
         let spawnTime = if r0 > r1 { r0 } else { r1 };
         G_LogPrintf("Duel Kill Details:\n");
-        G_LogPrintf(&format!("Kill Time: {}\n", (*addr_of!(level)).time - spawnTime));
+        G_LogPrintf(&format!(
+            "Kill Time: {}\n",
+            (*addr_of!(level)).time - spawnTime
+        ));
         G_LogPrintf(&format!(
             "victim: {}, hits on enemy {}\n",
             Sz((*(*self_).client).pers.netname.as_ptr()),
@@ -5283,9 +5386,7 @@ pub unsafe extern "C" fn player_die(
                 G_LogPrintf(&format!(
                     "killer saber style: {}, killer saber anim {}\n",
                     (*(*attacker).client).ps.fd.saberAnimLevel,
-                    Sz((*addr_of!(animTable))
-                        [(*(*attacker).client).ps.torsoAnim as usize]
-                        .name)
+                    Sz((*addr_of!(animTable))[(*(*attacker).client).ps.torsoAnim as usize].name)
                 ));
             }
         }
@@ -5297,7 +5398,15 @@ pub unsafe extern "C" fn player_die(
         G_LogWeaponFrag(killer, (*self_).s.number);
     }
 
-    G_BroadcastObit(self_, inflictor, attacker, killer, actualMOD, wasInVehicle, wasJediMaster);
+    G_BroadcastObit(
+        self_,
+        inflictor,
+        attacker,
+        killer,
+        actualMOD,
+        wasInVehicle,
+        wasJediMaster,
+    );
     if tempInflictor != QFALSE {
         G_FreeEntity(tempInflictorEnt);
     }
@@ -5343,12 +5452,19 @@ pub unsafe extern "C" fn player_die(
 
                 if otherClNum >= 0
                     && otherClNum < MAX_CLIENTS as c_int
-                    && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(otherClNum as usize)).inuse != QFALSE
-                    && !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(otherClNum as usize)).client.is_null()
+                    && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add(otherClNum as usize))
+                    .inuse
+                        != QFALSE
+                    && !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add(otherClNum as usize))
+                    .client
+                    .is_null()
                     && otherClNum != (*attacker).s.number
                 {
                     AddScore(
-                        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(otherClNum as usize),
+                        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                            .add(otherClNum as usize),
                         &(*self_).r.currentOrigin,
                         1,
                     );
@@ -5439,12 +5555,19 @@ pub unsafe extern "C" fn player_die(
 
             if otherClNum >= 0
                 && otherClNum < MAX_CLIENTS as c_int
-                && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(otherClNum as usize)).inuse != QFALSE
-                && !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(otherClNum as usize)).client.is_null()
+                && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add(otherClNum as usize))
+                .inuse
+                    != QFALSE
+                && !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add(otherClNum as usize))
+                .client
+                .is_null()
                 && otherClNum != (*self_).s.number
             {
                 AddScore(
-                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(otherClNum as usize),
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add(otherClNum as usize),
                     &(*self_).r.currentOrigin,
                     1,
                 );
@@ -5856,12 +5979,12 @@ pub unsafe extern "C" fn ExplodeDeath(self_: *mut gentity_t) {
     AngleVectors(&(*self_).s.angles, Some(&mut forward), None, None);
 
     /*
-        if ( self->fxID > 0 )
-        {
-            G_PlayEffect( self->fxID, self->r.currentOrigin, forward );
-        }
-        else
-        */
+    if ( self->fxID > 0 )
+    {
+        G_PlayEffect( self->fxID, self->r.currentOrigin, forward );
+    }
+    else
+    */
 
     {
         //		CG_SurfaceExplosion( self->r.currentOrigin, forward, 20.0f, 12.0f, ((self->spawnflags&4)==qfalse) );	//FIXME: This needs to be consistent to all exploders!
@@ -5933,7 +6056,8 @@ pub unsafe fn G_AlertTeam(
 
     //Cull this list
     for i in 0..numEnts as usize {
-        let check = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(radiusEnts[i] as usize);
+        let check =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(radiusEnts[i] as usize);
 
         //Validate clients
         if (*check).client.is_null() {
@@ -6069,7 +6193,11 @@ pub unsafe fn DeathFX(ent: *mut gentity_t) {
         x if x == CLASS_MOUSE => {
             VectorCopy(&(*ent).r.currentOrigin, &mut effect_pos);
             effect_pos[2] -= 20.0;
-            G_PlayEffectID(G_EffectIndex("env/small_explode"), &effect_pos, &default_dir);
+            G_PlayEffectID(
+                G_EffectIndex("env/small_explode"),
+                &effect_pos,
+                &default_dir,
+            );
             G_Sound(
                 ent,
                 CHAN_AUTO,
@@ -6120,10 +6248,7 @@ pub unsafe fn DeathFX(ent: *mut gentity_t) {
             G_Sound(
                 ent,
                 CHAN_AUTO,
-                G_SoundIndex(&format!(
-                    "sound/chars/gonk/misc/death{}.wav",
-                    Q_irand(1, 3)
-                )),
+                G_SoundIndex(&format!("sound/chars/gonk/misc/death{}.wav", Q_irand(1, 3))),
             );
             G_PlayEffectID(G_EffectIndex("env/med_explode"), &effect_pos, &default_dir);
         }
@@ -6301,8 +6426,7 @@ mod tests {
                         ent.r.maxs = maxs;
                         ent.r.currentAngles = [0.0, yaw, 0.0];
                         ent.client = 8 as *mut _; // non-null; only presence is checked
-                        let got =
-                            unsafe { G_GetHitLocation(&mut ent, &ppoint as *const vec3_t) };
+                        let got = unsafe { G_GetHitLocation(&mut ent, &ppoint as *const vec3_t) };
 
                         let want = unsafe {
                             oracle::jka_G_GetHitLocation(
@@ -6336,11 +6460,7 @@ mod tests {
             [-20.0, 270.0, 10.0],
             [33.0, -75.0, 5.0],
         ];
-        let origins: [vec3_t; 3] = [
-            [0.0, 0.0, 0.0],
-            [100.0, -50.0, 24.0],
-            [-37.5, 12.25, -8.0],
-        ];
+        let origins: [vec3_t; 3] = [[0.0, 0.0, 0.0], [100.0, -50.0, 24.0], [-37.5, 12.25, -8.0]];
         let limb_types = [
             G2_MODELPART_HEAD,
             G2_MODELPART_WAIST,
@@ -6371,10 +6491,7 @@ mod tests {
                             want.as_mut_ptr(),
                         );
                     }
-                    assert_eq!(
-                        got, want,
-                        "angles={angles:?} origin={origin:?} limb={limb}"
-                    );
+                    assert_eq!(got, want, "angles={angles:?} origin={origin:?} limb={limb}");
                 }
             }
         }
@@ -6401,7 +6518,13 @@ mod tests {
         let knock_cvars = [1000.0f32, 500.0];
         let bounces = [0.0f32, 100.0, 250.0];
         let knockbacks = [0.0f32, 10.0, 24.7, 100.0, 250.0];
-        let tr_types = [TR_STATIONARY, TR_LINEAR_STOP, TR_NONLINEAR_STOP, TR_LINEAR, TR_GRAVITY];
+        let tr_types = [
+            TR_STATIONARY,
+            TR_LINEAR_STOP,
+            TR_NONLINEAR_STOP,
+            TR_LINEAR,
+            TR_GRAVITY,
+        ];
         let pm_times = [0i32, 100];
         let level_time = 12_345i32;
 
@@ -6444,7 +6567,11 @@ mod tests {
                                         }
 
                                         unsafe {
-                                            G_ApplyKnockback(&mut ent, dir as *const vec3_t, knockback);
+                                            G_ApplyKnockback(
+                                                &mut ent,
+                                                dir as *const vec3_t,
+                                                knockback,
+                                            );
                                         }
 
                                         // Gather the Rust-mutated fields; null-client cases
@@ -6532,17 +6659,47 @@ mod tests {
         }
         let cases = [
             // pierce, axis-aligned: 2 roots
-            Case { origin: [0.0, 0.0, 0.0], radius: 10.0, point: [-50.0, 0.0, 0.0], dir: [1.0, 0.0, 0.0] },
+            Case {
+                origin: [0.0, 0.0, 0.0],
+                radius: 10.0,
+                point: [-50.0, 0.0, 0.0],
+                dir: [1.0, 0.0, 0.0],
+            },
             // tangent: d == 0 exactly (all integer-valued operands)
-            Case { origin: [0.0, 0.0, 0.0], radius: 10.0, point: [-50.0, 10.0, 0.0], dir: [1.0, 0.0, 0.0] },
+            Case {
+                origin: [0.0, 0.0, 0.0],
+                radius: 10.0,
+                point: [-50.0, 10.0, 0.0],
+                dir: [1.0, 0.0, 0.0],
+            },
             // miss: d < 0, 0 roots
-            Case { origin: [0.0, 0.0, 0.0], radius: 10.0, point: [-50.0, 20.0, 0.0], dir: [1.0, 0.0, 0.0] },
+            Case {
+                origin: [0.0, 0.0, 0.0],
+                radius: 10.0,
+                point: [-50.0, 20.0, 0.0],
+                dir: [1.0, 0.0, 0.0],
+            },
             // non-axis, non-unit dir (exercises normalize), offset center, pierce
-            Case { origin: [10.0, 5.0, -3.0], radius: 25.0, point: [-40.0, -30.0, 12.0], dir: [3.0, 2.0, -1.0] },
+            Case {
+                origin: [10.0, 5.0, -3.0],
+                radius: 25.0,
+                point: [-40.0, -30.0, 12.0],
+                dir: [3.0, 2.0, -1.0],
+            },
             // diagonal ray at far center
-            Case { origin: [100.0, 100.0, 100.0], radius: 50.0, point: [0.0, 0.0, 0.0], dir: [1.0, 1.0, 1.0] },
+            Case {
+                origin: [100.0, 100.0, 100.0],
+                radius: 50.0,
+                point: [0.0, 0.0, 0.0],
+                dir: [1.0, 1.0, 1.0],
+            },
             // ray origin inside the sphere (one root each side → still 2)
-            Case { origin: [0.0, 0.0, 0.0], radius: 30.0, point: [5.0, -2.0, 1.0], dir: [0.3, 0.9, -0.2] },
+            Case {
+                origin: [0.0, 0.0, 0.0],
+                radius: 30.0,
+                point: [5.0, -2.0, 1.0],
+                dir: [0.3, 0.9, -0.2],
+            },
         ];
 
         for (i, c) in cases.iter().enumerate() {
@@ -6585,15 +6742,35 @@ mod tests {
         };
         // The full set that must return qtrue (matches the C case list).
         let knocked = [
-            BOTH_KNOCKDOWN1, BOTH_KNOCKDOWN2, BOTH_KNOCKDOWN3, BOTH_KNOCKDOWN4, BOTH_KNOCKDOWN5,
-            BOTH_GETUP1, BOTH_GETUP2, BOTH_GETUP3, BOTH_GETUP4, BOTH_GETUP5,
-            BOTH_FORCE_GETUP_F1, BOTH_FORCE_GETUP_F2, BOTH_FORCE_GETUP_B1, BOTH_FORCE_GETUP_B2,
-            BOTH_FORCE_GETUP_B3, BOTH_FORCE_GETUP_B4, BOTH_FORCE_GETUP_B5,
+            BOTH_KNOCKDOWN1,
+            BOTH_KNOCKDOWN2,
+            BOTH_KNOCKDOWN3,
+            BOTH_KNOCKDOWN4,
+            BOTH_KNOCKDOWN5,
+            BOTH_GETUP1,
+            BOTH_GETUP2,
+            BOTH_GETUP3,
+            BOTH_GETUP4,
+            BOTH_GETUP5,
+            BOTH_FORCE_GETUP_F1,
+            BOTH_FORCE_GETUP_F2,
+            BOTH_FORCE_GETUP_B1,
+            BOTH_FORCE_GETUP_B2,
+            BOTH_FORCE_GETUP_B3,
+            BOTH_FORCE_GETUP_B4,
+            BOTH_FORCE_GETUP_B5,
         ];
         // Anims that must NOT count as a knockdown — including the two crouch get-ups
         // (1229/1230) that fall in the numeric gap but are absent from the switch.
         let not_knocked = [
-            -1, 0, 1, BOTH_GETUP_CROUCH_F1, BOTH_GETUP_CROUCH_B1, BOTH_FORCE_GETUP_B6, 1218, 1238,
+            -1,
+            0,
+            1,
+            BOTH_GETUP_CROUCH_F1,
+            BOTH_GETUP_CROUCH_B1,
+            BOTH_FORCE_GETUP_B6,
+            1218,
+            1238,
             9999,
         ];
 
@@ -6645,7 +6822,13 @@ mod tests {
                         (seed_fhe, seed_fda, seed_fhet, seed_qg);
                     unsafe {
                         oracle::jka_G_Knockdown(
-                            veh, emp, t, &mut o_fhe, &mut o_fda, &mut o_fhet, &mut o_qg,
+                            veh,
+                            emp,
+                            t,
+                            &mut o_fhe,
+                            &mut o_fda,
+                            &mut o_fhet,
+                            &mut o_qg,
                         );
                     }
 
@@ -6695,11 +6878,29 @@ mod tests {
             vec![animation_t::default(); MAX_TOTALANIMATIONS as usize];
 
         let anims = [
-            BOTH_KNOCKDOWN1, BOTH_KNOCKDOWN2, BOTH_KNOCKDOWN3, BOTH_KNOCKDOWN4, BOTH_KNOCKDOWN5,
-            BOTH_GETUP1, BOTH_GETUP2, BOTH_GETUP3, BOTH_GETUP4, BOTH_GETUP5, BOTH_GETUP_CROUCH_B1,
-            BOTH_GETUP_CROUCH_F1, BOTH_FORCE_GETUP_B1, BOTH_FORCE_GETUP_B2, BOTH_FORCE_GETUP_B3,
-            BOTH_FORCE_GETUP_B4, BOTH_FORCE_GETUP_B5, BOTH_FORCE_GETUP_B6, BOTH_FORCE_GETUP_F1,
-            BOTH_FORCE_GETUP_F2, BOTH_ROLL_F, BOTH_FLIP_F, BOTH_DEATH14,
+            BOTH_KNOCKDOWN1,
+            BOTH_KNOCKDOWN2,
+            BOTH_KNOCKDOWN3,
+            BOTH_KNOCKDOWN4,
+            BOTH_KNOCKDOWN5,
+            BOTH_GETUP1,
+            BOTH_GETUP2,
+            BOTH_GETUP3,
+            BOTH_GETUP4,
+            BOTH_GETUP5,
+            BOTH_GETUP_CROUCH_B1,
+            BOTH_GETUP_CROUCH_F1,
+            BOTH_FORCE_GETUP_B1,
+            BOTH_FORCE_GETUP_B2,
+            BOTH_FORCE_GETUP_B3,
+            BOTH_FORCE_GETUP_B4,
+            BOTH_FORCE_GETUP_B5,
+            BOTH_FORCE_GETUP_B6,
+            BOTH_FORCE_GETUP_F1,
+            BOTH_FORCE_GETUP_F2,
+            BOTH_ROLL_F,
+            BOTH_FLIP_F,
+            BOTH_DEATH14,
         ];
         // Every threshold the switch compares legsTimer against (plus 0 and a large value).
         let timers = [
@@ -6734,13 +6935,8 @@ mod tests {
                             let in_roll = BG_InRoll(&mut client.ps, la);
                             let flipping = BG_FlippingAnim(la);
 
-                            let got = G_CheckSpecialDeathAnim(
-                                &mut ent,
-                                core::ptr::null(),
-                                0,
-                                0,
-                                HL_NONE,
-                            );
+                            let got =
+                                G_CheckSpecialDeathAnim(&mut ent, core::ptr::null(), 0, 0, HL_NONE);
                             let want = crate::oracle::jka_G_CheckSpecialDeathAnim(
                                 la,
                                 lt,
@@ -6796,14 +6992,30 @@ mod tests {
 
         // Every anim valid so BG_HasAnimation passes and BG_PickAnim is never reached.
         let mut backing: Vec<animation_t> = vec![
-            animation_t { numFrames: 1, ..Default::default() };
+            animation_t {
+                numFrames: 1,
+                ..Default::default()
+            };
             MAX_TOTALANIMATIONS as usize
         ];
 
         let hitlocs = [
-            HL_FOOT_RT, HL_FOOT_LT, HL_LEG_RT, HL_LEG_LT, HL_BACK, HL_CHEST_RT, HL_ARM_RT,
-            HL_HAND_RT, HL_BACK_RT, HL_CHEST_LT, HL_ARM_LT, HL_HAND_LT, HL_BACK_LT, HL_CHEST,
-            HL_WAIST, HL_HEAD,
+            HL_FOOT_RT,
+            HL_FOOT_LT,
+            HL_LEG_RT,
+            HL_LEG_LT,
+            HL_BACK,
+            HL_CHEST_RT,
+            HL_ARM_RT,
+            HL_HAND_RT,
+            HL_BACK_RT,
+            HL_CHEST_LT,
+            HL_ARM_LT,
+            HL_HAND_LT,
+            HL_BACK_LT,
+            HL_CHEST,
+            HL_WAIST,
+            HL_HEAD,
         ];
         let mods = [MOD_SABER, MOD_MELEE]; // MOD_MELEE ≠ MOD_SABER → foot saber sub-branch off
         let max_health: c_int = 100;
@@ -6834,17 +7046,10 @@ mod tests {
                                 ent.localAnimIndex = IDX;
 
                                 Rand_Init(seed as c_int);
-                                let got =
-                                    G_PickDeathAnim(&mut ent, core::ptr::null(), dmg, md, hl);
+                                let got = G_PickDeathAnim(&mut ent, core::ptr::null(), dmg, md, hl);
                                 oracle_Rand_Init(seed as c_int);
-                                let want = jka_G_PickDeathAnim(
-                                    hl,
-                                    dmg,
-                                    md,
-                                    max_health,
-                                    vel.as_ptr(),
-                                    -1,
-                                );
+                                let want =
+                                    jka_G_PickDeathAnim(hl, dmg, md, max_health, vel.as_ptr(), -1);
                                 assert_eq!(
                                     got, want,
                                     "hitLoc={hl} mod={md} dmg={dmg} vel={vel:?} seed={seed}"
@@ -6863,7 +7068,13 @@ mod tests {
         unsafe {
             // NULL self → 0.
             assert_eq!(
-                G_PickDeathAnim(core::ptr::null_mut(), core::ptr::null(), 10, MOD_SABER, HL_HEAD),
+                G_PickDeathAnim(
+                    core::ptr::null_mut(),
+                    core::ptr::null(),
+                    10,
+                    MOD_SABER,
+                    HL_HEAD
+                ),
                 0
             );
             // Non-client, non-NPC entity → 0.

@@ -17,28 +17,28 @@ use core::mem::offset_of;
 use core::ptr::{addr_of, addr_of_mut};
 
 use crate::codemp::game::bg_lib::atof;
+use crate::codemp::game::bg_misc::forcePowerDarkLight;
+use crate::codemp::game::bg_misc::BG_EvaluateTrajectory;
 use crate::codemp::game::bg_misc::BG_FindItemForWeapon;
 use crate::codemp::game::bg_misc::BG_PlayerStateToEntityState;
-use crate::codemp::game::bg_misc::BG_EvaluateTrajectory;
+use crate::codemp::game::bg_public::EF_DOUBLE_AMMO;
+use crate::codemp::game::bg_public::EF_NODRAW;
+use crate::codemp::game::bg_public::EV_FIRE_WEAPON;
+use crate::codemp::game::bg_public::MASK_SHOT;
 use crate::codemp::game::bg_public::{
     CS_LIGHT_STYLES, CS_SKYBOXORG, CS_TERRAINS, EF_PERMANENT, EF_TELEPORT_BIT, ET_GENERAL, ET_NPC,
     ET_PORTAL, ET_TERRAIN, EV_PLAYER_TELEPORT_IN, EV_PLAYER_TELEPORT_OUT, GT_SIEGE,
     GT_SINGLE_PLAYER, PMF_FOLLOW, PMF_TIME_KNOCKBACK, STAT_ARMOR, STAT_MAX_HEALTH, TEAM_SPECTATOR,
 };
-use crate::codemp::game::bg_public::EF_DOUBLE_AMMO;
-use crate::codemp::game::bg_public::EF_NODRAW;
-use crate::codemp::game::bg_public::EV_FIRE_WEAPON;
-use crate::codemp::game::bg_public::{EV_ITEM_PICKUP, EV_NOAMMO};
-use crate::codemp::game::bg_public::MASK_SHOT;
-use crate::codemp::game::bg_public::{
-    ET_FX, EF_RADAROBJECT, EV_BMODEL_SOUND, FX_STATE_CONTINUOUS, FX_STATE_OFF, FX_STATE_ONE_SHOT,
-    FX_STATE_ONE_SHOT_LIMIT, MASK_SOLID, MOD_UNKNOWN,
-};
 use crate::codemp::game::bg_public::{
     DEFAULT_MAXS_2, DEFAULT_MINS_2, EF_CLIENTSMOOTH, EF_RAG, ET_HOLOCRON, GT_CTF, GT_CTY,
     GT_HOLOCRON, MASK_PLAYERSOLID,
 };
-use crate::codemp::game::bg_misc::forcePowerDarkLight;
+use crate::codemp::game::bg_public::{
+    EF_RADAROBJECT, ET_FX, EV_BMODEL_SOUND, FX_STATE_CONTINUOUS, FX_STATE_OFF, FX_STATE_ONE_SHOT,
+    FX_STATE_ONE_SHOT_LIMIT, MASK_SOLID, MOD_UNKNOWN,
+};
+use crate::codemp::game::bg_public::{EV_ITEM_PICKUP, EV_NOAMMO};
 use crate::codemp::game::bg_saga::{bgSiegeClasses, WPTable};
 use crate::codemp::game::bg_weapons::ammoData;
 use crate::codemp::game::bg_weapons_h::{AMMO_BLASTER, AMMO_MAX, AMMO_ROCKETS};
@@ -49,16 +49,15 @@ use crate::codemp::game::g_exphysics::G_RunExPhys;
 use crate::codemp::game::g_items::RegisterItem;
 use crate::codemp::game::g_local::{
     gclient_t, gentity_t, reference_tag_t, DAMAGEREDIRECT_HEAD, DAMAGEREDIRECT_LLEG,
-    DAMAGEREDIRECT_RLEG,
-    FL_BOUNCE_HALF, FL_INACTIVE, FL_SHIELDED, FRAMETIME, MAX_REFNAME, START_TIME_FIND_LINKS,
-    START_TIME_LINK_ENTS,
+    DAMAGEREDIRECT_RLEG, FL_BOUNCE_HALF, FL_INACTIVE, FL_SHIELDED, FRAMETIME, MAX_REFNAME,
+    START_TIME_FIND_LINKS, START_TIME_LINK_ENTS,
 };
 use crate::codemp::game::g_main::{
-    g_entities, g_gametype, g_MaxHolocronCarry, g_RMG, level, Com_Error, Com_Printf, G_Printf,
+    g_MaxHolocronCarry, g_RMG, g_entities, g_gametype, level, Com_Error, Com_Printf, G_Printf,
     LogExit,
 };
-use crate::codemp::game::g_object::G_RunObject;
 use crate::codemp::game::g_mover::{G_FindDoorTrigger, BMS_END, BMS_MID, BMS_START};
+use crate::codemp::game::g_object::G_RunObject;
 use crate::codemp::game::g_public_h::{
     BSET_USE, SVF_BROADCAST, SVF_NOCLIENT, SVF_PLAYER_USABLE, SVF_PORTAL, SVF_USE_CURRENT_ORIGIN,
 };
@@ -70,20 +69,19 @@ use crate::codemp::game::g_utils::{
 };
 use crate::codemp::game::g_weapon::{FireWeapon, WP_FireBlasterMissile};
 use crate::codemp::game::npc_utils::G_ActivateBehavior;
+use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_math::{
     flrand, vec3_origin, vectoangles, AngleVectors, CrossProduct, DirToByte, PerpendicularVector,
     VectorClear, VectorCopy, VectorMA, VectorNormalize, VectorScale, VectorSet, VectorSubtract,
 };
-use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_shared::{
     crandom, random, va, GetIDForString, Info_SetValueForKey, Q_stricmp, Q_strlwr, Q_strncpyz,
 };
 use crate::codemp::game::q_shared_h::{
     trace_t, vec3_t, BUTTON_USE, CHAN_AUTO, CHAN_VOICE, ENTITYNUM_NONE, ENTITYNUM_WORLD, ERR_DROP,
-    MAX_CLIENTS, MAX_INFO_STRING,
-    FORCE_DARKSIDE, FORCE_LIGHTSIDE, FP_LEVITATION, FP_SABER_DEFENSE, FP_SABER_OFFENSE,
-    FP_SABERTHROW,
-    MAX_GENTITIES, M_PI, NUM_FORCE_POWERS, TR_GRAVITY,
+    FORCE_DARKSIDE, FORCE_LIGHTSIDE, FP_LEVITATION, FP_SABERTHROW, FP_SABER_DEFENSE,
+    FP_SABER_OFFENSE, MAX_CLIENTS, MAX_GENTITIES, MAX_INFO_STRING, M_PI, NUM_FORCE_POWERS,
+    TR_GRAVITY,
 };
 use crate::codemp::game::surfaceflags_h::{
     CONTENTS_CORPSE, CONTENTS_SOLID, CONTENTS_TERRAIN, CONTENTS_TRIGGER,
@@ -599,7 +597,11 @@ pub unsafe extern "C" fn misc_dlight_use(
 ) {
     G_ActivateBehavior(ent, BSET_USE);
 
-    (*ent).alt_fire = if (*ent).alt_fire != QFALSE { QFALSE } else { QTRUE }; // toggle
+    (*ent).alt_fire = if (*ent).alt_fire != QFALSE {
+        QFALSE
+    } else {
+        QTRUE
+    }; // toggle
     misc_lightstyle_set(ent);
 }
 
@@ -621,7 +623,11 @@ pub unsafe extern "C" fn SP_light(self_: *mut gentity_t) {
     }
 
     G_SpawnInt(c"style".as_ptr(), c"0".as_ptr(), &mut (*self_).count);
-    G_SpawnInt(c"switch_style".as_ptr(), c"0".as_ptr(), &mut (*self_).bounceCount);
+    G_SpawnInt(
+        c"switch_style".as_ptr(),
+        c"0".as_ptr(),
+        &mut (*self_).bounceCount,
+    );
     G_SpawnInt(
         c"style_off".as_ptr(),
         c"0".as_ptr(),
@@ -680,7 +686,12 @@ pub unsafe fn TeleportPlayer(player: *mut gentity_t, origin: &vec3_t, angles: &v
     (*(*player).client).ps.origin[2] += 1.0;
 
     // spit the player out
-    AngleVectors(angles, Some(&mut (*(*player).client).ps.velocity), None, None);
+    AngleVectors(
+        angles,
+        Some(&mut (*(*player).client).ps.velocity),
+        None,
+        None,
+    );
     let vel = (*(*player).client).ps.velocity;
     VectorScale(&vel, 400.0, &mut (*(*player).client).ps.velocity);
     (*(*player).client).ps.pm_time = 160; // hold time
@@ -704,7 +715,10 @@ pub unsafe fn TeleportPlayer(player: *mut gentity_t, origin: &vec3_t, angles: &v
     }
 
     // use the precise origin for linking
-    VectorCopy(&(*(*player).client).ps.origin, &mut (*player).r.currentOrigin);
+    VectorCopy(
+        &(*(*player).client).ps.origin,
+        &mut (*player).r.currentOrigin,
+    );
 
     if (*(*player).client).sess.sessionTeam != TEAM_SPECTATOR {
         trap::LinkEntity(player);
@@ -885,9 +899,17 @@ Shakes the screen of nearby (or all) clients when used.
 pub unsafe extern "C" fn SP_target_screenshake(ent: *mut gentity_t) {
     G_SpawnFloat(c"intensity".as_ptr(), c"10".as_ptr(), &mut (*ent).speed);
     // intensity of the shake
-    G_SpawnInt(c"duration".as_ptr(), c"800".as_ptr(), &mut (*ent).genericValue5);
+    G_SpawnInt(
+        c"duration".as_ptr(),
+        c"800".as_ptr(),
+        &mut (*ent).genericValue5,
+    );
     // duration of the shake
-    G_SpawnInt(c"globalshake".as_ptr(), c"1".as_ptr(), &mut (*ent).genericValue6);
+    G_SpawnInt(
+        c"globalshake".as_ptr(),
+        c"1".as_ptr(),
+        &mut (*ent).genericValue6,
+    );
     // non-0 if shake should be global (all clients). Otherwise, only in the PVS.
 
     (*ent).r#use = Some(Use_Target_Screenshake);
@@ -941,7 +963,11 @@ pub unsafe extern "C" fn check_recharge(ent: *mut gentity_t) {
 pub unsafe extern "C" fn EnergyShieldStationSettings(ent: *mut gentity_t) {
     G_SpawnInt(c"count".as_ptr(), c"200".as_ptr(), &mut (*ent).count);
 
-    G_SpawnInt(c"chargerate".as_ptr(), c"0".as_ptr(), &mut (*ent).genericValue5);
+    G_SpawnInt(
+        c"chargerate".as_ptr(),
+        c"0".as_ptr(),
+        &mut (*ent).genericValue5,
+    );
 
     if (*ent).genericValue5 == 0 {
         (*ent).genericValue5 = STATION_RECHARGE_TIME;
@@ -997,7 +1023,8 @@ pub unsafe extern "C" fn G_PortalifyEntities(ent: *mut gentity_t) {
     let mut i: c_int = 0;
 
     while (i as usize) < MAX_GENTITIES {
-        let scan: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(i as isize);
+        let scan: *mut gentity_t =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(i as isize);
 
         if !scan.is_null()
             && (*scan).inuse != QFALSE
@@ -1091,7 +1118,6 @@ pub unsafe extern "C" fn Use_Shooter(
     G_AddEvent(ent, EV_FIRE_WEAPON, 0);
 }
 
-
 /// `static void InitShooter_Finish( gentity_t *ent )` (g_misc.c:917). Deferred think for a
 /// `shooter_*` entity that targets a (possibly moving) object: resolves the target name into
 /// an `enemy` pointer once the level has spawned, then clears the think so it never runs
@@ -1171,7 +1197,9 @@ pub unsafe extern "C" fn Use_Target_Escapetrig(
         gEscaping = QFALSE;
         while i < MAX_CLIENTS as c_int {
             //all of the survivors get 100 points!
-            let ent_i = core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add(i as usize);
+            let ent_i = core::ptr::addr_of_mut!(g_entities)
+                .cast::<gentity_t>()
+                .add(i as usize);
             if (*ent_i).inuse != QFALSE
                 && !(*ent_i).client.is_null()
                 && (*ent_i).health > 0
@@ -1208,9 +1236,17 @@ pub unsafe extern "C" fn SP_target_escapetrig(ent: *mut gentity_t) {
         return;
     }
 
-    G_SpawnInt(c"escapetime".as_ptr(), c"60000".as_ptr(), &mut (*ent).genericValue5);
+    G_SpawnInt(
+        c"escapetime".as_ptr(),
+        c"60000".as_ptr(),
+        &mut (*ent).genericValue5,
+    );
     //time given (in ms) for the escape
-    G_SpawnInt(c"escapegoal".as_ptr(), c"0".as_ptr(), &mut (*ent).genericValue6);
+    G_SpawnInt(
+        c"escapegoal".as_ptr(),
+        c"0".as_ptr(),
+        &mut (*ent).genericValue6,
+    );
     //if non-0, when used, will end an ongoing escape instead of start it
 
     (*ent).r#use = Some(Use_Target_Escapetrig);
@@ -1269,8 +1305,7 @@ pub unsafe extern "C" fn SP_misc_maglock(self_: *mut gentity_t) {
     //NOTE: May have to make these only work on doors that are either untargeted
     //		or are targeted by a trigger, not doors fired off by scripts, counters
     //		or other such things?
-    (*self_).s.modelindex =
-        G_ModelIndex("models/map_objects/imp_detention/door_lock.md3");
+    (*self_).s.modelindex = G_ModelIndex("models/map_objects/imp_detention/door_lock.md3");
     (*self_).genericValue1 = G_EffectIndex("maglock/explosion");
 
     G_SetOrigin(self_, &(*self_).s.origin);
@@ -1333,7 +1368,9 @@ pub unsafe extern "C" fn maglock_link(self_: *mut gentity_t) {
         */
         return;
     }
-    traceEnt = core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add(trace.entityNum as usize);
+    traceEnt = core::ptr::addr_of_mut!(g_entities)
+        .cast::<gentity_t>()
+        .add(trace.entityNum as usize);
     if trace.entityNum as c_int >= ENTITYNUM_WORLD
         || traceEnt.is_null()
         || Q_stricmp(c"func_door".as_ptr(), (*traceEnt).classname) != 0
@@ -1481,12 +1518,7 @@ pub unsafe extern "C" fn misc_faller_create(
     (*faller).s.customRGBA[2] = Q_irand(1, 255);
     (*faller).s.customRGBA[3] = 255;
 
-    VectorSet(
-        &mut (*faller).r.mins,
-        -15.0,
-        -15.0,
-        DEFAULT_MINS_2 as f32,
-    );
+    VectorSet(&mut (*faller).r.mins, -15.0, -15.0, DEFAULT_MINS_2 as f32);
     VectorSet(&mut (*faller).r.maxs, 15.0, 15.0, DEFAULT_MAXS_2 as f32);
 
     (*faller).clipmask = MASK_PLAYERSOLID;
@@ -1543,8 +1575,16 @@ pub unsafe extern "C" fn SP_misc_faller(ent: *mut gentity_t) {
     G_SoundIndex("sound/chars/stofficer1/misc/falling1");
     G_SoundIndex("sound/player/fallsplat");
 
-    G_SpawnInt(c"interval".as_ptr(), c"500".as_ptr(), &mut (*ent).genericValue1);
-    G_SpawnInt(c"fudgefactor".as_ptr(), c"0".as_ptr(), &mut (*ent).genericValue2);
+    G_SpawnInt(
+        c"interval".as_ptr(),
+        c"500".as_ptr(),
+        &mut (*ent).genericValue1,
+    );
+    G_SpawnInt(
+        c"fudgefactor".as_ptr(),
+        c"0".as_ptr(),
+        &mut (*ent).genericValue2,
+    );
 
     if (*ent).targetname.is_null() || *(*ent).targetname == 0 {
         (*ent).think = Some(misc_faller_think);
@@ -1604,7 +1644,11 @@ pub unsafe extern "C" fn shield_power_converter_use(
     {
         if bgSiegeClasses[(*(*other).client).siegeClass as usize].maxarmor == 0 {
             //can't use it!
-            G_Sound(self_, CHAN_AUTO, G_SoundIndex("sound/interface/shieldcon_empty"));
+            G_Sound(
+                self_,
+                CHAN_AUTO,
+                G_SoundIndex("sound/interface/shieldcon_empty"),
+            );
             return;
         }
     }
@@ -1658,7 +1702,11 @@ pub unsafe extern "C" fn shield_power_converter_use(
     if stop != 0 || (*self_).count <= 0 {
         if (*self_).s.loopSound != 0 && (*self_).setTime < (*addr_of!(level)).time {
             if (*self_).count <= 0 {
-                G_Sound(self_, CHAN_AUTO, G_SoundIndex("sound/interface/shieldcon_empty"));
+                G_Sound(
+                    self_,
+                    CHAN_AUTO,
+                    G_SoundIndex("sound/interface/shieldcon_empty"),
+                );
             } else {
                 G_Sound(self_, CHAN_AUTO, (*self_).genericValue7);
             }
@@ -1690,7 +1738,7 @@ pub unsafe extern "C" fn ammo_generic_power_converter_use(
     activator: *mut gentity_t,
 ) {
     let mut add: c_int; //int /*dif,*/ add;
-    //int ammoType;
+                        //int ammoType;
     let mut stop: c_int = 1;
 
     if activator.is_null() || (*activator).client.is_null() {
@@ -1834,7 +1882,11 @@ pub unsafe extern "C" fn ammo_generic_power_converter_use(
     if stop != 0 || (*self_).count <= 0 {
         if (*self_).s.loopSound != 0 && (*self_).setTime < (*addr_of!(level)).time {
             if (*self_).count <= 0 {
-                G_Sound(self_, CHAN_AUTO, G_SoundIndex("sound/interface/ammocon_empty"));
+                G_Sound(
+                    self_,
+                    CHAN_AUTO,
+                    G_SoundIndex("sound/interface/ammocon_empty"),
+                );
             } else {
                 G_Sound(self_, CHAN_AUTO, (*self_).genericValue7);
             }
@@ -1865,7 +1917,7 @@ pub unsafe extern "C" fn ammo_power_converter_use(
 ) {
     let mut add: c_int = 0; //int add = 0.0f;//,highest;
     let _overcharge: c_int; //qboolean overcharge;
-    //	int			difBlaster,difPowerCell,difMetalBolts;
+                            //	int			difBlaster,difPowerCell,difMetalBolts;
     let mut stop: c_int = 1;
 
     if activator.is_null() || (*activator).client.is_null() {
@@ -2100,7 +2152,11 @@ pub unsafe extern "C" fn SP_misc_model_ammo_power_converter(ent: *mut gentity_t)
     (*ent).r.contents = CONTENTS_SOLID;
     (*ent).clipmask = MASK_SOLID;
 
-    G_SpawnInt(c"nodrain".as_ptr(), c"0".as_ptr(), &mut (*ent).genericValue12);
+    G_SpawnInt(
+        c"nodrain".as_ptr(),
+        c"0".as_ptr(),
+        &mut (*ent).genericValue12,
+    );
     (*ent).r#use = Some(ammo_power_converter_use);
 
     EnergyAmmoStationSettings(ent);
@@ -2255,7 +2311,11 @@ pub unsafe extern "C" fn SP_misc_ammo_floor_unit(ent: *mut gentity_t) {
     (*ent).genericValue4 = (*ent).count; //initial value
     (*ent).think = Some(check_recharge);
 
-    G_SpawnInt(c"nodrain".as_ptr(), c"0".as_ptr(), &mut (*ent).genericValue12);
+    G_SpawnInt(
+        c"nodrain".as_ptr(),
+        c"0".as_ptr(),
+        &mut (*ent).genericValue12,
+    );
 
     if (*ent).genericValue12 == 0 {
         (*ent).s.maxhealth = (*ent).count;
@@ -2370,7 +2430,11 @@ pub unsafe extern "C" fn SP_misc_shield_floor_unit(ent: *mut gentity_t) {
     (*ent).genericValue4 = (*ent).count; //initial value
     (*ent).think = Some(check_recharge);
 
-    G_SpawnInt(c"nodrain".as_ptr(), c"0".as_ptr(), &mut (*ent).genericValue12);
+    G_SpawnInt(
+        c"nodrain".as_ptr(),
+        c"0".as_ptr(),
+        &mut (*ent).genericValue12,
+    );
 
     if (*ent).genericValue12 == 0 {
         (*ent).s.maxhealth = (*ent).count;
@@ -2493,10 +2557,7 @@ pub unsafe extern "C" fn SP_terrain(ent: *mut gentity_t) {
     g_RMG.integer = 1;
 
     VectorClear(&mut (*ent).s.angles);
-    trap::SetBrushModel(
-        ent,
-        &CStr::from_ptr((*ent).model).to_string_lossy(),
-    );
+    trap::SetBrushModel(ent, &CStr::from_ptr((*ent).model).to_string_lossy());
 
     // Get the shader from the top of the brush
     //	shaderNum = gi.CM_GetShaderNum(s.modelindex);
@@ -2758,8 +2819,16 @@ pub unsafe extern "C" fn SP_misc_skyportal(ent: *mut gentity_t) {
 /// # Safety
 /// `ent` must point to a valid `gentity_t`.
 pub unsafe extern "C" fn fx_runner_think(ent: *mut gentity_t) {
-    BG_EvaluateTrajectory(&(*ent).s.pos, (*addr_of!(level)).time, &mut (*ent).r.currentOrigin);
-    BG_EvaluateTrajectory(&(*ent).s.apos, (*addr_of!(level)).time, &mut (*ent).r.currentAngles);
+    BG_EvaluateTrajectory(
+        &(*ent).s.pos,
+        (*addr_of!(level)).time,
+        &mut (*ent).r.currentOrigin,
+    );
+    BG_EvaluateTrajectory(
+        &(*ent).s.apos,
+        (*addr_of!(level)).time,
+        &mut (*ent).r.currentAngles,
+    );
 
     // call the effect with the desired position and orientation
     if (*ent).s.isPortalEnt != QFALSE {
@@ -3065,8 +3134,11 @@ pub unsafe extern "C" fn ref_link(ent: *mut gentity_t) {
 
     if !(*ent).target.is_null() {
         //TODO: Find the target and set our angles to that direction
-        let target: *mut gentity_t =
-            G_Find(core::ptr::null_mut(), offset_of!(gentity_t, targetname), (*ent).target);
+        let target: *mut gentity_t = G_Find(
+            core::ptr::null_mut(),
+            offset_of!(gentity_t, targetname),
+            (*ent).target,
+        );
         let mut dir: vec3_t = [0.0; 3];
 
         if !target.is_null() {
@@ -3194,7 +3266,11 @@ pub unsafe extern "C" fn misc_weapon_shooter_aim(self_: *mut gentity_t) {
         if !targ.is_null() {
             (*self_).enemy = targ;
             let mut tmp: vec3_t = [0.0; 3];
-            VectorSubtract(&(*targ).r.currentOrigin, &(*self_).r.currentOrigin, &mut tmp);
+            VectorSubtract(
+                &(*targ).r.currentOrigin,
+                &(*self_).r.currentOrigin,
+                &mut tmp,
+            );
             (*self_).pos1 = tmp;
             VectorCopy(&(*targ).r.currentOrigin, &mut (*self_).pos1);
             let mut viewangles = (*(*self_).client).ps.viewangles;
@@ -3280,26 +3356,26 @@ TOGGLE - keep firing until used again (fires at intervals of "wait")
 "target" - what to aim at (will update aim every frame if it's a moving target)
 
 "weapon" - specify the weapon to use (default is WP_BLASTER)
-	WP_BRYAR_PISTOL
-	WP_BLASTER
-	WP_DISRUPTOR
-	WP_BOWCASTER
-	WP_REPEATER
-	WP_DEMP2
-	WP_FLECHETTE
-	WP_ROCKET_LAUNCHER
-	WP_THERMAL
-	WP_TRIP_MINE
-	WP_DET_PACK
-	WP_STUN_BATON
-	WP_EMPLACED_GUN
-	WP_BOT_LASER
-	WP_TURRET
-	WP_ATST_MAIN
-	WP_ATST_SIDE
-	WP_TIE_FIGHTER
-	WP_RAPID_FIRE_CONC
-	WP_BLASTER_PISTOL
+    WP_BRYAR_PISTOL
+    WP_BLASTER
+    WP_DISRUPTOR
+    WP_BOWCASTER
+    WP_REPEATER
+    WP_DEMP2
+    WP_FLECHETTE
+    WP_ROCKET_LAUNCHER
+    WP_THERMAL
+    WP_TRIP_MINE
+    WP_DET_PACK
+    WP_STUN_BATON
+    WP_EMPLACED_GUN
+    WP_BOT_LASER
+    WP_TURRET
+    WP_ATST_MAIN
+    WP_ATST_SIDE
+    WP_TIE_FIGHTER
+    WP_RAPID_FIRE_CONC
+    WP_BLASTER_PISTOL
 */
 /// `void SP_misc_weapon_shooter( gentity_t *self )` (g_misc.c:3444). PC-tree body (the Xbox
 /// tree `assert(0)`-stubbed it with "Removed by BTO - never used!?"; the PC retail source ships
@@ -3460,7 +3536,10 @@ pub unsafe extern "C" fn FirstFreeRefTag(tagOwner: *mut tagOwner_t) -> *mut refe
     }
 
     // #ifndef FINAL_BUILD
-    Com_Printf(&format!("WARNING: MAX_TAGS ({}) REF TAG LIMIT HIT\n", MAX_TAGS));
+    Com_Printf(&format!(
+        "WARNING: MAX_TAGS ({}) REF TAG LIMIT HIT\n",
+        MAX_TAGS
+    ));
     // #endif
     core::ptr::null_mut()
 }
@@ -3672,9 +3751,7 @@ pub unsafe fn TAG_Add(
         Com_Printf(&format!(
             // S_COLOR_RED
             "^1ERROR: Nameless ref_tag found at ({} {} {})\n",
-            origin[0] as c_int,
-            origin[1] as c_int,
-            origin[2] as c_int
+            origin[0] as c_int, origin[1] as c_int, origin[2] as c_int
         ));
         return core::ptr::null_mut();
     }
@@ -3708,7 +3785,11 @@ TAG_GetOrigin
 /// # Safety
 /// `owner`/`name` must be valid NUL-terminated C strings (or `owner` NULL); reads the
 /// file-scope `refTagOwnerMap` global and writes `origin`.
-pub unsafe fn TAG_GetOrigin(owner: *const c_char, name: *const c_char, origin: &mut vec3_t) -> c_int {
+pub unsafe fn TAG_GetOrigin(
+    owner: *const c_char,
+    name: *const c_char,
+    origin: &mut vec3_t,
+) -> c_int {
     let tag: *mut reference_tag_t = TAG_Find(owner, name);
 
     if tag.is_null() {
@@ -3738,7 +3819,11 @@ Had to get rid of that damn assert for dev
 /// # Safety
 /// `owner`/`name` must be valid NUL-terminated C strings (or `owner` NULL); reads the
 /// file-scope `refTagOwnerMap` global and writes `origin`.
-pub unsafe fn TAG_GetOrigin2(owner: *const c_char, name: *const c_char, origin: &mut vec3_t) -> c_int {
+pub unsafe fn TAG_GetOrigin2(
+    owner: *const c_char,
+    name: *const c_char,
+    origin: &mut vec3_t,
+) -> c_int {
     let tag: *mut reference_tag_t = TAG_Find(owner, name);
 
     if tag.is_null() {
@@ -3765,7 +3850,11 @@ TAG_GetAngles
 /// # Safety
 /// `owner`/`name` must be valid NUL-terminated C strings (or `owner` NULL); reads the
 /// file-scope `refTagOwnerMap` global and writes `angles`.
-pub unsafe fn TAG_GetAngles(owner: *const c_char, name: *const c_char, angles: &mut vec3_t) -> c_int {
+pub unsafe fn TAG_GetAngles(
+    owner: *const c_char,
+    name: *const c_char,
+    angles: &mut vec3_t,
+) -> c_int {
     let tag: *mut reference_tag_t = TAG_Find(owner, name);
 
     if tag.is_null() {
@@ -3861,7 +3950,9 @@ pub unsafe extern "C" fn DmgBoxHit(
 /// # Safety
 /// `self_` must point to a valid `gentity_t`.
 pub unsafe extern "C" fn DmgBoxUpdateSelf(self_: *mut gentity_t) {
-    let owner: *mut gentity_t = core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add((*self_).r.ownerNum as usize);
+    let owner: *mut gentity_t = core::ptr::addr_of_mut!(g_entities)
+        .cast::<gentity_t>()
+        .add((*self_).r.ownerNum as usize);
 
     'killMe: {
         if owner.is_null() || (*owner).client.is_null() || (*owner).inuse == QFALSE {
@@ -4003,10 +4094,17 @@ mod tests {
                 addr_of!(refTagOwnerMap) as *const u8,
                 core::mem::size_of::<[tagOwner_t; MAX_TAG_OWNERS]>(),
             );
-            assert!(bytes.iter().all(|&b| b == 0), "refTagOwnerMap not fully zeroed");
+            assert!(
+                bytes.iter().all(|&b| b == 0),
+                "refTagOwnerMap not fully zeroed"
+            );
 
             // and the real C agrees that the same dirty/run leaves a fully-zeroed pool
-            assert_eq!(oracle::jka_TAG_Init_zeroes(), 1, "C TAG_Init did not zero the pool");
+            assert_eq!(
+                oracle::jka_TAG_Init_zeroes(),
+                1,
+                "C TAG_Init did not zero the pool"
+            );
         }
     }
 
@@ -4095,10 +4193,10 @@ mod tests {
 
             // tags: (owner_idx, tag_idx, name, inuse)
             let tags: &[(usize, usize, &CStr, qboolean)] = &[
-                (0, 0, c"hand", QTRUE),    // alpha/hand
-                (0, 1, c"Foot", QFALSE),   // present-by-name but not in use
+                (0, 0, c"hand", QTRUE),       // alpha/hand
+                (0, 1, c"Foot", QFALSE),      // present-by-name but not in use
                 (1, 0, c"world_spot", QTRUE), // generic/world_spot
-                (1, 5, c"hand", QTRUE),    // generic also has a "hand"
+                (1, 5, c"hand", QTRUE),       // generic also has a "hand"
             ];
             for &(oi, ti, name, inuse) in tags {
                 let nbytes = name.to_bytes();
@@ -4115,12 +4213,12 @@ mod tests {
             let queries: &[(*const c_char, &CStr)] = &[
                 (c"alpha".as_ptr(), c"hand"),       // owner+tag hit -> owner 0 tag 0
                 (c"alpha".as_ptr(), c"HAND"),       // case-folded hit
-                (c"alpha".as_ptr(), c"foot"),       // tag present but not in use -> generic fallback (none) -> NULL
+                (c"alpha".as_ptr(), c"foot"), // tag present but not in use -> generic fallback (none) -> NULL
                 (c"alpha".as_ptr(), c"world_spot"), // not on alpha -> generic owner has it
-                (c"missing".as_ptr(), c"hand"),     // unknown owner -> generic owner's hand
+                (c"missing".as_ptr(), c"hand"), // unknown owner -> generic owner's hand
                 (core::ptr::null(), c"world_spot"), // NULL owner -> generic
-                (c"".as_ptr(), c"world_spot"),      // empty owner -> generic
-                (c"alpha".as_ptr(), c"nope"),       // absent everywhere -> NULL
+                (c"".as_ptr(), c"world_spot"), // empty owner -> generic
+                (c"alpha".as_ptr(), c"nope"), // absent everywhere -> NULL
             ];
 
             for &(owner, name) in queries {
@@ -4131,8 +4229,7 @@ mod tests {
                     // locate which owner/tag this pointer is
                     let mut found: c_int = -2;
                     for oi in 0..MAX_TAG_OWNERS {
-                        let base =
-                            addr_of!((*addr_of!(refTagOwnerMap))[oi].tags[0]) as usize;
+                        let base = addr_of!((*addr_of!(refTagOwnerMap))[oi].tags[0]) as usize;
                         let end = base + MAX_TAGS * core::mem::size_of::<reference_tag_t>();
                         let rp = r as usize;
                         if rp >= base && rp < end {
@@ -4167,10 +4264,38 @@ mod tests {
 
             // (name, owner, origin, angles, radius, flags) sequence
             let adds: &[(&CStr, *const c_char, [f32; 3], [f32; 3], c_int, c_int)] = &[
-                (c"Hand", c"Alpha".as_ptr(), [1.0, 2.0, 3.0], [10.0, 20.0, 30.0], 7, 0x1),
-                (c"Foot", c"alpha".as_ptr(), [4.0, 5.0, 6.0], [40.0, 50.0, 60.0], 9, 0x2),
-                (c"WorldSpot", core::ptr::null(), [7.0, 8.0, 9.0], [70.0, 80.0, 90.0], 11, 0x4),
-                (c"Hand", c"Alpha".as_ptr(), [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0, 0), // duplicate -> NULL
+                (
+                    c"Hand",
+                    c"Alpha".as_ptr(),
+                    [1.0, 2.0, 3.0],
+                    [10.0, 20.0, 30.0],
+                    7,
+                    0x1,
+                ),
+                (
+                    c"Foot",
+                    c"alpha".as_ptr(),
+                    [4.0, 5.0, 6.0],
+                    [40.0, 50.0, 60.0],
+                    9,
+                    0x2,
+                ),
+                (
+                    c"WorldSpot",
+                    core::ptr::null(),
+                    [7.0, 8.0, 9.0],
+                    [70.0, 80.0, 90.0],
+                    11,
+                    0x4,
+                ),
+                (
+                    c"Hand",
+                    c"Alpha".as_ptr(),
+                    [0.0, 0.0, 0.0],
+                    [0.0, 0.0, 0.0],
+                    0,
+                    0,
+                ), // duplicate -> NULL
             ];
 
             for &(name, owner, origin, angles, radius, flags) in adds {
@@ -4214,9 +4339,18 @@ mod tests {
                     let ti = (c_idx as usize) % MAX_TAGS;
                     let tag = &(*addr_of!(refTagOwnerMap))[oi].tags[ti];
 
-                    assert_eq!(tag.inuse as c_int, oracle::jka_TAG_get_inuse(oi as c_int, ti as c_int));
-                    assert_eq!(tag.radius, oracle::jka_TAG_get_radius(oi as c_int, ti as c_int));
-                    assert_eq!(tag.flags, oracle::jka_TAG_get_flags(oi as c_int, ti as c_int));
+                    assert_eq!(
+                        tag.inuse as c_int,
+                        oracle::jka_TAG_get_inuse(oi as c_int, ti as c_int)
+                    );
+                    assert_eq!(
+                        tag.radius,
+                        oracle::jka_TAG_get_radius(oi as c_int, ti as c_int)
+                    );
+                    assert_eq!(
+                        tag.flags,
+                        oracle::jka_TAG_get_flags(oi as c_int, ti as c_int)
+                    );
                     for c in 0..3 {
                         assert_eq!(
                             tag.origin[c],
@@ -4234,7 +4368,11 @@ mod tests {
 
                     // lower-cased tag name agrees
                     let mut cname = [0u8; MAX_REFNAME];
-                    oracle::jka_TAG_get_name(oi as c_int, ti as c_int, cname.as_mut_ptr() as *mut c_char);
+                    oracle::jka_TAG_get_name(
+                        oi as c_int,
+                        ti as c_int,
+                        cname.as_mut_ptr() as *mut c_char,
+                    );
                     let c_tagname = CStr::from_ptr(cname.as_ptr() as *const c_char);
                     let r_tagname = CStr::from_ptr(tag.name.as_ptr());
                     assert_eq!(r_tagname, c_tagname, "tag name mismatch");
@@ -4271,7 +4409,18 @@ mod tests {
             let o: vec3_t = [1.5, -2.25, 3.0];
             let ang: vec3_t = [0.0, 0.0, 0.0];
             TAG_Add(c"hand".as_ptr(), c"alpha".as_ptr(), &o, &ang, 0, 0);
-            oracle::jka_TAG_Add(c"hand".as_ptr(), c"alpha".as_ptr(), 1.5, -2.25, 3.0, 0.0, 0.0, 0.0, 0, 0);
+            oracle::jka_TAG_Add(
+                c"hand".as_ptr(),
+                c"alpha".as_ptr(),
+                1.5,
+                -2.25,
+                3.0,
+                0.0,
+                0.0,
+                0.0,
+                0,
+                0,
+            );
 
             let queries: &[(*const c_char, &CStr)] = &[
                 (c"alpha".as_ptr(), c"hand"),    // hit
@@ -4306,7 +4455,18 @@ mod tests {
             let o: vec3_t = [0.0, 0.0, 0.0];
             let ang: vec3_t = [11.5, -22.75, 33.0];
             TAG_Add(c"hand".as_ptr(), c"alpha".as_ptr(), &o, &ang, 0, 0);
-            oracle::jka_TAG_Add(c"hand".as_ptr(), c"alpha".as_ptr(), 0.0, 0.0, 0.0, 11.5, -22.75, 33.0, 0, 0);
+            oracle::jka_TAG_Add(
+                c"hand".as_ptr(),
+                c"alpha".as_ptr(),
+                0.0,
+                0.0,
+                0.0,
+                11.5,
+                -22.75,
+                33.0,
+                0,
+                0,
+            );
 
             let queries: &[(*const c_char, &CStr)] = &[(c"alpha".as_ptr(), c"hand")];
 
@@ -4338,7 +4498,18 @@ mod tests {
             let o: vec3_t = [0.0, 0.0, 0.0];
             let ang: vec3_t = [0.0, 0.0, 0.0];
             TAG_Add(c"hand".as_ptr(), c"alpha".as_ptr(), &o, &ang, 42, 0);
-            oracle::jka_TAG_Add(c"hand".as_ptr(), c"alpha".as_ptr(), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 42, 0);
+            oracle::jka_TAG_Add(
+                c"hand".as_ptr(),
+                c"alpha".as_ptr(),
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                0.0,
+                42,
+                0,
+            );
 
             let queries: &[(*const c_char, &CStr)] = &[(c"alpha".as_ptr(), c"hand")];
 

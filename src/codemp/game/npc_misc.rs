@@ -23,7 +23,7 @@ use crate::codemp::game::g_local::gentity_t;
 use crate::codemp::game::g_main::{level, Com_Printf};
 use crate::codemp::game::q_shared::Sz;
 use crate::codemp::game::q_shared_h::{
-    Q_COLOR_ESCAPE, COLOR_GREEN, COLOR_RED, COLOR_WHITE, COLOR_YELLOW,
+    COLOR_GREEN, COLOR_RED, COLOR_WHITE, COLOR_YELLOW, Q_COLOR_ESCAPE,
 };
 use crate::ffi::types::vmCvar_t;
 

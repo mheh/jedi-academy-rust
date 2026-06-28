@@ -95,7 +95,7 @@ pub const BOTH_DEATH_LYING_DN: animNumber_t = 51; //# Death anim when lying on f
 pub const BOTH_DEATH_FALLING_DN: animNumber_t = 52; //# Death anim when falling on face
 pub const BOTH_DEATH_FALLING_UP: animNumber_t = 53; //# Death anim when falling on back
 pub const BOTH_DEATH_CROUCHED: animNumber_t = 54; //# Death anim when crouched
-//# #sep BOTH_ DEAD POSES # Should be last frame of corresponding previous anims
+                                                  //# #sep BOTH_ DEAD POSES # Should be last frame of corresponding previous anims
 pub const BOTH_DEAD1: animNumber_t = 55; //# First Death finished pose
 pub const BOTH_DEAD2: animNumber_t = 56; //# Second Death finished pose
 pub const BOTH_DEAD3: animNumber_t = 57; //# Third Death finished pose
@@ -128,7 +128,7 @@ pub const BOTH_DEADBACKWARD2: animNumber_t = 83; //# Second thrown backward deat
 pub const BOTH_LYINGDEAD1: animNumber_t = 84; //# Killed lying down death finished pose
 pub const BOTH_STUMBLEDEAD1: animNumber_t = 85; //# Stumble forward death finished pose
 pub const BOTH_FALLDEAD1LAND: animNumber_t = 86; //# Fall forward and splat death finished pose
-//# #sep BOTH_ DEAD TWITCH/FLOP # React to being shot from death poses
+                                                 //# #sep BOTH_ DEAD TWITCH/FLOP # React to being shot from death poses
 pub const BOTH_DEADFLOP1: animNumber_t = 87; //# React to being shot from First Death finished pose
 pub const BOTH_DEADFLOP2: animNumber_t = 88; //# React to being shot from Second Death finished pose
 pub const BOTH_DISMEMBER_HEAD1: animNumber_t = 89; //#
@@ -137,7 +137,7 @@ pub const BOTH_DISMEMBER_LLEG: animNumber_t = 91; //#
 pub const BOTH_DISMEMBER_RLEG: animNumber_t = 92; //#
 pub const BOTH_DISMEMBER_RARM: animNumber_t = 93; //#
 pub const BOTH_DISMEMBER_LARM: animNumber_t = 94; //#
-//# #sep BOTH_ PAINS
+                                                  //# #sep BOTH_ PAINS
 pub const BOTH_PAIN1: animNumber_t = 95; //# First take pain anim
 pub const BOTH_PAIN2: animNumber_t = 96; //# Second take pain anim
 pub const BOTH_PAIN3: animNumber_t = 97; //# Third take pain anim
@@ -171,8 +171,8 @@ pub const BOTH_MELEE1: animNumber_t = 122; //# First melee attack
 pub const BOTH_MELEE2: animNumber_t = 123; //# Second melee attack
 pub const BOTH_THERMAL_READY: animNumber_t = 124; //# pull back with thermal
 pub const BOTH_THERMAL_THROW: animNumber_t = 125; //# throw thermal
-//* #sep BOTH_ SABER ANIMS
-//Saber attack anims - power level 1
+                                                  //* #sep BOTH_ SABER ANIMS
+                                                  //Saber attack anims - power level 1
 pub const BOTH_A1_T__B_: animNumber_t = 126; //# Fast weak vertical attack top to bottom
 pub const BOTH_A1__L__R: animNumber_t = 127; //# Fast weak horizontal attack left to right
 pub const BOTH_A1__R__L: animNumber_t = 128; //# Fast weak horizontal attack right to left
@@ -180,7 +180,7 @@ pub const BOTH_A1_TL_BR: animNumber_t = 129; //# Fast weak diagonal attack top l
 pub const BOTH_A1_BR_TL: animNumber_t = 130; //# Fast weak diagonal attack top left to botom right
 pub const BOTH_A1_BL_TR: animNumber_t = 131; //# Fast weak diagonal attack bottom left to top right
 pub const BOTH_A1_TR_BL: animNumber_t = 132; //# Fast weak diagonal attack bottom left to right
-//Saber Arc and Spin Transitions
+                                             //Saber Arc and Spin Transitions
 pub const BOTH_T1_BR__R: animNumber_t = 133; //# Fast arc bottom right to right
 pub const BOTH_T1_BR_TL: animNumber_t = 134; //# Fast weak spin bottom right to top left
 pub const BOTH_T1_BR__L: animNumber_t = 135; //# Fast weak spin bottom right to left
@@ -208,7 +208,7 @@ pub const BOTH_T1_BL_BR: animNumber_t = 156; //# Fast weak spin bottom left to b
 pub const BOTH_T1_BL__R: animNumber_t = 157; //# Fast weak spin bottom left to right
 pub const BOTH_T1_BL_TR: animNumber_t = 158; //# Fast weak spin bottom left to top right
 pub const BOTH_T1_BL__L: animNumber_t = 159; //# Fast arc bottom left to left
-//Saber Arc Transitions that use existing animations played backwards
+                                             //Saber Arc Transitions that use existing animations played backwards
 pub const BOTH_T1_BR_TR: animNumber_t = 160; //# Fast arc bottom right to top right		(use: BOTH_T1_TR_BR)
 pub const BOTH_T1_BR_T_: animNumber_t = 161; //# Fast arc bottom right to top			(use: BOTH_T1_T__BR)
 pub const BOTH_T1__R_BR: animNumber_t = 162; //# Fast arc right to bottom right			(use: BOTH_T1_BR__R)
@@ -224,7 +224,7 @@ pub const BOTH_T1__L_T_: animNumber_t = 171; //# Fast arc left to top				(use: B
 pub const BOTH_T1__L_BL: animNumber_t = 172; //# Fast arc left to bottom left			(use: BOTH_T1_BL__L)
 pub const BOTH_T1_BL_T_: animNumber_t = 173; //# Fast arc bottom left to top			(use: BOTH_T1_T__BL)
 pub const BOTH_T1_BL_TL: animNumber_t = 174; //# Fast arc bottom left to top left		(use: BOTH_T1_TL_BL)
-//Saber Attack Start Transitions
+                                             //Saber Attack Start Transitions
 pub const BOTH_S1_S1_T_: animNumber_t = 175; //# Fast plain transition from stance1 to top-to-bottom Fast weak attack
 pub const BOTH_S1_S1__L: animNumber_t = 176; //# Fast plain transition from stance1 to left-to-right Fast weak attack
 pub const BOTH_S1_S1__R: animNumber_t = 177; //# Fast plain transition from stance1 to right-to-left Fast weak attack
@@ -232,7 +232,7 @@ pub const BOTH_S1_S1_TL: animNumber_t = 178; //# Fast plain transition from stan
 pub const BOTH_S1_S1_BR: animNumber_t = 179; //# Fast plain transition from stance1 to bottom-right-to-top-left Fast weak attack
 pub const BOTH_S1_S1_BL: animNumber_t = 180; //# Fast plain transition from stance1 to bottom-left-to-top-right Fast weak attack
 pub const BOTH_S1_S1_TR: animNumber_t = 181; //# Fast plain transition from stance1 to top-right-to-bottom-left Fast weak attack
-//Saber Attack Return Transitions
+                                             //Saber Attack Return Transitions
 pub const BOTH_R1_B__S1: animNumber_t = 182; //# Fast plain transition from top-to-bottom Fast weak attack to stance1
 pub const BOTH_R1__L_S1: animNumber_t = 183; //# Fast plain transition from left-to-right Fast weak attack to stance1
 pub const BOTH_R1__R_S1: animNumber_t = 184; //# Fast plain transition from right-to-left Fast weak attack to stance1
@@ -240,7 +240,7 @@ pub const BOTH_R1_TL_S1: animNumber_t = 185; //# Fast plain transition from top-
 pub const BOTH_R1_BR_S1: animNumber_t = 186; //# Fast plain transition from bottom-right-to-top-left Fast weak attack to stance1
 pub const BOTH_R1_BL_S1: animNumber_t = 187; //# Fast plain transition from bottom-left-to-top-right Fast weak attack to stance1
 pub const BOTH_R1_TR_S1: animNumber_t = 188; //# Fast plain transition from top-right-to-bottom-left Fast weak attack
-//Saber Attack Bounces (first 4 frames of an attack, played backwards)
+                                             //Saber Attack Bounces (first 4 frames of an attack, played backwards)
 pub const BOTH_B1_BR___: animNumber_t = 189; //# Bounce-back if attack from BR is blocked
 pub const BOTH_B1__R___: animNumber_t = 190; //# Bounce-back if attack from R is blocked
 pub const BOTH_B1_TR___: animNumber_t = 191; //# Bounce-back if attack from TR is blocked
@@ -248,7 +248,7 @@ pub const BOTH_B1_T____: animNumber_t = 192; //# Bounce-back if attack from T is
 pub const BOTH_B1_TL___: animNumber_t = 193; //# Bounce-back if attack from TL is blocked
 pub const BOTH_B1__L___: animNumber_t = 194; //# Bounce-back if attack from L is blocked
 pub const BOTH_B1_BL___: animNumber_t = 195; //# Bounce-back if attack from BL is blocked
-//Saber Attack Deflections (last 4 frames of an attack)
+                                             //Saber Attack Deflections (last 4 frames of an attack)
 pub const BOTH_D1_BR___: animNumber_t = 196; //# Deflection toward BR
 pub const BOTH_D1__R___: animNumber_t = 197; //# Deflection toward R
 pub const BOTH_D1_TR___: animNumber_t = 198; //# Deflection toward TR
@@ -256,7 +256,7 @@ pub const BOTH_D1_TL___: animNumber_t = 199; //# Deflection toward TL
 pub const BOTH_D1__L___: animNumber_t = 200; //# Deflection toward L
 pub const BOTH_D1_BL___: animNumber_t = 201; //# Deflection toward BL
 pub const BOTH_D1_B____: animNumber_t = 202; //# Deflection toward B
-//Saber attack anims - power level 2
+                                             //Saber attack anims - power level 2
 pub const BOTH_A2_T__B_: animNumber_t = 203; //# Fast weak vertical attack top to bottom
 pub const BOTH_A2__L__R: animNumber_t = 204; //# Fast weak horizontal attack left to right
 pub const BOTH_A2__R__L: animNumber_t = 205; //# Fast weak horizontal attack right to left
@@ -264,7 +264,7 @@ pub const BOTH_A2_TL_BR: animNumber_t = 206; //# Fast weak diagonal attack top l
 pub const BOTH_A2_BR_TL: animNumber_t = 207; //# Fast weak diagonal attack top left to botom right
 pub const BOTH_A2_BL_TR: animNumber_t = 208; //# Fast weak diagonal attack bottom left to top right
 pub const BOTH_A2_TR_BL: animNumber_t = 209; //# Fast weak diagonal attack bottom left to right
-//Saber Arc and Spin Transitions
+                                             //Saber Arc and Spin Transitions
 pub const BOTH_T2_BR__R: animNumber_t = 210; //# Fast arc bottom right to right
 pub const BOTH_T2_BR_TL: animNumber_t = 211; //# Fast weak spin bottom right to top left
 pub const BOTH_T2_BR__L: animNumber_t = 212; //# Fast weak spin bottom right to left
@@ -292,7 +292,7 @@ pub const BOTH_T2_BL_BR: animNumber_t = 233; //# Fast weak spin bottom left to b
 pub const BOTH_T2_BL__R: animNumber_t = 234; //# Fast weak spin bottom left to right
 pub const BOTH_T2_BL_TR: animNumber_t = 235; //# Fast weak spin bottom left to top right
 pub const BOTH_T2_BL__L: animNumber_t = 236; //# Fast arc bottom left to left
-//Saber Arc Transitions that use existing animations played backwards
+                                             //Saber Arc Transitions that use existing animations played backwards
 pub const BOTH_T2_BR_TR: animNumber_t = 237; //# Fast arc bottom right to top right		(use: BOTH_T2_TR_BR)
 pub const BOTH_T2_BR_T_: animNumber_t = 238; //# Fast arc bottom right to top			(use: BOTH_T2_T__BR)
 pub const BOTH_T2__R_BR: animNumber_t = 239; //# Fast arc right to bottom right			(use: BOTH_T2_BR__R)
@@ -308,7 +308,7 @@ pub const BOTH_T2__L_T_: animNumber_t = 248; //# Fast arc left to top				(use: B
 pub const BOTH_T2__L_BL: animNumber_t = 249; //# Fast arc left to bottom left			(use: BOTH_T2_BL__L)
 pub const BOTH_T2_BL_T_: animNumber_t = 250; //# Fast arc bottom left to top			(use: BOTH_T2_T__BL)
 pub const BOTH_T2_BL_TL: animNumber_t = 251; //# Fast arc bottom left to top left		(use: BOTH_T2_TL_BL)
-//Saber Attack Start Transitions
+                                             //Saber Attack Start Transitions
 pub const BOTH_S2_S1_T_: animNumber_t = 252; //# Fast plain transition from stance1 to top-to-bottom Fast weak attack
 pub const BOTH_S2_S1__L: animNumber_t = 253; //# Fast plain transition from stance1 to left-to-right Fast weak attack
 pub const BOTH_S2_S1__R: animNumber_t = 254; //# Fast plain transition from stance1 to right-to-left Fast weak attack
@@ -316,7 +316,7 @@ pub const BOTH_S2_S1_TL: animNumber_t = 255; //# Fast plain transition from stan
 pub const BOTH_S2_S1_BR: animNumber_t = 256; //# Fast plain transition from stance1 to bottom-right-to-top-left Fast weak attack
 pub const BOTH_S2_S1_BL: animNumber_t = 257; //# Fast plain transition from stance1 to bottom-left-to-top-right Fast weak attack
 pub const BOTH_S2_S1_TR: animNumber_t = 258; //# Fast plain transition from stance1 to top-right-to-bottom-left Fast weak attack
-//Saber Attack Return Transitions
+                                             //Saber Attack Return Transitions
 pub const BOTH_R2_B__S1: animNumber_t = 259; //# Fast plain transition from top-to-bottom Fast weak attack to stance1
 pub const BOTH_R2__L_S1: animNumber_t = 260; //# Fast plain transition from left-to-right Fast weak attack to stance1
 pub const BOTH_R2__R_S1: animNumber_t = 261; //# Fast plain transition from right-to-left Fast weak attack to stance1
@@ -324,7 +324,7 @@ pub const BOTH_R2_TL_S1: animNumber_t = 262; //# Fast plain transition from top-
 pub const BOTH_R2_BR_S1: animNumber_t = 263; //# Fast plain transition from bottom-right-to-top-left Fast weak attack to stance1
 pub const BOTH_R2_BL_S1: animNumber_t = 264; //# Fast plain transition from bottom-left-to-top-right Fast weak attack to stance1
 pub const BOTH_R2_TR_S1: animNumber_t = 265; //# Fast plain transition from top-right-to-bottom-left Fast weak attack
-//Saber Attack Bounces (first 4 frames of an attack, played backwards)
+                                             //Saber Attack Bounces (first 4 frames of an attack, played backwards)
 pub const BOTH_B2_BR___: animNumber_t = 266; //# Bounce-back if attack from BR is blocked
 pub const BOTH_B2__R___: animNumber_t = 267; //# Bounce-back if attack from R is blocked
 pub const BOTH_B2_TR___: animNumber_t = 268; //# Bounce-back if attack from TR is blocked
@@ -332,7 +332,7 @@ pub const BOTH_B2_T____: animNumber_t = 269; //# Bounce-back if attack from T is
 pub const BOTH_B2_TL___: animNumber_t = 270; //# Bounce-back if attack from TL is blocked
 pub const BOTH_B2__L___: animNumber_t = 271; //# Bounce-back if attack from L is blocked
 pub const BOTH_B2_BL___: animNumber_t = 272; //# Bounce-back if attack from BL is blocked
-//Saber Attack Deflections (last 4 frames of an attack)
+                                             //Saber Attack Deflections (last 4 frames of an attack)
 pub const BOTH_D2_BR___: animNumber_t = 273; //# Deflection toward BR
 pub const BOTH_D2__R___: animNumber_t = 274; //# Deflection toward R
 pub const BOTH_D2_TR___: animNumber_t = 275; //# Deflection toward TR
@@ -340,7 +340,7 @@ pub const BOTH_D2_TL___: animNumber_t = 276; //# Deflection toward TL
 pub const BOTH_D2__L___: animNumber_t = 277; //# Deflection toward L
 pub const BOTH_D2_BL___: animNumber_t = 278; //# Deflection toward BL
 pub const BOTH_D2_B____: animNumber_t = 279; //# Deflection toward B
-//Saber attack anims - power level 3
+                                             //Saber attack anims - power level 3
 pub const BOTH_A3_T__B_: animNumber_t = 280; //# Fast weak vertical attack top to bottom
 pub const BOTH_A3__L__R: animNumber_t = 281; //# Fast weak horizontal attack left to right
 pub const BOTH_A3__R__L: animNumber_t = 282; //# Fast weak horizontal attack right to left
@@ -348,7 +348,7 @@ pub const BOTH_A3_TL_BR: animNumber_t = 283; //# Fast weak diagonal attack top l
 pub const BOTH_A3_BR_TL: animNumber_t = 284; //# Fast weak diagonal attack top left to botom right
 pub const BOTH_A3_BL_TR: animNumber_t = 285; //# Fast weak diagonal attack bottom left to top right
 pub const BOTH_A3_TR_BL: animNumber_t = 286; //# Fast weak diagonal attack bottom left to right
-//Saber Arc and Spin Transitions
+                                             //Saber Arc and Spin Transitions
 pub const BOTH_T3_BR__R: animNumber_t = 287; //# Fast arc bottom right to right
 pub const BOTH_T3_BR_TL: animNumber_t = 288; //# Fast weak spin bottom right to top left
 pub const BOTH_T3_BR__L: animNumber_t = 289; //# Fast weak spin bottom right to left
@@ -376,7 +376,7 @@ pub const BOTH_T3_BL_BR: animNumber_t = 310; //# Fast weak spin bottom left to b
 pub const BOTH_T3_BL__R: animNumber_t = 311; //# Fast weak spin bottom left to right
 pub const BOTH_T3_BL_TR: animNumber_t = 312; //# Fast weak spin bottom left to top right
 pub const BOTH_T3_BL__L: animNumber_t = 313; //# Fast arc bottom left to left
-//Saber Arc Transitions that use existing animations played backwards
+                                             //Saber Arc Transitions that use existing animations played backwards
 pub const BOTH_T3_BR_TR: animNumber_t = 314; //# Fast arc bottom right to top right		(use: BOTH_T3_TR_BR)
 pub const BOTH_T3_BR_T_: animNumber_t = 315; //# Fast arc bottom right to top			(use: BOTH_T3_T__BR)
 pub const BOTH_T3__R_BR: animNumber_t = 316; //# Fast arc right to bottom right			(use: BOTH_T3_BR__R)
@@ -392,7 +392,7 @@ pub const BOTH_T3__L_T_: animNumber_t = 325; //# Fast arc left to top				(use: B
 pub const BOTH_T3__L_BL: animNumber_t = 326; //# Fast arc left to bottom left			(use: BOTH_T3_BL__L)
 pub const BOTH_T3_BL_T_: animNumber_t = 327; //# Fast arc bottom left to top			(use: BOTH_T3_T__BL)
 pub const BOTH_T3_BL_TL: animNumber_t = 328; //# Fast arc bottom left to top left		(use: BOTH_T3_TL_BL)
-//Saber Attack Start Transitions
+                                             //Saber Attack Start Transitions
 pub const BOTH_S3_S1_T_: animNumber_t = 329; //# Fast plain transition from stance1 to top-to-bottom Fast weak attack
 pub const BOTH_S3_S1__L: animNumber_t = 330; //# Fast plain transition from stance1 to left-to-right Fast weak attack
 pub const BOTH_S3_S1__R: animNumber_t = 331; //# Fast plain transition from stance1 to right-to-left Fast weak attack
@@ -400,7 +400,7 @@ pub const BOTH_S3_S1_TL: animNumber_t = 332; //# Fast plain transition from stan
 pub const BOTH_S3_S1_BR: animNumber_t = 333; //# Fast plain transition from stance1 to bottom-right-to-top-left Fast weak attack
 pub const BOTH_S3_S1_BL: animNumber_t = 334; //# Fast plain transition from stance1 to bottom-left-to-top-right Fast weak attack
 pub const BOTH_S3_S1_TR: animNumber_t = 335; //# Fast plain transition from stance1 to top-right-to-bottom-left Fast weak attack
-//Saber Attack Return Transitions
+                                             //Saber Attack Return Transitions
 pub const BOTH_R3_B__S1: animNumber_t = 336; //# Fast plain transition from top-to-bottom Fast weak attack to stance1
 pub const BOTH_R3__L_S1: animNumber_t = 337; //# Fast plain transition from left-to-right Fast weak attack to stance1
 pub const BOTH_R3__R_S1: animNumber_t = 338; //# Fast plain transition from right-to-left Fast weak attack to stance1
@@ -408,7 +408,7 @@ pub const BOTH_R3_TL_S1: animNumber_t = 339; //# Fast plain transition from top-
 pub const BOTH_R3_BR_S1: animNumber_t = 340; //# Fast plain transition from bottom-right-to-top-left Fast weak attack to stance1
 pub const BOTH_R3_BL_S1: animNumber_t = 341; //# Fast plain transition from bottom-left-to-top-right Fast weak attack to stance1
 pub const BOTH_R3_TR_S1: animNumber_t = 342; //# Fast plain transition from top-right-to-bottom-left Fast weak attack
-//Saber Attack Bounces (first 4 frames of an attack, played backwards)
+                                             //Saber Attack Bounces (first 4 frames of an attack, played backwards)
 pub const BOTH_B3_BR___: animNumber_t = 343; //# Bounce-back if attack from BR is blocked
 pub const BOTH_B3__R___: animNumber_t = 344; //# Bounce-back if attack from R is blocked
 pub const BOTH_B3_TR___: animNumber_t = 345; //# Bounce-back if attack from TR is blocked
@@ -416,7 +416,7 @@ pub const BOTH_B3_T____: animNumber_t = 346; //# Bounce-back if attack from T is
 pub const BOTH_B3_TL___: animNumber_t = 347; //# Bounce-back if attack from TL is blocked
 pub const BOTH_B3__L___: animNumber_t = 348; //# Bounce-back if attack from L is blocked
 pub const BOTH_B3_BL___: animNumber_t = 349; //# Bounce-back if attack from BL is blocked
-//Saber Attack Deflections (last 4 frames of an attack)
+                                             //Saber Attack Deflections (last 4 frames of an attack)
 pub const BOTH_D3_BR___: animNumber_t = 350; //# Deflection toward BR
 pub const BOTH_D3__R___: animNumber_t = 351; //# Deflection toward R
 pub const BOTH_D3_TR___: animNumber_t = 352; //# Deflection toward TR
@@ -424,7 +424,7 @@ pub const BOTH_D3_TL___: animNumber_t = 353; //# Deflection toward TL
 pub const BOTH_D3__L___: animNumber_t = 354; //# Deflection toward L
 pub const BOTH_D3_BL___: animNumber_t = 355; //# Deflection toward BL
 pub const BOTH_D3_B____: animNumber_t = 356; //# Deflection toward B
-//Saber attack anims - power level 4  - Desann's
+                                             //Saber attack anims - power level 4  - Desann's
 pub const BOTH_A4_T__B_: animNumber_t = 357; //# Fast weak vertical attack top to bottom
 pub const BOTH_A4__L__R: animNumber_t = 358; //# Fast weak horizontal attack left to right
 pub const BOTH_A4__R__L: animNumber_t = 359; //# Fast weak horizontal attack right to left
@@ -432,7 +432,7 @@ pub const BOTH_A4_TL_BR: animNumber_t = 360; //# Fast weak diagonal attack top l
 pub const BOTH_A4_BR_TL: animNumber_t = 361; //# Fast weak diagonal attack top left to botom right
 pub const BOTH_A4_BL_TR: animNumber_t = 362; //# Fast weak diagonal attack bottom left to top right
 pub const BOTH_A4_TR_BL: animNumber_t = 363; //# Fast weak diagonal attack bottom left to right
-//Saber Arc and Spin Transitions
+                                             //Saber Arc and Spin Transitions
 pub const BOTH_T4_BR__R: animNumber_t = 364; //# Fast arc bottom right to right
 pub const BOTH_T4_BR_TL: animNumber_t = 365; //# Fast weak spin bottom right to top left
 pub const BOTH_T4_BR__L: animNumber_t = 366; //# Fast weak spin bottom right to left
@@ -460,7 +460,7 @@ pub const BOTH_T4_BL_BR: animNumber_t = 387; //# Fast weak spin bottom left to b
 pub const BOTH_T4_BL__R: animNumber_t = 388; //# Fast weak spin bottom left to right
 pub const BOTH_T4_BL_TR: animNumber_t = 389; //# Fast weak spin bottom left to top right
 pub const BOTH_T4_BL__L: animNumber_t = 390; //# Fast arc bottom left to left
-//Saber Arc Transitions that use existing animations played backwards
+                                             //Saber Arc Transitions that use existing animations played backwards
 pub const BOTH_T4_BR_TR: animNumber_t = 391; //# Fast arc bottom right to top right		(use: BOTH_T4_TR_BR)
 pub const BOTH_T4_BR_T_: animNumber_t = 392; //# Fast arc bottom right to top			(use: BOTH_T4_T__BR)
 pub const BOTH_T4__R_BR: animNumber_t = 393; //# Fast arc right to bottom right			(use: BOTH_T4_BR__R)
@@ -476,7 +476,7 @@ pub const BOTH_T4__L_T_: animNumber_t = 402; //# Fast arc left to top				(use: B
 pub const BOTH_T4__L_BL: animNumber_t = 403; //# Fast arc left to bottom left			(use: BOTH_T4_BL__L)
 pub const BOTH_T4_BL_T_: animNumber_t = 404; //# Fast arc bottom left to top			(use: BOTH_T4_T__BL)
 pub const BOTH_T4_BL_TL: animNumber_t = 405; //# Fast arc bottom left to top left		(use: BOTH_T4_TL_BL)
-//Saber Attack Start Transitions
+                                             //Saber Attack Start Transitions
 pub const BOTH_S4_S1_T_: animNumber_t = 406; //# Fast plain transition from stance1 to top-to-bottom Fast weak attack
 pub const BOTH_S4_S1__L: animNumber_t = 407; //# Fast plain transition from stance1 to left-to-right Fast weak attack
 pub const BOTH_S4_S1__R: animNumber_t = 408; //# Fast plain transition from stance1 to right-to-left Fast weak attack
@@ -484,7 +484,7 @@ pub const BOTH_S4_S1_TL: animNumber_t = 409; //# Fast plain transition from stan
 pub const BOTH_S4_S1_BR: animNumber_t = 410; //# Fast plain transition from stance1 to bottom-right-to-top-left Fast weak attack
 pub const BOTH_S4_S1_BL: animNumber_t = 411; //# Fast plain transition from stance1 to bottom-left-to-top-right Fast weak attack
 pub const BOTH_S4_S1_TR: animNumber_t = 412; //# Fast plain transition from stance1 to top-right-to-bottom-left Fast weak attack
-//Saber Attack Return Transitions
+                                             //Saber Attack Return Transitions
 pub const BOTH_R4_B__S1: animNumber_t = 413; //# Fast plain transition from top-to-bottom Fast weak attack to stance1
 pub const BOTH_R4__L_S1: animNumber_t = 414; //# Fast plain transition from left-to-right Fast weak attack to stance1
 pub const BOTH_R4__R_S1: animNumber_t = 415; //# Fast plain transition from right-to-left Fast weak attack to stance1
@@ -492,7 +492,7 @@ pub const BOTH_R4_TL_S1: animNumber_t = 416; //# Fast plain transition from top-
 pub const BOTH_R4_BR_S1: animNumber_t = 417; //# Fast plain transition from bottom-right-to-top-left Fast weak attack to stance1
 pub const BOTH_R4_BL_S1: animNumber_t = 418; //# Fast plain transition from bottom-left-to-top-right Fast weak attack to stance1
 pub const BOTH_R4_TR_S1: animNumber_t = 419; //# Fast plain transition from top-right-to-bottom-left Fast weak attack
-//Saber Attack Bounces (first 4 frames of an attack, played backwards)
+                                             //Saber Attack Bounces (first 4 frames of an attack, played backwards)
 pub const BOTH_B4_BR___: animNumber_t = 420; //# Bounce-back if attack from BR is blocked
 pub const BOTH_B4__R___: animNumber_t = 421; //# Bounce-back if attack from R is blocked
 pub const BOTH_B4_TR___: animNumber_t = 422; //# Bounce-back if attack from TR is blocked
@@ -500,7 +500,7 @@ pub const BOTH_B4_T____: animNumber_t = 423; //# Bounce-back if attack from T is
 pub const BOTH_B4_TL___: animNumber_t = 424; //# Bounce-back if attack from TL is blocked
 pub const BOTH_B4__L___: animNumber_t = 425; //# Bounce-back if attack from L is blocked
 pub const BOTH_B4_BL___: animNumber_t = 426; //# Bounce-back if attack from BL is blocked
-//Saber Attack Deflections (last 4 frames of an attack)
+                                             //Saber Attack Deflections (last 4 frames of an attack)
 pub const BOTH_D4_BR___: animNumber_t = 427; //# Deflection toward BR
 pub const BOTH_D4__R___: animNumber_t = 428; //# Deflection toward R
 pub const BOTH_D4_TR___: animNumber_t = 429; //# Deflection toward TR
@@ -508,7 +508,7 @@ pub const BOTH_D4_TL___: animNumber_t = 430; //# Deflection toward TL
 pub const BOTH_D4__L___: animNumber_t = 431; //# Deflection toward L
 pub const BOTH_D4_BL___: animNumber_t = 432; //# Deflection toward BL
 pub const BOTH_D4_B____: animNumber_t = 433; //# Deflection toward B
-//Saber attack anims - power level 5  - Tavion's
+                                             //Saber attack anims - power level 5  - Tavion's
 pub const BOTH_A5_T__B_: animNumber_t = 434; //# Fast weak vertical attack top to bottom
 pub const BOTH_A5__L__R: animNumber_t = 435; //# Fast weak horizontal attack left to right
 pub const BOTH_A5__R__L: animNumber_t = 436; //# Fast weak horizontal attack right to left
@@ -516,7 +516,7 @@ pub const BOTH_A5_TL_BR: animNumber_t = 437; //# Fast weak diagonal attack top l
 pub const BOTH_A5_BR_TL: animNumber_t = 438; //# Fast weak diagonal attack top left to botom right
 pub const BOTH_A5_BL_TR: animNumber_t = 439; //# Fast weak diagonal attack bottom left to top right
 pub const BOTH_A5_TR_BL: animNumber_t = 440; //# Fast weak diagonal attack bottom left to right
-//Saber Arc and Spin Transitions
+                                             //Saber Arc and Spin Transitions
 pub const BOTH_T5_BR__R: animNumber_t = 441; //# Fast arc bottom right to right
 pub const BOTH_T5_BR_TL: animNumber_t = 442; //# Fast weak spin bottom right to top left
 pub const BOTH_T5_BR__L: animNumber_t = 443; //# Fast weak spin bottom right to left
@@ -544,7 +544,7 @@ pub const BOTH_T5_BL_BR: animNumber_t = 464; //# Fast weak spin bottom left to b
 pub const BOTH_T5_BL__R: animNumber_t = 465; //# Fast weak spin bottom left to right
 pub const BOTH_T5_BL_TR: animNumber_t = 466; //# Fast weak spin bottom left to top right
 pub const BOTH_T5_BL__L: animNumber_t = 467; //# Fast arc bottom left to left
-//Saber Arc Transitions that use existing animations played backwards
+                                             //Saber Arc Transitions that use existing animations played backwards
 pub const BOTH_T5_BR_TR: animNumber_t = 468; //# Fast arc bottom right to top right		(use: BOTH_T5_TR_BR)
 pub const BOTH_T5_BR_T_: animNumber_t = 469; //# Fast arc bottom right to top			(use: BOTH_T5_T__BR)
 pub const BOTH_T5__R_BR: animNumber_t = 470; //# Fast arc right to bottom right			(use: BOTH_T5_BR__R)
@@ -560,7 +560,7 @@ pub const BOTH_T5__L_T_: animNumber_t = 479; //# Fast arc left to top				(use: B
 pub const BOTH_T5__L_BL: animNumber_t = 480; //# Fast arc left to bottom left			(use: BOTH_T5_BL__L)
 pub const BOTH_T5_BL_T_: animNumber_t = 481; //# Fast arc bottom left to top			(use: BOTH_T5_T__BL)
 pub const BOTH_T5_BL_TL: animNumber_t = 482; //# Fast arc bottom left to top left		(use: BOTH_T5_TL_BL)
-//Saber Attack Start Transitions
+                                             //Saber Attack Start Transitions
 pub const BOTH_S5_S1_T_: animNumber_t = 483; //# Fast plain transition from stance1 to top-to-bottom Fast weak attack
 pub const BOTH_S5_S1__L: animNumber_t = 484; //# Fast plain transition from stance1 to left-to-right Fast weak attack
 pub const BOTH_S5_S1__R: animNumber_t = 485; //# Fast plain transition from stance1 to right-to-left Fast weak attack
@@ -568,7 +568,7 @@ pub const BOTH_S5_S1_TL: animNumber_t = 486; //# Fast plain transition from stan
 pub const BOTH_S5_S1_BR: animNumber_t = 487; //# Fast plain transition from stance1 to bottom-right-to-top-left Fast weak attack
 pub const BOTH_S5_S1_BL: animNumber_t = 488; //# Fast plain transition from stance1 to bottom-left-to-top-right Fast weak attack
 pub const BOTH_S5_S1_TR: animNumber_t = 489; //# Fast plain transition from stance1 to top-right-to-bottom-left Fast weak attack
-//Saber Attack Return Transitions
+                                             //Saber Attack Return Transitions
 pub const BOTH_R5_B__S1: animNumber_t = 490; //# Fast plain transition from top-to-bottom Fast weak attack to stance1
 pub const BOTH_R5__L_S1: animNumber_t = 491; //# Fast plain transition from left-to-right Fast weak attack to stance1
 pub const BOTH_R5__R_S1: animNumber_t = 492; //# Fast plain transition from right-to-left Fast weak attack to stance1
@@ -576,7 +576,7 @@ pub const BOTH_R5_TL_S1: animNumber_t = 493; //# Fast plain transition from top-
 pub const BOTH_R5_BR_S1: animNumber_t = 494; //# Fast plain transition from bottom-right-to-top-left Fast weak attack to stance1
 pub const BOTH_R5_BL_S1: animNumber_t = 495; //# Fast plain transition from bottom-left-to-top-right Fast weak attack to stance1
 pub const BOTH_R5_TR_S1: animNumber_t = 496; //# Fast plain transition from top-right-to-bottom-left Fast weak attack
-//Saber Attack Bounces (first 4 frames of an attack, played backwards)
+                                             //Saber Attack Bounces (first 4 frames of an attack, played backwards)
 pub const BOTH_B5_BR___: animNumber_t = 497; //# Bounce-back if attack from BR is blocked
 pub const BOTH_B5__R___: animNumber_t = 498; //# Bounce-back if attack from R is blocked
 pub const BOTH_B5_TR___: animNumber_t = 499; //# Bounce-back if attack from TR is blocked
@@ -584,7 +584,7 @@ pub const BOTH_B5_T____: animNumber_t = 500; //# Bounce-back if attack from T is
 pub const BOTH_B5_TL___: animNumber_t = 501; //# Bounce-back if attack from TL is blocked
 pub const BOTH_B5__L___: animNumber_t = 502; //# Bounce-back if attack from L is blocked
 pub const BOTH_B5_BL___: animNumber_t = 503; //# Bounce-back if attack from BL is blocked
-//Saber Attack Deflections (last 4 frames of an attack)
+                                             //Saber Attack Deflections (last 4 frames of an attack)
 pub const BOTH_D5_BR___: animNumber_t = 504; //# Deflection toward BR
 pub const BOTH_D5__R___: animNumber_t = 505; //# Deflection toward R
 pub const BOTH_D5_TR___: animNumber_t = 506; //# Deflection toward TR
@@ -592,7 +592,7 @@ pub const BOTH_D5_TL___: animNumber_t = 507; //# Deflection toward TL
 pub const BOTH_D5__L___: animNumber_t = 508; //# Deflection toward L
 pub const BOTH_D5_BL___: animNumber_t = 509; //# Deflection toward BL
 pub const BOTH_D5_B____: animNumber_t = 510; //# Deflection toward B
-//Saber attack anims - power level 6
+                                             //Saber attack anims - power level 6
 pub const BOTH_A6_T__B_: animNumber_t = 511; //# Fast weak vertical attack top to bottom
 pub const BOTH_A6__L__R: animNumber_t = 512; //# Fast weak horizontal attack left to right
 pub const BOTH_A6__R__L: animNumber_t = 513; //# Fast weak horizontal attack right to left
@@ -600,7 +600,7 @@ pub const BOTH_A6_TL_BR: animNumber_t = 514; //# Fast weak diagonal attack top l
 pub const BOTH_A6_BR_TL: animNumber_t = 515; //# Fast weak diagonal attack top left to botom right
 pub const BOTH_A6_BL_TR: animNumber_t = 516; //# Fast weak diagonal attack bottom left to top right
 pub const BOTH_A6_TR_BL: animNumber_t = 517; //# Fast weak diagonal attack bottom left to right
-//Saber Arc and Spin Transitions
+                                             //Saber Arc and Spin Transitions
 pub const BOTH_T6_BR__R: animNumber_t = 518; //# Fast arc bottom right to right
 pub const BOTH_T6_BR_TL: animNumber_t = 519; //# Fast weak spin bottom right to top left
 pub const BOTH_T6_BR__L: animNumber_t = 520; //# Fast weak spin bottom right to left
@@ -628,7 +628,7 @@ pub const BOTH_T6_BL_BR: animNumber_t = 541; //# Fast weak spin bottom left to b
 pub const BOTH_T6_BL__R: animNumber_t = 542; //# Fast weak spin bottom left to right
 pub const BOTH_T6_BL_TR: animNumber_t = 543; //# Fast weak spin bottom left to top right
 pub const BOTH_T6_BL__L: animNumber_t = 544; //# Fast arc bottom left to left
-//Saber Arc Transitions that use existing animations played backwards
+                                             //Saber Arc Transitions that use existing animations played backwards
 pub const BOTH_T6_BR_TR: animNumber_t = 545; //# Fast arc bottom right to top right		(use: BOTH_T6_TR_BR)
 pub const BOTH_T6_BR_T_: animNumber_t = 546; //# Fast arc bottom right to top			(use: BOTH_T6_T__BR)
 pub const BOTH_T6__R_BR: animNumber_t = 547; //# Fast arc right to bottom right			(use: BOTH_T6_BR__R)
@@ -644,7 +644,7 @@ pub const BOTH_T6__L_T_: animNumber_t = 556; //# Fast arc left to top				(use: B
 pub const BOTH_T6__L_BL: animNumber_t = 557; //# Fast arc left to bottom left			(use: BOTH_T6_BL__L)
 pub const BOTH_T6_BL_T_: animNumber_t = 558; //# Fast arc bottom left to top			(use: BOTH_T6_T__BL)
 pub const BOTH_T6_BL_TL: animNumber_t = 559; //# Fast arc bottom left to top left		(use: BOTH_T6_TL_BL)
-//Saber Attack Start Transitions
+                                             //Saber Attack Start Transitions
 pub const BOTH_S6_S6_T_: animNumber_t = 560; //# Fast plain transition from stance1 to top-to-bottom Fast weak attack
 pub const BOTH_S6_S6__L: animNumber_t = 561; //# Fast plain transition from stance1 to left-to-right Fast weak attack
 pub const BOTH_S6_S6__R: animNumber_t = 562; //# Fast plain transition from stance1 to right-to-left Fast weak attack
@@ -652,7 +652,7 @@ pub const BOTH_S6_S6_TL: animNumber_t = 563; //# Fast plain transition from stan
 pub const BOTH_S6_S6_BR: animNumber_t = 564; //# Fast plain transition from stance1 to bottom-right-to-top-left Fast weak attack
 pub const BOTH_S6_S6_BL: animNumber_t = 565; //# Fast plain transition from stance1 to bottom-left-to-top-right Fast weak attack
 pub const BOTH_S6_S6_TR: animNumber_t = 566; //# Fast plain transition from stance1 to top-right-to-bottom-left Fast weak attack
-//Saber Attack Return Transitions
+                                             //Saber Attack Return Transitions
 pub const BOTH_R6_B__S6: animNumber_t = 567; //# Fast plain transition from top-to-bottom Fast weak attack to stance1
 pub const BOTH_R6__L_S6: animNumber_t = 568; //# Fast plain transition from left-to-right Fast weak attack to stance1
 pub const BOTH_R6__R_S6: animNumber_t = 569; //# Fast plain transition from right-to-left Fast weak attack to stance1
@@ -660,7 +660,7 @@ pub const BOTH_R6_TL_S6: animNumber_t = 570; //# Fast plain transition from top-
 pub const BOTH_R6_BR_S6: animNumber_t = 571; //# Fast plain transition from bottom-right-to-top-left Fast weak attack to stance1
 pub const BOTH_R6_BL_S6: animNumber_t = 572; //# Fast plain transition from bottom-left-to-top-right Fast weak attack to stance1
 pub const BOTH_R6_TR_S6: animNumber_t = 573; //# Fast plain transition from top-right-to-bottom-left Fast weak attack
-//Saber Attack Bounces (first 4 frames of an attack, played backwards)
+                                             //Saber Attack Bounces (first 4 frames of an attack, played backwards)
 pub const BOTH_B6_BR___: animNumber_t = 574; //# Bounce-back if attack from BR is blocked
 pub const BOTH_B6__R___: animNumber_t = 575; //# Bounce-back if attack from R is blocked
 pub const BOTH_B6_TR___: animNumber_t = 576; //# Bounce-back if attack from TR is blocked
@@ -668,7 +668,7 @@ pub const BOTH_B6_T____: animNumber_t = 577; //# Bounce-back if attack from T is
 pub const BOTH_B6_TL___: animNumber_t = 578; //# Bounce-back if attack from TL is blocked
 pub const BOTH_B6__L___: animNumber_t = 579; //# Bounce-back if attack from L is blocked
 pub const BOTH_B6_BL___: animNumber_t = 580; //# Bounce-back if attack from BL is blocked
-//Saber Attack Deflections (last 4 frames of an attack)
+                                             //Saber Attack Deflections (last 4 frames of an attack)
 pub const BOTH_D6_BR___: animNumber_t = 581; //# Deflection toward BR
 pub const BOTH_D6__R___: animNumber_t = 582; //# Deflection toward R
 pub const BOTH_D6_TR___: animNumber_t = 583; //# Deflection toward TR
@@ -676,7 +676,7 @@ pub const BOTH_D6_TL___: animNumber_t = 584; //# Deflection toward TL
 pub const BOTH_D6__L___: animNumber_t = 585; //# Deflection toward L
 pub const BOTH_D6_BL___: animNumber_t = 586; //# Deflection toward BL
 pub const BOTH_D6_B____: animNumber_t = 587; //# Deflection toward B
-//Saber attack anims - power level 7
+                                             //Saber attack anims - power level 7
 pub const BOTH_A7_T__B_: animNumber_t = 588; //# Fast weak vertical attack top to bottom
 pub const BOTH_A7__L__R: animNumber_t = 589; //# Fast weak horizontal attack left to right
 pub const BOTH_A7__R__L: animNumber_t = 590; //# Fast weak horizontal attack right to left
@@ -684,7 +684,7 @@ pub const BOTH_A7_TL_BR: animNumber_t = 591; //# Fast weak diagonal attack top l
 pub const BOTH_A7_BR_TL: animNumber_t = 592; //# Fast weak diagonal attack top left to botom right
 pub const BOTH_A7_BL_TR: animNumber_t = 593; //# Fast weak diagonal attack bottom left to top right
 pub const BOTH_A7_TR_BL: animNumber_t = 594; //# Fast weak diagonal attack bottom left to right
-//Saber Arc and Spin Transitions
+                                             //Saber Arc and Spin Transitions
 pub const BOTH_T7_BR__R: animNumber_t = 595; //# Fast arc bottom right to right
 pub const BOTH_T7_BR_TL: animNumber_t = 596; //# Fast weak spin bottom right to top left
 pub const BOTH_T7_BR__L: animNumber_t = 597; //# Fast weak spin bottom right to left
@@ -712,7 +712,7 @@ pub const BOTH_T7_BL_BR: animNumber_t = 618; //# Fast weak spin bottom left to b
 pub const BOTH_T7_BL__R: animNumber_t = 619; //# Fast weak spin bottom left to right
 pub const BOTH_T7_BL_TR: animNumber_t = 620; //# Fast weak spin bottom left to top right
 pub const BOTH_T7_BL__L: animNumber_t = 621; //# Fast arc bottom left to left
-//Saber Arc Transitions that use existing animations played backwards
+                                             //Saber Arc Transitions that use existing animations played backwards
 pub const BOTH_T7_BR_TR: animNumber_t = 622; //# Fast arc bottom right to top right		(use: BOTH_T7_TR_BR)
 pub const BOTH_T7_BR_T_: animNumber_t = 623; //# Fast arc bottom right to top			(use: BOTH_T7_T__BR)
 pub const BOTH_T7__R_BR: animNumber_t = 624; //# Fast arc right to bottom right			(use: BOTH_T7_BR__R)
@@ -728,7 +728,7 @@ pub const BOTH_T7__L_T_: animNumber_t = 633; //# Fast arc left to top				(use: B
 pub const BOTH_T7__L_BL: animNumber_t = 634; //# Fast arc left to bottom left			(use: BOTH_T7_BL__L)
 pub const BOTH_T7_BL_T_: animNumber_t = 635; //# Fast arc bottom left to top			(use: BOTH_T7_T__BL)
 pub const BOTH_T7_BL_TL: animNumber_t = 636; //# Fast arc bottom left to top left		(use: BOTH_T7_TL_BL)
-//Saber Attack Start Transitions
+                                             //Saber Attack Start Transitions
 pub const BOTH_S7_S7_T_: animNumber_t = 637; //# Fast plain transition from stance1 to top-to-bottom Fast weak attack
 pub const BOTH_S7_S7__L: animNumber_t = 638; //# Fast plain transition from stance1 to left-to-right Fast weak attack
 pub const BOTH_S7_S7__R: animNumber_t = 639; //# Fast plain transition from stance1 to right-to-left Fast weak attack
@@ -736,7 +736,7 @@ pub const BOTH_S7_S7_TL: animNumber_t = 640; //# Fast plain transition from stan
 pub const BOTH_S7_S7_BR: animNumber_t = 641; //# Fast plain transition from stance1 to bottom-right-to-top-left Fast weak attack
 pub const BOTH_S7_S7_BL: animNumber_t = 642; //# Fast plain transition from stance1 to bottom-left-to-top-right Fast weak attack
 pub const BOTH_S7_S7_TR: animNumber_t = 643; //# Fast plain transition from stance1 to top-right-to-bottom-left Fast weak attack
-//Saber Attack Return Transitions
+                                             //Saber Attack Return Transitions
 pub const BOTH_R7_B__S7: animNumber_t = 644; //# Fast plain transition from top-to-bottom Fast weak attack to stance1
 pub const BOTH_R7__L_S7: animNumber_t = 645; //# Fast plain transition from left-to-right Fast weak attack to stance1
 pub const BOTH_R7__R_S7: animNumber_t = 646; //# Fast plain transition from right-to-left Fast weak attack to stance1
@@ -744,7 +744,7 @@ pub const BOTH_R7_TL_S7: animNumber_t = 647; //# Fast plain transition from top-
 pub const BOTH_R7_BR_S7: animNumber_t = 648; //# Fast plain transition from bottom-right-to-top-left Fast weak attack to stance1
 pub const BOTH_R7_BL_S7: animNumber_t = 649; //# Fast plain transition from bottom-left-to-top-right Fast weak attack to stance1
 pub const BOTH_R7_TR_S7: animNumber_t = 650; //# Fast plain transition from top-right-to-bottom-left Fast weak attack
-//Saber Attack Bounces (first 4 frames of an attack, played backwards)
+                                             //Saber Attack Bounces (first 4 frames of an attack, played backwards)
 pub const BOTH_B7_BR___: animNumber_t = 651; //# Bounce-back if attack from BR is blocked
 pub const BOTH_B7__R___: animNumber_t = 652; //# Bounce-back if attack from R is blocked
 pub const BOTH_B7_TR___: animNumber_t = 653; //# Bounce-back if attack from TR is blocked
@@ -752,7 +752,7 @@ pub const BOTH_B7_T____: animNumber_t = 654; //# Bounce-back if attack from T is
 pub const BOTH_B7_TL___: animNumber_t = 655; //# Bounce-back if attack from TL is blocked
 pub const BOTH_B7__L___: animNumber_t = 656; //# Bounce-back if attack from L is blocked
 pub const BOTH_B7_BL___: animNumber_t = 657; //# Bounce-back if attack from BL is blocked
-//Saber Attack Deflections (last 4 frames of an attack)
+                                             //Saber Attack Deflections (last 4 frames of an attack)
 pub const BOTH_D7_BR___: animNumber_t = 658; //# Deflection toward BR
 pub const BOTH_D7__R___: animNumber_t = 659; //# Deflection toward R
 pub const BOTH_D7_TR___: animNumber_t = 660; //# Deflection toward TR
@@ -760,20 +760,20 @@ pub const BOTH_D7_TL___: animNumber_t = 661; //# Deflection toward TL
 pub const BOTH_D7__L___: animNumber_t = 662; //# Deflection toward L
 pub const BOTH_D7_BL___: animNumber_t = 663; //# Deflection toward BL
 pub const BOTH_D7_B____: animNumber_t = 664; //# Deflection toward B
-//Saber parry anims
+                                             //Saber parry anims
 pub const BOTH_P1_S1_T_: animNumber_t = 665; //# Block shot/saber top
 pub const BOTH_P1_S1_TR: animNumber_t = 666; //# Block shot/saber top right
 pub const BOTH_P1_S1_TL: animNumber_t = 667; //# Block shot/saber top left
 pub const BOTH_P1_S1_BL: animNumber_t = 668; //# Block shot/saber bottom left
 pub const BOTH_P1_S1_BR: animNumber_t = 669; //# Block shot/saber bottom right
-//Saber knockaway
+                                             //Saber knockaway
 pub const BOTH_K1_S1_T_: animNumber_t = 670; //# knockaway saber top
 pub const BOTH_K1_S1_TR: animNumber_t = 671; //# knockaway saber top right
 pub const BOTH_K1_S1_TL: animNumber_t = 672; //# knockaway saber top left
 pub const BOTH_K1_S1_BL: animNumber_t = 673; //# knockaway saber bottom left
 pub const BOTH_K1_S1_B_: animNumber_t = 674; //# knockaway saber bottom
 pub const BOTH_K1_S1_BR: animNumber_t = 675; //# knockaway saber bottom right
-//Saber attack knocked away
+                                             //Saber attack knocked away
 pub const BOTH_V1_BR_S1: animNumber_t = 676; //# BR attack knocked away
 pub const BOTH_V1__R_S1: animNumber_t = 677; //# R attack knocked away
 pub const BOTH_V1_TR_S1: animNumber_t = 678; //# TR attack knocked away
@@ -782,27 +782,27 @@ pub const BOTH_V1_TL_S1: animNumber_t = 680; //# TL attack knocked away
 pub const BOTH_V1__L_S1: animNumber_t = 681; //# L attack knocked away
 pub const BOTH_V1_BL_S1: animNumber_t = 682; //# BL attack knocked away
 pub const BOTH_V1_B__S1: animNumber_t = 683; //# B attack knocked away
-//Saber parry broken
+                                             //Saber parry broken
 pub const BOTH_H1_S1_T_: animNumber_t = 684; //# saber knocked down from top parry
 pub const BOTH_H1_S1_TR: animNumber_t = 685; //# saber knocked down-left from TR parry
 pub const BOTH_H1_S1_TL: animNumber_t = 686; //# saber knocked down-right from TL parry
 pub const BOTH_H1_S1_BL: animNumber_t = 687; //# saber knocked up-right from BL parry
 pub const BOTH_H1_S1_B_: animNumber_t = 688; //# saber knocked up over head from ready?
 pub const BOTH_H1_S1_BR: animNumber_t = 689; //# saber knocked up-left from BR parry
-//Dual Saber parry anims
+                                             //Dual Saber parry anims
 pub const BOTH_P6_S6_T_: animNumber_t = 690; //# Block shot/saber top
 pub const BOTH_P6_S6_TR: animNumber_t = 691; //# Block shot/saber top right
 pub const BOTH_P6_S6_TL: animNumber_t = 692; //# Block shot/saber top left
 pub const BOTH_P6_S6_BL: animNumber_t = 693; //# Block shot/saber bottom left
 pub const BOTH_P6_S6_BR: animNumber_t = 694; //# Block shot/saber bottom right
-//Dual Saber knockaway
+                                             //Dual Saber knockaway
 pub const BOTH_K6_S6_T_: animNumber_t = 695; //# knockaway saber top
 pub const BOTH_K6_S6_TR: animNumber_t = 696; //# knockaway saber top right
 pub const BOTH_K6_S6_TL: animNumber_t = 697; //# knockaway saber top left
 pub const BOTH_K6_S6_BL: animNumber_t = 698; //# knockaway saber bottom left
 pub const BOTH_K6_S6_B_: animNumber_t = 699; //# knockaway saber bottom
 pub const BOTH_K6_S6_BR: animNumber_t = 700; //# knockaway saber bottom right
-//Dual Saber attack knocked away
+                                             //Dual Saber attack knocked away
 pub const BOTH_V6_BR_S6: animNumber_t = 701; //# BR attack knocked away
 pub const BOTH_V6__R_S6: animNumber_t = 702; //# R attack knocked away
 pub const BOTH_V6_TR_S6: animNumber_t = 703; //# TR attack knocked away
@@ -811,27 +811,27 @@ pub const BOTH_V6_TL_S6: animNumber_t = 705; //# TL attack knocked away
 pub const BOTH_V6__L_S6: animNumber_t = 706; //# L attack knocked away
 pub const BOTH_V6_BL_S6: animNumber_t = 707; //# BL attack knocked away
 pub const BOTH_V6_B__S6: animNumber_t = 708; //# B attack knocked away
-//Dual Saber parry broken
+                                             //Dual Saber parry broken
 pub const BOTH_H6_S6_T_: animNumber_t = 709; //# saber knocked down from top parry
 pub const BOTH_H6_S6_TR: animNumber_t = 710; //# saber knocked down-left from TR parry
 pub const BOTH_H6_S6_TL: animNumber_t = 711; //# saber knocked down-right from TL parry
 pub const BOTH_H6_S6_BL: animNumber_t = 712; //# saber knocked up-right from BL parry
 pub const BOTH_H6_S6_B_: animNumber_t = 713; //# saber knocked up over head from ready?
 pub const BOTH_H6_S6_BR: animNumber_t = 714; //# saber knocked up-left from BR parry
-//SaberStaff parry anims
+                                             //SaberStaff parry anims
 pub const BOTH_P7_S7_T_: animNumber_t = 715; //# Block shot/saber top
 pub const BOTH_P7_S7_TR: animNumber_t = 716; //# Block shot/saber top right
 pub const BOTH_P7_S7_TL: animNumber_t = 717; //# Block shot/saber top left
 pub const BOTH_P7_S7_BL: animNumber_t = 718; //# Block shot/saber bottom left
 pub const BOTH_P7_S7_BR: animNumber_t = 719; //# Block shot/saber bottom right
-//SaberStaff knockaway
+                                             //SaberStaff knockaway
 pub const BOTH_K7_S7_T_: animNumber_t = 720; //# knockaway saber top
 pub const BOTH_K7_S7_TR: animNumber_t = 721; //# knockaway saber top right
 pub const BOTH_K7_S7_TL: animNumber_t = 722; //# knockaway saber top left
 pub const BOTH_K7_S7_BL: animNumber_t = 723; //# knockaway saber bottom left
 pub const BOTH_K7_S7_B_: animNumber_t = 724; //# knockaway saber bottom
 pub const BOTH_K7_S7_BR: animNumber_t = 725; //# knockaway saber bottom right
-//SaberStaff attack knocked away
+                                             //SaberStaff attack knocked away
 pub const BOTH_V7_BR_S7: animNumber_t = 726; //# BR attack knocked away
 pub const BOTH_V7__R_S7: animNumber_t = 727; //# R attack knocked away
 pub const BOTH_V7_TR_S7: animNumber_t = 728; //# TR attack knocked away
@@ -840,145 +840,145 @@ pub const BOTH_V7_TL_S7: animNumber_t = 730; //# TL attack knocked away
 pub const BOTH_V7__L_S7: animNumber_t = 731; //# L attack knocked away
 pub const BOTH_V7_BL_S7: animNumber_t = 732; //# BL attack knocked away
 pub const BOTH_V7_B__S7: animNumber_t = 733; //# B attack knocked away
-//SaberStaff parry broken
+                                             //SaberStaff parry broken
 pub const BOTH_H7_S7_T_: animNumber_t = 734; //# saber knocked down from top parry
 pub const BOTH_H7_S7_TR: animNumber_t = 735; //# saber knocked down-left from TR parry
 pub const BOTH_H7_S7_TL: animNumber_t = 736; //# saber knocked down-right from TL parry
 pub const BOTH_H7_S7_BL: animNumber_t = 737; //# saber knocked up-right from BL parry
 pub const BOTH_H7_S7_B_: animNumber_t = 738; //# saber knocked up over head from ready?
 pub const BOTH_H7_S7_BR: animNumber_t = 739; //# saber knocked up-left from BR parry
-//Sabers locked anims
-//* #sep BOTH_ SABER LOCKED ANIMS
-//BOTH_(DL, S, ST)_(DL, S, ST)_(T, S)_(L, B, SB)_1(_W, _L)
-//===Single locks==================================================================
-//SINGLE vs. DUAL
-//side locks - I'm using a single and they're using dual
+                                             //Sabers locked anims
+                                             //* #sep BOTH_ SABER LOCKED ANIMS
+                                             //BOTH_(DL, S, ST)_(DL, S, ST)_(T, S)_(L, B, SB)_1(_W, _L)
+                                             //===Single locks==================================================================
+                                             //SINGLE vs. DUAL
+                                             //side locks - I'm using a single and they're using dual
 pub const BOTH_LK_S_DL_S_B_1_L: animNumber_t = 740; //normal break I lost
 pub const BOTH_LK_S_DL_S_B_1_W: animNumber_t = 741; //normal break I won
 pub const BOTH_LK_S_DL_S_L_1: animNumber_t = 742; //lock if I'm using single vs. a dual
 pub const BOTH_LK_S_DL_S_SB_1_L: animNumber_t = 743; //super break I lost
 pub const BOTH_LK_S_DL_S_SB_1_W: animNumber_t = 744; //super break I won
-//top locks
+                                                     //top locks
 pub const BOTH_LK_S_DL_T_B_1_L: animNumber_t = 745; //normal break I lost
 pub const BOTH_LK_S_DL_T_B_1_W: animNumber_t = 746; //normal break I won
 pub const BOTH_LK_S_DL_T_L_1: animNumber_t = 747; //lock if I'm using single vs. a dual
 pub const BOTH_LK_S_DL_T_SB_1_L: animNumber_t = 748; //super break I lost
 pub const BOTH_LK_S_DL_T_SB_1_W: animNumber_t = 749; //super break I won
-//SINGLE vs. STAFF
-//side locks
+                                                     //SINGLE vs. STAFF
+                                                     //side locks
 pub const BOTH_LK_S_ST_S_B_1_L: animNumber_t = 750; //normal break I lost
 pub const BOTH_LK_S_ST_S_B_1_W: animNumber_t = 751; //normal break I won
 pub const BOTH_LK_S_ST_S_L_1: animNumber_t = 752; //lock if I'm using single vs. a staff
 pub const BOTH_LK_S_ST_S_SB_1_L: animNumber_t = 753; //super break I lost
 pub const BOTH_LK_S_ST_S_SB_1_W: animNumber_t = 754; //super break I won
-//top locks
+                                                     //top locks
 pub const BOTH_LK_S_ST_T_B_1_L: animNumber_t = 755; //normal break I lost
 pub const BOTH_LK_S_ST_T_B_1_W: animNumber_t = 756; //normal break I won
 pub const BOTH_LK_S_ST_T_L_1: animNumber_t = 757; //lock if I'm using single vs. a staff
 pub const BOTH_LK_S_ST_T_SB_1_L: animNumber_t = 758; //super break I lost
 pub const BOTH_LK_S_ST_T_SB_1_W: animNumber_t = 759; //super break I won
-//SINGLE vs. SINGLE
-//side locks
+                                                     //SINGLE vs. SINGLE
+                                                     //side locks
 pub const BOTH_LK_S_S_S_B_1_L: animNumber_t = 760; //normal break I lost
 pub const BOTH_LK_S_S_S_B_1_W: animNumber_t = 761; //normal break I won
 pub const BOTH_LK_S_S_S_L_1: animNumber_t = 762; //lock if I'm using single vs. a single and I initiated
 pub const BOTH_LK_S_S_S_SB_1_L: animNumber_t = 763; //super break I lost
 pub const BOTH_LK_S_S_S_SB_1_W: animNumber_t = 764; //super break I won
-//top locks
+                                                    //top locks
 pub const BOTH_LK_S_S_T_B_1_L: animNumber_t = 765; //normal break I lost
 pub const BOTH_LK_S_S_T_B_1_W: animNumber_t = 766; //normal break I won
 pub const BOTH_LK_S_S_T_L_1: animNumber_t = 767; //lock if I'm using single vs. a single and I initiated
 pub const BOTH_LK_S_S_T_SB_1_L: animNumber_t = 768; //super break I lost
 pub const BOTH_LK_S_S_T_SB_1_W: animNumber_t = 769; //super break I won
-//===Dual Saber locks==================================================================
-//DUAL vs. DUAL
-//side locks
+                                                    //===Dual Saber locks==================================================================
+                                                    //DUAL vs. DUAL
+                                                    //side locks
 pub const BOTH_LK_DL_DL_S_B_1_L: animNumber_t = 770; //normal break I lost
 pub const BOTH_LK_DL_DL_S_B_1_W: animNumber_t = 771; //normal break I won
 pub const BOTH_LK_DL_DL_S_L_1: animNumber_t = 772; //lock if I'm using dual vs. dual and I initiated
 pub const BOTH_LK_DL_DL_S_SB_1_L: animNumber_t = 773; //super break I lost
 pub const BOTH_LK_DL_DL_S_SB_1_W: animNumber_t = 774; //super break I won
-//top locks
+                                                      //top locks
 pub const BOTH_LK_DL_DL_T_B_1_L: animNumber_t = 775; //normal break I lost
 pub const BOTH_LK_DL_DL_T_B_1_W: animNumber_t = 776; //normal break I won
 pub const BOTH_LK_DL_DL_T_L_1: animNumber_t = 777; //lock if I'm using dual vs. dual and I initiated
 pub const BOTH_LK_DL_DL_T_SB_1_L: animNumber_t = 778; //super break I lost
 pub const BOTH_LK_DL_DL_T_SB_1_W: animNumber_t = 779; //super break I won
-//DUAL vs. STAFF
-//side locks
+                                                      //DUAL vs. STAFF
+                                                      //side locks
 pub const BOTH_LK_DL_ST_S_B_1_L: animNumber_t = 780; //normal break I lost
 pub const BOTH_LK_DL_ST_S_B_1_W: animNumber_t = 781; //normal break I won
 pub const BOTH_LK_DL_ST_S_L_1: animNumber_t = 782; //lock if I'm using dual vs. a staff
 pub const BOTH_LK_DL_ST_S_SB_1_L: animNumber_t = 783; //super break I lost
 pub const BOTH_LK_DL_ST_S_SB_1_W: animNumber_t = 784; //super break I won
-//top locks
+                                                      //top locks
 pub const BOTH_LK_DL_ST_T_B_1_L: animNumber_t = 785; //normal break I lost
 pub const BOTH_LK_DL_ST_T_B_1_W: animNumber_t = 786; //normal break I won
 pub const BOTH_LK_DL_ST_T_L_1: animNumber_t = 787; //lock if I'm using dual vs. a staff
 pub const BOTH_LK_DL_ST_T_SB_1_L: animNumber_t = 788; //super break I lost
 pub const BOTH_LK_DL_ST_T_SB_1_W: animNumber_t = 789; //super break I won
-//DUAL vs. SINGLE
-//side locks
+                                                      //DUAL vs. SINGLE
+                                                      //side locks
 pub const BOTH_LK_DL_S_S_B_1_L: animNumber_t = 790; //normal break I lost
 pub const BOTH_LK_DL_S_S_B_1_W: animNumber_t = 791; //normal break I won
 pub const BOTH_LK_DL_S_S_L_1: animNumber_t = 792; //lock if I'm using dual vs. a single
 pub const BOTH_LK_DL_S_S_SB_1_L: animNumber_t = 793; //super break I lost
 pub const BOTH_LK_DL_S_S_SB_1_W: animNumber_t = 794; //super break I won
-//top locks
+                                                     //top locks
 pub const BOTH_LK_DL_S_T_B_1_L: animNumber_t = 795; //normal break I lost
 pub const BOTH_LK_DL_S_T_B_1_W: animNumber_t = 796; //normal break I won
 pub const BOTH_LK_DL_S_T_L_1: animNumber_t = 797; //lock if I'm using dual vs. a single
 pub const BOTH_LK_DL_S_T_SB_1_L: animNumber_t = 798; //super break I lost
 pub const BOTH_LK_DL_S_T_SB_1_W: animNumber_t = 799; //super break I won
-//===Saber Staff locks==================================================================
-//STAFF vs. DUAL
-//side locks
+                                                     //===Saber Staff locks==================================================================
+                                                     //STAFF vs. DUAL
+                                                     //side locks
 pub const BOTH_LK_ST_DL_S_B_1_L: animNumber_t = 800; //normal break I lost
 pub const BOTH_LK_ST_DL_S_B_1_W: animNumber_t = 801; //normal break I won
 pub const BOTH_LK_ST_DL_S_L_1: animNumber_t = 802; //lock if I'm using staff vs. dual
 pub const BOTH_LK_ST_DL_S_SB_1_L: animNumber_t = 803; //super break I lost
 pub const BOTH_LK_ST_DL_S_SB_1_W: animNumber_t = 804; //super break I won
-//top locks
+                                                      //top locks
 pub const BOTH_LK_ST_DL_T_B_1_L: animNumber_t = 805; //normal break I lost
 pub const BOTH_LK_ST_DL_T_B_1_W: animNumber_t = 806; //normal break I won
 pub const BOTH_LK_ST_DL_T_L_1: animNumber_t = 807; //lock if I'm using staff vs. dual
 pub const BOTH_LK_ST_DL_T_SB_1_L: animNumber_t = 808; //super break I lost
 pub const BOTH_LK_ST_DL_T_SB_1_W: animNumber_t = 809; //super break I won
-//STAFF vs. STAFF
-//side locks
+                                                      //STAFF vs. STAFF
+                                                      //side locks
 pub const BOTH_LK_ST_ST_S_B_1_L: animNumber_t = 810; //normal break I lost
 pub const BOTH_LK_ST_ST_S_B_1_W: animNumber_t = 811; //normal break I won
 pub const BOTH_LK_ST_ST_S_L_1: animNumber_t = 812; //lock if I'm using staff vs. a staff and I initiated
 pub const BOTH_LK_ST_ST_S_SB_1_L: animNumber_t = 813; //super break I lost
 pub const BOTH_LK_ST_ST_S_SB_1_W: animNumber_t = 814; //super break I won
-//top locks
+                                                      //top locks
 pub const BOTH_LK_ST_ST_T_B_1_L: animNumber_t = 815; //normal break I lost
 pub const BOTH_LK_ST_ST_T_B_1_W: animNumber_t = 816; //normal break I won
 pub const BOTH_LK_ST_ST_T_L_1: animNumber_t = 817; //lock if I'm using staff vs. a staff and I initiated
 pub const BOTH_LK_ST_ST_T_SB_1_L: animNumber_t = 818; //super break I lost
 pub const BOTH_LK_ST_ST_T_SB_1_W: animNumber_t = 819; //super break I won
-//STAFF vs. SINGLE
-//side locks
+                                                      //STAFF vs. SINGLE
+                                                      //side locks
 pub const BOTH_LK_ST_S_S_B_1_L: animNumber_t = 820; //normal break I lost
 pub const BOTH_LK_ST_S_S_B_1_W: animNumber_t = 821; //normal break I won
 pub const BOTH_LK_ST_S_S_L_1: animNumber_t = 822; //lock if I'm using staff vs. a single
 pub const BOTH_LK_ST_S_S_SB_1_L: animNumber_t = 823; //super break I lost
 pub const BOTH_LK_ST_S_S_SB_1_W: animNumber_t = 824; //super break I won
-//top locks
+                                                     //top locks
 pub const BOTH_LK_ST_S_T_B_1_L: animNumber_t = 825; //normal break I lost
 pub const BOTH_LK_ST_S_T_B_1_W: animNumber_t = 826; //normal break I won
 pub const BOTH_LK_ST_S_T_L_1: animNumber_t = 827; //lock if I'm using staff vs. a single
 pub const BOTH_LK_ST_S_T_SB_1_L: animNumber_t = 828; //super break I lost
 pub const BOTH_LK_ST_S_T_SB_1_W: animNumber_t = 829; //super break I won
-//Special cases for same saber style vs. each other (won't fit in nice 5-anim size lists above)
+                                                     //Special cases for same saber style vs. each other (won't fit in nice 5-anim size lists above)
 pub const BOTH_LK_S_S_S_L_2: animNumber_t = 830; //lock if I'm using single vs. a single and other intitiated
 pub const BOTH_LK_S_S_T_L_2: animNumber_t = 831; //lock if I'm using single vs. a single and other initiated
 pub const BOTH_LK_DL_DL_S_L_2: animNumber_t = 832; //lock if I'm using dual vs. dual and other initiated
 pub const BOTH_LK_DL_DL_T_L_2: animNumber_t = 833; //lock if I'm using dual vs. dual and other initiated
 pub const BOTH_LK_ST_ST_S_L_2: animNumber_t = 834; //lock if I'm using staff vs. a staff and other initiated
 pub const BOTH_LK_ST_ST_T_L_2: animNumber_t = 835; //lock if I'm using staff vs. a staff and other initiated
-//===End Saber locks==================================================================
-//old locks
+                                                   //===End Saber locks==================================================================
+                                                   //old locks
 pub const BOTH_BF2RETURN: animNumber_t = 836; //#
 pub const BOTH_BF2BREAK: animNumber_t = 837; //#
 pub const BOTH_BF2LOCK: animNumber_t = 838; //#
@@ -993,8 +993,8 @@ pub const BOTH_CWCIRCLEBREAK: animNumber_t = 846; //#
 pub const BOTH_CCWCIRCLEBREAK: animNumber_t = 847; //#
 pub const BOTH_CWCIRCLELOCK: animNumber_t = 848; //#
 pub const BOTH_CCWCIRCLELOCK: animNumber_t = 849; //#
-//other saber anims
-//* #sep BOTH_ SABER MISC ANIMS
+                                                  //other saber anims
+                                                  //* #sep BOTH_ SABER MISC ANIMS
 pub const BOTH_SABERFAST_STANCE: animNumber_t = 850;
 pub const BOTH_SABERSLOW_STANCE: animNumber_t = 851;
 pub const BOTH_SABERDUAL_STANCE: animNumber_t = 852;
@@ -1006,7 +1006,7 @@ pub const BOTH_JUMPFLIPSTABDOWN: animNumber_t = 857; //#
 pub const BOTH_FORCELEAP2_T__B_: animNumber_t = 858; //#
 pub const BOTH_LUNGE2_B__T_: animNumber_t = 859; //#
 pub const BOTH_CROUCHATTACKBACK1: animNumber_t = 860; //#
-//New specials for JKA:
+                                                      //New specials for JKA:
 pub const BOTH_JUMPATTACK6: animNumber_t = 861; //#
 pub const BOTH_JUMPATTACK7: animNumber_t = 862; //#
 pub const BOTH_SPINATTACK6: animNumber_t = 863; //#
@@ -1275,7 +1275,6 @@ pub const BOTH_VT_ATR_G: animNumber_t = 1090; //# Attack right with gun (90)
 pub const BOTH_VT_ATL_G: animNumber_t = 1091; //# Attack left with gun (90)
 pub const BOTH_VT_ATF_G: animNumber_t = 1092; //# Attack forward with gun
 
-
 // Added 2/26/02 by Aurelio.
 //* #sep BOTH_ FIGHTER ANIMS
 pub const BOTH_GEARS_OPEN: animNumber_t = 1093;
@@ -1361,7 +1360,7 @@ pub const BOTH_FORCELANDLEFT1: animNumber_t = 1159; //# Landing left(from in air
 pub const BOTH_FORCEJUMPRIGHT1: animNumber_t = 1160; //# Jump right - wind-up and leave ground
 pub const BOTH_FORCEINAIRRIGHT1: animNumber_t = 1161; //# In air loop (from jump right)
 pub const BOTH_FORCELANDRIGHT1: animNumber_t = 1162; //# Landing right(from in air loop)
-//# #sep BOTH_ ACROBATICS
+                                                     //# #sep BOTH_ ACROBATICS
 pub const BOTH_FLIP_F: animNumber_t = 1163; //# Flip forward
 pub const BOTH_FLIP_B: animNumber_t = 1164; //# Flip backwards
 pub const BOTH_FLIP_L: animNumber_t = 1165; //# Flip left
@@ -1476,7 +1475,7 @@ pub const BOTH_DUAL_TAUNT: animNumber_t = 1263; //# taunt dual
 pub const BOTH_A6_FB: animNumber_t = 1264; //# dual attack front/back
 pub const BOTH_A6_LR: animNumber_t = 1265; //# dual attack left/right
 pub const BOTH_A7_HILT: animNumber_t = 1266; //# saber knock (alt + stand still)
-//Alora
+                                             //Alora
 pub const BOTH_ALORA_SPIN: animNumber_t = 1267; //#jump spin attack	death ballet
 pub const BOTH_ALORA_FLIP_1: animNumber_t = 1268; //# gymnast move 1
 pub const BOTH_ALORA_FLIP_2: animNumber_t = 1269; //# gymnast move 2
@@ -1485,16 +1484,16 @@ pub const BOTH_ALORA_FLIP_B: animNumber_t = 1271; //# gymnast move back
 pub const BOTH_ALORA_SPIN_THROW: animNumber_t = 1272; //# dual saber throw
 pub const BOTH_ALORA_SPIN_SLASH: animNumber_t = 1273; //# spin slash	special bonus animation!! :)
 pub const BOTH_ALORA_TAUNT: animNumber_t = 1274; //# special taunt
-//Rosh (Kothos battle)
+                                                 //Rosh (Kothos battle)
 pub const BOTH_ROSH_PAIN: animNumber_t = 1275; //# hurt animation (exhausted)
 pub const BOTH_ROSH_HEAL: animNumber_t = 1276; //# healed/rejuvenated
-//Tavion
+                                               //Tavion
 pub const BOTH_TAVION_SCEPTERGROUND: animNumber_t = 1277; //# stabbing ground with sith sword shoots electricity everywhere
 pub const BOTH_TAVION_SWORDPOWER: animNumber_t = 1278; //# Tavion doing the He-Man(tm) thing
 pub const BOTH_SCEPTER_START: animNumber_t = 1279; //#Point scepter and attack start
 pub const BOTH_SCEPTER_HOLD: animNumber_t = 1280; //#Point scepter and attack hold
 pub const BOTH_SCEPTER_STOP: animNumber_t = 1281; //#Point scepter and attack stop
-//Kyle Boss
+                                                  //Kyle Boss
 pub const BOTH_KYLE_GRAB: animNumber_t = 1282; //# grab
 pub const BOTH_KYLE_MISS: animNumber_t = 1283; //# miss
 pub const BOTH_KYLE_PA_1: animNumber_t = 1284; //# hold 1
@@ -1505,9 +1504,9 @@ pub const BOTH_PLAYER_PA_FLY: animNumber_t = 1288; //# player getting knocked ba
 pub const BOTH_KYLE_PA_3: animNumber_t = 1289; //# hold 3
 pub const BOTH_PLAYER_PA_3: animNumber_t = 1290; //# player getting held 3
 pub const BOTH_PLAYER_PA_3_FLY: animNumber_t = 1291; //# player getting thrown at end of hold 3
-//Rancor
+                                                     //Rancor
 pub const BOTH_BUCK_RIDER: animNumber_t = 1292; //# Rancor bucks when someone is on him
-//WAMPA Grabbing enemy
+                                                //WAMPA Grabbing enemy
 pub const BOTH_HOLD_START: animNumber_t = 1293; //#
 pub const BOTH_HOLD_MISS: animNumber_t = 1294; //#
 pub const BOTH_HOLD_IDLE: animNumber_t = 1295; //#
@@ -1515,7 +1514,7 @@ pub const BOTH_HOLD_END: animNumber_t = 1296; //#
 pub const BOTH_HOLD_ATTACK: animNumber_t = 1297; //#
 pub const BOTH_HOLD_SNIFF: animNumber_t = 1298; //# Sniff the guy you're holding
 pub const BOTH_HOLD_DROP: animNumber_t = 1299; //# just drop 'em
-//BEING GRABBED BY WAMPA
+                                               //BEING GRABBED BY WAMPA
 pub const BOTH_GRABBED: animNumber_t = 1300; //#
 pub const BOTH_RELEASED: animNumber_t = 1301; //#
 pub const BOTH_HANG_IDLE: animNumber_t = 1302; //#
@@ -1583,7 +1582,7 @@ pub const BOTH_FORCEGRIP_HOLD: animNumber_t = 1346; //# Use off-hand to do grip 
 pub const BOTH_FORCEGRIP_RELEASE: animNumber_t = 1347; //# Use off-hand to do grip - release
 pub const BOTH_TOSS1: animNumber_t = 1348; //# throwing to left after force gripping
 pub const BOTH_TOSS2: animNumber_t = 1349; //# throwing to right after force gripping
-//NEW force anims for JKA:
+                                           //NEW force anims for JKA:
 pub const BOTH_FORCE_RAGE: animNumber_t = 1350;
 pub const BOTH_FORCE_2HANDEDLIGHTNING: animNumber_t = 1351;
 pub const BOTH_FORCE_2HANDEDLIGHTNING_START: animNumber_t = 1352;
@@ -1669,7 +1668,6 @@ pub const TORSO_HANDSIGNAL2: animNumber_t = 1413;
 pub const TORSO_HANDSIGNAL3: animNumber_t = 1414;
 pub const TORSO_HANDSIGNAL4: animNumber_t = 1415;
 pub const TORSO_HANDSIGNAL5: animNumber_t = 1416;
-
 
 //=================================================
 //ANIMS IN WHICH ONLY THE LOWER OBJECTS ARE IN MD3
@@ -1850,14 +1848,30 @@ mod tests {
             assert_eq!(BOTH_T7__R_TL, jka_anim_BOTH_T7__R_TL(), "BOTH_T7__R_TL");
             assert_eq!(BOTH_K7_S7_T_, jka_anim_BOTH_K7_S7_T_(), "BOTH_K7_S7_T_");
             assert_eq!(BOTH_BF1BREAK, jka_anim_BOTH_BF1BREAK(), "BOTH_BF1BREAK");
-            assert_eq!(BOTH_CONSOLE2HOLDCOMSTOP, jka_anim_BOTH_CONSOLE2HOLDCOMSTOP(), "BOTH_CONSOLE2HOLDCOMSTOP");
-            assert_eq!(BOTH_VT_IDLE_SR, jka_anim_BOTH_VT_IDLE_SR(), "BOTH_VT_IDLE_SR");
-            assert_eq!(BOTH_VICTORY_STAFF, jka_anim_BOTH_VICTORY_STAFF(), "BOTH_VICTORY_STAFF");
+            assert_eq!(
+                BOTH_CONSOLE2HOLDCOMSTOP,
+                jka_anim_BOTH_CONSOLE2HOLDCOMSTOP(),
+                "BOTH_CONSOLE2HOLDCOMSTOP"
+            );
+            assert_eq!(
+                BOTH_VT_IDLE_SR,
+                jka_anim_BOTH_VT_IDLE_SR(),
+                "BOTH_VT_IDLE_SR"
+            );
+            assert_eq!(
+                BOTH_VICTORY_STAFF,
+                jka_anim_BOTH_VICTORY_STAFF(),
+                "BOTH_VICTORY_STAFF"
+            );
             assert_eq!(BOTH_CHOKE1, jka_anim_BOTH_CHOKE1(), "BOTH_CHOKE1");
             assert_eq!(LEGS_S1_RUP4, jka_anim_LEGS_S1_RUP4(), "LEGS_S1_RUP4");
             assert_eq!(BOTH_CIN_50, jka_anim_BOTH_CIN_50(), "BOTH_CIN_50");
             assert_eq!(MAX_ANIMATIONS, jka_anim_MAX_ANIMATIONS(), "MAX_ANIMATIONS");
-            assert_eq!(MAX_TOTALANIMATIONS, jka_anim_MAX_TOTALANIMATIONS(), "MAX_TOTALANIMATIONS");
+            assert_eq!(
+                MAX_TOTALANIMATIONS,
+                jka_anim_MAX_TOTALANIMATIONS(),
+                "MAX_TOTALANIMATIONS"
+            );
             assert_eq!(SABER_ANIM_GROUP_SIZE, jka_SABER_ANIM_GROUP_SIZE());
         }
     }

@@ -42,29 +42,28 @@ extern "C" {
     fn strcpy(dest: *mut c_char, src: *const c_char) -> *mut c_char;
 }
 
+use crate::codemp::game::anims::{BOTH_BUTTON_HOLD, BOTH_CONSOLE1};
 use crate::codemp::game::bg_lib::rand;
 use crate::codemp::game::bg_misc::{BG_AddPredictableEventToPlayerstate, BG_Alloc};
 use crate::codemp::game::bg_panimate::{bgAllAnims, BG_SetAnim};
-use crate::codemp::game::bg_vehicles_h::Vehicle_t;
+use crate::codemp::game::bg_public::team_t;
 use crate::codemp::game::bg_public::{
     bgEntity_t, CS_AMBIENT_SET, CS_BSP_MODELS, CS_EFFECTS, CS_G2BONES, CS_ICONS, CS_MODELS,
     CS_SHADERSTATE, CS_SOUNDS, DEFAULT_MAXS_2, DEFAULT_MINS_2, EF_SOUNDTRACKER, ET_EVENTS,
-    ET_MISSILE, ET_NPC, MAX_SUB_BSP,
-    EV_ENTITY_SOUND, EV_EVENT_BIT1, EV_EVENT_BITS, EV_GENERAL_SOUND, EV_MUTE_SOUND, EV_PLAY_EFFECT,
-    EV_PLAY_EFFECT_ID, EV_SCREENSHAKE, EV_USE_ITEM0, GT_TEAM, HANDEXTEND_DRAGGING, HANDEXTEND_NONE,
-    HI_AMMODISP, HI_JETPACK, MASK_OPAQUE, MOD_TELEFRAG, PMF_FOLLOW, PMF_TIME_KNOCKBACK,
-    STAT_HOLDABLE_ITEMS, TEAM_SPECTATOR,
+    ET_MISSILE, ET_NPC, EV_ENTITY_SOUND, EV_EVENT_BIT1, EV_EVENT_BITS, EV_GENERAL_SOUND,
+    EV_MUTE_SOUND, EV_PLAY_EFFECT, EV_PLAY_EFFECT_ID, EV_SCREENSHAKE, EV_USE_ITEM0, GT_TEAM,
+    HANDEXTEND_DRAGGING, HANDEXTEND_NONE, HI_AMMODISP, HI_JETPACK, MASK_OPAQUE, MAX_SUB_BSP,
+    MOD_TELEFRAG, PMF_FOLLOW, PMF_TIME_KNOCKBACK, STAT_HOLDABLE_ITEMS, TEAM_SPECTATOR,
 };
-use crate::codemp::game::bg_public::team_t;
 use crate::codemp::game::bg_public::{
     GT_SIEGE, HI_HEALTHDISP, SETANIM_FLAG_HOLD, SETANIM_FLAG_OVERRIDE, SETANIM_TORSO, STAT_HEALTH,
     STAT_MAX_HEALTH,
 };
-use crate::codemp::game::bg_weapons::{ammoData, weaponData};
-use crate::codemp::game::bg_weapons_h::{LAST_USEABLE_WEAPON, WP_NONE};
-use crate::codemp::game::anims::{BOTH_BUTTON_HOLD, BOTH_CONSOLE1};
 use crate::codemp::game::bg_saga::bgSiegeClasses;
 use crate::codemp::game::bg_saga_h::siegeClass_t;
+use crate::codemp::game::bg_vehicles_h::Vehicle_t;
+use crate::codemp::game::bg_weapons::{ammoData, weaponData};
+use crate::codemp::game::bg_weapons_h::{LAST_USEABLE_WEAPON, WP_NONE};
 use crate::codemp::game::g_combat::{gSiegeRoundBegun, G_Damage};
 use crate::codemp::game::g_items::{ItemUse_Jetpack, ItemUse_UseDisp};
 use crate::codemp::game::g_local::{
@@ -77,21 +76,23 @@ use crate::codemp::game::g_main::{
 use crate::codemp::game::g_mover::Touch_Button;
 use crate::codemp::game::g_public_h::{Q3_INFINITE, SVF_BROADCAST, SVF_PLAYER_USABLE};
 use crate::codemp::game::g_team::OnSameTeam;
-use crate::codemp::game::teams_h::CLASS_VEHICLE;
-use crate::codemp::game::surfaceflags_h::{CONTENTS_BODY, CONTENTS_CORPSE, CONTENTS_ITEM, CONTENTS_SOLID};
 use crate::codemp::game::q_math::{
     vec3_origin, vectoangles, AngleVectors, CrossProduct, Distance, DotProduct,
     G_FindClosestPointOnLineSegment, VectorAdd, VectorClear, VectorCompare, VectorCopy,
     VectorLength, VectorMA, VectorNormalize, VectorSet, VectorSubtract,
 };
-use crate::codemp::game::q_shared::{va, Com_sprintf, Q_stricmp, Q_strcat, Sz};
+use crate::codemp::game::q_shared::{va, Com_sprintf, Q_strcat, Q_stricmp, Sz};
 use crate::codemp::game::q_shared_h::{
-    snap_vector, trace_t, vec3_t, vec_t, BUTTON_USE, CHAN_AUTO, CHAN_VOICE, ENTITYNUM_MAX_NORMAL,
-    ENTITYNUM_NONE, ERR_DROP, MAX_AMBIENT_SETS, MAX_CLIENTS, MAX_FX, MAX_G2BONES,
-    MAX_GENTITIES, MAX_ICONS, MAX_MODELS, MAX_QPATH, MAX_SABERS, MAX_SOUNDS, MAX_STRING_CHARS,
-    NUM_TRACK_CHANNELS, SOLID_BMODEL, TR_LINEAR_STOP, TR_NONLINEAR_STOP,
-    TR_STATIONARY, TRACK_CHANNEL_NONE, YAW, usercmd_t,
+    snap_vector, trace_t, usercmd_t, vec3_t, vec_t, BUTTON_USE, CHAN_AUTO, CHAN_VOICE,
+    ENTITYNUM_MAX_NORMAL, ENTITYNUM_NONE, ERR_DROP, MAX_AMBIENT_SETS, MAX_CLIENTS, MAX_FX,
+    MAX_G2BONES, MAX_GENTITIES, MAX_ICONS, MAX_MODELS, MAX_QPATH, MAX_SABERS, MAX_SOUNDS,
+    MAX_STRING_CHARS, NUM_TRACK_CHANNELS, SOLID_BMODEL, TRACK_CHANNEL_NONE, TR_LINEAR_STOP,
+    TR_NONLINEAR_STOP, TR_STATIONARY, YAW,
 };
+use crate::codemp::game::surfaceflags_h::{
+    CONTENTS_BODY, CONTENTS_CORPSE, CONTENTS_ITEM, CONTENTS_SOLID,
+};
+use crate::codemp::game::teams_h::CLASS_VEHICLE;
 use crate::ffi::types::{qboolean, QFALSE, QTRUE};
 use crate::trap;
 
@@ -324,7 +325,8 @@ pub unsafe fn G_Find(
         from = from.add(1);
     }
 
-    let end = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*addr_of!(level)).num_entities as usize);
+    let end = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+        .add((*addr_of!(level)).num_entities as usize);
     while from < end {
         'cont: {
             if (*from).inuse == QFALSE {
@@ -445,8 +447,7 @@ pub unsafe fn G_Throw(targ: *mut gentity_t, newDir: &vec3_t, push: f32) {
         // The C macro substitutes the scale expression inline; the trailing `* 0.8`
         // promotes it to `double`, so `newDir[i] * scale` evaluates in double precision
         // before truncating into the float `kvel[i]`. Mirror that exactly.
-        let scale: f64 =
-            ((*addr_of!(g_knockback)).value * push / mass) as f64 * 0.8_f64;
+        let scale: f64 = ((*addr_of!(g_knockback)).value * push / mass) as f64 * 0.8_f64;
         kvel[0] = (newDir[0] as f64 * scale) as f32;
         kvel[1] = (newDir[1] as f64 * scale) as f32;
         kvel[2] = (newDir[2] as f64 * scale) as f32;
@@ -562,11 +563,7 @@ pub unsafe fn G_PickTarget(targetname: *mut c_char) -> *mut gentity_t {
 /// `void GlobalUse( gentity_t *self, gentity_t *other, gentity_t *activator )`
 /// (g_utils.c:561) — fire `self`'s `use` callback, skipping if `self` is null, flagged
 /// `FL_INACTIVE`, or has no `use` handler.
-pub unsafe fn GlobalUse(
-    self_: *mut gentity_t,
-    other: *mut gentity_t,
-    activator: *mut gentity_t,
-) {
+pub unsafe fn GlobalUse(self_: *mut gentity_t, other: *mut gentity_t, activator: *mut gentity_t) {
     if self_.is_null() || ((*self_).flags & FL_INACTIVE) != 0 {
         return;
     }
@@ -583,11 +580,7 @@ pub unsafe fn GlobalUse(
 /// Applies `ent`'s optional shader remap (pushing the rebuilt shader-state configstring),
 /// then fires the `use` of every entity whose `targetname` equals `string`. Self-targeting
 /// warns instead of recursing, and the loop bails out if `ent` is freed mid-iteration.
-pub unsafe fn G_UseTargets2(
-    ent: *mut gentity_t,
-    activator: *mut gentity_t,
-    string: *const c_char,
-) {
+pub unsafe fn G_UseTargets2(ent: *mut gentity_t, activator: *mut gentity_t, string: *const c_char) {
     if ent.is_null() {
         return;
     }
@@ -596,7 +589,10 @@ pub unsafe fn G_UseTargets2(
         let f = ((*addr_of!(level)).time as f64 * 0.001) as f32;
         AddRemap((*ent).targetShaderName, (*ent).targetShaderNewName, f);
         let cfg = BuildShaderStateConfig();
-        trap::SetConfigstring(CS_SHADERSTATE, CStr::from_ptr(cfg).to_str().unwrap_or_default());
+        trap::SetConfigstring(
+            CS_SHADERSTATE,
+            CStr::from_ptr(cfg).to_str().unwrap_or_default(),
+        );
     }
 
     if string.is_null() || *string == 0 {
@@ -733,11 +729,7 @@ unsafe fn G_SpewEntList() {
     let mut num_temp_ent_st: c_int = 0;
 
     #[cfg(not(feature = "vm"))]
-    let fh = trap::FS_FOpenFile(
-        "entspew.txt",
-        crate::codemp::game::q_shared_h::FS_WRITE,
-    )
-    .1;
+    let fh = trap::FS_FOpenFile("entspew.txt", crate::codemp::game::q_shared_h::FS_WRITE).1;
 
     let base = core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>();
     let mut i: c_int = 0;
@@ -767,7 +759,11 @@ unsafe fn G_SpewEntList() {
             }
 
             let s = if !(*ent).classname.is_null() && *(*ent).classname != 0 {
-                format!("ENT {:4}: Classname {}\n", (*ent).s.number, Sz((*ent).classname))
+                format!(
+                    "ENT {:4}: Classname {}\n",
+                    (*ent).s.number,
+                    Sz((*ent).classname)
+                )
             } else {
                 format!("ENT {:4}: Classname Unknown\n", (*ent).s.number)
             };
@@ -1363,11 +1359,7 @@ pub unsafe fn G_ScreenShake(
 /// `DEVIATIONS.md` / [`BG_BLADE_ActivateTrail`]). `channel` is unused here — [`G_Sound`]
 /// writes it into `s.saberEntityNum` on the returned entity. No oracle (allocates via
 /// [`G_Spawn`] + traps).
-pub unsafe fn G_SoundTempEntity(
-    origin: &vec3_t,
-    event: c_int,
-    _channel: c_int,
-) -> *mut gentity_t {
+pub unsafe fn G_SoundTempEntity(origin: &vec3_t, event: c_int, _channel: c_int) -> *mut gentity_t {
     let e = G_Spawn();
 
     (*e).s.eType = ET_EVENTS + event;
@@ -1678,7 +1670,9 @@ pub fn G_BoxInBounds(
 /// (reads the global `g_entities` array).
 pub unsafe fn G_EntityPosition(i: c_int, ret: &mut vec3_t) {
     let base = core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>();
-    if /*g_entities &&*/ i >= 0 && i < MAX_GENTITIES as c_int && (*base.add(i as usize)).inuse != QFALSE {
+    if
+    /*g_entities &&*/
+    i >= 0 && i < MAX_GENTITIES as c_int && (*base.add(i as usize)).inuse != QFALSE {
         // #if 0	// VVFIXME - Do we really care about doing this? It's slow and unnecessary
         //   (bmodel CM_InlineModel/CM_ModelBounds centroid branch — disabled in C)
         // #endif
@@ -1806,10 +1800,10 @@ pub fn ShortestLineSegBewteen2LineSegs(
 
     // if denom is small, then skip all this and jump to the section marked below
     if (denom as f64).abs() > 0.001f32 as f64 {
-        let mut s = -((v2v2 * DotProduct(&v1, &start_dif)) - (v1v2 * DotProduct(&v2, &start_dif)))
-            / denom;
-        let mut t = ((v1v1 * DotProduct(&v2, &start_dif)) - (v1v2 * DotProduct(&v1, &start_dif)))
-            / denom;
+        let mut s =
+            -((v2v2 * DotProduct(&v1, &start_dif)) - (v1v2 * DotProduct(&v2, &start_dif))) / denom;
+        let mut t =
+            ((v1v1 * DotProduct(&v2, &start_dif)) - (v1v2 * DotProduct(&v1, &start_dif))) / denom;
         let mut done = QTRUE;
 
         if s < 0.0 {
@@ -2112,7 +2106,8 @@ pub unsafe fn TryUse(ent: *mut gentity_t) {
         && !(*ent).client.is_null()
         && (*(*ent).client).ps.m_iVehicleNum != 0
     {
-        let currentVeh = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*ent).client).ps.m_iVehicleNum as usize);
+        let currentVeh = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*(*ent).client).ps.m_iVehicleNum as usize);
         if (*currentVeh).inuse != QFALSE && !(*currentVeh).m_pVehicle.is_null() {
             let pVeh = (*currentVeh).m_pVehicle;
             if (*pVeh).m_iBoarding == 0 {
@@ -2131,7 +2126,8 @@ pub unsafe fn TryUse(ent: *mut gentity_t) {
         if (*(*ent).client).bodyGrabIndex != ENTITYNUM_NONE {
             //then hitting the use key just means let go
             if (*(*ent).client).bodyGrabTime < (*addr_of!(level)).time {
-                let grabbed = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*ent).client).bodyGrabIndex as usize);
+                let grabbed = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*(*ent).client).bodyGrabIndex as usize);
 
                 if (*grabbed).inuse != QFALSE {
                     if !(*grabbed).client.is_null() {
@@ -2168,7 +2164,8 @@ pub unsafe fn TryUse(ent: *mut gentity_t) {
             break 'try_use;
         }
 
-        target = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(trace.entityNum as usize);
+        target =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(trace.entityNum as usize);
 
         //Enable for corpse dragging
         // (C #if 0 block omitted)
@@ -2185,7 +2182,11 @@ pub unsafe fn TryUse(ent: *mut gentity_t) {
             if !(*pVeh).m_pVehicleInfo.is_null() {
                 if (*ent).r.ownerNum == (*target).s.number {
                     //user is already on this vehicle so eject him
-                    ((*(*pVeh).m_pVehicleInfo).Eject.unwrap())(pVeh, ent as *mut bgEntity_t, QFALSE);
+                    ((*(*pVeh).m_pVehicleInfo).Eject.unwrap())(
+                        pVeh,
+                        ent as *mut bgEntity_t,
+                        QFALSE,
+                    );
                 } else {
                     // Otherwise board this vehicle.
                     if (*addr_of!(g_gametype)).integer < GT_TEAM
@@ -2369,8 +2370,7 @@ pub unsafe fn G_CanUseDispOn(ent: *mut gentity_t, dispType: c_int) -> c_int {
         //otherwise no
         return 0;
     } else if dispType == HI_AMMODISP {
-        if (*(*ent).client).ps.weapon <= WP_NONE
-            || (*(*ent).client).ps.weapon > LAST_USEABLE_WEAPON
+        if (*(*ent).client).ps.weapon <= WP_NONE || (*(*ent).client).ps.weapon > LAST_USEABLE_WEAPON
         {
             //not a player-useable weapon
             return 0;
@@ -2390,7 +2390,6 @@ pub unsafe fn G_CanUseDispOn(ent: *mut gentity_t, dispType: c_int) -> c_int {
     //invalid type?
     0
 }
-
 
 /// `void G_UseDispenserOn( gentity_t *ent, int dispType, gentity_t *target )`
 /// (g_utils.c:1537) — use an ammo/health dispenser on another client.
@@ -2432,12 +2431,12 @@ pub unsafe fn G_UseDispenserOn(ent: *mut gentity_t, dispType: c_int, target: *mu
             }
 
             //base the next supply time on how long the weapon takes to fire. Seems fair enough.
-            (*(*ent).client).medSupplyDebounce = (*addr_of!(level)).time + weaponData[weapon].fireTime;
+            (*(*ent).client).medSupplyDebounce =
+                (*addr_of!(level)).time + weaponData[weapon].fireTime;
         }
         (*(*target).client).isMedSupplied = (*addr_of!(level)).time + 500;
     }
 }
-
 
 // =====================================================================================
 // `void G_ClPtrClear(void)` — g_utils.c:450 (inside `#ifdef _XBOX` ... `#endif`)
@@ -2540,7 +2539,13 @@ pub unsafe fn G_ROFF_NotetrackCallback(cent: *mut gentity_t, notetrack: *const c
     }
 
     // strcmp(type, "loop") == 0
-    if &type_[..4] == &[b'l' as c_char, b'o' as c_char, b'o' as c_char, b'p' as c_char]
+    if &type_[..4]
+        == &[
+            b'l' as c_char,
+            b'o' as c_char,
+            b'o' as c_char,
+            b'p' as c_char,
+        ]
         && type_[4] == 0
     {
         if addlArg != 0
@@ -2572,7 +2577,6 @@ pub unsafe fn G_CleanAllFakeClients() {
         i += 1;
     }
 }
-
 
 #[cfg(all(test, feature = "oracle"))]
 mod tests {
@@ -2624,7 +2628,8 @@ mod tests {
         ];
         for p in points {
             let got = G_PointInBounds(p, &mins, &maxs);
-            let want = unsafe { oracle::jka_G_PointInBounds(p.as_ptr(), mins.as_ptr(), maxs.as_ptr()) };
+            let want =
+                unsafe { oracle::jka_G_PointInBounds(p.as_ptr(), mins.as_ptr(), maxs.as_ptr()) };
             assert_eq!(got as c_int, want, "G_PointInBounds mismatch for {p:?}");
         }
     }
@@ -2636,13 +2641,13 @@ mod tests {
         let mins: vec3_t = [-5.0, -5.0, -5.0];
         let maxs: vec3_t = [5.0, 5.0, 5.0];
         let points: &[vec3_t] = &[
-            [0.0, 0.0, 0.0],     // centred, fully contained
-            [95.0, 0.0, 0.0],    // box max pokes past bounds max in x
-            [-95.0, 0.0, 0.0],   // box min pokes past bounds min in x
+            [0.0, 0.0, 0.0],   // centred, fully contained
+            [95.0, 0.0, 0.0],  // box max pokes past bounds max in x
+            [-95.0, 0.0, 0.0], // box min pokes past bounds min in x
             [0.0, 96.0, 0.0],
             [0.0, 0.0, -96.0],
-            [95.0, 95.0, 95.0],  // corner, just contained
-            [96.0, 0.0, 0.0],    // just over
+            [95.0, 95.0, 95.0], // corner, just contained
+            [96.0, 0.0, 0.0],   // just over
         ];
         for p in points {
             let got = G_BoxInBounds(p, &mins, &maxs, &bmins, &bmaxs);
@@ -2693,7 +2698,11 @@ mod tests {
 
             let got = CStr::from_ptr(BuildShaderStateConfig());
             let want = CStr::from_ptr(oracle::jka_BuildShaderStateConfig());
-            assert_eq!(got.to_bytes(), want.to_bytes(), "shader-state config mismatch");
+            assert_eq!(
+                got.to_bytes(),
+                want.to_bytes(),
+                "shader-state config mismatch"
+            );
         }
     }
 
@@ -2717,9 +2726,14 @@ mod tests {
             GetAnglesForDirection(p1, p2, &mut r_out);
 
             let mut c_out: vec3_t = [0.0; 3];
-            unsafe { oracle::jka_GetAnglesForDirection(p1.as_ptr(), p2.as_ptr(), c_out.as_mut_ptr()) };
+            unsafe {
+                oracle::jka_GetAnglesForDirection(p1.as_ptr(), p2.as_ptr(), c_out.as_mut_ptr())
+            };
 
-            assert_eq!(r_out, c_out, "GetAnglesForDirection mismatch for {p1:?}->{p2:?}");
+            assert_eq!(
+                r_out, c_out,
+                "GetAnglesForDirection mismatch for {p1:?}->{p2:?}"
+            );
         }
     }
 
@@ -2732,19 +2746,54 @@ mod tests {
         // (start1, end1, start2, end2)
         let cases: &[(vec3_t, vec3_t, vec3_t, vec3_t)] = &[
             // skew lines crossing near the middle -> interior solution
-            ([0.0, 0.0, 0.0], [10.0, 0.0, 0.0], [5.0, -5.0, 2.0], [5.0, 5.0, 2.0]),
+            (
+                [0.0, 0.0, 0.0],
+                [10.0, 0.0, 0.0],
+                [5.0, -5.0, 2.0],
+                [5.0, 5.0, 2.0],
+            ),
             // parallel segments -> denom ~ 0, infinity path then endpoint sweep
-            ([0.0, 0.0, 0.0], [10.0, 0.0, 0.0], [0.0, 4.0, 0.0], [10.0, 4.0, 0.0]),
+            (
+                [0.0, 0.0, 0.0],
+                [10.0, 0.0, 0.0],
+                [0.0, 4.0, 0.0],
+                [10.0, 4.0, 0.0],
+            ),
             // colinear, disjoint
-            ([0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [3.0, 0.0, 0.0], [5.0, 0.0, 0.0]),
+            (
+                [0.0, 0.0, 0.0],
+                [1.0, 0.0, 0.0],
+                [3.0, 0.0, 0.0],
+                [5.0, 0.0, 0.0],
+            ),
             // clamped: closest pair is an endpoint vs interior
-            ([0.0, 0.0, 0.0], [10.0, 0.0, 0.0], [20.0, 1.0, 0.0], [20.0, -1.0, 0.0]),
+            (
+                [0.0, 0.0, 0.0],
+                [10.0, 0.0, 0.0],
+                [20.0, 1.0, 0.0],
+                [20.0, -1.0, 0.0],
+            ),
             // second segment zero-length (a point)
-            ([0.0, 0.0, 0.0], [10.0, 0.0, 0.0], [5.0, 3.0, 0.0], [5.0, 3.0, 0.0]),
+            (
+                [0.0, 0.0, 0.0],
+                [10.0, 0.0, 0.0],
+                [5.0, 3.0, 0.0],
+                [5.0, 3.0, 0.0],
+            ),
             // general 3D skew
-            ([1.0, 2.0, 3.0], [-4.0, 7.0, -2.0], [0.0, -1.0, 5.0], [6.0, 2.0, -3.0]),
+            (
+                [1.0, 2.0, 3.0],
+                [-4.0, 7.0, -2.0],
+                [0.0, -1.0, 5.0],
+                [6.0, 2.0, -3.0],
+            ),
             // identical segments
-            ([2.0, 2.0, 2.0], [8.0, 8.0, 8.0], [2.0, 2.0, 2.0], [8.0, 8.0, 8.0]),
+            (
+                [2.0, 2.0, 2.0],
+                [8.0, 8.0, 8.0],
+                [2.0, 2.0, 2.0],
+                [8.0, 8.0, 8.0],
+            ),
         ];
         for (s1, e1, s2, e2) in cases {
             let mut r_c1: vec3_t = [0.0; 3];
@@ -2764,9 +2813,19 @@ mod tests {
                 )
             };
 
-            assert_eq!(r_dist.to_bits(), c_dist.to_bits(), "dist mismatch for {s1:?}/{e1:?} {s2:?}/{e2:?}");
-            assert_eq!(r_c1, c_c1, "close_pnt1 mismatch for {s1:?}/{e1:?} {s2:?}/{e2:?}");
-            assert_eq!(r_c2, c_c2, "close_pnt2 mismatch for {s1:?}/{e1:?} {s2:?}/{e2:?}");
+            assert_eq!(
+                r_dist.to_bits(),
+                c_dist.to_bits(),
+                "dist mismatch for {s1:?}/{e1:?} {s2:?}/{e2:?}"
+            );
+            assert_eq!(
+                r_c1, c_c1,
+                "close_pnt1 mismatch for {s1:?}/{e1:?} {s2:?}/{e2:?}"
+            );
+            assert_eq!(
+                r_c2, c_c2,
+                "close_pnt2 mismatch for {s1:?}/{e1:?} {s2:?}/{e2:?}"
+            );
         }
     }
 }

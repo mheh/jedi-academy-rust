@@ -46,15 +46,15 @@ fn main() {
         ("q_math_oracle.c", &[]),
         ("q_shared_oracle.c", &[]),
         ("q_shared_h_oracle.c", &[]),
-        ("bg_lib_oracle.c", &["-fwrapv", "-Wno-null-pointer-subtraction"]),
+        (
+            "bg_lib_oracle.c",
+            &["-fwrapv", "-Wno-null-pointer-subtraction"],
+        ),
         ("tri_coll_test_oracle.c", &[]),
         ("anims_oracle.c", &["-Ioracle/codemp/game"]),
         (
             "animtable_oracle.c",
-            &[
-                "-Ioracle/codemp/cgame",
-                "-Ioracle/codemp/game",
-            ],
+            &["-Ioracle/codemp/cgame", "-Ioracle/codemp/game"],
         ),
         ("bg_public_oracle.c", &[]),
         ("bg_public_enums_oracle.c", &[]),
@@ -118,7 +118,14 @@ fn main() {
         let mut cmd = Command::new(&cc);
         // -ffp-contract=off: disable FMA fusion so the C does discrete IEEE-754
         // mul/add steps, matching Rust (which never auto-fuses) bit-for-bit.
-        cmd.args(["-c", "-O2", "-fPIC", "-Wall", "-ffp-contract=off", "-Ioracle_c"]);
+        cmd.args([
+            "-c",
+            "-O2",
+            "-fPIC",
+            "-Wall",
+            "-ffp-contract=off",
+            "-Ioracle_c",
+        ]);
         cmd.args(*extra);
         cmd.arg(format!("oracle_c/{src}")).arg("-o").arg(&obj);
         let status = cmd

@@ -28,6 +28,7 @@ use crate::codemp::game::b_public_h::{
     BS_DEFAULT, SCF_CHASE_ENEMIES, SCF_DONT_FIRE, SCF_FIRE_WEAPON, SCF_IGNORE_ALERTS,
     SCF_LOOK_FOR_ENEMIES, SCF_USE_CP_NEAREST,
 };
+use crate::codemp::game::bg_pmove::BG_SabersOff;
 use crate::codemp::game::bg_public::{
     EV_CONFUSE1, EV_CONFUSE3, EV_PUSHED1, EV_PUSHED3, STAT_WEAPONS,
 };
@@ -39,7 +40,7 @@ use crate::codemp::game::g_nav::{
 };
 use crate::codemp::game::g_public_h::SVF_GLASS_BRUSH;
 use crate::codemp::game::g_timer::{TIMER_Done, TIMER_Set};
-use crate::codemp::game::npc::{ucmd, NPC, NPCInfo};
+use crate::codemp::game::npc::{ucmd, NPCInfo, NPC};
 use crate::codemp::game::npc_combat::{
     G_AddVoiceEvent, G_ClearEnemy, G_SetEnemy, NPC_AimAdjust, NPC_ChangeWeapon,
     NPC_FindCombatPoint, NPC_FreeCombatPoint, NPC_SetCombatPoint, NPC_ShotEntity, WeaponThink,
@@ -51,15 +52,14 @@ use crate::codemp::game::npc_senses::{InFOV3, NPC_CheckAlertEvents, NPC_CheckFor
 use crate::codemp::game::npc_utils::{
     NPC_CheckEnemyExt, NPC_ClearLOS4, NPC_FaceEnemy, NPC_UpdateAngles,
 };
-use crate::codemp::game::bg_pmove::BG_SabersOff;
+use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_math::{
     vec3_origin, vectoangles, DistanceHorizontalSquared, DistanceSquared, VectorCompare,
     VectorCopy, VectorSubtract,
 };
-use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_shared_h::{trace_t, vec3_t, BUTTON_WALKING, PITCH, YAW};
-use crate::trap;
 use crate::ffi::types::{qboolean, QFALSE, QTRUE};
+use crate::trap;
 
 // `NPC_CheckPlayerTeamStealth` and `trap` need full namespace; declared below.
 use crate::codemp::game::npc_ai_stormtrooper::NPC_CheckPlayerTeamStealth;
@@ -119,7 +119,11 @@ NPC_ST_Pain
 -------------------------
 */
 
-pub unsafe extern "C" fn NPC_Grenadier_Pain(self_: *mut gentity_t, attacker: *mut gentity_t, damage: c_int) {
+pub unsafe extern "C" fn NPC_Grenadier_Pain(
+    self_: *mut gentity_t,
+    attacker: *mut gentity_t,
+    damage: c_int,
+) {
     (*(*self_).NPC).localState = LSTATE_UNDERFIRE;
 
     TIMER_Set(self_, c"duck".as_ptr(), -1);
@@ -288,8 +292,15 @@ pub unsafe fn Grenadier_EvaluateShot(hit: c_int) -> qboolean {
     }
 
     if hit == (*(*(*addr_of!(NPC))).enemy).s.number
-        || (!core::ptr::addr_of!(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(hit as isize)).is_null()
-            && ((*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(hit as isize)).r.svFlags & SVF_GLASS_BRUSH) != 0)
+        || (!core::ptr::addr_of!(
+            *(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(hit as isize)
+        )
+        .is_null()
+            && ((*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(hit as isize))
+                .r
+                .svFlags
+                & SVF_GLASS_BRUSH)
+                != 0)
     {
         //can hit enemy or will hit glass, so shoot anyway
         return QTRUE;
@@ -326,22 +337,29 @@ pub unsafe fn NPC_BSGrenadier_Patrol() {
                 //check for other alert events
                 //There is an event to look at
                 if alertEvent >= 0
-                    && (*addr_of!(level)).alertEvents[alertEvent as usize].ID != (*NPCInfo).lastAlertID
+                    && (*addr_of!(level)).alertEvents[alertEvent as usize].ID
+                        != (*NPCInfo).lastAlertID
                 {
                     (*NPCInfo).lastAlertID = (*addr_of!(level)).alertEvents[alertEvent as usize].ID;
                     if (*addr_of!(level)).alertEvents[alertEvent as usize].level == AEL_DISCOVERED {
-                        if !(*addr_of!(level)).alertEvents[alertEvent as usize].owner.is_null()
+                        if !(*addr_of!(level)).alertEvents[alertEvent as usize]
+                            .owner
+                            .is_null()
                             && !(*(*addr_of!(level)).alertEvents[alertEvent as usize].owner)
                                 .client
                                 .is_null()
                             && (*(*addr_of!(level)).alertEvents[alertEvent as usize].owner).health
                                 >= 0
-                            && (*(*(*addr_of!(level)).alertEvents[alertEvent as usize].owner).client)
+                            && (*(*(*addr_of!(level)).alertEvents[alertEvent as usize].owner)
+                                .client)
                                 .playerTeam
                                 == (*(*NPC).client).enemyTeam
                         {
                             //an enemy
-                            G_SetEnemy(NPC, (*addr_of!(level)).alertEvents[alertEvent as usize].owner);
+                            G_SetEnemy(
+                                NPC,
+                                (*addr_of!(level)).alertEvents[alertEvent as usize].owner,
+                            );
                             //NPCInfo->enemyLastSeenTime = level.time;
                             TIMER_Set(NPC, c"attackDelay".as_ptr(), Q_irand(500, 2500));
                         }
@@ -499,7 +517,7 @@ unsafe fn Grenadier_CheckMoveState() {
             NPC_ReachedGoal();
             //don't attack right away
             TIMER_Set(NPC, c"attackDelay".as_ptr(), Q_irand(250, 500)); //FIXME: Slant for difficulty levels
-            //don't do something else just yet
+                                                                        //don't do something else just yet
             TIMER_Set(NPC, c"roamTime".as_ptr(), Q_irand(1000, 4000));
             //stop fleeing
             if (*NPCInfo).squadState == SQUAD_RETREAT {
@@ -582,8 +600,7 @@ pub unsafe fn NPC_BSGrenadier_Attack() {
             );
             if trace.allsolid == 0
                 && trace.startsolid == 0
-                && (trace.fraction == 1.0
-                    || trace.entityNum as c_int == (*(*NPC).enemy).s.number)
+                && (trace.fraction == 1.0 || trace.entityNum as c_int == (*(*NPC).enemy).s.number)
             {
                 //I can get right to him
                 //reset fire-timing variables
@@ -645,7 +662,8 @@ pub unsafe fn NPC_BSGrenadier_Attack() {
             //can we shoot our target?
             //FIXME: how accurate/necessary is this check?
             let hit: c_int = NPC_ShotEntity((*NPC).enemy, core::ptr::null_mut());
-            let hitEnt: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(hit as isize);
+            let hitEnt: *mut gentity_t =
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(hit as isize);
             if hit == (*(*NPC).enemy).s.number
                 || (!hitEnt.is_null()
                     && !(*hitEnt).client.is_null()

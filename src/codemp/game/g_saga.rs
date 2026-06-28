@@ -10,62 +10,62 @@
 //! `BG_SiegeFindClassIndexByName`) already lives in `bg_saga.rs`.
 
 use crate::codemp::game::bg_misc::{BG_FindItemForHoldable, BG_FindItemForWeapon};
+use crate::codemp::game::bg_public::PMF_FOLLOW;
 use crate::codemp::game::bg_public::{
     CS_SIEGE_OBJECTIVES, CS_SIEGE_WINTEAM, EF_CLIENTSMOOTH, EF_NODRAW, EF_RADAROBJECT, ET_GENERAL,
     ET_NPC, ET_PLAYER, EV_SIEGE_OBJECTIVECOMPLETE, EV_SIEGE_ROUNDOVER, GT_SIEGE, HI_NUM_HOLDABLE,
     MASK_PLAYERSOLID, PM_SPECTATOR, STAT_HEALTH, STAT_MAX_HEALTH,
 };
+use crate::codemp::game::bg_public::{
+    CS_SIEGE_STATE, CS_SIEGE_TIMEOVERRIDE, EV_PLAYER_TELEPORT_IN, TEAM_BLUE, TEAM_RED,
+    TEAM_SPECTATOR,
+};
 use crate::codemp::game::bg_saga::{
-    bgSiegeClasses, siege_info, siege_valid, BG_SiegeFindClassIndexByName, BG_SiegeFindThemeForTeam,
-    BG_SiegeGetPairedValue, BG_SiegeGetValueGroup,
+    bgNumSiegeClasses, bgNumSiegeTeams, BG_PrecacheSabersForSiegeTeam, BG_SiegeLoadClasses,
+    BG_SiegeLoadTeams, BG_SiegeSetTeamTheme,
+};
+use crate::codemp::game::bg_saga::{
+    bgSiegeClasses, siege_info, siege_valid, BG_SiegeFindClassIndexByName,
+    BG_SiegeFindThemeForTeam, BG_SiegeGetPairedValue, BG_SiegeGetValueGroup,
 };
 use crate::codemp::game::bg_saga_h::{
     siegeClass_t, MAX_EXDATA_ENTS_TO_SEND, MAX_SIEGE_INFO_SIZE, SIEGETEAM_TEAM1, SIEGETEAM_TEAM2,
     SIEGE_POINTS_FINALOBJECTIVECOMPLETED, SIEGE_POINTS_OBJECTIVECOMPLETED,
     SIEGE_POINTS_TEAMWONROUND, SIEGE_ROUND_BEGIN_TIME,
 };
-use crate::ffi::types::{fileHandle_t, vmCvar_t};
-use crate::codemp::game::g_combat::AddScore;
 use crate::codemp::game::bg_weapons::weaponData;
 use crate::codemp::game::bg_weapons_h::WP_NUM_WEAPONS;
+use crate::codemp::game::g_client::{ClientBegin, ClientSpawn, ClientUserinfoChanged};
+use crate::codemp::game::g_combat::AddScore;
+use crate::codemp::game::g_exphysics::G_RunExPhys;
 use crate::codemp::game::g_items::RegisterItem;
 use crate::codemp::game::g_local::{gentity_s, gentity_t, FRAMETIME};
+use crate::codemp::game::g_local::{CON_CONNECTED, SPECTATOR_FREE, SPECTATOR_NOT, TEAM_BEGIN};
 use crate::codemp::game::g_main::{
     g_entities, g_gametype, g_siegeTeam1, g_siegeTeam2, g_siegeTeamSwitch, level, Com_Error,
     Com_Printf, G_Error, G_Printf, LogExit,
 };
-use crate::codemp::game::g_client::{ClientBegin, ClientSpawn, ClientUserinfoChanged};
-use crate::codemp::game::bg_saga::{
-    bgNumSiegeClasses, bgNumSiegeTeams, BG_PrecacheSabersForSiegeTeam, BG_SiegeLoadClasses,
-    BG_SiegeLoadTeams, BG_SiegeSetTeamTheme,
-};
-use crate::codemp::game::g_public_h::{SVF_BROADCAST, Q3_INFINITE};
-use crate::codemp::game::bg_public::{
-    CS_SIEGE_STATE, CS_SIEGE_TIMEOVERRIDE, EV_PLAYER_TELEPORT_IN, TEAM_BLUE, TEAM_RED,
-    TEAM_SPECTATOR,
-};
-use crate::codemp::game::g_local::{
-    CON_CONNECTED, SPECTATOR_FREE, SPECTATOR_NOT, TEAM_BEGIN,
-};
-use crate::codemp::game::q_shared::Info_SetValueForKey;
-use crate::codemp::game::q_shared_h::{siegePers_t, FS_READ, MAX_INFO_STRING, CVAR_ROM, CVAR_SERVERINFO};
+use crate::codemp::game::g_public_h::{Q3_INFINITE, SVF_BROADCAST};
 use crate::codemp::game::g_spawn::{G_SpawnFloat, G_SpawnInt, G_SpawnString, G_SpawnVector};
 use crate::codemp::game::g_utils::{
-    G_EffectIndex, G_Find, G_FreeEntity, G_IconIndex, G_ModelIndex, G_PlayEffectID, G_ScaleNetHealth,
-    G_SetOrigin, G_Sound, G_SoundIndex, G_TempEntity, G_UseTargets2, GlobalUse,
+    G_EffectIndex, G_Find, G_FreeEntity, G_IconIndex, G_ModelIndex, G_PlayEffectID,
+    G_ScaleNetHealth, G_SetOrigin, G_Sound, G_SoundIndex, G_TempEntity, G_UseTargets2, GlobalUse,
 };
-use crate::codemp::game::q_math::{vec3_origin, VectorCopy, VectorSet};
-use crate::codemp::game::q_shared_h::{trace_t, vec3_t};
-use crate::codemp::game::q_shared::{va, Com_sprintf, Q_strcat, Q_stricmp};
 use crate::codemp::game::q_math::Q_irand;
+use crate::codemp::game::q_math::{vec3_origin, VectorCopy, VectorSet};
+use crate::codemp::game::q_shared::Info_SetValueForKey;
+use crate::codemp::game::q_shared::{va, Com_sprintf, Q_strcat, Q_stricmp};
 use crate::codemp::game::q_shared_h::{
     qboolean, CHAN_AUTO, ENTITYNUM_NONE, ERR_DROP, MAX_CLIENTS, MAX_STRING_CHARS, QFALSE, QTRUE,
 };
-use crate::codemp::game::bg_public::PMF_FOLLOW;
-use crate::codemp::game::g_exphysics::G_RunExPhys;
+use crate::codemp::game::q_shared_h::{
+    siegePers_t, CVAR_ROM, CVAR_SERVERINFO, FS_READ, MAX_INFO_STRING,
+};
+use crate::codemp::game::q_shared_h::{trace_t, vec3_t};
 use crate::codemp::game::surfaceflags_h::{
     CONTENTS_NODROP, CONTENTS_SOLID, CONTENTS_TERRAIN, CONTENTS_TRIGGER,
 };
+use crate::ffi::types::{fileHandle_t, vmCvar_t};
 use crate::trap;
 use core::ffi::{c_char, c_int, CStr};
 use core::mem::offset_of;
@@ -267,7 +267,10 @@ pub unsafe fn G_ValidateSiegeClassForTeam(ent: *mut gentity_t, team: c_int) {
             // go through the team and see its valid classes, can we find one that
             // matches our current player class?
             if !(*stm).classes[i as usize].is_null() {
-                if Q_stricmp((*scl).name.as_ptr(), (*(*stm).classes[i as usize]).name.as_ptr()) == 0
+                if Q_stricmp(
+                    (*scl).name.as_ptr(),
+                    (*(*stm).classes[i as usize]).name.as_ptr(),
+                ) == 0
                 {
                     // the class we're using is already ok for this team.
                     return;
@@ -622,12 +625,18 @@ pub unsafe fn SiegeBroadcast_OBJECTIVECOMPLETE(team: c_int, client: c_int, objec
 ///
 /// # Safety
 /// `client` indexes the global `g_entities`; the entity system must be initialised.
-pub unsafe fn BroadcastObjectiveCompletion(team: c_int, objective: c_int, _final: c_int, client: c_int) {
+pub unsafe fn BroadcastObjectiveCompletion(
+    team: c_int,
+    objective: c_int,
+    _final: c_int,
+    client: c_int,
+) {
     let ent = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(client as usize);
     if client != ENTITYNUM_NONE
         && !(*ent).client.is_null()
         && (*(*ent).client).sess.sessionTeam == team
-    { //guy who completed this objective gets points, providing he's on the opposing team
+    {
+        //guy who completed this objective gets points, providing he's on the opposing team
         AddScore(
             ent,
             &(*(*ent).client).ps.origin,
@@ -653,7 +662,8 @@ pub unsafe fn AddSiegeWinningTeamPoints(team: c_int, winner: c_int) {
     let mut i: c_int = 0;
 
     while i < MAX_CLIENTS as c_int {
-        let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
+        let ent: *mut gentity_t =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
 
         if !ent.is_null() && !(*ent).client.is_null() && (*(*ent).client).sess.sessionTeam == team {
             if i == winner {
@@ -663,11 +673,7 @@ pub unsafe fn AddSiegeWinningTeamPoints(team: c_int, winner: c_int) {
                     SIEGE_POINTS_TEAMWONROUND + SIEGE_POINTS_FINALOBJECTIVECOMPLETED,
                 );
             } else {
-                AddScore(
-                    ent,
-                    &(*(*ent).client).ps.origin,
-                    SIEGE_POINTS_TEAMWONROUND,
-                );
+                AddScore(ent, &(*(*ent).client).ps.origin, SIEGE_POINTS_TEAMWONROUND);
             }
         }
 
@@ -830,17 +836,15 @@ pub unsafe fn G_SiegeClientExData(msgTarg: *mut gentity_t) {
     let mut scratch: [c_char; MAX_STRING_CHARS] = [0; MAX_STRING_CHARS];
 
     while i < (*addr_of!(level)).num_entities && (count as usize) < MAX_EXDATA_ENTS_TO_SEND {
-        let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
+        let ent: *mut gentity_t =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
 
         if (*ent).inuse != QFALSE
             && !(*ent).client.is_null()
             && (*msgTarg).s.number != (*ent).s.number
             && (*ent).s.eType == ET_PLAYER
             && (*(*msgTarg).client).sess.sessionTeam == (*(*ent).client).sess.sessionTeam
-            && trap::InPVS(
-                &(*(*msgTarg).client).ps.origin,
-                &(*(*ent).client).ps.origin,
-            ) != QFALSE
+            && trap::InPVS(&(*(*msgTarg).client).ps.origin, &(*(*ent).client).ps.origin) != QFALSE
         {
             //another client in the same pvs, send his jive
             if count != 0 {
@@ -876,7 +880,8 @@ pub unsafe fn G_SiegeClientExData(msgTarg: *mut gentity_t) {
     }
 
     //send the string to him
-    let client_num = msgTarg.offset_from(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()) as i32;
+    let client_num =
+        msgTarg.offset_from(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()) as i32;
     let s = CStr::from_ptr(str.as_ptr()).to_string_lossy();
     trap::SendServerCommand(client_num, &s);
 }
@@ -942,13 +947,11 @@ pub unsafe extern "C" fn SiegeItemThink(ent: *mut gentity_t) {
 
     if (*ent).genericValue8 != ENTITYNUM_NONE {
         //Just keep sticking it on top of the owner. We need it in the same PVS as him so it will render bolted onto him properly.
-        carrier = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*ent).genericValue8 as usize);
+        carrier = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*ent).genericValue8 as usize);
 
         if (*carrier).inuse != QFALSE && !(*carrier).client.is_null() {
-            VectorCopy(
-                &(*(*carrier).client).ps.origin,
-                &mut (*ent).r.currentOrigin,
-            );
+            VectorCopy(&(*(*carrier).client).ps.origin, &mut (*ent).r.currentOrigin);
             trap::LinkEntity(ent);
         }
     } else if (*ent).genericValue1 != 0 {
@@ -972,7 +975,8 @@ pub unsafe extern "C" fn SiegeItemThink(ent: *mut gentity_t) {
     }
 
     if !carrier.is_null() {
-        let carrier: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*ent).genericValue8 as usize);
+        let carrier: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*ent).genericValue8 as usize);
 
         //This checking can be a bit iffy on the death stuff, but in theory we should always
         //get a think in before the default minimum respawn time is exceeded.
@@ -1243,7 +1247,6 @@ pub unsafe fn SP_info_siege_radaricon(ent: *mut gentity_t) {
     trap::LinkEntity(ent);
 }
 
-
 /*QUAKED info_siege_decomplete (1 0 1) (-16 -16 -24) (16 16 32)
 "objective" - specifies the objective to decomplete upon activation
 "side" - set to 1 to specify an imperial (team1) goal, 2 to specify rebels (team2)
@@ -1276,7 +1279,6 @@ pub unsafe fn SP_info_siege_decomplete(ent: *mut gentity_t) {
     }
 }
 
-
 /// `void siegeEndUse( gentity_t *ent, gentity_t *other, gentity_t *activator )` (g_saga.c:1331).
 ///
 /// `use` callback for a `target_siege_end` entity — do a [`LogExit`]`("Round ended")` to end
@@ -1296,46 +1298,45 @@ pub unsafe extern "C" fn siegeEndUse(
     LogExit("Round ended");
 }
 
-
 /*QUAKED misc_siege_item (1 0 1) (-16 -16 -24) (16 16 32) ? x x STARTOFFRADAR
 STARTOFFRADAR - start not displaying on radar, don't display until used.
 
 "model"				Name of model to use for the object
 "mins"				Actual mins of the object. Careful not to place it into a solid,
-					as these new mins will not be reflected visually in the editor.
-					Default value is "-16 -16 -24".
+                    as these new mins will not be reflected visually in the editor.
+                    Default value is "-16 -16 -24".
 "maxs"				Same as above for maxs. Default value is "16 16 32".
 "targetname"		If it has a targetname, it will only spawn upon being used.
 "target2"			Target to fire upon pickup. If none, nothing will happen.
 "pickuponlyonce"	If non-0, target2 will only be fired on the first pickup. If the item is
-					dropped and picked up again later, the target will not be fired off on
-					the sequential pickup. Default value is 1.
+                    dropped and picked up again later, the target will not be fired off on
+                    the sequential pickup. Default value is 1.
 "target3"			Target to fire upon delivery of the item to the goal point.
-					If none, nothing will happen. (but you should always want something to happen)
+                    If none, nothing will happen. (but you should always want something to happen)
 "health"			If > 0, object can be damaged and will die once health reaches 0. Default is 0.
 "showhealth"		if health > 0, will show a health meter for this item
 "teamowner"			Which team owns this item, used only for deciding what color to make health meter
 "target4"			Target to fire upon death, if damageable. Default is none.
 "deathfx"			Effect to play on death, if damageable. Default is none.
 "canpickup"			If non-0, item can be picked up. Otherwise it will just be solid and sit on the
-					ground. Default is 1.
+                    ground. Default is 1.
 "pickupsound"		Sound to play on pickup, if any.
 "goaltarget"		Must be the targetname of a trigger_multi/trigger_once. Once a player carrying
-					this object is brought inside the specified trigger, then that trigger will be
-					allowed to fire. Ideally it will target a siege objective or something like that.
+                    this object is brought inside the specified trigger, then that trigger will be
+                    allowed to fire. Ideally it will target a siege objective or something like that.
 "usephysics"		If non-0, run standard physics on the object. Default is 1.
 "mass"				If usephysics, this will be the factored object mass. Default is 0.09.
 "gravity"			If usephysics, this will be the factored gravitational pull. Default is 3.0.
 "bounce"			If usephysics, this will be the factored bounce amount. Default is 1.3.
 "teamnotouch"		If 1 don't let team 1 pickup, if 2 don't let team 2. By default both teams
-					can pick this object up and carry it around until death.
+                    can pick this object up and carry it around until death.
 "teamnocomplete"	Same values as above, but controls if this object can be taken into the objective
-					area by said team.
+                    area by said team.
 "respawnfx"			Plays this effect when respawning (e.g. it is left in an unknown area too long
-					and goes back to the original spot). If this is not specified there will be
-					no effect. (expected format is .efx file)
+                    and goes back to the original spot). If this is not specified there will be
+                    no effect. (expected format is .efx file)
 "paintarget"		plop self on top of this guy's origin when we are used (only applies if the siege
-					item has a targetname)
+                    item has a targetname)
 "noradar"			if non-0 this thing will not show up on radar
 
 "forcelimit"		if non-0, while carrying this item, the carrier's force powers will be crippled.
@@ -1453,11 +1454,7 @@ pub unsafe fn SP_misc_siege_item(ent: *mut gentity_t) {
     (*ent).s.modelindex = G_ModelIndex(&CStr::from_ptr((*ent).model).to_string_lossy());
 
     //Is the model a ghoul2 model?
-    if Q_stricmp(
-        (*ent).model.add(strlen((*ent).model) - 4),
-        c".glm".as_ptr(),
-    ) == 0
-    {
+    if Q_stricmp((*ent).model.add(strlen((*ent).model) - 4), c".glm".as_ptr()) == 0 {
         //apparently so.
         (*ent).s.modelGhoul2 = 1;
     }
@@ -1629,8 +1626,12 @@ pub unsafe fn SiegeRoundComplete(winningteam: c_int, mut winningclient: c_int) {
     //G_Printf("Team %i won\n", winningteam);
 
     if winningclient != ENTITYNUM_NONE
-        && !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(winningclient as usize)).client.is_null()
-        && (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(winningclient as usize)).client)
+        && !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(winningclient as usize))
+            .client
+            .is_null()
+        && (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add(winningclient as usize))
+        .client)
             .sess
             .sessionTeam
             != winningteam
@@ -1697,7 +1698,8 @@ pub unsafe fn SiegeRoundComplete(winningteam: c_int, mut winningclient: c_int) {
             let mut i: c_int = 0;
 
             while i < MAX_CLIENTS as c_int {
-                let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
+                let ent: *mut gentity_t =
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
 
                 if (*ent).inuse != QFALSE {
                     //sure, you'll do.
@@ -1709,8 +1711,10 @@ pub unsafe fn SiegeRoundComplete(winningteam: c_int, mut winningclient: c_int) {
             }
         }
         G_UseTargets2(
-            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(originalWinningClient as usize),
-            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(originalWinningClient as usize),
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add(originalWinningClient as usize),
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add(originalWinningClient as usize),
             teamstr.as_mut_ptr(),
         );
     }
@@ -1812,7 +1816,8 @@ pub unsafe fn SiegeDoTeamAssign() {
 
     //yeah, this is great...
     while i < MAX_CLIENTS as c_int {
-        let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
+        let ent: *mut gentity_t =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
 
         if (*ent).inuse != QFALSE
             && !(*ent).client.is_null()
@@ -1880,7 +1885,8 @@ pub unsafe fn SiegeBeginRound(entNum: c_int) {
 
         //respawn everyone now
         while i < MAX_CLIENTS as c_int {
-            let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
+            let ent: *mut gentity_t =
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
 
             if (*ent).inuse != QFALSE && !(*ent).client.is_null() {
                 if (*(*ent).client).sess.sessionTeam != TEAM_SPECTATOR
@@ -1964,7 +1970,8 @@ pub unsafe fn SiegeCheckTimers() {
         i = 0;
 
         while i < MAX_CLIENTS as c_int {
-            let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
+            let ent: *mut gentity_t =
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
 
             if !ent.is_null()
                 && (*ent).inuse != QFALSE
@@ -1980,7 +1987,8 @@ pub unsafe fn SiegeCheckTimers() {
         i = 0;
 
         while i < MAX_CLIENTS as c_int {
-            let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
+            let ent: *mut gentity_t =
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
 
             if !ent.is_null()
                 && (*ent).inuse != QFALSE
@@ -2389,10 +2397,8 @@ pub unsafe fn InitSiegeMode() {
     }
 
     {
-        let buf = core::slice::from_raw_parts_mut(
-            addr_of_mut!(siege_info) as *mut u8,
-            len as usize,
-        );
+        let buf =
+            core::slice::from_raw_parts_mut(addr_of_mut!(siege_info) as *mut u8, len as usize);
         trap::FS_Read(buf, f);
     }
 
@@ -2488,7 +2494,8 @@ pub unsafe fn InitSiegeMode() {
         ) != 0
         {
             rebel_time_limit = atoi(goalreq.as_ptr()) * 1000;
-            if g_siegeTeamSwitch.integer != 0 && (*addr_of!(g_siegePersistant)).beatingTime != QFALSE
+            if g_siegeTeamSwitch.integer != 0
+                && (*addr_of!(g_siegePersistant)).beatingTime != QFALSE
             {
                 gRebelCountdown = (*addr_of!(level)).time + (*addr_of!(g_siegePersistant)).lastTime;
             } else {
@@ -2622,10 +2629,7 @@ pub unsafe fn InitSiegeMode() {
 
         //Now count up the objectives for this team.
         i = 1;
-        strcpy(
-            objecStr.as_mut_ptr(),
-            va(format_args!("Objective{}", i)),
-        );
+        strcpy(objecStr.as_mut_ptr(), va(format_args!("Objective{}", i)));
         while BG_SiegeGetValueGroup(
             addr_of_mut!(gParseObjectives) as *mut c_char,
             objecStr.as_mut_ptr(),
@@ -2634,10 +2638,7 @@ pub unsafe fn InitSiegeMode() {
         {
             objectiveNumTeam1 += 1;
             i += 1;
-            strcpy(
-                objecStr.as_mut_ptr(),
-                va(format_args!("Objective{}", i)),
-            );
+            strcpy(objecStr.as_mut_ptr(), va(format_args!("Objective{}", i)));
         }
     }
     if BG_SiegeGetValueGroup(
@@ -2657,10 +2658,7 @@ pub unsafe fn InitSiegeMode() {
 
         //Now count up the objectives for this team.
         i = 1;
-        strcpy(
-            objecStr.as_mut_ptr(),
-            va(format_args!("Objective{}", i)),
-        );
+        strcpy(objecStr.as_mut_ptr(), va(format_args!("Objective{}", i)));
         while BG_SiegeGetValueGroup(
             addr_of_mut!(gParseObjectives) as *mut c_char,
             objecStr.as_mut_ptr(),
@@ -2669,15 +2667,15 @@ pub unsafe fn InitSiegeMode() {
         {
             objectiveNumTeam2 += 1;
             i += 1;
-            strcpy(
-                objecStr.as_mut_ptr(),
-                va(format_args!("Objective{}", i)),
-            );
+            strcpy(objecStr.as_mut_ptr(), va(format_args!("Objective{}", i)));
         }
     }
 
     //Set the configstring to show status of all current objectives
-    strcpy(addr_of_mut!(gObjectiveCfgStr) as *mut c_char, c"t1".as_ptr());
+    strcpy(
+        addr_of_mut!(gObjectiveCfgStr) as *mut c_char,
+        c"t1".as_ptr(),
+    );
     while objectiveNumTeam1 > 0 {
         //mark them all as not completed since we just initialized
         Q_strcat(

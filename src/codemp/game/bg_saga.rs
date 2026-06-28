@@ -18,18 +18,20 @@
 
 #![allow(non_upper_case_globals, non_snake_case)]
 
-use crate::codemp::game::bg_saga_h::{
-    siegeClass_t, siegeClassDesc_t, siegeTeam_t, CFL_CUSTOMSKEL, CFL_EXTRA_AMMO, CFL_FASTFORCEREGEN,
-    CFL_HEAVYMELEE, CFL_MORESABERDMG, CFL_SINGLE_ROCKET, CFL_STATVIEWER, CFL_STRONGAGAINSTPHYSICAL,
-    MAX_SIEGE_CLASSES, MAX_SIEGE_INFO_SIZE, MAX_SIEGE_TEAMS, SIEGETEAM_TEAM1, SIEGETEAM_TEAM2,
-    SIEGE_CLASS_DESC_LEN, SPC_INFANTRY, SPC_MAX,
-};
+use crate::codemp::game::bg_misc::BG_ModelCache;
 use crate::codemp::game::bg_public::{
     HI_AMMODISP, HI_BINOCULARS, HI_CLOAK, HI_EWEB, HI_HEALTHDISP, HI_JETPACK, HI_MEDPAC,
     HI_MEDPAC_BIG, HI_NONE, HI_SEEKER, HI_SENTRY_GUN, HI_SHIELD, PW_BATTLESUIT, PW_BLUEFLAG,
     PW_CLOAKED, PW_DISINT_4, PW_FORCE_BOON, PW_FORCE_ENLIGHTENED_DARK, PW_FORCE_ENLIGHTENED_LIGHT,
     PW_NEUTRALFLAG, PW_NONE, PW_PULL, PW_QUAD, PW_REDFLAG, PW_SHIELDHIT, PW_SPEED, PW_SPEEDBURST,
     PW_YSALAMIRI,
+};
+use crate::codemp::game::bg_saberLoad::WP_SaberParseParms;
+use crate::codemp::game::bg_saga_h::{
+    siegeClassDesc_t, siegeClass_t, siegeTeam_t, CFL_CUSTOMSKEL, CFL_EXTRA_AMMO,
+    CFL_FASTFORCEREGEN, CFL_HEAVYMELEE, CFL_MORESABERDMG, CFL_SINGLE_ROCKET, CFL_STATVIEWER,
+    CFL_STRONGAGAINSTPHYSICAL, MAX_SIEGE_CLASSES, MAX_SIEGE_INFO_SIZE, MAX_SIEGE_TEAMS,
+    SIEGETEAM_TEAM1, SIEGETEAM_TEAM2, SIEGE_CLASS_DESC_LEN, SPC_INFANTRY, SPC_MAX,
 };
 use crate::codemp::game::bg_weapons_h::{
     WP_BLASTER, WP_BOWCASTER, WP_BRYAR_OLD, WP_BRYAR_PISTOL, WP_CONCUSSION, WP_DEMP2, WP_DET_PACK,
@@ -45,8 +47,6 @@ use crate::codemp::game::q_shared_h::{
     FP_TEAM_HEAL, FP_TELEPATHY, FS_READ, MAX_QPATH, MAX_SABERS, NUM_FORCE_POWERS, QFALSE, QTRUE,
     SS_DESANN, SS_DUAL, SS_FAST, SS_MEDIUM, SS_NONE, SS_STAFF, SS_STRONG, SS_TAVION,
 };
-use crate::codemp::game::bg_misc::BG_ModelCache;
-use crate::codemp::game::bg_saberLoad::WP_SaberParseParms;
 use crate::trap;
 use core::ffi::{c_char, c_int, c_short, CStr};
 use core::ptr::{addr_of, addr_of_mut};
@@ -69,7 +69,10 @@ const SIEGECHAR_TAB: c_char = 9;
 /// alias/terminator rows in the C tables. (The `bg_saberLoad::enum2string`
 /// precedent; widened to take any C-`int` id since these tables mix enum families.)
 const fn s(name: &'static CStr, id: c_int) -> stringID_table_t {
-    stringID_table_t { name: name.as_ptr(), id }
+    stringID_table_t {
+        name: name.as_ptr(),
+        id,
+    }
 }
 
 // New - only make one copy of this shit.
@@ -645,7 +648,13 @@ pub unsafe fn BG_SiegeGetPairedValue(
                             }
                         }
                     } else {
-                        Com_Error(ERR_DROP, &format!("Error parsing file, found comment, expected value for '{}'", Sz(key)));
+                        Com_Error(
+                            ERR_DROP,
+                            &format!(
+                                "Error parsing file, found comment, expected value for '{}'",
+                                Sz(key)
+                            ),
+                        );
                     }
                 }
             }
@@ -1217,7 +1226,9 @@ pub unsafe fn BG_SiegeParseClassFile(filename: *const c_char, desc_buffer: *mut 
                 break;
             }
 
-            let hold_buf = parse_buf.as_ptr().add((title_length - array_title_length) as usize);
+            let hold_buf = parse_buf
+                .as_ptr()
+                .add((title_length - array_title_length) as usize);
             if strcmp(hold_buf, *class_titles.add(ci as usize)) == 0 {
                 (*cls).playerClass = ci as c_short;
                 break;
@@ -1727,9 +1738,9 @@ mod tests {
     use crate::oracle::{
         jka_BG_GetClassOnBaseClass, jka_BG_GetUIPortrait, jka_BG_GetUIPortraitFile,
         jka_BG_SiegeCheckClassLegality, jka_BG_SiegeCountBaseClass, jka_BG_SiegeFindClassByName,
-        jka_BG_SiegeFindClassIndexByName, jka_BG_SiegeFindTeamForTheme, jka_BG_SiegeFindThemeForTeam,
-        jka_BG_SiegeGetPairedValue, jka_BG_SiegeGetValueGroup, jka_BG_SiegeStripTabs,
-        jka_BG_SiegeTranslateForcePowers, jka_BG_SiegeTranslateGenericTable,
+        jka_BG_SiegeFindClassIndexByName, jka_BG_SiegeFindTeamForTheme,
+        jka_BG_SiegeFindThemeForTeam, jka_BG_SiegeGetPairedValue, jka_BG_SiegeGetValueGroup,
+        jka_BG_SiegeStripTabs, jka_BG_SiegeTranslateForcePowers, jka_BG_SiegeTranslateGenericTable,
     };
 
     /// Serializes every bg_saga test that mutates the module's siege globals
@@ -1796,10 +1807,7 @@ mod tests {
             // group not present -> 0
             (b"GroupA\n{\n\tkey1 value1\n}\n", b"GroupZ"),
             // second sibling group, find it
-            (
-                b"First\n{\n\ta b\n}\nSecond\n{\n\tc d\n}\n",
-                b"Second",
-            ),
+            (b"First\n{\n\ta b\n}\nSecond\n{\n\tc d\n}\n", b"Second"),
             // nested braces inside the wanted group
             (
                 b"Outer\n{\n\tInner\n\t{\n\t\tx y\n\t}\n\tz w\n}\n",
@@ -1811,20 +1819,14 @@ mod tests {
                 b"GroupA",
             ),
             // a // comment line before the group
-            (
-                b"//a comment\nGroupA\n{\n\tkey1 value1\n}\n",
-                b"GroupA",
-            ),
+            (b"//a comment\nGroupA\n{\n\tkey1 value1\n}\n", b"GroupA"),
             // a sibling group we skip past to reach the wanted one
             (
                 b"Skip\n{\n\tnested\n\t{\n\t\tdeep v\n\t}\n}\nWant\n{\n\tfound it\n}\n",
                 b"Want",
             ),
             // group name appears as a plain value first (not followed by a brace)
-            (
-                b"GroupA somevalue\nGroupA\n{\n\treal stuff\n}\n",
-                b"GroupA",
-            ),
+            (b"GroupA somevalue\nGroupA\n{\n\treal stuff\n}\n", b"GroupA"),
         ];
 
         for (input, group) in cases {
@@ -1866,7 +1868,10 @@ mod tests {
             // quoted value (allows embedded spaces)
             (b"name \"Imperial Officer\"\nhealth 100\n", b"name"),
             // key only exists inside a sub-group -> not found at top level
-            (b"saberInfo\n{\n\tsaber1 single_1\n}\nhealth 50\n", b"saber1"),
+            (
+                b"saberInfo\n{\n\tsaber1 single_1\n}\nhealth 50\n",
+                b"saber1",
+            ),
             // a value pair after skipping a sub-group
             (b"group\n{\n\tinner v\n}\nspeed 250\n", b"speed"),
             // trailing // comment after the value
@@ -1951,8 +1956,7 @@ mod tests {
             buf_r.push(0);
             let mut buf_c = buf_r.clone();
             let rr = BG_SiegeTranslateGenericTable(buf_r.as_mut_ptr(), table, bitflag);
-            let rc =
-                jka_BG_SiegeTranslateGenericTable(buf_c.as_mut_ptr(), table, bitflag);
+            let rc = jka_BG_SiegeTranslateGenericTable(buf_c.as_mut_ptr(), table, bitflag);
             assert_eq!(rr, rc, "generic table for {buf:?} bitflag={bitflag}");
         }
 
@@ -1973,7 +1977,7 @@ mod tests {
             check(b"SS_STAFF", stance, QFALSE);
             check(b"WP_ROCKET_LAUNCHER", wp, QFALSE);
             check(b"WP_BLASTER_PISTOL", wp, QFALSE); // alias -> WP_BRYAR_PISTOL
-            // "0" special case and unknowns
+                                                     // "0" special case and unknowns
             check(b"0", wp, QTRUE);
             check(b"0", stance, QFALSE);
             check(b"WP_BOGUS|WP_SABER", wp, QTRUE);
@@ -1994,7 +1998,13 @@ mod tests {
         let _g = SAGA_LOCK.lock().unwrap_or_else(|e| e.into_inner());
 
         unsafe {
-            let pcs = [SPC_INFANTRY, SPC_JEDI, SPC_INFANTRY, SPC_SUPPORT, SPC_INFANTRY];
+            let pcs = [
+                SPC_INFANTRY,
+                SPC_JEDI,
+                SPC_INFANTRY,
+                SPC_SUPPORT,
+                SPC_INFANTRY,
+            ];
             let mut classes: Vec<siegeClass_t> = pcs
                 .iter()
                 .enumerate()
@@ -2092,7 +2102,13 @@ mod tests {
             }
             bgNumSiegeClasses = 3;
 
-            for q in [&b"beta"[..], &b"ALPHA"[..], &b"gamma"[..], &b"zeta"[..], &b""[..]] {
+            for q in [
+                &b"beta"[..],
+                &b"ALPHA"[..],
+                &b"gamma"[..],
+                &b"zeta"[..],
+                &b""[..],
+            ] {
                 let qn = cbuf(q);
                 assert_eq!(
                     BG_SiegeFindClassByName(qn.as_ptr()),
@@ -2129,10 +2145,16 @@ mod tests {
             // SetTeamTheme sets the theme global to FindTeamForTheme(name)
             let mut red = cbuf(b"red");
             BG_SiegeSetTeamTheme(SIEGETEAM_TEAM1, red.as_mut_ptr());
-            assert_eq!(*addr_of!(team1Theme), BG_SiegeFindTeamForTheme(red.as_mut_ptr()));
+            assert_eq!(
+                *addr_of!(team1Theme),
+                BG_SiegeFindTeamForTheme(red.as_mut_ptr())
+            );
             let mut blue = cbuf(b"blue");
             BG_SiegeSetTeamTheme(SIEGETEAM_TEAM2, blue.as_mut_ptr());
-            assert_eq!(*addr_of!(team2Theme), BG_SiegeFindTeamForTheme(blue.as_mut_ptr()));
+            assert_eq!(
+                *addr_of!(team2Theme),
+                BG_SiegeFindTeamForTheme(blue.as_mut_ptr())
+            );
             let mut green = cbuf(b"green");
             BG_SiegeSetTeamTheme(SIEGETEAM_TEAM1, green.as_mut_ptr());
             assert!(team1Theme.is_null());
@@ -2172,7 +2194,10 @@ mod tests {
                     core::ptr::null_mut(),
                 );
                 assert_eq!(rr, rc, "CheckClassLegality return team={team_id} cn={cn:?}");
-                assert_eq!(buf_r, buf_c, "CheckClassLegality classname team={team_id} cn={cn:?}");
+                assert_eq!(
+                    buf_r, buf_c,
+                    "CheckClassLegality classname team={team_id} cn={cn:?}"
+                );
             }
 
             // no-theme path: team1Theme null -> always legal

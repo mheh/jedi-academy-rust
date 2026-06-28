@@ -26,40 +26,48 @@ use core::ptr::{addr_of, addr_of_mut, null_mut};
 
 use crate::codemp::game::anims::{BOTH_BUTTON_HOLD, BOTH_CONSOLE1};
 use crate::codemp::game::bg_misc::BG_TouchJumpPad;
+use crate::codemp::game::bg_public::HYPERSPACE_TIME;
 use crate::codemp::game::bg_public::{
     CS_GLOBAL_AMBIENT_SET, EF_DEAD, EF_RAG, ET_NPC, ET_PUSH_TRIGGER, ET_TELEPORT_TRIGGER, GT_SIEGE,
     HANDEXTEND_NONE, MASK_PLAYERSOLID, MOD_FALLING, MOD_SUICIDE, MOD_TRIGGER_HURT, PMF_FOLLOW,
     PM_DEAD, PM_FLOAT, PM_FREEZE, PM_NORMAL, SETANIM_FLAG_HOLD, SETANIM_FLAG_OVERRIDE,
     SETANIM_TORSO, TEAM_SPECTATOR,
 };
+use crate::codemp::game::bg_public::{EF2_HYPERSPACE, HYPERSPACE_TELEPORT_FRAC};
 use crate::codemp::game::bg_saga::bgSiegeClasses;
-use crate::codemp::game::bg_weapons_h::WP_NONE;
 use crate::codemp::game::bg_saga_h::{SIEGETEAM_TEAM1, SIEGETEAM_TEAM2};
+use crate::codemp::game::bg_vehicles_h::VH_FIGHTER;
+use crate::codemp::game::bg_weapons_h::WP_NONE;
+use crate::codemp::game::g_ICARUScb::Q3_Lerp2Origin;
 use crate::codemp::game::g_client::respawn;
 use crate::codemp::game::g_combat::{gSiegeRoundBegun, G_Damage, G_RadiusDamage};
 use crate::codemp::game::g_items::Jetpack_Off;
+use crate::codemp::game::g_local::gentity_s;
 use crate::codemp::game::g_local::{gentity_t, DAMAGE_NO_PROTECTION, FL_INACTIVE, FRAMETIME};
 use crate::codemp::game::g_main::{
     g_entities, g_gametype, g_gravity, level, Com_Error, Com_Printf, G_Error, G_Printf,
 };
 use crate::codemp::game::g_misc::TeleportPlayer;
+use crate::codemp::game::g_mover::SP_func_rotating;
 use crate::codemp::game::g_public_h::SVF_NOCLIENT;
+use crate::codemp::game::g_public_h::{BSET_USE, Q3_INFINITE};
 use crate::codemp::game::g_saga::SiegeItemRemoveOwner;
 use crate::codemp::game::g_spawn::{G_SpawnFloat, G_SpawnInt, G_SpawnString};
+use crate::codemp::game::g_utils::G_Find;
 use crate::codemp::game::g_utils::{
-    vtos, G_EffectIndex, G_FreeEntity, G_PickTarget, G_PlayEffectID, G_PointInBounds, G_ScaleNetHealth,
-    G_SetAnim, G_SetAngles, G_SetOrigin, G_Spawn, G_EntitySound, G_SetMovedir, G_Sound, G_SoundIndex,
-    G_UseTargets, G_UseTargets2,
+    vtos, G_EffectIndex, G_EntitySound, G_FreeEntity, G_PickTarget, G_PlayEffectID,
+    G_PointInBounds, G_ScaleNetHealth, G_SetAngles, G_SetAnim, G_SetMovedir, G_SetOrigin, G_Sound,
+    G_SoundIndex, G_Spawn, G_UseTargets, G_UseTargets2,
 };
-use crate::codemp::game::g_ICARUScb::Q3_Lerp2Origin;
-use crate::codemp::game::g_mover::SP_func_rotating;
 use crate::codemp::game::npc_utils::G_ActivateBehavior;
+use crate::codemp::game::q_math::Q_irand;
+use crate::codemp::game::q_math::VectorMA;
 use crate::codemp::game::q_math::{
-    flrand, vec3_origin, AngleVectors, DotProduct, VectorAdd, VectorCompare, VectorCopy,
-    Distance, VectorLengthSquared, VectorNormalize, VectorScale, VectorSet, VectorSubtract,
+    flrand, vec3_origin, AngleVectors, Distance, DotProduct, VectorAdd, VectorCompare, VectorCopy,
+    VectorLengthSquared, VectorNormalize, VectorScale, VectorSet, VectorSubtract,
 };
 use crate::codemp::game::q_shared::{crandom, Q_stricmp};
-use crate::codemp::game::q_math::Q_irand;
+use crate::codemp::game::q_shared_h::CHAN_LOCAL;
 use crate::codemp::game::q_shared_h::{
     trace_t, vec3_t, BUTTON_ALT_ATTACK, BUTTON_ATTACK, BUTTON_USE, CHAN_AUTO, CHAN_VOICE,
     ENTITYNUM_NONE, ENTITYNUM_WORLD, ERR_DROP, MAX_CLIENTS, MAX_GENTITIES, MAX_STRING_CHARS,
@@ -67,17 +75,9 @@ use crate::codemp::game::q_shared_h::{
 };
 use crate::codemp::game::surfaceflags_h::CONTENTS_TRIGGER;
 use crate::codemp::game::teams_h::CLASS_VEHICLE;
-use crate::codemp::game::g_public_h::{BSET_USE, Q3_INFINITE};
 use crate::ffi::types::{qboolean, QFALSE, QTRUE};
 use crate::trap;
-use crate::codemp::game::q_shared_h::CHAN_LOCAL;
-use crate::codemp::game::q_math::VectorMA;
-use crate::codemp::game::bg_public::{EF2_HYPERSPACE, HYPERSPACE_TELEPORT_FRAC};
-use crate::codemp::game::bg_vehicles_h::VH_FIGHTER;
-use crate::codemp::game::bg_public::HYPERSPACE_TIME;
 use core::mem::offset_of;
-use crate::codemp::game::g_local::gentity_s;
-use crate::codemp::game::g_utils::G_Find;
 
 // `SP_trigger_multiple`/`_once` resolve their `team` spawn key through libc `atoi`
 // (the game build pulls it from <stdlib.h>), matching the original byte-for-byte.
@@ -251,7 +251,10 @@ pub unsafe fn multi_trigger(ent: *mut gentity_t, activator: *mut gentity_t) {
     let mut haltTrigger: qboolean = QFALSE;
 
     if let Some(think) = (*ent).think {
-        if core::ptr::fn_addr_eq(think, multi_trigger_run as unsafe extern "C" fn(*mut gentity_t)) {
+        if core::ptr::fn_addr_eq(
+            think,
+            multi_trigger_run as unsafe extern "C" fn(*mut gentity_t),
+        ) {
             //already triggered, just waiting to run
             return;
         }
@@ -306,8 +309,8 @@ pub unsafe fn multi_trigger(ent: *mut gentity_t, activator: *mut gentity_t) {
             && !(*ent).targetname.is_null()
             && *(*ent).targetname != 0
         {
-            let objItem =
-                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*activator).client).holdingObjectiveItem as usize);
+            let objItem = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*(*activator).client).holdingObjectiveItem as usize);
 
             if !objItem.is_null() && (*objItem).inuse != QFALSE {
                 if !(*objItem).goaltarget.is_null()
@@ -369,7 +372,8 @@ pub unsafe fn multi_trigger(ent: *mut gentity_t, activator: *mut gentity_t) {
         while i < numEnts {
             if entityList[i as usize] < MAX_CLIENTS as c_int {
                 //only care about clients
-                let cl = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entityList[i as usize] as usize);
+                let cl = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add(entityList[i as usize] as usize);
 
                 //the client is valid
                 if (*cl).inuse != QFALSE
@@ -449,9 +453,7 @@ pub unsafe fn multi_trigger(ent: *mut gentity_t, activator: *mut gentity_t) {
 
     (*ent).activator = activator;
 
-    if (*ent).delay != 0
-        && (*ent).painDebounceTime < ((*addr_of!(level)).time + (*ent).delay)
-    {
+    if (*ent).delay != 0 && (*ent).painDebounceTime < ((*addr_of!(level)).time + (*ent).delay) {
         //delay before firing trigger
         (*ent).think = Some(multi_trigger_run);
         (*ent).nextthink = (*addr_of!(level)).time + (*ent).delay;
@@ -580,9 +582,7 @@ pub unsafe extern "C" fn Touch_Multi(
                 && *(*self_).idealclass != 0
             {
                 //only certain classes can activate it
-                if other.is_null()
-                    || (*other).client.is_null()
-                    || (*(*other).client).siegeClass < 0
+                if other.is_null() || (*other).client.is_null() || (*(*other).client).siegeClass < 0
                 {
                     //no class
                     return;
@@ -616,7 +616,8 @@ pub unsafe extern "C" fn Touch_Multi(
                     &(*(*other).client).ps.viewangles,
                     &mut (*(*other).client).hackingAngles,
                 );
-                (*(*other).client).ps.hackingTime = (*addr_of!(level)).time + (*self_).genericValue7;
+                (*(*other).client).ps.hackingTime =
+                    (*addr_of!(level)).time + (*self_).genericValue7;
                 (*(*other).client).ps.hackingBaseTime = (*self_).genericValue7;
                 if (*(*other).client).ps.hackingBaseTime > 60000 {
                     //don't allow a bit overflow
@@ -733,29 +734,29 @@ so, the basic time between firing is a random time between
 (wait - random) and (wait + random)
 
 "team" - If set, only this team can trip this trigger
-	0 - any
-	1 - red
-	2 - blue
+    0 - any
+    1 - red
+    2 - blue
 
 "soundSet"	Ambient sound set to play when this trigger is activated
 
 usetime		-	If specified (in milliseconds) along with the USE_BUTTON flag, will
-				require a client to hold the use key for x amount of ms before firing.
+                require a client to hold the use key for x amount of ms before firing.
 
 Applicable only during Siege gametype:
 teamuser	-	if 1, team 2 can't use this. If 2, team 1 can't use this.
 siegetrig	-	if non-0, can only be activated by players carrying a misc_siege_item
-				which is associated with this trigger by the item's goaltarget value.
+                which is associated with this trigger by the item's goaltarget value.
 teambalance	-	if non-0, is "owned" by the last team that activated. Can only be activated
-				by the other team if the number of players on the other team inside	the
-				trigger outnumber the number of players on the owning team inside the
-				trigger.
+                by the other team if the number of players on the other team inside	the
+                trigger outnumber the number of players on the owning team inside the
+                trigger.
 target3		-	fire when activated by team1
 target4		-	fire when activated by team2
 
 idealclass	-	Can only be used by this class/these classes. You can specify use by
-				multiple classes with the use of |, e.g.:
-				"Imperial Medic|Imperial Assassin|Imperial Demolitionist"
+                multiple classes with the use of |, e.g.:
+                "Imperial Medic|Imperial Assassin|Imperial Demolitionist"
 */
 /// `void SP_trigger_multiple( gentity_t *ent )` (g_trigger.c:610). Spawn-initializer for
 /// `trigger_multiple`: reads the `noise`/`usetime`/Siege/`delay` spawn keys, validates the
@@ -776,10 +777,18 @@ pub unsafe extern "C" fn SP_trigger_multiple(ent: *mut gentity_t) {
         }
     }
 
-    G_SpawnInt(c"usetime".as_ptr(), c"0".as_ptr(), &mut (*ent).genericValue7);
+    G_SpawnInt(
+        c"usetime".as_ptr(),
+        c"0".as_ptr(),
+        &mut (*ent).genericValue7,
+    );
 
     //For siege gametype
-    G_SpawnInt(c"siegetrig".as_ptr(), c"0".as_ptr(), &mut (*ent).genericValue1);
+    G_SpawnInt(
+        c"siegetrig".as_ptr(),
+        c"0".as_ptr(),
+        &mut (*ent).genericValue1,
+    );
     G_SpawnInt(
         c"teambalance".as_ptr(),
         c"0".as_ptr(),
@@ -829,23 +838,23 @@ so, the basic time between firing is a random time between
 "NPC_targetname"  Only the NPC with this NPC_targetname fires this trigger
 
 "team" - If set, only this team can trip this trigger
-	0 - any
-	1 - red
-	2 - blue
+    0 - any
+    1 - red
+    2 - blue
 
 "soundSet"	Ambient sound set to play when this trigger is activated
 
 usetime		-	If specified (in milliseconds) along with the USE_BUTTON flag, will
-				require a client to hold the use key for x amount of ms before firing.
+                require a client to hold the use key for x amount of ms before firing.
 
 Applicable only during Siege gametype:
 teamuser - if 1, team 2 can't use this. If 2, team 1 can't use this.
 siegetrig - if non-0, can only be activated by players carrying a misc_siege_item
-			which is associated with this trigger by the item's goaltarget value.
+            which is associated with this trigger by the item's goaltarget value.
 
 idealclass	-	Can only be used by this class/these classes. You can specify use by
-				multiple classes with the use of |, e.g.:
-				"Imperial Medic|Imperial Assassin|Imperial Demolitionist"
+                multiple classes with the use of |, e.g.:
+                "Imperial Medic|Imperial Assassin|Imperial Demolitionist"
 */
 /// `void SP_trigger_once( gentity_t *ent )` (g_trigger.c:697). Spawn-initializer for
 /// `trigger_once`: like [`SP_trigger_multiple`] but forces `wait = -1` (a one-shot) and has no
@@ -866,10 +875,18 @@ pub unsafe extern "C" fn SP_trigger_once(ent: *mut gentity_t) {
         }
     }
 
-    G_SpawnInt(c"usetime".as_ptr(), c"0".as_ptr(), &mut (*ent).genericValue7);
+    G_SpawnInt(
+        c"usetime".as_ptr(),
+        c"0".as_ptr(),
+        &mut (*ent).genericValue7,
+    );
 
     //For siege gametype
-    G_SpawnInt(c"siegetrig".as_ptr(), c"0".as_ptr(), &mut (*ent).genericValue1);
+    G_SpawnInt(
+        c"siegetrig".as_ptr(),
+        c"0".as_ptr(),
+        &mut (*ent).genericValue1,
+    );
 
     G_SpawnInt(c"delay".as_ptr(), c"0".as_ptr(), &mut (*ent).delay);
 
@@ -918,7 +935,8 @@ pub unsafe extern "C" fn space_touch(
         && (*(*other).client).ps.m_iVehicleNum >= MAX_CLIENTS as c_int
     {
         // a player client inside a vehicle
-        let veh = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*other).client).ps.m_iVehicleNum as usize);
+        let veh = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*(*other).client).ps.m_iVehicleNum as usize);
 
         if (*veh).inuse != QFALSE
             && !(*veh).client.is_null()
@@ -932,8 +950,11 @@ pub unsafe extern "C" fn space_touch(
         }
     }
 
-    if G_PointInBounds(&(*(*other).client).ps.origin, &(*self_).r.absmin, &(*self_).r.absmax)
-        == QFALSE
+    if G_PointInBounds(
+        &(*(*other).client).ps.origin,
+        &(*self_).r.absmin,
+        &(*self_).r.absmax,
+    ) == QFALSE
     {
         // his origin must be inside the trigger
         return;
@@ -941,8 +962,7 @@ pub unsafe extern "C" fn space_touch(
 
     if (*(*other).client).inSpaceIndex == 0 || (*(*other).client).inSpaceIndex == ENTITYNUM_NONE {
         // freshly entering space
-        (*(*other).client).inSpaceSuffocation =
-            (*addr_of!(level)).time + INITIAL_SUFFOCATION_DELAY;
+        (*(*other).client).inSpaceSuffocation = (*addr_of!(level)).time + INITIAL_SUFFOCATION_DELAY;
     }
 
     (*(*other).client).inSpaceIndex = (*self_).s.number;
@@ -1209,9 +1229,14 @@ pub unsafe extern "C" fn AimAtTarget(self_: *mut gentity_t) {
         }
     }
 
-    if !(*self_).classname.is_null() && Q_stricmp(c"target_push".as_ptr(), (*self_).classname) == 0 {
+    if !(*self_).classname.is_null() && Q_stricmp(c"target_push".as_ptr(), (*self_).classname) == 0
+    {
         if (*self_).spawnflags & PUSH_CONSTANT != 0 {
-            VectorSubtract(&(*ent).s.origin, &(*self_).s.origin, &mut (*self_).s.origin2);
+            VectorSubtract(
+                &(*ent).s.origin,
+                &(*self_).s.origin,
+                &mut (*self_).s.origin2,
+            );
             VectorNormalize(&mut (*self_).s.origin2);
             let o2 = (*self_).s.origin2;
             VectorScale(&o2, (*self_).speed, &mut (*self_).s.origin2);
@@ -1412,7 +1437,8 @@ pub unsafe extern "C" fn Do_Strike(ent: *mut gentity_t) {
         );
     } else {
         //only damage individuals
-        let tr_hit = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(local_trace.entityNum as usize);
+        let tr_hit = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add(local_trace.entityNum as usize);
 
         if (*tr_hit).inuse != QFALSE && (*tr_hit).takedamage != QFALSE {
             //damage it then
@@ -1480,8 +1506,8 @@ START_OFF - start trigger disabled
 "random"		wait variance, default is 2000
 "dmg"			damage on strike (default 50)
 "radius"		if non-0, does a radius damage at the lightning strike
-				impact point (using this value as the radius). otherwise
-				will only do line trace damage. default 0.
+                impact point (using this value as the radius). otherwise
+                will only do line trace damage. default 0.
 
 use to toggle on and off
 */
@@ -1675,7 +1701,9 @@ pub unsafe extern "C" fn hurt_touch(
 ) {
     let dflags: c_int;
 
-    if (*addr_of!(g_gametype)).integer == GT_SIEGE && !(*self_).team.is_null() && *(*self_).team != 0
+    if (*addr_of!(g_gametype)).integer == GT_SIEGE
+        && !(*self_).team.is_null()
+        && *(*self_).team != 0
     {
         let team = atoi((*self_).team);
 
@@ -1710,7 +1738,10 @@ pub unsafe extern "C" fn hurt_touch(
         return;
     }
 
-    if (*self_).damage == -1 && !other.is_null() && !(*other).client.is_null() && (*other).health < 1
+    if (*self_).damage == -1
+        && !other.is_null()
+        && !(*other).client.is_null()
+        && (*other).health < 1
     {
         (*(*other).client).ps.fallingToDeath = 0;
         respawn(other);
@@ -1883,7 +1914,11 @@ pub unsafe extern "C" fn shipboundary_touch(
         return;
     }
 
-    ent = G_Find(null_mut(), offset_of!(gentity_s, targetname), (*self_).target);
+    ent = G_Find(
+        null_mut(),
+        offset_of!(gentity_s, targetname),
+        (*self_).target,
+    );
     if ent.is_null() || (*ent).inuse == QFALSE {
         //this is bad
         G_Error(&format!(
@@ -1892,9 +1927,7 @@ pub unsafe extern "C" fn shipboundary_touch(
         ));
     }
 
-    if (*(*other).client).ps.m_iVehicleNum == 0
-        || (*(*other).m_pVehicle).m_iRemovedSurfaces != 0
-    {
+    if (*(*other).client).ps.m_iVehicleNum == 0 || (*(*other).m_pVehicle).m_iRemovedSurfaces != 0 {
         //if a vehicle touches a boundary without a pilot in it or with parts missing, just blow the thing up
         G_Damage(
             other,
@@ -1939,16 +1972,15 @@ pub unsafe extern "C" fn shipboundary_think(ent: *mut gentity_t) {
         return;
     }
 
-    numListedEntities =
-        trap::EntitiesInBox(&(*ent).r.absmin, &(*ent).r.absmax, &mut iEntityList);
+    numListedEntities = trap::EntitiesInBox(&(*ent).r.absmin, &(*ent).r.absmax, &mut iEntityList);
     while i < numListedEntities {
-        let listedEnt = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(iEntityList[i as usize] as usize);
+        let listedEnt = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add(iEntityList[i as usize] as usize);
         if (*listedEnt).inuse != QFALSE
             && !(*listedEnt).client.is_null()
             && (*(*listedEnt).client).ps.m_iVehicleNum != 0
         {
-            if (*listedEnt).s.eType == ET_NPC as c_int
-                && (*listedEnt).s.NPC_class == CLASS_VEHICLE
+            if (*listedEnt).s.eType == ET_NPC as c_int && (*listedEnt).s.NPC_class == CLASS_VEHICLE
             {
                 let pVeh = (*listedEnt).m_pVehicle;
                 if !pVeh.is_null() && (*(*pVeh).m_pVehicleInfo).r#type == VH_FIGHTER {
@@ -1981,7 +2013,11 @@ pub unsafe extern "C" fn SP_trigger_shipboundary(self_: *mut gentity_t) {
     if (*self_).target.is_null() || *(*self_).target == 0 {
         G_Error("trigger_shipboundary without a target.");
     }
-    G_SpawnInt(c"traveltime".as_ptr(), c"0".as_ptr(), &mut (*self_).genericValue1);
+    G_SpawnInt(
+        c"traveltime".as_ptr(),
+        c"0".as_ptr(),
+        &mut (*self_).genericValue1,
+    );
 
     if (*self_).genericValue1 == 0 {
         G_Error("trigger_shipboundary without traveltime.");
@@ -2026,8 +2062,8 @@ pub unsafe extern "C" fn hyperspace_touch(
         //already hyperspacing, just keep us moving
         if (*(*other).client).ps.eFlags2 & EF2_HYPERSPACE != 0 {
             //they've started the hyperspace but haven't been teleported yet
-            let timeFrac: f32 = ((*addr_of!(level)).time
-                - (*(*other).client).ps.hyperSpaceTime) as f32
+            let timeFrac: f32 = ((*addr_of!(level)).time - (*(*other).client).ps.hyperSpaceTime)
+                as f32
                 / HYPERSPACE_TIME as f32;
             if timeFrac >= HYPERSPACE_TELEPORT_FRAC {
                 //half-way, now teleport them!
@@ -2042,7 +2078,11 @@ pub unsafe extern "C" fn hyperspace_touch(
                 //take off the flag so we only do this once
                 (*(*other).client).ps.eFlags2 &= !EF2_HYPERSPACE;
                 //Get the offset from the local position
-                ent = G_Find(null_mut(), offset_of!(gentity_s, targetname), (*self_).target);
+                ent = G_Find(
+                    null_mut(),
+                    offset_of!(gentity_s, targetname),
+                    (*self_).target,
+                );
                 if ent.is_null() || (*ent).inuse == QFALSE {
                     //this is bad
                     G_Error(&format!(
@@ -2061,7 +2101,11 @@ pub unsafe extern "C" fn hyperspace_touch(
                 rDiff = DotProduct(&right, &diff);
                 uDiff = DotProduct(&up, &diff);
                 //Now get the base position of the destination
-                ent = G_Find(null_mut(), offset_of!(gentity_s, targetname), (*self_).target2);
+                ent = G_Find(
+                    null_mut(),
+                    offset_of!(gentity_s, targetname),
+                    (*self_).target2,
+                );
                 if ent.is_null() || (*ent).inuse == QFALSE {
                     //this is bad
                     G_Error(&format!(
@@ -2078,7 +2122,12 @@ pub unsafe extern "C" fn hyperspace_touch(
                     Some(&mut up),
                 );
                 VectorMA(&newOrg.clone(), fDiff * (*self_).radius, &fwd, &mut newOrg);
-                VectorMA(&newOrg.clone(), rDiff * (*self_).radius, &right, &mut newOrg);
+                VectorMA(
+                    &newOrg.clone(),
+                    rDiff * (*self_).radius,
+                    &right,
+                    &mut newOrg,
+                );
                 VectorMA(&newOrg.clone(), uDiff * (*self_).radius, &up, &mut newOrg);
                 //G_Printf("hyperspace from %s to %s\n", vtos(other->client->ps.origin), vtos(newOrg) );
                 //now put them in the offset position, facing the angles that position wants them to be facing
@@ -2094,7 +2143,10 @@ pub unsafe extern "C" fn hyperspace_touch(
                 }
                 //make them face the new angle
                 //other->client->ps.hyperSpaceIndex = ent->s.number;
-                VectorCopy(&(*ent).s.angles, &mut (*(*other).client).ps.hyperSpaceAngles);
+                VectorCopy(
+                    &(*ent).s.angles,
+                    &mut (*(*other).client).ps.hyperSpaceAngles,
+                );
                 //sound
                 G_Sound(
                     other,
@@ -2105,7 +2157,11 @@ pub unsafe extern "C" fn hyperspace_touch(
         }
         return;
     } else {
-        ent = G_Find(null_mut(), offset_of!(gentity_s, targetname), (*self_).target);
+        ent = G_Find(
+            null_mut(),
+            offset_of!(gentity_s, targetname),
+            (*self_).target,
+        );
         if ent.is_null() || (*ent).inuse == QFALSE {
             //this is bad
             G_Error(&format!(
@@ -2131,7 +2187,10 @@ pub unsafe extern "C" fn hyperspace_touch(
             return;
         }
         //other->client->ps.hyperSpaceIndex = ent->s.number;
-        VectorCopy(&(*ent).s.angles, &mut (*(*other).client).ps.hyperSpaceAngles);
+        VectorCopy(
+            &(*ent).s.angles,
+            &mut (*(*other).client).ps.hyperSpaceAngles,
+        );
         (*(*other).client).ps.hyperSpaceTime = (*addr_of!(level)).time;
     }
 }
@@ -2222,7 +2281,11 @@ pub unsafe extern "C" fn asteroid_pick_random_asteroid(self_: *mut gentity_t) ->
     }
 
     if t_count == 1 {
-        return G_Find(null_mut(), offset_of!(gentity_s, targetname), (*self_).target);
+        return G_Find(
+            null_mut(),
+            offset_of!(gentity_s, targetname),
+            (*self_).target,
+        );
     }
 
     //FIXME: need a seed
@@ -2470,11 +2533,10 @@ mod tests {
             let mut cl = cbuf(list);
             let mut cs = cbuf(s);
             let r = unsafe { G_NameInTriggerClassList(rl.as_ptr(), rs.as_ptr()) };
-            let o = unsafe {
-                jka_G_NameInTriggerClassList(cl.as_mut_ptr(), cs.as_mut_ptr())
-            };
+            let o = unsafe { jka_G_NameInTriggerClassList(cl.as_mut_ptr(), cs.as_mut_ptr()) };
             assert_eq!(
-                r, o,
+                r,
+                o,
                 "G_NameInTriggerClassList({:?}, {:?})",
                 String::from_utf8_lossy(list),
                 String::from_utf8_lossy(s)

@@ -36,17 +36,20 @@ use crate::codemp::game::bg_public::{
     TEAM_NUM_TEAMS, TEAM_RED, TEAM_SPECTATOR, VOTE_TIME,
 };
 use crate::codemp::game::g_client::{
-    ClientBegin, ClientConnect, ClientDisconnect, ClientSpawn, ClientUserinfoChanged, SelectSpawnPoint, TeamCount, g2SaberInstance, respawn
+    g2SaberInstance, respawn, ClientBegin, ClientConnect, ClientDisconnect, ClientSpawn,
+    ClientUserinfoChanged, SelectSpawnPoint, TeamCount,
 };
-use crate::codemp::game::g_cmds::{ClientCommand, DeathmatchScoreboardMessage, SetTeam, StopFollowing};
+use crate::codemp::game::g_cmds::{
+    ClientCommand, DeathmatchScoreboardMessage, SetTeam, StopFollowing,
+};
 use crate::codemp::game::g_combat::player_die;
 use crate::codemp::game::g_local::{
     gclient_t, gentity_t, level_locals_t, CON_CONNECTED, CON_CONNECTING, CON_DISCONNECTED,
     FL_TEAMSLAVE, GAMEVERSION, INTERMISSION_DELAY_TIME, MAX_G_SHARED_BUFFER_SIZE, SPECTATOR_FOLLOW,
     SPECTATOR_SCOREBOARD,
 };
-use crate::codemp::game::g_mem::G_InitMemory;
 use crate::codemp::game::g_log::{G_LogWeaponInit, G_LogWeaponOutput};
+use crate::codemp::game::g_mem::G_InitMemory;
 use crate::codemp::game::g_misc::{gEscapeTime, gEscaping, TAG_Init};
 use crate::codemp::game::g_public_h::{SVF_BOT, SVF_BROADCAST};
 use crate::codemp::game::g_saga::{g_siegePersistant, SiegeDoTeamAssign};
@@ -71,50 +74,50 @@ use crate::trap;
 
 use crate::codemp::game::ai_main::{BotAILoadMap, BotAISetup, BotAIShutdown, BotAIStartFrame};
 use crate::codemp::game::ai_util::{B_CleanupAlloc, B_InitAlloc};
-use crate::codemp::game::bg_vehicleLoad::BG_VehicleLoadParms;
-use crate::codemp::game::bg_saberLoad::WP_SaberLoadParms;
-use crate::codemp::game::npc::NPC_InitGame;
-use crate::codemp::game::g_timer::TIMER_Clear;
-use crate::codemp::game::g_client::InitBodyQue;
-use crate::codemp::game::g_items::{ClearRegisteredItems, G_CheckTeamItems, SaveRegisteredItems};
-use crate::codemp::game::g_saga::InitSiegeMode;
-use crate::codemp::game::g_spawn::G_SpawnEntitiesFromString;
-use crate::codemp::game::g_bot::G_InitBots;
-use crate::codemp::game::g_nav::navCalculatePaths;
-use crate::codemp::game::g_local::{SP_PODIUM_MODEL, START_TIME_NAV_CALC};
 use crate::codemp::game::bg_misc::bg_customSiegeSoundNames;
 use crate::codemp::game::bg_public::{CS_CLIENT_JEDIMASTER, MAX_CUSTOM_SIEGE_SOUNDS};
-use crate::codemp::game::g_utils::G_ModelIndex;
+use crate::codemp::game::bg_saberLoad::WP_SaberLoadParms;
+use crate::codemp::game::bg_vehicleLoad::BG_VehicleLoadParms;
+use crate::codemp::game::g_bot::G_InitBots;
 use crate::codemp::game::g_bot::G_RefreshNextMap;
+use crate::codemp::game::g_client::InitBodyQue;
+use crate::codemp::game::g_items::{ClearRegisteredItems, G_CheckTeamItems, SaveRegisteredItems};
+use crate::codemp::game::g_local::{SP_PODIUM_MODEL, START_TIME_NAV_CALC};
+use crate::codemp::game::g_nav::navCalculatePaths;
 use crate::codemp::game::g_nav::{fatalErrors, NAV_CalculatePaths};
+use crate::codemp::game::g_saga::InitSiegeMode;
+use crate::codemp::game::g_spawn::G_SpawnEntitiesFromString;
+use crate::codemp::game::g_timer::TIMER_Clear;
+use crate::codemp::game::g_utils::G_ModelIndex;
+use crate::codemp::game::npc::NPC_InitGame;
 
 // G_RunFrame callees + constants (per-frame tick).
 use crate::codemp::game::anims::BOTH_CONSOLE1;
+use crate::codemp::game::bg_misc::BG_GetItemIndexByTag;
 use crate::codemp::game::bg_public::{
     EF_SOUNDTRACKER, ET_ITEM, ET_MISSILE, ET_MOVER, ET_NPC, EVENT_VALID_MSEC, HANDEXTEND_CHOKE,
     PW_CLOAKED, SETANIM_FLAG_HOLD, SETANIM_FLAG_OVERRIDE, SETANIM_TORSO,
 };
 use crate::codemp::game::bg_saga::bgSiegeClasses;
 use crate::codemp::game::bg_saga_h::{CFL_STATVIEWER, SIEGETEAM_TEAM1, SIEGETEAM_TEAM2};
-use crate::codemp::game::g_active::{ClientEndFrame, ClientThink, G_CheckClientTimeouts, G_RunClient};
+use crate::codemp::game::g_ICARUScb::{
+    setTable, Q3_GetFloat, Q3_GetString, Q3_GetTag, Q3_GetVector, Q3_Kill, Q3_Lerp2Angles,
+    Q3_Lerp2End, Q3_Lerp2Origin, Q3_Lerp2Pos, Q3_Lerp2Start, Q3_Play, Q3_PlaySound, Q3_Remove,
+    Q3_Set, Q3_Use,
+};
+use crate::codemp::game::g_active::{
+    ClientEndFrame, ClientThink, G_CheckClientTimeouts, G_RunClient,
+};
 use crate::codemp::game::g_combat::G_Damage;
 use crate::codemp::game::g_items::{G_RunItem, Jetpack_Off};
 use crate::codemp::game::g_local::DAMAGE_NO_ARMOR;
 use crate::codemp::game::g_missile::G_RunMissile;
 use crate::codemp::game::g_mover::G_RunMover;
-use crate::codemp::game::bg_misc::BG_GetItemIndexByTag;
-use crate::codemp::game::g_ICARUScb::{
-    Q3_GetFloat, Q3_GetString, Q3_GetTag, Q3_GetVector, Q3_Kill, Q3_Lerp2Angles, Q3_Lerp2End,
-    Q3_Lerp2Origin, Q3_Lerp2Pos, Q3_Lerp2Start, Q3_Play, Q3_PlaySound, Q3_Remove, Q3_Set,
-    Q3_Use, setTable,
+use crate::codemp::game::g_mover::{
+    G_EntIsBreakable, G_EntIsDoor, G_EntIsRemovableUsable, G_EntIsUnlockedDoor,
 };
-use crate::codemp::game::q_shared::GetIDForString;
-use crate::codemp::game::q_shared_h::stringID_table_t;
-use crate::codemp::game::g_mover::{G_EntIsBreakable, G_EntIsDoor, G_EntIsRemovableUsable, G_EntIsUnlockedDoor};
 use crate::codemp::game::g_nav::{NAV_ClearPathToPoint, NAV_FindPlayerWaypoint, WAYPOINT_NONE};
-use crate::codemp::game::g_navnew::{NAV_CheckNodeFailedForEnt, NAVNEW_ClearPathBetweenPoints};
-use crate::codemp::game::npc_combat::CP_FindCombatPointWaypoints;
-use crate::codemp::game::npc_utils::NPC_ClearLOS2;
+use crate::codemp::game::g_navnew::{NAVNEW_ClearPathBetweenPoints, NAV_CheckNodeFailedForEnt};
 use crate::codemp::game::g_saga::{
     gSiegeRoundEnded, gSiegeRoundWinningTeam, G_SiegeClientExData, SiegeCheckTimers,
 };
@@ -125,9 +128,13 @@ use crate::codemp::game::g_utils::{
 use crate::codemp::game::npc::ClearNPCGlobals;
 use crate::codemp::game::npc_ai_jedi::Jedi_Decloak;
 use crate::codemp::game::npc_ai_utils::AI_UpdateGroups;
+use crate::codemp::game::npc_combat::CP_FindCombatPointWaypoints;
 use crate::codemp::game::npc_senses::ClearPlayerAlertEvents;
-use crate::codemp::game::q_math::VectorLength;
+use crate::codemp::game::npc_utils::NPC_ClearLOS2;
 use crate::codemp::game::q_math::Q_irand;
+use crate::codemp::game::q_math::VectorLength;
+use crate::codemp::game::q_shared::GetIDForString;
+use crate::codemp::game::q_shared_h::stringID_table_t;
 use crate::codemp::game::q_shared_h::{
     vec3_t, BUTTON_USE, CHAN_VOICE, ENTITYNUM_NONE, MAX_POWERUPS,
 };
@@ -190,23 +197,113 @@ pub static mut gSharedBuffer: [c_char; MAX_G_SHARED_BUFFER_SIZE] = [0; MAX_G_SHA
 
 // Shared-memory argument structs for ICARUS vmMain callbacks (g_public.h:796-918).
 // The engine fills `gSharedBuffer` with one of these before calling vmMain.
-#[repr(C)] pub struct T_G_ICARUS_PLAYSOUND    { pub taskID: c_int, pub entID: c_int, pub name: [c_char; 2048], pub channel: [c_char; 2048] }
-#[repr(C)] pub struct T_G_ICARUS_SET          { pub taskID: c_int, pub entID: c_int, pub type_name: [c_char; 2048], pub data: [c_char; 2048] }
-#[repr(C)] pub struct T_G_ICARUS_LERP2POS     { pub taskID: c_int, pub entID: c_int, pub origin: vec3_t, pub angles: vec3_t, pub duration: f32, pub nullAngles: qboolean }
-#[repr(C)] pub struct T_G_ICARUS_LERP2ORIGIN  { pub taskID: c_int, pub entID: c_int, pub origin: vec3_t, pub duration: f32 }
-#[repr(C)] pub struct T_G_ICARUS_LERP2ANGLES  { pub taskID: c_int, pub entID: c_int, pub angles: vec3_t, pub duration: f32 }
-#[repr(C)] pub struct T_G_ICARUS_GETTAG       { pub entID: c_int, pub name: [c_char; 2048], pub lookup: c_int, pub info: vec3_t }
-#[repr(C)] pub struct T_G_ICARUS_LERP2START   { pub entID: c_int, pub taskID: c_int, pub duration: f32 }
-#[repr(C)] pub struct T_G_ICARUS_LERP2END     { pub entID: c_int, pub taskID: c_int, pub duration: f32 }
-#[repr(C)] pub struct T_G_ICARUS_USE          { pub entID: c_int, pub target: [c_char; 2048] }
-#[repr(C)] pub struct T_G_ICARUS_KILL         { pub entID: c_int, pub name: [c_char; 2048] }
-#[repr(C)] pub struct T_G_ICARUS_REMOVE       { pub entID: c_int, pub name: [c_char; 2048] }
-#[repr(C)] pub struct T_G_ICARUS_PLAY         { pub taskID: c_int, pub entID: c_int, pub type_: [c_char; 2048], pub name: [c_char; 2048] }
-#[repr(C)] pub struct T_G_ICARUS_GETFLOAT     { pub entID: c_int, pub type_: c_int, pub name: [c_char; 2048], pub value: f32 }
-#[repr(C)] pub struct T_G_ICARUS_GETVECTOR    { pub entID: c_int, pub type_: c_int, pub name: [c_char; 2048], pub value: vec3_t }
-#[repr(C)] pub struct T_G_ICARUS_GETSTRING    { pub entID: c_int, pub type_: c_int, pub name: [c_char; 2048], pub value: [c_char; 2048] }
-#[repr(C)] pub struct T_G_ICARUS_SOUNDINDEX   { pub filename: [c_char; 2048] }
-#[repr(C)] pub struct T_G_ICARUS_GETSETIDFORSTRING { pub string: [c_char; 2048] }
+#[repr(C)]
+pub struct T_G_ICARUS_PLAYSOUND {
+    pub taskID: c_int,
+    pub entID: c_int,
+    pub name: [c_char; 2048],
+    pub channel: [c_char; 2048],
+}
+#[repr(C)]
+pub struct T_G_ICARUS_SET {
+    pub taskID: c_int,
+    pub entID: c_int,
+    pub type_name: [c_char; 2048],
+    pub data: [c_char; 2048],
+}
+#[repr(C)]
+pub struct T_G_ICARUS_LERP2POS {
+    pub taskID: c_int,
+    pub entID: c_int,
+    pub origin: vec3_t,
+    pub angles: vec3_t,
+    pub duration: f32,
+    pub nullAngles: qboolean,
+}
+#[repr(C)]
+pub struct T_G_ICARUS_LERP2ORIGIN {
+    pub taskID: c_int,
+    pub entID: c_int,
+    pub origin: vec3_t,
+    pub duration: f32,
+}
+#[repr(C)]
+pub struct T_G_ICARUS_LERP2ANGLES {
+    pub taskID: c_int,
+    pub entID: c_int,
+    pub angles: vec3_t,
+    pub duration: f32,
+}
+#[repr(C)]
+pub struct T_G_ICARUS_GETTAG {
+    pub entID: c_int,
+    pub name: [c_char; 2048],
+    pub lookup: c_int,
+    pub info: vec3_t,
+}
+#[repr(C)]
+pub struct T_G_ICARUS_LERP2START {
+    pub entID: c_int,
+    pub taskID: c_int,
+    pub duration: f32,
+}
+#[repr(C)]
+pub struct T_G_ICARUS_LERP2END {
+    pub entID: c_int,
+    pub taskID: c_int,
+    pub duration: f32,
+}
+#[repr(C)]
+pub struct T_G_ICARUS_USE {
+    pub entID: c_int,
+    pub target: [c_char; 2048],
+}
+#[repr(C)]
+pub struct T_G_ICARUS_KILL {
+    pub entID: c_int,
+    pub name: [c_char; 2048],
+}
+#[repr(C)]
+pub struct T_G_ICARUS_REMOVE {
+    pub entID: c_int,
+    pub name: [c_char; 2048],
+}
+#[repr(C)]
+pub struct T_G_ICARUS_PLAY {
+    pub taskID: c_int,
+    pub entID: c_int,
+    pub type_: [c_char; 2048],
+    pub name: [c_char; 2048],
+}
+#[repr(C)]
+pub struct T_G_ICARUS_GETFLOAT {
+    pub entID: c_int,
+    pub type_: c_int,
+    pub name: [c_char; 2048],
+    pub value: f32,
+}
+#[repr(C)]
+pub struct T_G_ICARUS_GETVECTOR {
+    pub entID: c_int,
+    pub type_: c_int,
+    pub name: [c_char; 2048],
+    pub value: vec3_t,
+}
+#[repr(C)]
+pub struct T_G_ICARUS_GETSTRING {
+    pub entID: c_int,
+    pub type_: c_int,
+    pub name: [c_char; 2048],
+    pub value: [c_char; 2048],
+}
+#[repr(C)]
+pub struct T_G_ICARUS_SOUNDINDEX {
+    pub filename: [c_char; 2048],
+}
+#[repr(C)]
+pub struct T_G_ICARUS_GETSETIDFORSTRING {
+    pub string: [c_char; 2048],
+}
 
 /// `qboolean gQueueScoreMessage` / `int gQueueScoreMessageTime` (g_main.c:1714) —
 /// rww's deferred-scoreboard "queue": rather than broadcasting the scoreboard the
@@ -1254,7 +1351,13 @@ pub fn CalculateRanks() {
                         {
                             (*lvl).numPlayingClients += 1;
                         }
-                        if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(i as isize)).r.svFlags & SVF_BOT == 0 {
+                        if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                            .offset(i as isize))
+                        .r
+                        .svFlags
+                            & SVF_BOT
+                            == 0
+                        {
                             (*lvl).numVotingClients += 1;
                             if (*clients.add(i as usize)).sess.sessionTeam == TEAM_RED {
                                 (*lvl).numteamVotingClients[0] += 1;
@@ -1776,7 +1879,8 @@ pub fn G_ResetDuelists() {
 
         let mut i: usize = 0;
         while i < 3 {
-            let ent = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*lvl).sortedClients[i] as usize);
+            let ent = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*lvl).sortedClients[i] as usize);
 
             *addr_of_mut!(g_noPDuelCheck) = QTRUE;
             player_die(ent, ent, ent, 999, MOD_SUICIDE);
@@ -1909,9 +2013,10 @@ pub fn CheckIntermissionExit() {
             if (*cl).pers.connected != CON_CONNECTED {
                 continue;
             }
-            if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*cl).ps.clientNum as usize))
-                .r
-                .svFlags
+            if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*cl).ps.clientNum as usize))
+            .r
+            .svFlags
                 & SVF_BOT
                 != 0
             {
@@ -2949,7 +3054,8 @@ pub unsafe fn RemovePowerDuelLosers() {
     while i < remNum {
         //set them all to spectator
         SetTeam(
-            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(remClients[i] as isize),
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .offset(remClients[i] as isize),
             c"s".as_ptr() as *mut c_char,
         );
         i += 1;
@@ -3015,13 +3121,15 @@ pub unsafe fn RemoveDuelDrawLoser() {
 
     if clFailure != 2 {
         SetTeam(
-            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset((*lvl).sortedClients[clFailure as usize] as isize),
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .offset((*lvl).sortedClients[clFailure as usize] as isize),
             c"s".as_ptr() as *mut c_char,
         );
     } else {
         //we could be more elegant about this, but oh well.
         SetTeam(
-            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset((*lvl).sortedClients[1] as isize),
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .offset((*lvl).sortedClients[1] as isize),
             c"s".as_ptr() as *mut c_char,
         );
     }
@@ -3174,7 +3282,12 @@ pub unsafe fn CheckTeamLeader(team: c_int) {
             if (*cl).sess.sessionTeam != team {
                 continue;
             }
-            if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(i as isize)).r.svFlags & SVF_BOT == 0 {
+            if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(i as isize))
+                .r
+                .svFlags
+                & SVF_BOT
+                == 0
+            {
                 (*cl).sess.teamLeader = QTRUE;
                 break;
             }
@@ -3209,7 +3322,9 @@ pub unsafe fn SendScoreboardMessageToAllClients() {
             .connected
             == CON_CONNECTED
         {
-            DeathmatchScoreboardMessage((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(i as isize));
+            DeathmatchScoreboardMessage(
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(i as isize),
+            );
         }
     }
 }
@@ -3339,7 +3454,8 @@ pub fn G_CanResetDuelists() -> qboolean {
         let mut i: usize = 0;
         while i < 3 {
             // precheck to make sure they are all respawnable
-            let ent = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*lvl).sortedClients[i] as usize);
+            let ent = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*lvl).sortedClients[i] as usize);
             let cl = (*ent).client;
 
             if (*ent).inuse == QFALSE
@@ -3806,113 +3922,168 @@ pub fn vm_main(command: c_int, args: &[isize; 12]) -> isize {
             unsafe { ClientConnect(args[0] as c_int, args[1] as c_int, args[2] as c_int) as isize }
         }
         Some(GameExport::GAME_CLIENT_THINK) => {
-            unsafe { ClientThink(args[0] as c_int, null_mut()); }
-            return 0
+            unsafe {
+                ClientThink(args[0] as c_int, null_mut());
+            }
+            return 0;
         }
         Some(GameExport::GAME_CLIENT_USERINFO_CHANGED) => {
-            unsafe { ClientUserinfoChanged(args[0] as c_int); }
-            return 0
+            unsafe {
+                ClientUserinfoChanged(args[0] as c_int);
+            }
+            return 0;
         }
         Some(GameExport::GAME_CLIENT_DISCONNECT) => {
-            unsafe { ClientDisconnect(args[0] as c_int); }
-            return 0
+            unsafe {
+                ClientDisconnect(args[0] as c_int);
+            }
+            return 0;
         }
         Some(GameExport::GAME_CLIENT_BEGIN) => {
-            unsafe { ClientBegin(args[0] as c_int, QTRUE); }
-            return 0
+            unsafe {
+                ClientBegin(args[0] as c_int, QTRUE);
+            }
+            return 0;
         }
         Some(GameExport::GAME_CLIENT_COMMAND) => {
-            unsafe { ClientCommand(args[0] as c_int); }
-            return 0
+            unsafe {
+                ClientCommand(args[0] as c_int);
+            }
+            return 0;
         }
         Some(GameExport::GAME_RUN_FRAME) => {
             // ( int levelTime )
             G_RunFrame(args[0] as c_int);
             0
         }
-        Some(GameExport::GAME_CONSOLE_COMMAND) => {
-            unsafe { ConsoleCommand() as isize }
-        }
-        Some(GameExport::BOTAI_START_FRAME) => {
-            unsafe { BotAIStartFrame(args[0] as c_int) as isize }
-        }
+        Some(GameExport::GAME_CONSOLE_COMMAND) => unsafe { ConsoleCommand() as isize },
+        Some(GameExport::BOTAI_START_FRAME) => unsafe {
+            BotAIStartFrame(args[0] as c_int) as isize
+        },
         Some(GameExport::GAME_ROFF_NOTETRACK_CALLBACK) => {
-            unsafe { G_ROFF_NotetrackCallback((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(args[0] as usize), args[1] as *const c_char); }
+            unsafe {
+                G_ROFF_NotetrackCallback(
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(args[0] as usize),
+                    args[1] as *const c_char,
+                );
+            }
             0
         }
         Some(GameExport::GAME_SPAWN_RMG_ENTITY) => {
             if unsafe { G_ParseSpawnVars(QFALSE) } != QFALSE {
-                unsafe { G_SpawnGEntityFromSpawnVars(QFALSE); }
+                unsafe {
+                    G_SpawnGEntityFromSpawnVars(QFALSE);
+                }
             }
             0
         }
         // rww - begin icarus callbacks
         Some(GameExport::GAME_ICARUS_PLAYSOUND) => unsafe {
             let sm = addr_of_mut!(gSharedBuffer) as *mut T_G_ICARUS_PLAYSOUND;
-            Q3_PlaySound((*sm).taskID, (*sm).entID, (*sm).name.as_ptr(), (*sm).channel.as_ptr()) as isize
-        }
+            Q3_PlaySound(
+                (*sm).taskID,
+                (*sm).entID,
+                (*sm).name.as_ptr(),
+                (*sm).channel.as_ptr(),
+            ) as isize
+        },
         Some(GameExport::GAME_ICARUS_SET) => unsafe {
             let sm = addr_of_mut!(gSharedBuffer) as *mut T_G_ICARUS_SET;
-            Q3_Set((*sm).taskID, (*sm).entID, (*sm).type_name.as_ptr(), (*sm).data.as_ptr()) as isize
-        }
+            Q3_Set(
+                (*sm).taskID,
+                (*sm).entID,
+                (*sm).type_name.as_ptr(),
+                (*sm).data.as_ptr(),
+            ) as isize
+        },
         Some(GameExport::GAME_ICARUS_LERP2POS) => unsafe {
             let sm = addr_of_mut!(gSharedBuffer) as *mut T_G_ICARUS_LERP2POS;
-            let angles: *const vec3_t = if (*sm).nullAngles != QFALSE { null_mut() } else { &(*sm).angles };
-            Q3_Lerp2Pos((*sm).taskID, (*sm).entID, &(*sm).origin, angles, (*sm).duration);
+            let angles: *const vec3_t = if (*sm).nullAngles != QFALSE {
+                null_mut()
+            } else {
+                &(*sm).angles
+            };
+            Q3_Lerp2Pos(
+                (*sm).taskID,
+                (*sm).entID,
+                &(*sm).origin,
+                angles,
+                (*sm).duration,
+            );
             0
-        }
+        },
         Some(GameExport::GAME_ICARUS_LERP2ORIGIN) => unsafe {
             let sm = addr_of_mut!(gSharedBuffer) as *mut T_G_ICARUS_LERP2ORIGIN;
             Q3_Lerp2Origin((*sm).taskID, (*sm).entID, &(*sm).origin, (*sm).duration);
             0
-        }
+        },
         Some(GameExport::GAME_ICARUS_LERP2ANGLES) => unsafe {
             let sm = addr_of_mut!(gSharedBuffer) as *mut T_G_ICARUS_LERP2ANGLES;
             Q3_Lerp2Angles((*sm).taskID, (*sm).entID, &(*sm).angles, (*sm).duration);
             0
-        }
+        },
         Some(GameExport::GAME_ICARUS_GETTAG) => unsafe {
             let sm = addr_of_mut!(gSharedBuffer) as *mut T_G_ICARUS_GETTAG;
-            Q3_GetTag((*sm).entID, (*sm).name.as_ptr(), (*sm).lookup, &mut (*sm).info) as isize
-        }
+            Q3_GetTag(
+                (*sm).entID,
+                (*sm).name.as_ptr(),
+                (*sm).lookup,
+                &mut (*sm).info,
+            ) as isize
+        },
         Some(GameExport::GAME_ICARUS_LERP2START) => unsafe {
             let sm = addr_of_mut!(gSharedBuffer) as *mut T_G_ICARUS_LERP2START;
             Q3_Lerp2Start((*sm).entID, (*sm).taskID, (*sm).duration);
             0
-        }
+        },
         Some(GameExport::GAME_ICARUS_LERP2END) => unsafe {
             let sm = addr_of_mut!(gSharedBuffer) as *mut T_G_ICARUS_LERP2END;
             Q3_Lerp2End((*sm).entID, (*sm).taskID, (*sm).duration);
             0
-        }
+        },
         Some(GameExport::GAME_ICARUS_USE) => unsafe {
             let sm = addr_of_mut!(gSharedBuffer) as *mut T_G_ICARUS_USE;
             Q3_Use((*sm).entID, (*sm).target.as_ptr());
             0
-        }
+        },
         Some(GameExport::GAME_ICARUS_KILL) => unsafe {
             let sm = addr_of_mut!(gSharedBuffer) as *mut T_G_ICARUS_KILL;
             Q3_Kill((*sm).entID, (*sm).name.as_ptr());
             0
-        }
+        },
         Some(GameExport::GAME_ICARUS_REMOVE) => unsafe {
             let sm = addr_of_mut!(gSharedBuffer) as *mut T_G_ICARUS_REMOVE;
             Q3_Remove((*sm).entID, (*sm).name.as_ptr());
             0
-        }
+        },
         Some(GameExport::GAME_ICARUS_PLAY) => unsafe {
             let sm = addr_of_mut!(gSharedBuffer) as *mut T_G_ICARUS_PLAY;
-            Q3_Play((*sm).taskID, (*sm).entID, (*sm).type_.as_ptr(), (*sm).name.as_ptr());
+            Q3_Play(
+                (*sm).taskID,
+                (*sm).entID,
+                (*sm).type_.as_ptr(),
+                (*sm).name.as_ptr(),
+            );
             0
-        }
+        },
         Some(GameExport::GAME_ICARUS_GETFLOAT) => unsafe {
             let sm = addr_of_mut!(gSharedBuffer) as *mut T_G_ICARUS_GETFLOAT;
-            Q3_GetFloat((*sm).entID, (*sm).type_, (*sm).name.as_ptr(), &mut (*sm).value) as isize
-        }
+            Q3_GetFloat(
+                (*sm).entID,
+                (*sm).type_,
+                (*sm).name.as_ptr(),
+                &mut (*sm).value,
+            ) as isize
+        },
         Some(GameExport::GAME_ICARUS_GETVECTOR) => unsafe {
             let sm = addr_of_mut!(gSharedBuffer) as *mut T_G_ICARUS_GETVECTOR;
-            Q3_GetVector((*sm).entID, (*sm).type_, (*sm).name.as_ptr(), &mut (*sm).value) as isize
-        }
+            Q3_GetVector(
+                (*sm).entID,
+                (*sm).type_,
+                (*sm).name.as_ptr(),
+                &mut (*sm).value,
+            ) as isize
+        },
         Some(GameExport::GAME_ICARUS_GETSTRING) => unsafe {
             let sm = addr_of_mut!(gSharedBuffer) as *mut T_G_ICARUS_GETSTRING;
             let mut crap: *mut c_char = null_mut(); // "I am sorry for this -rww"
@@ -3921,18 +4092,24 @@ pub fn vm_main(command: c_int, args: &[isize; 12]) -> isize {
                 strcpy((*sm).value.as_mut_ptr(), crap);
             }
             r as isize
-        }
+        },
         Some(GameExport::GAME_ICARUS_SOUNDINDEX) => unsafe {
             let sm = addr_of_mut!(gSharedBuffer) as *mut T_G_ICARUS_SOUNDINDEX;
-            G_SoundIndex(CStr::from_ptr((*sm).filename.as_ptr()).to_str().unwrap_or(""));
+            G_SoundIndex(
+                CStr::from_ptr((*sm).filename.as_ptr())
+                    .to_str()
+                    .unwrap_or(""),
+            );
             0
-        }
+        },
         Some(GameExport::GAME_ICARUS_GETSETIDFORSTRING) => unsafe {
             let sm = addr_of_mut!(gSharedBuffer) as *mut T_G_ICARUS_GETSETIDFORSTRING;
-            GetIDForString(addr_of!(setTable) as *const stringID_table_t, (*sm).string.as_ptr()) as isize
-        }
+            GetIDForString(
+                addr_of!(setTable) as *const stringID_table_t,
+                (*sm).string.as_ptr(),
+            ) as isize
+        },
         // rww - end icarus callbacks
-
         Some(GameExport::GAME_NAV_CLEARPATHTOPOINT) => {
             // NAV_ClearPathToPoint(&g_entities[arg0], (float*)arg1, (float*)arg2, (float*)arg3, arg4, arg5)
             unsafe {
@@ -3977,20 +4154,20 @@ pub fn vm_main(command: c_int, args: &[isize; 12]) -> isize {
                 ) as isize
             }
         }
-        Some(GameExport::GAME_NAV_ENTISUNLOCKEDDOOR) => {
-            unsafe { G_EntIsUnlockedDoor(args[0] as c_int) as isize }
-        }
-        Some(GameExport::GAME_NAV_ENTISDOOR) => {
-            unsafe { G_EntIsDoor(args[0] as c_int) as isize }
-        }
-        Some(GameExport::GAME_NAV_ENTISBREAKABLE) => {
-            unsafe { G_EntIsBreakable(args[0] as c_int) as isize }
-        }
-        Some(GameExport::GAME_NAV_ENTISREMOVABLEUSABLE) => {
-            unsafe { G_EntIsRemovableUsable(args[0] as c_int) as isize }
-        }
+        Some(GameExport::GAME_NAV_ENTISUNLOCKEDDOOR) => unsafe {
+            G_EntIsUnlockedDoor(args[0] as c_int) as isize
+        },
+        Some(GameExport::GAME_NAV_ENTISDOOR) => unsafe { G_EntIsDoor(args[0] as c_int) as isize },
+        Some(GameExport::GAME_NAV_ENTISBREAKABLE) => unsafe {
+            G_EntIsBreakable(args[0] as c_int) as isize
+        },
+        Some(GameExport::GAME_NAV_ENTISREMOVABLEUSABLE) => unsafe {
+            G_EntIsRemovableUsable(args[0] as c_int) as isize
+        },
         Some(GameExport::GAME_NAV_FINDCOMBATPOINTWAYPOINTS) => {
-            unsafe { CP_FindCombatPointWaypoints(); }
+            unsafe {
+                CP_FindCombatPointWaypoints();
+            }
             0
         }
         Some(GameExport::GAME_GETITEMINDEXBYTAG) => {
@@ -4149,7 +4326,8 @@ pub fn G_InitGame(levelTime: c_int, randomSeed: c_int, restart: c_int) {
         // for ( i=0 ; i<level.maxclients ; i++ ) g_entities[i].client = level.clients + i;
         let maxclients = (*addr_of!(level)).maxclients;
         for i in 0..maxclients as isize {
-            (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(i)).client = (*addr_of!(level)).clients.offset(i);
+            (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset(i)).client =
+                (*addr_of!(level)).clients.offset(i);
         }
 
         // always leave room for the max number of clients, even if they aren't
@@ -4193,7 +4371,12 @@ pub fn G_InitGame(levelTime: c_int, randomSeed: c_int, restart: c_int) {
         // `mapname` is a function-local cvar in the C source (g_main.c:899), not
         // the module static the table once carried.
         let mut mapname: vmCvar_t = vmCvar_t::zeroed();
-        trap::Cvar_Register(Some(&mut mapname), "mapname", "", CVAR_SERVERINFO | CVAR_ROM);
+        trap::Cvar_Register(
+            Some(&mut mapname),
+            "mapname",
+            "",
+            CVAR_SERVERINFO | CVAR_ROM,
+        );
         let mut ck_sum: vmCvar_t = vmCvar_t::zeroed();
         trap::Cvar_Register(Some(&mut ck_sum), "sv_mapChecksum", "", CVAR_ROM);
 
@@ -4587,8 +4770,8 @@ pub fn G_RunFrame(levelTime: c_int) {
                     && (*(*ent).client).inSpaceIndex != ENTITYNUM_NONE
                 {
                     //we're in space, check for suffocating and for exiting
-                    let spacetrigger =
-                        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*ent).client).inSpaceIndex as usize);
+                    let spacetrigger = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*(*ent).client).inSpaceIndex as usize);
 
                     if (*spacetrigger).inuse == QFALSE
                         || G_PointInBounds(
@@ -4638,7 +4821,8 @@ pub fn G_RunFrame(levelTime: c_int) {
 
                 if (*(*ent).client).isHacking != 0 {
                     //hacking checks
-                    let hacked = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*ent).client).isHacking as usize);
+                    let hacked = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*(*ent).client).isHacking as usize);
                     let mut ang_dif: vec3_t = [0.0; 3];
 
                     VectorSubtract(
@@ -4894,9 +5078,10 @@ pub fn G_KickAllBots() {
                 i += 1;
                 continue;
             }
-            if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).offset((*cl).ps.clientNum as isize))
-                .r
-                .svFlags
+            if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .offset((*cl).ps.clientNum as isize))
+            .r
+            .svFlags
                 & SVF_BOT
                 == 0
             {

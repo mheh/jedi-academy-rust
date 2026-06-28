@@ -15,10 +15,10 @@ use crate::codemp::game::q_shared_h::{
     sharedRagDollUpdateParams_t, sharedSetBoneIKStateParams_t, trace_t, usercmd_t, vec3_t,
     CollisionRecord_t,
 };
-use core::ffi::c_void;
 use crate::ffi::syscalls::pass_float;
 use crate::ffi::types::{fileHandle_t, qboolean, vmCvar_t};
 use crate::ffi::GameImport::*;
+use core::ffi::c_void;
 
 // Deferred trap-layer subsystems, partitioned by `GameImport` enum range. Each
 // submodule's wrappers land in Phase B; the foundation only scaffolds them so the
@@ -173,8 +173,14 @@ pub fn Argv(n: i32) -> String {
 pub fn FS_FOpenFile(qpath: &str, mode: fsMode_t) -> (i32, fileHandle_t) {
     let path = cstr(qpath);
     let mut f: fileHandle_t = 0;
-    let len =
-        unsafe { syscall!(G_FS_FOPEN_FILE, path.as_ptr(), &mut f as *mut fileHandle_t, mode) as i32 };
+    let len = unsafe {
+        syscall!(
+            G_FS_FOPEN_FILE,
+            path.as_ptr(),
+            &mut f as *mut fileHandle_t,
+            mode
+        ) as i32
+    };
     (len, f)
 }
 
@@ -750,15 +756,32 @@ pub fn G2API_SetBoneIKState(
 ) -> qboolean {
     let bone = bone_name.map(cstr);
     let bone_ptr = bone.as_ref().map_or(core::ptr::null(), |c| c.as_ptr());
-    let params_ptr =
-        params.map_or(core::ptr::null(), |p| p as *const sharedSetBoneIKStateParams_t);
-    unsafe { syscall!(G_G2_SETBONEIKSTATE, ghoul2, time, bone_ptr, ik_state, params_ptr) as qboolean }
+    let params_ptr = params.map_or(core::ptr::null(), |p| {
+        p as *const sharedSetBoneIKStateParams_t
+    });
+    unsafe {
+        syscall!(
+            G_G2_SETBONEIKSTATE,
+            ghoul2,
+            time,
+            bone_ptr,
+            ik_state,
+            params_ptr
+        ) as qboolean
+    }
 }
 
 /// `trap_G2API_IKMove` — advance an active IK bone one step toward its
 /// `desiredOrigin` (carried in `params`) at time `time`. Returns `qtrue` on success.
 pub fn G2API_IKMove(ghoul2: *mut c_void, time: i32, params: &sharedIKMoveParams_t) -> qboolean {
-    unsafe { syscall!(G_G2_IKMOVE, ghoul2, time, params as *const sharedIKMoveParams_t) as qboolean }
+    unsafe {
+        syscall!(
+            G_G2_IKMOVE,
+            ghoul2,
+            time,
+            params as *const sharedIKMoveParams_t
+        ) as qboolean
+    }
 }
 
 /// `trap_R_RegisterSkin` — register the `.skin` file `name` with the engine renderer and
@@ -791,7 +814,10 @@ pub fn ICARUS_RunScript(ent: *mut gentity_t, name: *const c_char) -> c_int {
 
 /// `trap_ICARUS_RegisterScript` — precache/validate script `name`. `b_called_during_interrogate`
 /// distinguishes the interrogation precache pass.
-pub fn ICARUS_RegisterScript(name: *const c_char, b_called_during_interrogate: qboolean) -> qboolean {
+pub fn ICARUS_RegisterScript(
+    name: *const c_char,
+    b_called_during_interrogate: qboolean,
+) -> qboolean {
     unsafe { syscall!(G_ICARUS_REGISTERSCRIPT, name, b_called_during_interrogate) as qboolean }
 }
 
@@ -1035,7 +1061,14 @@ pub fn G2API_GetSurfaceRenderStatus(
     model_index: i32,
     surface_name: *const c_char,
 ) -> i32 {
-    unsafe { syscall!(G_G2_GETSURFACERENDERSTATUS, ghoul2, model_index, surface_name) as i32 }
+    unsafe {
+        syscall!(
+            G_G2_GETSURFACERENDERSTATUS,
+            ghoul2,
+            model_index,
+            surface_name
+        ) as i32
+    }
 }
 
 /// `trap_G2API_GetSurfaceName` — write the name of surface `surf_number` on model
@@ -1050,7 +1083,13 @@ pub fn G2API_GetSurfaceName(
     fill_buf: *mut c_char,
 ) {
     unsafe {
-        syscall!(G_G2_GETSURFACENAME, ghoul2, surf_number, model_index, fill_buf);
+        syscall!(
+            G_G2_GETSURFACENAME,
+            ghoul2,
+            surf_number,
+            model_index,
+            fill_buf
+        );
     }
 }
 

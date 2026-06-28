@@ -24,9 +24,10 @@ use crate::codemp::game::anims::{BOTH_PAIN1, BOTH_RUN1};
 use crate::codemp::game::b_public_h::{SCF_CHASE_ENEMIES, SCF_LOOK_FOR_ENEMIES, SPOT_CHEST};
 use crate::codemp::game::bg_lib::rand;
 use crate::codemp::game::bg_misc::{BG_FindItemForAmmo, BG_FindItemForWeapon};
-use crate::codemp::game::bg_public::{BG_GiveMeVectorFromMatrix, MASK_SHOT, MASK_SOLID, MOD_DEMP2,
-    MOD_DEMP2_ALT, MOD_UNKNOWN, SETANIM_BOTH, SETANIM_FLAG_HOLD, SETANIM_FLAG_NORMAL,
-    SETANIM_FLAG_OVERRIDE};
+use crate::codemp::game::bg_public::{
+    BG_GiveMeVectorFromMatrix, MASK_SHOT, MASK_SOLID, MOD_DEMP2, MOD_DEMP2_ALT, MOD_UNKNOWN,
+    SETANIM_BOTH, SETANIM_FLAG_HOLD, SETANIM_FLAG_NORMAL, SETANIM_FLAG_OVERRIDE,
+};
 use crate::codemp::game::bg_weapons_h::{AMMO_BLASTER, WP_BRYAR_PISTOL};
 use crate::codemp::game::g_combat::{gPainMOD, G_Damage};
 use crate::codemp::game::g_items::RegisterItem;
@@ -34,20 +35,24 @@ use crate::codemp::game::g_local::{gentity_t, DAMAGE_DEATH_KNOCKBACK};
 use crate::codemp::game::g_main::{g_spskill, level};
 use crate::codemp::game::g_missile::CreateMissile;
 use crate::codemp::game::g_timer::{TIMER_Done, TIMER_Set};
-use crate::codemp::game::g_utils::{G_EffectIndex, G_PlayEffectID, G_Sound, G_SoundIndex,
-    G_SoundOnEnt};
-use crate::codemp::game::npc::{ucmd, NPC_SetAnim, NPCInfo, NPC};
+use crate::codemp::game::g_utils::{
+    G_EffectIndex, G_PlayEffectID, G_Sound, G_SoundIndex, G_SoundOnEnt,
+};
+use crate::codemp::game::npc::{ucmd, NPCInfo, NPC_SetAnim, NPC};
 use crate::codemp::game::npc_ai_default::NPC_BSIdle;
 use crate::codemp::game::npc_ai_stormtrooper::NPC_CheckPlayerTeamStealth;
 use crate::codemp::game::npc_goal::UpdateGoal;
 use crate::codemp::game::npc_move::{NPC_GetMoveDirection, NPC_MoveToGoal};
 use crate::codemp::game::npc_reactions::{NPC_GetPainChance, NPC_Pain};
-use crate::codemp::game::npc_utils::{CalcEntitySpot, NPC_CheckEnemyExt, NPC_ClearLOS4,
-    NPC_FaceEnemy, NPC_UpdateAngles};
-use crate::codemp::game::q_math::{vec3_origin, vectoangles, AngleNormalize360, AngleVectors,
-    DistanceHorizontalSquared, VectorCopy, VectorMA, VectorNormalize, VectorSet, VectorSubtract};
-use crate::codemp::game::q_shared::{random};
+use crate::codemp::game::npc_utils::{
+    CalcEntitySpot, NPC_CheckEnemyExt, NPC_ClearLOS4, NPC_FaceEnemy, NPC_UpdateAngles,
+};
 use crate::codemp::game::q_math::Q_irand;
+use crate::codemp::game::q_math::{
+    vec3_origin, vectoangles, AngleNormalize360, AngleVectors, DistanceHorizontalSquared,
+    VectorCopy, VectorMA, VectorNormalize, VectorSet, VectorSubtract,
+};
+use crate::codemp::game::q_shared::random;
 use crate::codemp::game::q_shared_h::{mdxaBone_t, vec3_t, BUTTON_WALKING, CHAN_AUTO, ORIGIN};
 use crate::codemp::game::surfaceflags_h::CONTENTS_LIGHTSABER;
 use crate::ffi::types::{qboolean, QFALSE, QTRUE};
@@ -210,12 +215,22 @@ pub unsafe fn ImperialProbe_Strafe() {
     let mut right: vec3_t = [0.0; 3];
     let tr;
 
-    AngleVectors(&(*(*NPC).client).renderInfo.eyeAngles, None, Some(&mut right), None);
+    AngleVectors(
+        &(*(*NPC).client).renderInfo.eyeAngles,
+        None,
+        Some(&mut right),
+        None,
+    );
 
     // Pick a random strafe direction, then check to see if doing a strafe would be
     //	reasonable valid
     dir = if (rand() & 1) != 0 { -1 } else { 1 };
-    VectorMA(&(*NPC).r.currentOrigin, HUNTER_STRAFE_DIS * dir as f32, &right, &mut end);
+    VectorMA(
+        &(*NPC).r.currentOrigin,
+        HUNTER_STRAFE_DIS * dir as f32,
+        &right,
+        &mut end,
+    );
 
     tr = trap::Trace(
         &(*NPC).r.currentOrigin,
@@ -229,7 +244,12 @@ pub unsafe fn ImperialProbe_Strafe() {
     // Close enough
     if tr.fraction > 0.9 {
         let vel = (*(*NPC).client).ps.velocity;
-        VectorMA(&vel, HUNTER_STRAFE_VEL * dir as f32, &right, &mut (*(*NPC).client).ps.velocity);
+        VectorMA(
+            &vel,
+            HUNTER_STRAFE_VEL * dir as f32,
+            &right,
+            &mut (*(*NPC).client).ps.velocity,
+        );
 
         // Add a slight upward push
         (*(*NPC).client).ps.velocity[2] += HUNTER_UPWARD_PUSH;
@@ -254,7 +274,12 @@ pub unsafe fn ImperialProbe_Hunt(visible: qboolean, advance: qboolean) {
     let speed: f32;
     let mut forward: vec3_t = [0.0; 3];
 
-    NPC_SetAnim(NPC, SETANIM_BOTH, BOTH_RUN1, SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD);
+    NPC_SetAnim(
+        NPC,
+        SETANIM_BOTH,
+        BOTH_RUN1,
+        SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD,
+    );
 
     //If we're not supposed to stand still, pursue the player
     if (*NPCInfo).standTime < (*addr_of!(level)).time {
@@ -281,7 +306,11 @@ pub unsafe fn ImperialProbe_Hunt(visible: qboolean, advance: qboolean) {
             return;
         }
     } else {
-        VectorSubtract(&(*(*NPC).enemy).r.currentOrigin, &(*NPC).r.currentOrigin, &mut forward);
+        VectorSubtract(
+            &(*(*NPC).enemy).r.currentOrigin,
+            &(*NPC).r.currentOrigin,
+            &mut forward,
+        );
         distance = VectorNormalize(&mut forward);
     }
     let _ = distance;
@@ -472,7 +501,11 @@ pub unsafe fn ImperialProbe_AttackDecision() {
 NPC_BSDroid_Pain
 -------------------------
 */
-pub unsafe extern "C" fn NPC_Probe_Pain(self_: *mut gentity_t, attacker: *mut gentity_t, damage: c_int) {
+pub unsafe extern "C" fn NPC_Probe_Pain(
+    self_: *mut gentity_t,
+    attacker: *mut gentity_t,
+    damage: c_int,
+) {
     let pain_chance: f32;
     let other: *mut gentity_t = attacker;
     let mod_: c_int = *addr_of!(gPainMOD);
@@ -504,20 +537,20 @@ pub unsafe extern "C" fn NPC_Probe_Pain(self_: *mut gentity_t, attacker: *mut ge
         // demp2 always does this
         {
             /*
-            if (self->client->clientInfo.headModel != 0)
-            {
-                vec3_t origin;
+                        if (self->client->clientInfo.headModel != 0)
+                        {
+                            vec3_t origin;
 
-                VectorCopy(self->r.currentOrigin,origin);
-                origin[2] +=50;
-//				G_PlayEffect( "small_chunks", origin );
-                G_PlayEffect( "chunks/probehead", origin );
-                G_PlayEffect( "env/med_explode2", origin );
-                self->client->clientInfo.headModel = 0;
-                self->client->moveType = MT_RUNJUMP;
-                self->client->ps.gravity = g_gravity->value*.1;
-            }
-            */
+                            VectorCopy(self->r.currentOrigin,origin);
+                            origin[2] +=50;
+            //				G_PlayEffect( "small_chunks", origin );
+                            G_PlayEffect( "chunks/probehead", origin );
+                            G_PlayEffect( "env/med_explode2", origin );
+                            self->client->clientInfo.headModel = 0;
+                            self->client->moveType = MT_RUNJUMP;
+                            self->client->ps.gravity = g_gravity->value*.1;
+                        }
+                        */
 
             if (mod_ == MOD_DEMP2 || mod_ == MOD_DEMP2_ALT) && !other.is_null() {
                 let mut dir: vec3_t = [0.0; 3];
@@ -529,7 +562,11 @@ pub unsafe extern "C" fn NPC_Probe_Pain(self_: *mut gentity_t, attacker: *mut ge
                     SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD,
                 );
 
-                VectorSubtract(&(*self_).r.currentOrigin, &(*other).r.currentOrigin, &mut dir);
+                VectorSubtract(
+                    &(*self_).r.currentOrigin,
+                    &(*other).r.currentOrigin,
+                    &mut dir,
+                );
                 VectorNormalize(&mut dir);
 
                 let vel = (*(*self_).client).ps.velocity;

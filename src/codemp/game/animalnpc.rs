@@ -100,7 +100,9 @@ pub unsafe extern "C" fn DeathUpdate(pVeh: *mut Vehicle_t) {
 
 // Like a think or move command, this updates various vehicle properties.
 pub unsafe extern "C" fn Update(pVeh: *mut Vehicle_t, pUcmd: *const usercmd_t) -> qboolean {
-    ((*addr_of!(g_vehicleInfo))[VEHICLE_BASE as usize].Update.unwrap())(pVeh, pUcmd)
+    ((*addr_of!(g_vehicleInfo))[VEHICLE_BASE as usize]
+        .Update
+        .unwrap())(pVeh, pUcmd)
 }
 
 //MP RULE - ALL PROCESSORIENTCOMMANDS FUNCTIONS MUST BE BG-COMPATIBLE!!!
@@ -134,10 +136,8 @@ pub unsafe extern "C" fn ProcessOrientCommands(pVeh: *mut Vehicle_t) {
     riderPS = (*rider).playerState;
 
     if !rider.is_null() {
-        let mut angDif = AngleSubtract(
-            *(*pVeh).m_vOrientation.add(YAW),
-            (*riderPS).viewangles[YAW],
-        );
+        let mut angDif =
+            AngleSubtract(*(*pVeh).m_vOrientation.add(YAW), (*riderPS).viewangles[YAW]);
         if !parentPS.is_null() && (*parentPS).speed != 0.0 {
             let mut s = (*parentPS).speed;
             let maxDif = (*(*pVeh).m_pVehicleInfo).turningSpeed * 4.0; //magic number hackery
@@ -497,8 +497,7 @@ pub unsafe extern "C" fn AnimateRiders(pVeh: *mut Vehicle_t) {
         Anim = BOTH_VT_WALK_REV;
         iBlend = 600;
     } else {
-        let HasWeapon: bool =
-            (*pilotPS).weapon != WP_NONE && (*pilotPS).weapon != WP_MELEE;
+        let HasWeapon: bool = (*pilotPS).weapon != WP_NONE && (*pilotPS).weapon != WP_MELEE;
         let Attacking: bool = HasWeapon && ((*pVeh).m_ucmd.buttons & BUTTON_ATTACK) != 0;
         let mut Right: bool = (*pVeh).m_ucmd.rightmove > 0;
         let mut Left: bool = (*pVeh).m_ucmd.rightmove < 0;
@@ -656,7 +655,10 @@ pub unsafe extern "C" fn G_SetAnimalVehicleFunctions(pVehInfo: *mut vehicleInfo_
 //
 // No-oracle: allocates from the module-static vehicle pool via
 // `G_AllocateVehicleObject` and zeroes/initialises `Vehicle_t` through pointers.
-pub unsafe extern "C" fn G_CreateAnimalNPC(pVeh: *mut *mut Vehicle_t, strAnimalType: *const c_char) {
+pub unsafe extern "C" fn G_CreateAnimalNPC(
+    pVeh: *mut *mut Vehicle_t,
+    strAnimalType: *const c_char,
+) {
     // Allocate the Vehicle.
     // #ifdef _JK2MP / #ifdef QAGAME (server build):
     //these will remain on entities on the client once allocated because the pointer is
@@ -664,6 +666,6 @@ pub unsafe extern "C" fn G_CreateAnimalNPC(pVeh: *mut *mut Vehicle_t, strAnimalT
     //memset to 0, so this memory would be lost..
     G_AllocateVehicleObject(pVeh);
     write_bytes(*pVeh, 0, 1); // memset(*pVeh, 0, sizeof(Vehicle_t))
-    (**pVeh).m_pVehicleInfo =
-        (addr_of_mut!(g_vehicleInfo) as *mut vehicleInfo_t).add(BG_VehicleGetIndex(strAnimalType) as usize);
+    (**pVeh).m_pVehicleInfo = (addr_of_mut!(g_vehicleInfo) as *mut vehicleInfo_t)
+        .add(BG_VehicleGetIndex(strAnimalType) as usize);
 }

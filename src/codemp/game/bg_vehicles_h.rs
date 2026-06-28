@@ -74,29 +74,29 @@ pub struct vehWeaponInfo_t {
     //*** IMPORTANT!!! *** the number of variables in the vehWeaponStats_t struct (including all elements of arrays) must be reflected by NUM_VWEAP_PARMS!!!
     //*** IMPORTANT!!! *** vWeapFields table correponds to this structure!
     pub name: *mut c_char,
-    pub bIsProjectile: qboolean, //traceline or entity?
-    pub bHasGravity: qboolean,   //if a projectile, drops
-    pub bIonWeapon: qboolean,    //disables ship shields and sends them out of control
-    pub bSaberBlockable: qboolean, //lightsabers can deflect this projectile
-    pub iMuzzleFX: c_int,        //index of Muzzle Effect
-    pub iModel: c_int,           //handle to the model used by this projectile
-    pub iShotFX: c_int,          //index of Shot Effect
-    pub iImpactFX: c_int,        //index of Impact Effect
+    pub bIsProjectile: qboolean,    //traceline or entity?
+    pub bHasGravity: qboolean,      //if a projectile, drops
+    pub bIonWeapon: qboolean,       //disables ship shields and sends them out of control
+    pub bSaberBlockable: qboolean,  //lightsabers can deflect this projectile
+    pub iMuzzleFX: c_int,           //index of Muzzle Effect
+    pub iModel: c_int,              //handle to the model used by this projectile
+    pub iShotFX: c_int,             //index of Shot Effect
+    pub iImpactFX: c_int,           //index of Impact Effect
     pub iG2MarkShaderHandle: c_int, //index of shader to use for G2 marks made on other models when hit by this projectile
-    pub fG2MarkSize: f32,        //size (diameter) of the ghoul2 mark
-    pub iLoopSound: c_int,       //index of loopSound
-    pub fSpeed: f32,             //speed of projectile/range of traceline
-    pub fHoming: f32,            //0.0 = not homing, 0.5 = half vel to targ, half cur vel, 1.0 = all vel to targ
-    pub fHomingFOV: f32,         //missile will lose lock on if DotProduct of missile direction and direction to target ever drops below this (-1 to 1, -1 = never lose target, 0 = lose if ship gets behind missile, 1 = pretty much will lose it's target right away)
-    pub iLockOnTime: c_int,      //0 = no lock time needed, else # of ms needed to lock on
-    pub iDamage: c_int,          //damage done when traceline or projectile directly hits target
-    pub iSplashDamage: c_int,    //damage done to ents in splashRadius of end of traceline or projectile origin on impact
-    pub fSplashRadius: f32,      //radius that ent must be in to take splashDamage (linear fall-off)
-    pub iAmmoPerShot: c_int,     //how much "ammo" each shot takes
-    pub iHealth: c_int,          //if non-zero, projectile can be shot, takes this much damage before being destroyed
-    pub fWidth: f32,             //width of traceline or bounding box of projecile (non-rotating!)
-    pub fHeight: f32,            //height of traceline or bounding box of projecile (non-rotating!)
-    pub iLifeTime: c_int,        //removes itself after this amount of time
+    pub fG2MarkSize: f32,           //size (diameter) of the ghoul2 mark
+    pub iLoopSound: c_int,          //index of loopSound
+    pub fSpeed: f32,                //speed of projectile/range of traceline
+    pub fHoming: f32, //0.0 = not homing, 0.5 = half vel to targ, half cur vel, 1.0 = all vel to targ
+    pub fHomingFOV: f32, //missile will lose lock on if DotProduct of missile direction and direction to target ever drops below this (-1 to 1, -1 = never lose target, 0 = lose if ship gets behind missile, 1 = pretty much will lose it's target right away)
+    pub iLockOnTime: c_int, //0 = no lock time needed, else # of ms needed to lock on
+    pub iDamage: c_int,  //damage done when traceline or projectile directly hits target
+    pub iSplashDamage: c_int, //damage done to ents in splashRadius of end of traceline or projectile origin on impact
+    pub fSplashRadius: f32,   //radius that ent must be in to take splashDamage (linear fall-off)
+    pub iAmmoPerShot: c_int,  //how much "ammo" each shot takes
+    pub iHealth: c_int, //if non-zero, projectile can be shot, takes this much damage before being destroyed
+    pub fWidth: f32,    //width of traceline or bounding box of projecile (non-rotating!)
+    pub fHeight: f32,   //height of traceline or bounding box of projecile (non-rotating!)
+    pub iLifeTime: c_int, //removes itself after this amount of time
     pub bExplodeOnExpire: qboolean, //when iLifeTime is up, explodes rather than simply removing itself
 }
 const _: () = assert!(core::mem::offset_of!(vehWeaponInfo_t, name) == 0); // arch-independent anchor
@@ -142,9 +142,9 @@ pub const MAX_VEHICLE_TURRET_MUZZLES: usize = 2;
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct turretStats_t {
-    pub iWeapon: c_int,         //what vehWeaponInfo index to use
-    pub iDelay: c_int,          //delay between turret muzzle shots
-    pub iAmmoMax: c_int,        //how much ammo it has
+    pub iWeapon: c_int,                               //what vehWeaponInfo index to use
+    pub iDelay: c_int,                                //delay between turret muzzle shots
+    pub iAmmoMax: c_int,                              //how much ammo it has
     pub iAmmoRechargeMS: c_int, //how many MS between every point of recharged ammo
     pub yawBone: *mut c_char,   //bone on ship that this turret uses to yaw
     pub pitchBone: *mut c_char, //bone on ship that this turret uses to pitch
@@ -156,11 +156,11 @@ pub struct turretStats_t {
     pub pitchClampDown: f32,    //how far the turret is allowed to tilt down
     pub iMuzzle: [c_int; MAX_VEHICLE_TURRET_MUZZLES], //iMuzzle-1 = index of ship's muzzle to fire this turret's 1st and 2nd shots from
     pub gunnerViewTag: *mut c_char, //Where to put the view origin of the gunner (name)
-    pub fTurnSpeed: f32,        //how quickly the turret can turn
-    pub bAI: qboolean,          //whether or not the turret auto-targets enemies when it's not manned
-    pub bAILead: qboolean,      //whether
-    pub fAIRange: f32,          //how far away the AI will look for enemies
-    pub passengerNum: c_int,    //which passenger, if any, has control of this turret (overrides AI)
+    pub fTurnSpeed: f32,            //how quickly the turret can turn
+    pub bAI: qboolean, //whether or not the turret auto-targets enemies when it's not manned
+    pub bAILead: qboolean, //whether
+    pub fAIRange: f32, //how far away the AI will look for enemies
+    pub passengerNum: c_int, //which passenger, if any, has control of this turret (overrides AI)
 }
 const _: () = assert!(core::mem::offset_of!(turretStats_t, iWeapon) == 0); // arch-independent anchor
 #[cfg(target_pointer_width = "64")]
@@ -206,7 +206,7 @@ pub struct vehicleInfo_t {
     pub name: *mut c_char, //unique name of the vehicle
 
     //general data
-    pub r#type: vehicleType_t, //what kind of vehicle
+    pub r#type: vehicleType_t,   //what kind of vehicle
     pub numHands: c_int, //if 2 hands, no weapons, if 1 hand, can use 1-handed weapons, if 0 hands, can use 2-handed weapons
     pub lookPitch: f32,  //How far you can look up and down off the forward of the vehicle
     pub lookYaw: f32,    //How far you can look left and right off the forward of the vehicle
@@ -227,27 +227,27 @@ pub struct vehicleInfo_t {
     pub strafePerc: f32, //multiplier on current speed for strafing.  If 1.0f, you can strafe at the same speed as you're going forward, 0.5 is half, 0 is no strafing
 
     //handling stats
-    pub bankingSpeed: f32,        //how quickly it pitches and rolls (not under player control)
-    pub rollLimit: f32,           //how far it can roll to either side
-    pub pitchLimit: f32,          //how far it can roll forward or backward
-    pub braking: f32,             //when pressing on decelerator
-    pub mouseYaw: f32,            // The mouse yaw override.
-    pub mousePitch: f32,          // The mouse pitch override.
-    pub turningSpeed: f32,        //how quickly you can turn
+    pub bankingSpeed: f32, //how quickly it pitches and rolls (not under player control)
+    pub rollLimit: f32,    //how far it can roll to either side
+    pub pitchLimit: f32,   //how far it can roll forward or backward
+    pub braking: f32,      //when pressing on decelerator
+    pub mouseYaw: f32,     // The mouse yaw override.
+    pub mousePitch: f32,   // The mouse pitch override.
+    pub turningSpeed: f32, //how quickly you can turn
     pub turnWhenStopped: qboolean, //whether or not you can turn when not moving
-    pub traction: f32,            //how much your command input affects velocity
-    pub friction: f32,            //how much velocity is cut on its own
-    pub maxSlope: f32,            //the max slope that it can go up with control
+    pub traction: f32,     //how much your command input affects velocity
+    pub friction: f32,     //how much velocity is cut on its own
+    pub maxSlope: f32,     //the max slope that it can go up with control
     pub speedDependantTurning: qboolean, //vehicle turns faster the faster it's going
 
     //durability stats
-    pub mass: c_int,        //for momentum and impact force (player mass is 10)
-    pub armor: c_int,       //total points of damage it can take
-    pub shields: c_int,     //energy shield damage points
+    pub mass: c_int,             //for momentum and impact force (player mass is 10)
+    pub armor: c_int,            //total points of damage it can take
+    pub shields: c_int,          //energy shield damage points
     pub shieldRechargeMS: c_int, //energy shield milliseconds per point recharged
     pub toughness: f32, //modifies incoming damage, 1.0 is normal, 0.5 is half, etc.  Simulates being made of tougher materials/construction
     pub malfunctionArmorLevel: c_int, //when armor drops to or below this point, start malfunctioning
-    pub surfDestruction: c_int, //can parts of this thing be torn off on impact? -rww
+    pub surfDestruction: c_int,       //can parts of this thing be torn off on impact? -rww
 
     //individual "area" health -rww
     pub health_front: c_int,
@@ -265,12 +265,12 @@ pub struct vehicleInfo_t {
     pub dmgIndicShieldHandle: c_int, //what image to use for the shield of the damage indicator
     pub dmgIndicBackgroundHandle: c_int, //what image to use for the background of the damage indicator
     pub iconFrontHandle: c_int, //what image to use for the front of the ship on the damage indicator
-    pub iconBackHandle: c_int, //what image to use for the back of the ship on the damage indicator
+    pub iconBackHandle: c_int,  //what image to use for the back of the ship on the damage indicator
     pub iconRightHandle: c_int, //what image to use for the right of the ship on the damage indicator
-    pub iconLeftHandle: c_int, //what image to use for the left of the ship on the damage indicator
+    pub iconLeftHandle: c_int,  //what image to use for the left of the ship on the damage indicator
     pub crosshairShaderHandle: c_int, //what image to use for the left of the ship on the damage indicator
-    pub shieldShaderHandle: c_int, //What shader to use when drawing the shield shell
-    pub droidNPC: *mut c_char, //NPC to attach to *droidunit tag (if it exists in the model)
+    pub shieldShaderHandle: c_int,    //What shader to use when drawing the shield shell
+    pub droidNPC: *mut c_char,        //NPC to attach to *droidunit tag (if it exists in the model)
 
     pub soundOn: c_int,          //sound to play when get on it
     pub soundTakeOff: c_int,     //sound to play when ship takes off
@@ -289,13 +289,13 @@ pub struct vehicleInfo_t {
     pub soundShift4: c_int,      //sound to play when decelerating
 
     pub iExhaustFX: c_int,    //exhaust effect, played from "*exhaust" bolt(s)
-    pub iTurboFX: c_int,      //turbo exhaust effect, played from "*exhaust" bolt(s) when ship is in "turbo" mode
+    pub iTurboFX: c_int, //turbo exhaust effect, played from "*exhaust" bolt(s) when ship is in "turbo" mode
     pub iTurboStartFX: c_int, //turbo begin effect, played from "*exhaust" bolts when "turbo" mode begins
     pub iTrailFX: c_int,      //trail effect, played from "*trail" bolt(s)
     pub iImpactFX: c_int,     //impact effect, for when it bumps into something
-    pub iExplodeFX: c_int,    //explosion effect, for when it blows up (should have the sound built into explosion effect)
-    pub iWakeFX: c_int,       //effect it makes when going across water
-    pub iDmgFX: c_int,        //effect to play on damage from a weapon or something
+    pub iExplodeFX: c_int, //explosion effect, for when it blows up (should have the sound built into explosion effect)
+    pub iWakeFX: c_int,    //effect it makes when going across water
+    pub iDmgFX: c_int,     //effect to play on damage from a weapon or something
     pub iInjureFX: c_int,
     pub iNoseFX: c_int,  //effect for nose piece flying away when blown off
     pub iLWingFX: c_int, //effect for left wing piece flying away when blown off
@@ -315,17 +315,17 @@ pub struct vehicleInfo_t {
     pub landingHeight: f32,
 
     //other misc stats
-    pub gravity: c_int,       //normal is 800
-    pub hoverHeight: f32,     //if 0, it's a ground vehicle
-    pub hoverStrength: f32,   //how hard it pushes off ground when less than hover height... causes "bounce", like shocks
+    pub gravity: c_int,         //normal is 800
+    pub hoverHeight: f32,       //if 0, it's a ground vehicle
+    pub hoverStrength: f32, //how hard it pushes off ground when less than hover height... causes "bounce", like shocks
     pub waterProof: qboolean, //can drive underwater if it has to
-    pub bouyancy: f32,        //when in water, how high it floats (1 is neutral bouyancy)
-    pub fuelMax: c_int,       //how much fuel it can hold (capacity)
-    pub fuelRate: c_int,      //how quickly is uses up fuel
+    pub bouyancy: f32,      //when in water, how high it floats (1 is neutral bouyancy)
+    pub fuelMax: c_int,     //how much fuel it can hold (capacity)
+    pub fuelRate: c_int,    //how quickly is uses up fuel
     pub turboDuration: c_int, //how long turbo lasts
     pub turboRecharge: c_int, //how long turbo takes to recharge
-    pub visibility: c_int,    //for sight alerts
-    pub loudness: c_int,      //for sound alerts
+    pub visibility: c_int,  //for sight alerts
+    pub loudness: c_int,    //for sound alerts
     pub explosionRadius: f32, //range of explosion
     pub explosionDamage: c_int, //damage of explosion
 
@@ -337,10 +337,10 @@ pub struct vehicleInfo_t {
     //camera stuff
     pub cameraOverride: qboolean, //whether or not to use all of the following 3rd person camera override values
     pub cameraRange: f32,         //how far back the camera should be - normal is 80
-    pub cameraVertOffset: f32,    //how high over the vehicle origin the camera should be - normal is 16
+    pub cameraVertOffset: f32, //how high over the vehicle origin the camera should be - normal is 16
     pub cameraHorzOffset: f32, //how far to left/right (negative/positive) of of the vehicle origin the camera should be - normal is 0
     pub cameraPitchOffset: f32, //a modifier on the camera's pitch (up/down angle) to the vehicle - normal is 0
-    pub cameraFOV: f32,        //third person camera FOV, default is 80
+    pub cameraFOV: f32,         //third person camera FOV, default is 80
     pub cameraAlpha: f32, //fade out the vehicle to this alpha (0.1-1.0f) if it's in the way of the crosshair
     pub cameraPitchDependantVertOffset: qboolean, //use the hacky AT-ST pitch dependant vertical offset
 
@@ -366,10 +366,12 @@ pub struct vehicleInfo_t {
     pub AnimateRiders: Option<unsafe extern "C" fn(pVeh: *mut Vehicle_t)>,
 
     // Determine whether this entity is able to board this vehicle or not.
-    pub ValidateBoard: Option<unsafe extern "C" fn(pVeh: *mut Vehicle_t, pEnt: *mut bgEntity_t) -> qboolean>,
+    pub ValidateBoard:
+        Option<unsafe extern "C" fn(pVeh: *mut Vehicle_t, pEnt: *mut bgEntity_t) -> qboolean>,
 
     // Set the parent entity of this Vehicle NPC.
-    pub SetParent: Option<unsafe extern "C" fn(pVeh: *mut Vehicle_t, pParentEntity: *mut bgEntity_t)>,
+    pub SetParent:
+        Option<unsafe extern "C" fn(pVeh: *mut Vehicle_t, pParentEntity: *mut bgEntity_t)>,
 
     // Add a pilot to the vehicle.
     pub SetPilot: Option<unsafe extern "C" fn(pVeh: *mut Vehicle_t, pPilot: *mut bgEntity_t)>,
@@ -381,10 +383,17 @@ pub struct vehicleInfo_t {
     pub Animate: Option<unsafe extern "C" fn(pVeh: *mut Vehicle_t)>,
 
     // Board this Vehicle (get on). The first entity to board an empty vehicle becomes the Pilot.
-    pub Board: Option<unsafe extern "C" fn(pVeh: *mut Vehicle_t, pEnt: *mut bgEntity_t) -> qboolean>,
+    pub Board:
+        Option<unsafe extern "C" fn(pVeh: *mut Vehicle_t, pEnt: *mut bgEntity_t) -> qboolean>,
 
     // Eject an entity from the vehicle.
-    pub Eject: Option<unsafe extern "C" fn(pVeh: *mut Vehicle_t, pEnt: *mut bgEntity_t, forceEject: qboolean) -> qboolean>,
+    pub Eject: Option<
+        unsafe extern "C" fn(
+            pVeh: *mut Vehicle_t,
+            pEnt: *mut bgEntity_t,
+            forceEject: qboolean,
+        ) -> qboolean,
+    >,
 
     // Eject all the inhabitants of this vehicle.
     pub EjectAll: Option<unsafe extern "C" fn(pVeh: *mut Vehicle_t) -> qboolean>,
@@ -402,12 +411,19 @@ pub struct vehicleInfo_t {
     pub Initialize: Option<unsafe extern "C" fn(pVeh: *mut Vehicle_t) -> qboolean>,
 
     // Like a think or move command, this updates various vehicle properties.
-    pub Update: Option<unsafe extern "C" fn(pVeh: *mut Vehicle_t, pUcmd: *const usercmd_t) -> qboolean>,
+    pub Update:
+        Option<unsafe extern "C" fn(pVeh: *mut Vehicle_t, pUcmd: *const usercmd_t) -> qboolean>,
 
     // Update the properties of a Rider (that may reflect what happens to the vehicle).
     //
     //	[return]		bool			True if still in vehicle, false if otherwise.
-    pub UpdateRider: Option<unsafe extern "C" fn(pVeh: *mut Vehicle_t, pRider: *mut bgEntity_t, pUcmd: *mut usercmd_t) -> qboolean>,
+    pub UpdateRider: Option<
+        unsafe extern "C" fn(
+            pVeh: *mut Vehicle_t,
+            pRider: *mut bgEntity_t,
+            pUcmd: *mut usercmd_t,
+        ) -> qboolean,
+    >,
 
     // ProcessMoveCommands the Vehicle.
     pub ProcessMoveCommands: Option<unsafe extern "C" fn(pVeh: *mut Vehicle_t)>,
@@ -588,7 +604,7 @@ pub struct Vehicle_t {
     // NOTE: This is redundant (since m_pParentEntity->owner _should_ be the pilot). This makes things clearer though.
     pub m_pPilot: *mut bgEntity_t,
 
-    pub m_iPilotTime: c_int,      //if spawnflag to die without pilot and this < level.time then die.
+    pub m_iPilotTime: c_int, //if spawnflag to die without pilot and this < level.time then die.
     pub m_iPilotLastIndex: c_int, //index to last pilot
     pub m_bHasHadPilot: qboolean, //qtrue once the vehicle gets its first pilot
 
@@ -730,15 +746,15 @@ pub struct Vehicle_t {
     pub m_pOldPilot: *mut bgEntity_t,
 }
 const _: () = assert!(core::mem::offset_of!(Vehicle_t, m_pPilot) == 0); // arch-independent anchor
-// Vehicle_t is the ONLY struct in this file embedding a C `long` (`m_ulFlags`,
-// `c_ulong`). On LP64 (the dev host + x86_64-unknown-linux-gnu) long is 8 bytes;
-// on Windows LLP64 (x86_64-pc-windows-msvc) it is 4, which shrinks the struct and
-// shifts every field from `m_ulFlags` onward. These byte values were calibrated
-// against the LP64 C oracle, so the numeric self-check is gated to LP64 — a plain
-// `target_pointer_width = "64"` also admitted 64-bit Windows and false-failed there
-// (E0080). The 32-bit targets are excluded by the pointer-width clause. The struct
-// itself stays ABI-correct on every platform because `c_ulong` already tracks the
-// platform's `long` width. See EXTERN_C_AUDIT.md section D.
+                                                                        // Vehicle_t is the ONLY struct in this file embedding a C `long` (`m_ulFlags`,
+                                                                        // `c_ulong`). On LP64 (the dev host + x86_64-unknown-linux-gnu) long is 8 bytes;
+                                                                        // on Windows LLP64 (x86_64-pc-windows-msvc) it is 4, which shrinks the struct and
+                                                                        // shifts every field from `m_ulFlags` onward. These byte values were calibrated
+                                                                        // against the LP64 C oracle, so the numeric self-check is gated to LP64 — a plain
+                                                                        // `target_pointer_width = "64"` also admitted 64-bit Windows and false-failed there
+                                                                        // (E0080). The 32-bit targets are excluded by the pointer-width clause. The struct
+                                                                        // itself stays ABI-correct on every platform because `c_ulong` already tracks the
+                                                                        // platform's `long` width. See EXTERN_C_AUDIT.md section D.
 #[cfg(all(target_pointer_width = "64", not(target_os = "windows")))]
 const _: () = assert!(core::mem::size_of::<Vehicle_t>() == 976);
 #[cfg(all(target_pointer_width = "64", not(target_os = "windows")))]

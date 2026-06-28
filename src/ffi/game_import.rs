@@ -291,7 +291,6 @@ pub enum GameImport {
     G_NAV_GETPATHSCALCULATED,
     G_NAV_SETPATHSCALCULATED, // == 241
     //rww - END NPC NAV TRAPS
-
     /// `( void )`
     BOTLIB_SETUP = 250,
     /// `( void )`
@@ -503,9 +502,9 @@ pub enum GameImport {
     G_RMG_INIT,
     G_BOT_UPDATEWAYPOINTS,
     G_BOT_CALCULATEPATHS, // == 634
-    /*
-    Ghoul2 Insert End
-    */
+                          /*
+                          Ghoul2 Insert End
+                          */
 }
 
 #[cfg(test)]

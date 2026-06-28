@@ -43,7 +43,11 @@ use core::ptr::addr_of;
 /// # Safety
 /// `self` must point to a valid `gentity_t`; `level` must be initialised. `self->client`/
 /// `self->NPC` may be NULL (the early bail paths handle that).
-pub(crate) unsafe fn G_AddVoiceEvent(self_: *mut gentity_t, event: c_int, speakDebounceTime: c_int) {
+pub(crate) unsafe fn G_AddVoiceEvent(
+    self_: *mut gentity_t,
+    event: c_int,
+    speakDebounceTime: c_int,
+) {
     if (*self_).NPC.is_null() {
         return;
     }
@@ -81,8 +85,12 @@ pub(crate) unsafe fn G_AddVoiceEvent(self_: *mut gentity_t, event: c_int, speakD
     G_SpeechEvent(self_, event);
 
     //won't speak again for 5 seconds (unless otherwise specified)
-    (*(*self_).NPC).blockedSpeechDebounceTime =
-        (*addr_of!(level)).time + if speakDebounceTime == 0 { 5000 } else { speakDebounceTime };
+    (*(*self_).NPC).blockedSpeechDebounceTime = (*addr_of!(level)).time
+        + if speakDebounceTime == 0 {
+            5000
+        } else {
+            speakDebounceTime
+        };
 }
 
 /*

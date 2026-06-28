@@ -19,12 +19,14 @@ use core::ffi::{c_char, c_int};
 use core::ptr::addr_of;
 
 use crate::codemp::game::anims::{BOTH_ATTACK1, BOTH_FLY_SHIELDED, BOTH_POWERUP1, BOTH_SLEEP1};
+use crate::codemp::game::b_public_h::{SCF_CHASE_ENEMIES, SCF_LOOK_FOR_ENEMIES};
 use crate::codemp::game::bg_lib::rand;
 use crate::codemp::game::bg_misc::{BG_FindItemForAmmo, BG_GiveMeVectorFromMatrix};
-use crate::codemp::game::bg_public::{MASK_SHOT, MASK_SOLID, MOD_BRYAR_PISTOL, MOD_DEMP2,
-    MOD_DEMP2_ALT, SETANIM_BOTH, SETANIM_FLAG_HOLD, SETANIM_FLAG_OVERRIDE};
+use crate::codemp::game::bg_public::{
+    MASK_SHOT, MASK_SOLID, MOD_BRYAR_PISTOL, MOD_DEMP2, MOD_DEMP2_ALT, SETANIM_BOTH,
+    SETANIM_FLAG_HOLD, SETANIM_FLAG_OVERRIDE,
+};
 use crate::codemp::game::bg_weapons_h::{AMMO_BLASTER, WP_BRYAR_PISTOL};
-use crate::codemp::game::b_public_h::{SCF_CHASE_ENEMIES, SCF_LOOK_FOR_ENEMIES};
 use crate::codemp::game::g_combat::gPainMOD;
 use crate::codemp::game::g_items::RegisterItem;
 use crate::codemp::game::g_local::{gentity_t, DAMAGE_DEATH_KNOCKBACK, FL_SHIELDED};
@@ -35,7 +37,7 @@ use crate::codemp::game::g_timer::{TIMER_Done, TIMER_Set};
 use crate::codemp::game::g_utils::{
     G_EffectIndex, G_PlayEffectID, G_Sound, G_SoundIndex, G_SoundOnEnt,
 };
-use crate::codemp::game::npc::{ucmd, NPC_SetAnim, NPCInfo, NPC};
+use crate::codemp::game::npc::{ucmd, NPCInfo, NPC_SetAnim, NPC};
 use crate::codemp::game::npc_ai_default::NPC_BSIdle;
 use crate::codemp::game::npc_ai_stormtrooper::NPC_CheckPlayerTeamStealth;
 use crate::codemp::game::npc_goal::UpdateGoal;
@@ -44,10 +46,11 @@ use crate::codemp::game::npc_reactions::NPC_Pain;
 use crate::codemp::game::npc_utils::{
     G_ActivateBehavior, NPC_CheckEnemyExt, NPC_ClearLOS4, NPC_FaceEnemy, NPC_UpdateAngles,
 };
-use crate::codemp::game::q_math::{AngleVectors, DistanceHorizontalSquared, VectorMA,
-    VectorNormalize, VectorSubtract};
-use crate::codemp::game::q_shared::{random};
 use crate::codemp::game::q_math::Q_irand;
+use crate::codemp::game::q_math::{
+    AngleVectors, DistanceHorizontalSquared, VectorMA, VectorNormalize, VectorSubtract,
+};
+use crate::codemp::game::q_shared::random;
 use crate::codemp::game::q_shared_h::{mdxaBone_t, vec3_t, BUTTON_WALKING, CHAN_AUTO, ORIGIN};
 use crate::codemp::game::surfaceflags_h::CONTENTS_LIGHTSABER;
 use crate::ffi::types::{qboolean, QFALSE, QTRUE};
@@ -131,7 +134,11 @@ pub unsafe extern "C" fn sentry_use(
 NPC_Sentry_Pain
 -------------------------
 */
-pub unsafe extern "C" fn NPC_Sentry_Pain(self_: *mut gentity_t, attacker: *mut gentity_t, damage: c_int) {
+pub unsafe extern "C" fn NPC_Sentry_Pain(
+    self_: *mut gentity_t,
+    attacker: *mut gentity_t,
+    damage: c_int,
+) {
     let mod_: c_int = *addr_of!(gPainMOD);
 
     NPC_Pain(self_, attacker, damage);
@@ -401,12 +408,22 @@ pub unsafe fn Sentry_Strafe() {
     let mut right: vec3_t = [0.0; 3];
     let tr;
 
-    AngleVectors(&(*(*NPC).client).renderInfo.eyeAngles, None, Some(&mut right), None);
+    AngleVectors(
+        &(*(*NPC).client).renderInfo.eyeAngles,
+        None,
+        Some(&mut right),
+        None,
+    );
 
     // Pick a random strafe direction, then check to see if doing a strafe would be
     //	reasonable valid
     dir = if (rand() & 1) != 0 { -1 } else { 1 };
-    VectorMA(&(*NPC).r.currentOrigin, SENTRY_STRAFE_DIS * dir as f32, &right, &mut end);
+    VectorMA(
+        &(*NPC).r.currentOrigin,
+        SENTRY_STRAFE_DIS * dir as f32,
+        &right,
+        &mut end,
+    );
 
     tr = trap::Trace(
         &(*NPC).r.currentOrigin,
@@ -420,7 +437,12 @@ pub unsafe fn Sentry_Strafe() {
     // Close enough
     if tr.fraction > 0.9 {
         let vel = (*(*NPC).client).ps.velocity;
-        VectorMA(&vel, SENTRY_STRAFE_VEL * dir as f32, &right, &mut (*(*NPC).client).ps.velocity);
+        VectorMA(
+            &vel,
+            SENTRY_STRAFE_VEL * dir as f32,
+            &right,
+            &mut (*(*NPC).client).ps.velocity,
+        );
 
         // Add a slight upward push
         (*(*NPC).client).ps.velocity[2] += SENTRY_UPWARD_PUSH;
@@ -466,7 +488,11 @@ pub unsafe fn Sentry_Hunt(visible: qboolean, advance: qboolean) {
             return;
         }
     } else {
-        VectorSubtract(&(*(*NPC).enemy).r.currentOrigin, &(*NPC).r.currentOrigin, &mut forward);
+        VectorSubtract(
+            &(*(*NPC).enemy).r.currentOrigin,
+            &(*NPC).r.currentOrigin,
+            &mut forward,
+        );
         distance = VectorNormalize(&mut forward);
     }
     let _ = distance;
@@ -504,7 +530,11 @@ pub unsafe fn Sentry_RangedAttack(visible: qboolean, advance: qboolean) {
                     BOTH_FLY_SHIELDED,
                     SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD,
                 );
-                G_SoundOnEnt(NPC, CHAN_AUTO, "sound/chars/sentry/misc/sentry_shield_close");
+                G_SoundOnEnt(
+                    NPC,
+                    CHAN_AUTO,
+                    "sound/chars/sentry/misc/sentry_shield_close",
+                );
             }
         } else {
             Sentry_Fire();

@@ -160,25 +160,25 @@ pub struct botskills_t {
 /// `bot_state_t` (ai_main.h:148) — the per-bot AI state. Faithful field order/types.
 #[repr(C)]
 pub struct bot_state_t {
-    pub inuse: i32,                  //true if this state is used by a bot client
-    pub botthink_residual: i32,      //residual for the bot thinks
-    pub client: i32,                 //client number of the bot
-    pub entitynum: i32,              //entity number of the bot
-    pub cur_ps: playerState_t,       //current player state
-    pub lastucmd: usercmd_t,         //usercmd from last frame
-    pub settings: bot_settings_t,    //several bot settings
-    pub thinktime: f32,              //time the bot thinks this frame
-    pub origin: vec3_t,              //origin of the bot
-    pub velocity: vec3_t,            //velocity of the bot
-    pub eye: vec3_t,                 //eye coordinates of the bot
-    pub setupcount: i32,             //true when the bot has just been setup
-    pub ltime: f32,                  //local bot time
-    pub entergame_time: f32,         //time the bot entered the game
-    pub ms: i32,                     //move state of the bot
-    pub gs: i32,                     //goal state of the bot
-    pub ws: i32,                     //weapon state of the bot
-    pub viewangles: vec3_t,          //current view angles
-    pub ideal_viewangles: vec3_t,    //ideal view angles
+    pub inuse: i32,               //true if this state is used by a bot client
+    pub botthink_residual: i32,   //residual for the bot thinks
+    pub client: i32,              //client number of the bot
+    pub entitynum: i32,           //entity number of the bot
+    pub cur_ps: playerState_t,    //current player state
+    pub lastucmd: usercmd_t,      //usercmd from last frame
+    pub settings: bot_settings_t, //several bot settings
+    pub thinktime: f32,           //time the bot thinks this frame
+    pub origin: vec3_t,           //origin of the bot
+    pub velocity: vec3_t,         //velocity of the bot
+    pub eye: vec3_t,              //eye coordinates of the bot
+    pub setupcount: i32,          //true when the bot has just been setup
+    pub ltime: f32,               //local bot time
+    pub entergame_time: f32,      //time the bot entered the game
+    pub ms: i32,                  //move state of the bot
+    pub gs: i32,                  //goal state of the bot
+    pub ws: i32,                  //weapon state of the bot
+    pub viewangles: vec3_t,       //current view angles
+    pub ideal_viewangles: vec3_t, //ideal view angles
     pub viewanglespeed: vec3_t,
 
     //rww - new AI values

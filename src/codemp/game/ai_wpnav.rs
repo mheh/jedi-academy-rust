@@ -30,11 +30,11 @@ use crate::codemp::game::ai_main::{
     GetNearestVisibleWP, OrgVisible, OrgVisibleBox,
 };
 use crate::codemp::game::ai_main_h::{
-    nodeobject_t, MAX_NODETABLE_SIZE, TABLE_BRANCH_DISTANCE, WPFLAG_BLUE_FLAG, WPFLAG_CALCULATED,
-    WPFLAG_DUCK, WPFLAG_GOALPOINT, WPFLAG_JUMP, WPFLAG_NEVERONEWAY, WPFLAG_NOMOVEFUNC, WPFLAG_NOVIS,
-    WPFLAG_ONEWAY_BACK, WPFLAG_ONEWAY_FWD, WPFLAG_RED_FLAG, WPFLAG_SIEGE_IMPERIALOBJ,
-    WPFLAG_SIEGE_REBELOBJ, WPFLAG_SNIPEORCAMP, WPFLAG_SNIPEORCAMPSTAND, WPFLAG_WAITFORFUNC,
-    LEVELFLAG_NOPOINTPREDICTION,
+    nodeobject_t, LEVELFLAG_NOPOINTPREDICTION, MAX_NODETABLE_SIZE, TABLE_BRANCH_DISTANCE,
+    WPFLAG_BLUE_FLAG, WPFLAG_CALCULATED, WPFLAG_DUCK, WPFLAG_GOALPOINT, WPFLAG_JUMP,
+    WPFLAG_NEVERONEWAY, WPFLAG_NOMOVEFUNC, WPFLAG_NOVIS, WPFLAG_ONEWAY_BACK, WPFLAG_ONEWAY_FWD,
+    WPFLAG_RED_FLAG, WPFLAG_SIEGE_IMPERIALOBJ, WPFLAG_SIEGE_REBELOBJ, WPFLAG_SNIPEORCAMP,
+    WPFLAG_SNIPEORCAMPSTAND, WPFLAG_WAITFORFUNC,
 };
 use crate::codemp::game::ai_util::{B_Alloc, B_TempAlloc, B_TempFree};
 use crate::codemp::game::bg_public::{
@@ -45,7 +45,7 @@ use crate::codemp::game::bg_saga_h::SIEGETEAM_TEAM1;
 use crate::codemp::game::bg_weapons_h::WP_NUM_WEAPONS;
 use crate::codemp::game::g_cmds::ConcatArgs;
 use crate::codemp::game::g_local::{gentity_s, gentity_t};
-use crate::codemp::game::g_main::{g_entities, g_gametype, g_RMG, level, G_Printf};
+use crate::codemp::game::g_main::{g_RMG, g_entities, g_gametype, level, G_Printf};
 use crate::codemp::game::g_public_h::SVF_BROADCAST;
 use crate::codemp::game::g_utils::{G_Find, G_TempEntity};
 use crate::codemp::game::q_math::{
@@ -72,7 +72,6 @@ unsafe extern "C" {
 
 const S_COLOR_YELLOW: &str = "^3";
 const S_COLOR_RED: &str = "^1";
-
 
 // ===========================================================================
 // File-scope globals (ai_wpnav.c:6-23). Declared `extern` in ai_main.h, defined
@@ -476,8 +475,7 @@ pub unsafe fn CreateNewWP_InTrail(origin: &vec3_t, flags: c_int, afterindex: c_i
             i += 1;
 
             if gWPArray[i as usize].is_null() {
-                gWPArray[i as usize] =
-                    B_Alloc(size_of::<wpobject_t>() as c_int) as *mut wpobject_t;
+                gWPArray[i as usize] = B_Alloc(size_of::<wpobject_t>() as c_int) as *mut wpobject_t;
             }
 
             (*gWPArray[i as usize]).flags = flags;
@@ -564,8 +562,7 @@ pub unsafe fn CreateNewWP_InsertUnder(origin: &vec3_t, flags: c_int, afterindex:
             TransferWPData(i, i + 1);
 
             if gWPArray[i as usize].is_null() {
-                gWPArray[i as usize] =
-                    B_Alloc(size_of::<wpobject_t>() as c_int) as *mut wpobject_t;
+                gWPArray[i as usize] = B_Alloc(size_of::<wpobject_t>() as c_int) as *mut wpobject_t;
             }
 
             (*gWPArray[i as usize]).flags = flags;
@@ -790,7 +787,9 @@ pub unsafe fn BotWaypointRender() {
         flagstr = GetFlagStr((*gWPArray[bestindex as usize]).flags);
         gLastPrintedIndex = bestindex;
         let wp = gWPArray[bestindex as usize];
-        let fstr = core::ffi::CStr::from_ptr(flagstr).to_string_lossy().into_owned();
+        let fstr = core::ffi::CStr::from_ptr(flagstr)
+            .to_string_lossy()
+            .into_owned();
         G_Printf(&format!(
             "{S_COLOR_YELLOW}Waypoint {}\nFlags - {} ({}) (w{:.6})\nOrigin - ({} {} {})\n",
             (*wp).index,
@@ -946,7 +945,14 @@ pub unsafe fn CanForceJumpTo(baseindex: c_int, testingindex: c_int, distance: f3
         return 0;
     }
 
-    if OrgVisibleCurve(&(*wpBase).origin, &mins, &maxs, &(*wpTest).origin, ENTITYNUM_NONE) == 0 {
+    if OrgVisibleCurve(
+        &(*wpBase).origin,
+        &mins,
+        &maxs,
+        &(*wpTest).origin,
+        ENTITYNUM_NONE,
+    ) == 0
+    {
         return 0;
     }
 
@@ -968,11 +974,7 @@ pub unsafe fn GetObjectThatTargets(ent: *mut gentity_t) -> *mut gentity_t {
         return null_mut();
     }
 
-    next = G_Find(
-        null_mut(),
-        offset_of!(gentity_s, target),
-        (*ent).targetname,
-    );
+    next = G_Find(null_mut(), offset_of!(gentity_s, target), (*ent).targetname);
 
     if !next.is_null() {
         return next;
@@ -1249,7 +1251,14 @@ pub fn CanGetToVectorTravel(org1: &vec3_t, moveTo: &vec3_t, mins: &vec3_t, maxs:
         stepGoal[1] = workingOrg[1] + stepSub[1] * stepSize;
         stepGoal[2] = workingOrg[2] + stepSub[2] * stepSize;
 
-        tr = trap::Trace(&workingOrg, mins, maxs, &stepGoal, ENTITYNUM_NONE, traceMask);
+        tr = trap::Trace(
+            &workingOrg,
+            mins,
+            maxs,
+            &stepGoal,
+            ENTITYNUM_NONE,
+            traceMask,
+        );
 
         if tr.startsolid == 0 && tr.allsolid == 0 && tr.fraction != 0.0 {
             let mut vecSub: vec3_t = [0.0; 3];
@@ -1582,7 +1591,14 @@ pub unsafe fn ConnectTrail(startindex: c_int, endindex: c_int, behindTheScenes: 
                 testspot[0] += branchDistance;
                 VectorCopy(&testspot, &mut starttrace);
                 starttrace[2] -= 4096.0;
-                tr = trap::Trace(&testspot, &vec3_origin, &vec3_origin, &starttrace, ENTITYNUM_NONE, MASK_SOLID);
+                tr = trap::Trace(
+                    &testspot,
+                    &vec3_origin,
+                    &vec3_origin,
+                    &starttrace,
+                    ENTITYNUM_NONE,
+                    MASK_SOLID,
+                );
                 testspot[2] = tr.endpos[2] + baseheight;
                 if NodeHere(&testspot) == 0
                     && tr.startsolid == 0
@@ -1593,7 +1609,9 @@ pub unsafe fn ConnectTrail(startindex: c_int, endindex: c_int, behindTheScenes: 
                     nodetable[nodenum as usize].inuse = 1;
                     nodetable[nodenum as usize].weight = nodetable[i as usize].weight + 1.0;
                     nodetable[nodenum as usize].neighbornum = i;
-                    if (nodetable[i as usize].origin[2] - nodetable[nodenum as usize].origin[2]) > 50.0 {
+                    if (nodetable[i as usize].origin[2] - nodetable[nodenum as usize].origin[2])
+                        > 50.0
+                    {
                         //if there's a big drop, make sure we know we can't just magically fly back up
                         nodetable[nodenum as usize].flags = WPFLAG_ONEWAY_FWD;
                     }
@@ -1609,7 +1627,14 @@ pub unsafe fn ConnectTrail(startindex: c_int, endindex: c_int, behindTheScenes: 
                 testspot[0] -= branchDistance;
                 VectorCopy(&testspot, &mut starttrace);
                 starttrace[2] -= 4096.0;
-                tr = trap::Trace(&testspot, &vec3_origin, &vec3_origin, &starttrace, ENTITYNUM_NONE, MASK_SOLID);
+                tr = trap::Trace(
+                    &testspot,
+                    &vec3_origin,
+                    &vec3_origin,
+                    &starttrace,
+                    ENTITYNUM_NONE,
+                    MASK_SOLID,
+                );
                 testspot[2] = tr.endpos[2] + baseheight;
                 if NodeHere(&testspot) == 0
                     && tr.startsolid == 0
@@ -1620,7 +1645,9 @@ pub unsafe fn ConnectTrail(startindex: c_int, endindex: c_int, behindTheScenes: 
                     nodetable[nodenum as usize].inuse = 1;
                     nodetable[nodenum as usize].weight = nodetable[i as usize].weight + 1.0;
                     nodetable[nodenum as usize].neighbornum = i;
-                    if (nodetable[i as usize].origin[2] - nodetable[nodenum as usize].origin[2]) > 50.0 {
+                    if (nodetable[i as usize].origin[2] - nodetable[nodenum as usize].origin[2])
+                        > 50.0
+                    {
                         nodetable[nodenum as usize].flags = WPFLAG_ONEWAY_FWD;
                     }
                     nodenum += 1;
@@ -1635,7 +1662,14 @@ pub unsafe fn ConnectTrail(startindex: c_int, endindex: c_int, behindTheScenes: 
                 testspot[1] += branchDistance;
                 VectorCopy(&testspot, &mut starttrace);
                 starttrace[2] -= 4096.0;
-                tr = trap::Trace(&testspot, &vec3_origin, &vec3_origin, &starttrace, ENTITYNUM_NONE, MASK_SOLID);
+                tr = trap::Trace(
+                    &testspot,
+                    &vec3_origin,
+                    &vec3_origin,
+                    &starttrace,
+                    ENTITYNUM_NONE,
+                    MASK_SOLID,
+                );
                 testspot[2] = tr.endpos[2] + baseheight;
                 if NodeHere(&testspot) == 0
                     && tr.startsolid == 0
@@ -1646,7 +1680,9 @@ pub unsafe fn ConnectTrail(startindex: c_int, endindex: c_int, behindTheScenes: 
                     nodetable[nodenum as usize].inuse = 1;
                     nodetable[nodenum as usize].weight = nodetable[i as usize].weight + 1.0;
                     nodetable[nodenum as usize].neighbornum = i;
-                    if (nodetable[i as usize].origin[2] - nodetable[nodenum as usize].origin[2]) > 50.0 {
+                    if (nodetable[i as usize].origin[2] - nodetable[nodenum as usize].origin[2])
+                        > 50.0
+                    {
                         nodetable[nodenum as usize].flags = WPFLAG_ONEWAY_FWD;
                     }
                     nodenum += 1;
@@ -1661,7 +1697,14 @@ pub unsafe fn ConnectTrail(startindex: c_int, endindex: c_int, behindTheScenes: 
                 testspot[1] -= branchDistance;
                 VectorCopy(&testspot, &mut starttrace);
                 starttrace[2] -= 4096.0;
-                tr = trap::Trace(&testspot, &vec3_origin, &vec3_origin, &starttrace, ENTITYNUM_NONE, MASK_SOLID);
+                tr = trap::Trace(
+                    &testspot,
+                    &vec3_origin,
+                    &vec3_origin,
+                    &starttrace,
+                    ENTITYNUM_NONE,
+                    MASK_SOLID,
+                );
                 testspot[2] = tr.endpos[2] + baseheight;
                 if NodeHere(&testspot) == 0
                     && tr.startsolid == 0
@@ -1672,7 +1715,9 @@ pub unsafe fn ConnectTrail(startindex: c_int, endindex: c_int, behindTheScenes: 
                     nodetable[nodenum as usize].inuse = 1;
                     nodetable[nodenum as usize].weight = nodetable[i as usize].weight + 1.0;
                     nodetable[nodenum as usize].neighbornum = i;
-                    if (nodetable[i as usize].origin[2] - nodetable[nodenum as usize].origin[2]) > 50.0 {
+                    if (nodetable[i as usize].origin[2] - nodetable[nodenum as usize].origin[2])
+                        > 50.0
+                    {
                         nodetable[nodenum as usize].flags = WPFLAG_ONEWAY_FWD;
                     }
                     nodenum += 1;
@@ -1905,7 +1950,8 @@ pub unsafe fn CalculatePaths() {
     }
 
     if g_RMG.integer != 0 {
-        maxNeighborDist = (DEFAULT_GRID_SPACING as f32 + (DEFAULT_GRID_SPACING as f32 * 0.5)) as c_int;
+        maxNeighborDist =
+            (DEFAULT_GRID_SPACING as f32 + (DEFAULT_GRID_SPACING as f32 * 0.5)) as c_int;
     }
 
     mins[0] = -15.0;
@@ -1976,7 +2022,8 @@ pub unsafe fn CalculatePaths() {
                                 != (*gWPArray[c as usize]).origin[2] as c_int
                                 || nLDist < maxNeighborDist as f32)
                         {
-                            (*gWPArray[i as usize]).neighbors[nn].forceJumpTo = 999; //forceJumpable; //FJSR
+                            (*gWPArray[i as usize]).neighbors[nn].forceJumpTo = 999;
+                        //forceJumpable; //FJSR
                         } else {
                             (*gWPArray[i as usize]).neighbors[nn].forceJumpTo = 0;
                         }
@@ -2189,7 +2236,9 @@ pub unsafe fn CalculateWeightGoals() {
                 weight = 5.0;
             } else if strcmp((*ent).classname, c"item_ysalimari".as_ptr()) == 0 {
                 weight = 2.0;
-            } else if !strstr((*ent).classname, c"weapon_".as_ptr()).is_null() && !(*ent).item.is_null() {
+            } else if !strstr((*ent).classname, c"weapon_".as_ptr()).is_null()
+                && !(*ent).item.is_null()
+            {
                 weight = botGlobalNavWeaponWeights[(*(*ent).item).giTag as usize];
             } else if !(*ent).item.is_null() && (*(*ent).item).giType == IT_AMMO {
                 weight = 3.0;
@@ -2368,7 +2417,9 @@ pub unsafe fn LoadPathData(filename: *const c_char) -> c_int {
     }
 
     // Com_sprintf(routePath, 1024, "botroutes/%s.wnt\0", filename) — the trap wrapper takes &str.
-    let fname = core::ffi::CStr::from_ptr(filename).to_string_lossy().into_owned();
+    let fname = core::ffi::CStr::from_ptr(filename)
+        .to_string_lossy()
+        .into_owned();
     let routePath = format!("botroutes/{fname}.wnt");
 
     let (l, fh) = trap::FS_FOpenFile(&routePath, FS_READ);
@@ -2441,7 +2492,10 @@ pub unsafe fn LoadPathData(filename: *const c_char) -> c_int {
             associated_entity: ENTITYNUM_NONE as c_int,
             forceJumpTo: 0,
             neighbornum: 0,
-            neighbors: [wpneighbor_t { num: 0, forceJumpTo: 0 }; MAX_NEIGHBOR_SIZE],
+            neighbors: [wpneighbor_t {
+                num: 0,
+                forceJumpTo: 0,
+            }; MAX_NEIGHBOR_SIZE],
         };
 
         nei_num = 0;
@@ -2547,7 +2601,8 @@ pub unsafe fn LoadPathData(filename: *const c_char) -> c_int {
                 }
                 cv!(i_cv) = b'\0' as c_char;
 
-                thiswp.neighbors[thiswp.neighbornum as usize].forceJumpTo = 999; //atoi(currentVar); //FJSR
+                thiswp.neighbors[thiswp.neighbornum as usize].forceJumpTo = 999;
+            //atoi(currentVar); //FJSR
             } else {
                 thiswp.neighbors[thiswp.neighbornum as usize].forceJumpTo = 0;
             }
@@ -2598,7 +2653,9 @@ pub unsafe fn LoadPathData(filename: *const c_char) -> c_int {
 /// for reproducing the C `Com_sprintf(buf, sz, "%s...", buf, ...)` self-concatenation idiom (the
 /// rendered `%s` argument is the buffer's prior contents).
 unsafe fn cbuf_str(buf: *const c_char) -> String {
-    core::ffi::CStr::from_ptr(buf).to_string_lossy().into_owned()
+    core::ffi::CStr::from_ptr(buf)
+        .to_string_lossy()
+        .into_owned()
 }
 
 /// `int SavePathData(const char *filename)` (ai_wpnav.c:2372) — repair, connect and flag the
@@ -2624,7 +2681,9 @@ pub unsafe fn SavePathData(filename: *const c_char) -> c_int {
     }
 
     // Com_sprintf(routePath, 1024, "botroutes/%s.wnt\0", filename)
-    let fname = core::ffi::CStr::from_ptr(filename).to_string_lossy().into_owned();
+    let fname = core::ffi::CStr::from_ptr(filename)
+        .to_string_lossy()
+        .into_owned();
     let routePath = format!("botroutes/{fname}.wnt");
 
     let (_l, fh) = trap::FS_FOpenFile(&routePath, FS_WRITE);
@@ -2685,7 +2744,11 @@ pub unsafe fn SavePathData(filename: *const c_char) -> c_int {
             Com_sprintf(
                 storeString,
                 4096,
-                format_args!("{}{} ", prev, (*gWPArray[i as usize]).neighbors[n as usize].num),
+                format_args!(
+                    "{}{} ",
+                    prev,
+                    (*gWPArray[i as usize]).neighbors[n as usize].num
+                ),
             );
         }
         n += 1;
@@ -2709,7 +2772,11 @@ pub unsafe fn SavePathData(filename: *const c_char) -> c_int {
 
     {
         let prev = cbuf_str(fileString);
-        Com_sprintf(fileString, 524288, format_args!("{}}} {:.6}\n", prev, flLen));
+        Com_sprintf(
+            fileString,
+            524288,
+            format_args!("{}}} {:.6}\n", prev, flLen),
+        );
     }
 
     i += 1;
@@ -2749,7 +2816,11 @@ pub unsafe fn SavePathData(filename: *const c_char) -> c_int {
                 Com_sprintf(
                     storeString,
                     4096,
-                    format_args!("{}{} ", prev, (*gWPArray[i as usize]).neighbors[n as usize].num),
+                    format_args!(
+                        "{}{} ",
+                        prev,
+                        (*gWPArray[i as usize]).neighbors[n as usize].num
+                    ),
                 );
             }
             n += 1;
@@ -2852,7 +2923,9 @@ pub unsafe fn G_RecursiveConnection(
             return indexDirections[i as usize];
         }
 
-        if indexDirections[i as usize] != -1 && nodetable[indexDirections[i as usize] as usize].flags != 0 {
+        if indexDirections[i as usize] != -1
+            && nodetable[indexDirections[i as usize] as usize].flags != 0
+        {
             //this point is already used, so it's not valid.
             indexDirections[i as usize] = -1;
         } else if indexDirections[i as usize] != -1 {
@@ -2878,8 +2951,13 @@ pub unsafe fn G_RecursiveConnection(
 
         if indexDirections[i as usize] != -1 {
             //it's still valid, so keep connecting via this point.
-            recursiveIndex =
-                G_RecursiveConnection(indexDirections[i as usize], end, passWeight, traceCheck, baseHeight);
+            recursiveIndex = G_RecursiveConnection(
+                indexDirections[i as usize],
+                end,
+                passWeight,
+                traceCheck,
+                baseHeight,
+            );
         }
 
         if recursiveIndex != -1 {
@@ -2912,22 +2990,26 @@ pub unsafe fn G_BackwardAttachment(
     givenXY[0] = nodetable[start as usize].origin[0];
     givenXY[1] = nodetable[start as usize].origin[1];
     givenXY[0] -= DEFAULT_GRID_SPACING as f32;
-    indexDirections[0] = G_NodeMatchingXY_BA(givenXY[0] as c_int, givenXY[1] as c_int, finalDestination);
+    indexDirections[0] =
+        G_NodeMatchingXY_BA(givenXY[0] as c_int, givenXY[1] as c_int, finalDestination);
 
     givenXY[0] = nodetable[start as usize].origin[0];
     givenXY[1] = nodetable[start as usize].origin[1];
     givenXY[0] += DEFAULT_GRID_SPACING as f32;
-    indexDirections[1] = G_NodeMatchingXY_BA(givenXY[0] as c_int, givenXY[1] as c_int, finalDestination);
+    indexDirections[1] =
+        G_NodeMatchingXY_BA(givenXY[0] as c_int, givenXY[1] as c_int, finalDestination);
 
     givenXY[0] = nodetable[start as usize].origin[0];
     givenXY[1] = nodetable[start as usize].origin[1];
     givenXY[1] -= DEFAULT_GRID_SPACING as f32;
-    indexDirections[2] = G_NodeMatchingXY_BA(givenXY[0] as c_int, givenXY[1] as c_int, finalDestination);
+    indexDirections[2] =
+        G_NodeMatchingXY_BA(givenXY[0] as c_int, givenXY[1] as c_int, finalDestination);
 
     givenXY[0] = nodetable[start as usize].origin[0];
     givenXY[1] = nodetable[start as usize].origin[1];
     givenXY[1] += DEFAULT_GRID_SPACING as f32;
-    indexDirections[3] = G_NodeMatchingXY_BA(givenXY[0] as c_int, givenXY[1] as c_int, finalDestination);
+    indexDirections[3] =
+        G_NodeMatchingXY_BA(givenXY[0] as c_int, givenXY[1] as c_int, finalDestination);
 
     while i < 4 {
         if indexDirections[i as usize] != -1 {
@@ -2987,7 +3069,11 @@ pub unsafe fn G_RMGPathing() {
     let mut trMins: vec3_t = [0.0; 3];
     let mut trMaxs: vec3_t = [0.0; 3];
     let mut tr;
-    let terrain: *mut gentity_t = G_Find(null_mut(), offset_of!(gentity_s, classname), c"terrain".as_ptr());
+    let terrain: *mut gentity_t = G_Find(
+        null_mut(),
+        offset_of!(gentity_s, classname),
+        c"terrain".as_ptr(),
+    );
 
     if terrain.is_null() || (*terrain).inuse == 0 || (*terrain).s.eType != ET_TERRAIN {
         G_Printf("Error: RMG with no terrain!\n");
@@ -2995,7 +3081,11 @@ pub unsafe fn G_RMGPathing() {
     }
 
     nodenum = 0;
-    write_bytes(addr_of_mut!(nodetable) as *mut u8, 0, size_of::<[nodeobject_t; MAX_NODETABLE_SIZE]>());
+    write_bytes(
+        addr_of_mut!(nodetable) as *mut u8,
+        0,
+        size_of::<[nodeobject_t; MAX_NODETABLE_SIZE]>(),
+    );
 
     VectorSet(&mut trMins, -15.0, -15.0, DEFAULT_MINS_2 as f32);
     VectorSet(&mut trMaxs, 15.0, 15.0, DEFAULT_MAXS_2 as f32);
@@ -3032,7 +3122,11 @@ pub unsafe fn G_RMGPathing() {
             );
 
             if (tr.entityNum as c_int >= ENTITYNUM_WORLD
-                || (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(tr.entityNum as usize)).s.eType == ET_TERRAIN)
+                || (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add(tr.entityNum as usize))
+                .s
+                .eType
+                    == ET_TERRAIN)
                 && tr.endpos[2] < (*terrain).r.absmin[2] + 750.0
             {
                 //only drop nodes on terrain directly
@@ -3079,14 +3173,24 @@ pub unsafe fn G_RMGPathing() {
 
         //For now I am going to branch out mindlessly, but I will probably want to use some sort of A* algorithm
         //here to lessen the time taken.
-        if G_RecursiveConnection(nearestIndex, nearestIndexForNext, 0, QTRUE, (*terrain).r.absmin[2])
-            != nearestIndexForNext
+        if G_RecursiveConnection(
+            nearestIndex,
+            nearestIndexForNext,
+            0,
+            QTRUE,
+            (*terrain).r.absmin[2],
+        ) != nearestIndexForNext
         {
             //failed to branch to where we want. Oh well, try it without trace checks.
             G_NodeClearForNext();
 
-            if G_RecursiveConnection(nearestIndex, nearestIndexForNext, 0, QFALSE, (*terrain).r.absmin[2])
-                != nearestIndexForNext
+            if G_RecursiveConnection(
+                nearestIndex,
+                nearestIndexForNext,
+                0,
+                QFALSE,
+                (*terrain).r.absmin[2],
+            ) != nearestIndexForNext
             {
                 //still failed somehow. Just disregard this point.
                 G_NodeClearForNext();
@@ -3174,7 +3278,10 @@ pub unsafe fn BeginAutoPathRoutine() {
     G_RMGPathing();
 
     //rww - Using a faster in-engine version because we're having to wait for this stuff to get done as opposed to just saving it once.
-    trap::Bot_UpdateWaypoints(gWPNum, addr_of_mut!(gWPArray) as *mut *mut core::ffi::c_void);
+    trap::Bot_UpdateWaypoints(
+        gWPNum,
+        addr_of_mut!(gWPArray) as *mut *mut core::ffi::c_void,
+    );
     trap::Bot_CalculatePaths(g_RMG.integer);
     //CalculatePaths(); //make everything nice and connected
 
@@ -3369,7 +3476,10 @@ pub unsafe fn AcceptBotCommand(cmd: *mut c_char, pl: *mut gentity_t) -> c_int {
         closestSpawn = GetNextSpawnInIndex(closestSpawn);
 
         if !closestSpawn.is_null() {
-            VectorCopy(&(*closestSpawn).r.currentOrigin, &mut (*(*pl).client).ps.origin);
+            VectorCopy(
+                &(*closestSpawn).r.currentOrigin,
+                &mut (*(*pl).client).ps.origin,
+            );
         }
         return 1;
     }
@@ -3418,7 +3528,11 @@ pub unsafe fn AcceptBotCommand(cmd: *mut c_char, pl: *mut gentity_t) -> c_int {
         }
 
         if !OptionalSArgument.is_null() && *OptionalSArgument != 0 {
-            CreateNewWP_InTrail(&(*(*pl).client).ps.origin, FlagsFromArgument, OptionalArgument);
+            CreateNewWP_InTrail(
+                &(*(*pl).client).ps.origin,
+                FlagsFromArgument,
+                OptionalArgument,
+            );
         } else {
             CreateNewWP(&(*(*pl).client).ps.origin, FlagsFromArgument);
         }
@@ -3521,7 +3635,11 @@ pub unsafe fn G_DebugNodeFile() {
     let mut i: c_int = 0;
     let mut placeX: f32;
     let mut fileString: Vec<c_char> = vec![0; 131072];
-    let terrain: *mut gentity_t = G_Find(null_mut(), offset_of!(gentity_s, classname), c"terrain".as_ptr());
+    let terrain: *mut gentity_t = G_Find(
+        null_mut(),
+        offset_of!(gentity_s, classname),
+        c"terrain".as_ptr(),
+    );
 
     fileString[0] = 0;
 
@@ -3544,7 +3662,10 @@ pub unsafe fn G_DebugNodeFile() {
     let (_l, fh) = trap::FS_FOpenFile("ROUTEDEBUG.txt", FS_WRITE);
     f = fh;
     {
-        let wbuf = core::slice::from_raw_parts(fileString.as_ptr() as *const u8, strlen(fileString.as_ptr()));
+        let wbuf = core::slice::from_raw_parts(
+            fileString.as_ptr() as *const u8,
+            strlen(fileString.as_ptr()),
+        );
         trap::FS_Write(wbuf, f);
     }
     trap::FS_FCloseFile(f);
@@ -3570,7 +3691,11 @@ pub unsafe fn CreateAsciiTableRepresentation() {
     let mut oldY: c_int;
     let mut fileString: Vec<c_char> = vec![0; ALLOWABLE_DEBUG_FILE_SIZE];
     let mut bChr: c_char;
-    let terrain: *mut gentity_t = G_Find(null_mut(), offset_of!(gentity_s, classname), c"terrain".as_ptr());
+    let terrain: *mut gentity_t = G_Find(
+        null_mut(),
+        offset_of!(gentity_s, classname),
+        c"terrain".as_ptr(),
+    );
 
     placeX = (*terrain).r.absmin[0] as c_int;
     placeY = (*terrain).r.absmin[1] as c_int;
@@ -3664,7 +3789,10 @@ pub unsafe fn CreateAsciiTableRepresentation() {
     let (_l, fh) = trap::FS_FOpenFile("ROUTEDRAWN.txt", FS_WRITE);
     f = fh;
     {
-        let wbuf = core::slice::from_raw_parts(fileString.as_ptr() as *const u8, strlen(fileString.as_ptr()));
+        let wbuf = core::slice::from_raw_parts(
+            fileString.as_ptr() as *const u8,
+            strlen(fileString.as_ptr()),
+        );
         trap::FS_Write(wbuf, f);
     }
     trap::FS_FCloseFile(f);
@@ -3685,7 +3813,11 @@ pub unsafe fn CreateAsciiNodeTableRepresentation(start: c_int, end: c_int) {
     let mut oldX: c_int;
     let mut oldY: c_int;
     let mut fileString: Vec<c_char> = vec![0; ALLOWABLE_DEBUG_FILE_SIZE];
-    let terrain: *mut gentity_t = G_Find(null_mut(), offset_of!(gentity_s, classname), c"terrain".as_ptr());
+    let terrain: *mut gentity_t = G_Find(
+        null_mut(),
+        offset_of!(gentity_s, classname),
+        c"terrain".as_ptr(),
+    );
 
     placeX = (*terrain).r.absmin[0] as c_int;
     placeY = (*terrain).r.absmin[1] as c_int;
@@ -3783,7 +3915,10 @@ pub unsafe fn CreateAsciiNodeTableRepresentation(start: c_int, end: c_int) {
     let (_l, fh) = trap::FS_FOpenFile("ROUTEDRAWN.txt", FS_WRITE);
     f = fh;
     {
-        let wbuf = core::slice::from_raw_parts(fileString.as_ptr() as *const u8, strlen(fileString.as_ptr()));
+        let wbuf = core::slice::from_raw_parts(
+            fileString.as_ptr() as *const u8,
+            strlen(fileString.as_ptr()),
+        );
         trap::FS_Write(wbuf, f);
     }
     trap::FS_FCloseFile(f);

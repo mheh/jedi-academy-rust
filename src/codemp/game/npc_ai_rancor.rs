@@ -22,39 +22,53 @@
 use core::ffi::c_int;
 use core::ptr::{addr_of, addr_of_mut, null_mut};
 
-use crate::codemp::game::anims::{BOTH_ATTACK1, BOTH_ATTACK2, BOTH_ATTACK3, BOTH_DEATH17,
-    BOTH_DEATHBACKWARD2, BOTH_FALLDEATH1, BOTH_MELEE1, BOTH_MELEE2, BOTH_PAIN1, BOTH_PAIN2,
-    BOTH_STAND1TO2, BOTH_SWIM_IDLE1};
+use crate::codemp::game::anims::{
+    BOTH_ATTACK1, BOTH_ATTACK2, BOTH_ATTACK3, BOTH_DEATH17, BOTH_DEATHBACKWARD2, BOTH_FALLDEATH1,
+    BOTH_MELEE1, BOTH_MELEE2, BOTH_PAIN1, BOTH_PAIN2, BOTH_STAND1TO2, BOTH_SWIM_IDLE1,
+};
 use crate::codemp::game::b_public_h::SCF_LOOK_FOR_ENEMIES;
-use crate::codemp::game::bg_public::{EF2_ALERTED, EF2_GENERIC_NPC_FLAG, EF2_HELD_BY_MONSTER,
-    EF2_USE_ALT_ANIM, EF_NODRAW, EV_DEATH1,
+use crate::codemp::game::bg_public::{
+    EF2_ALERTED, EF2_GENERIC_NPC_FLAG, EF2_HELD_BY_MONSTER, EF2_USE_ALT_ANIM, EF_NODRAW, EV_DEATH1,
     EV_DEATH3, EV_JUMP, G2_MODELPART_HEAD, G2_MODELPART_RLEG, G2_MODELPART_WAIST, HANDEXTEND_NONE,
-    MOD_CRUSH, MOD_MELEE, SETANIM_BOTH, SETANIM_FLAG_HOLD, SETANIM_FLAG_OVERRIDE, SETANIM_TORSO};
+    MOD_CRUSH, MOD_MELEE, SETANIM_BOTH, SETANIM_FLAG_HOLD, SETANIM_FLAG_OVERRIDE, SETANIM_TORSO,
+};
 use crate::codemp::game::g_client::SetClientViewAngle;
 use crate::codemp::game::g_combat::{G_Damage, G_Dismember, G_Knockdown, TossClientItems};
-use crate::codemp::game::g_local::{gentity_t, AEL_DANGER, AEL_DANGER_GREAT, DAMAGE_NO_ARMOR,
-    DAMAGE_NO_HIT_LOC, DAMAGE_NO_KNOCKBACK, DAMAGE_NO_PROTECTION, FL_NOTARGET};
+use crate::codemp::game::g_local::{
+    gentity_t, AEL_DANGER, AEL_DANGER_GREAT, DAMAGE_NO_ARMOR, DAMAGE_NO_HIT_LOC,
+    DAMAGE_NO_KNOCKBACK, DAMAGE_NO_PROTECTION, FL_NOTARGET,
+};
 use crate::codemp::game::g_main::{g_entities, level};
 use crate::codemp::game::g_public_h::Q3_INFINITE;
-use crate::codemp::game::g_timer::{TIMER_Done, TIMER_Done2, TIMER_Exists, TIMER_Remove, TIMER_Set};
-use crate::codemp::game::g_utils::{G_AddEvent, G_ScreenShake, G_SetAngles, G_Sound, G_SoundIndex,
-    G_Throw};
-use crate::codemp::game::npc::{ucmd, NPC_SetAnim, NPC, NPCInfo};
+use crate::codemp::game::g_timer::{
+    TIMER_Done, TIMER_Done2, TIMER_Exists, TIMER_Remove, TIMER_Set,
+};
+use crate::codemp::game::g_utils::{
+    G_AddEvent, G_ScreenShake, G_SetAngles, G_Sound, G_SoundIndex, G_Throw,
+};
+use crate::codemp::game::npc::{ucmd, NPCInfo, NPC_SetAnim, NPC};
 use crate::codemp::game::npc_combat::{G_SetEnemy, NPC_CheckEnemy, ValidEnemy};
 use crate::codemp::game::npc_goal::UpdateGoal;
 use crate::codemp::game::npc_move::NPC_MoveToGoal;
 use crate::codemp::game::npc_senses::{AddSightEvent, AddSoundEvent, InFOV3};
-use crate::codemp::game::npc_utils::{G_GetBoltPosition, NPC_CheckEnemyExt, NPC_ClearLOS4,
-    NPC_FaceEnemy, NPC_GetEntsNearBolt, NPC_UpdateAngles};
-use crate::codemp::game::q_math::{flrand, vec3_origin, AngleVectors, Distance, DistanceSquared,
-    VectorCopy, VectorScale, VectorSet};
-use crate::codemp::game::q_shared::{crandom, random};
+use crate::codemp::game::npc_utils::{
+    G_GetBoltPosition, NPC_CheckEnemyExt, NPC_ClearLOS4, NPC_FaceEnemy, NPC_GetEntsNearBolt,
+    NPC_UpdateAngles,
+};
 use crate::codemp::game::q_math::Q_irand;
-use crate::codemp::game::q_shared_h::{trace_t, vec3_t, BUTTON_WALKING, CHAN_AUTO, ENTITYNUM_NONE,
-    ENTITYNUM_WORLD, PITCH, ROLL, YAW};
-use crate::codemp::game::teams_h::{CLASS_ATST, CLASS_GALAKMECH, CLASS_GONK, CLASS_INTERROGATOR,
-    CLASS_MARK1, CLASS_MARK2, CLASS_MOUSE, CLASS_PROBE, CLASS_R2D2, CLASS_R5D2, CLASS_RANCOR,
-    CLASS_REMOTE, CLASS_SEEKER, CLASS_SENTRY, CLASS_VEHICLE};
+use crate::codemp::game::q_math::{
+    flrand, vec3_origin, AngleVectors, Distance, DistanceSquared, VectorCopy, VectorScale,
+    VectorSet,
+};
+use crate::codemp::game::q_shared::{crandom, random};
+use crate::codemp::game::q_shared_h::{
+    trace_t, vec3_t, BUTTON_WALKING, CHAN_AUTO, ENTITYNUM_NONE, ENTITYNUM_WORLD, PITCH, ROLL, YAW,
+};
+use crate::codemp::game::teams_h::{
+    CLASS_ATST, CLASS_GALAKMECH, CLASS_GONK, CLASS_INTERROGATOR, CLASS_MARK1, CLASS_MARK2,
+    CLASS_MOUSE, CLASS_PROBE, CLASS_R2D2, CLASS_R5D2, CLASS_RANCOR, CLASS_REMOTE, CLASS_SEEKER,
+    CLASS_SENTRY, CLASS_VEHICLE,
+};
 use crate::ffi::types::{qboolean, QFALSE, QTRUE};
 use crate::trap;
 
@@ -149,7 +163,11 @@ pub unsafe fn Rancor_Patrol() {
         NPC_MoveToGoal(QTRUE);
     } else {
         if TIMER_Done(NPC, c"patrolTime".as_ptr()) != QFALSE {
-            TIMER_Set(NPC, c"patrolTime".as_ptr(), (crandom() * 5000.0 + 5000.0) as c_int);
+            TIMER_Set(
+                NPC,
+                c"patrolTime".as_ptr(),
+                (crandom() * 5000.0 + 5000.0) as c_int,
+            );
         }
     }
 
@@ -226,12 +244,7 @@ pub unsafe fn Rancor_Combat() {
         if advance != QFALSE {
             //have to get closer
             let mut yawOnlyAngles: vec3_t = [0.0; 3];
-            VectorSet(
-                &mut yawOnlyAngles,
-                0.0,
-                (*NPC).r.currentAngles[YAW],
-                0.0,
-            );
+            VectorSet(&mut yawOnlyAngles, 0.0, (*NPC).r.currentAngles[YAW], 0.0);
             if (*(*NPC).enemy).health > 0
                 && (distance - 250.0).abs() <= 80.0
                 && InFOV3(
@@ -250,7 +263,7 @@ pub unsafe fn Rancor_Combat() {
             }
         }
 
-        if (advance != QFALSE /*|| NPCInfo->localState == LSTATE_WAITING*/)
+        if (advance != QFALSE/*|| NPCInfo->localState == LSTATE_WAITING*/)
             && TIMER_Done(NPC, c"attacking".as_ptr()) != QFALSE
         // waiting monsters can't attack
         {
@@ -373,7 +386,9 @@ pub unsafe fn Rancor_Crush() {
         return;
     }
 
-    crush = core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add((*(*NPC).client).ps.groundEntityNum as usize);
+    crush = core::ptr::addr_of_mut!(g_entities)
+        .cast::<gentity_t>()
+        .add((*(*NPC).client).ps.groundEntityNum as usize);
     if (*crush).inuse != 0 && !(*crush).client.is_null() && (*crush).localAnimIndex == 0 {
         //a humanoid, smash them good.
         G_Damage(
@@ -389,7 +404,11 @@ pub unsafe fn Rancor_Crush() {
     }
 }
 
-pub unsafe extern "C" fn NPC_Rancor_Pain(self_: *mut gentity_t, attacker: *mut gentity_t, damage: c_int) {
+pub unsafe extern "C" fn NPC_Rancor_Pain(
+    self_: *mut gentity_t,
+    attacker: *mut gentity_t,
+    damage: c_int,
+) {
     let mut hitByRancor = QFALSE;
     if !attacker.is_null()
         && !(*attacker).client.is_null()
@@ -410,13 +429,11 @@ pub unsafe extern "C" fn NPC_Rancor_Pain(self_: *mut gentity_t, attacker: *mut g
                     && (*(*(*self_).enemy).client).NPC_class == CLASS_RANCOR)
                 || (!(*self_).NPC.is_null()
                     && (*(*self_).NPC).consecutiveBlockedMoves >= 10
-                    && DistanceSquared(
-                        &(*attacker).r.currentOrigin,
-                        &(*self_).r.currentOrigin,
-                    ) < DistanceSquared(
-                        &(*(*self_).enemy).r.currentOrigin,
-                        &(*self_).r.currentOrigin,
-                    ))
+                    && DistanceSquared(&(*attacker).r.currentOrigin, &(*self_).r.currentOrigin)
+                        < DistanceSquared(
+                            &(*(*self_).enemy).r.currentOrigin,
+                            &(*self_).r.currentOrigin,
+                        ))
             {
                 //if my enemy is dead (or attacked by player) and I'm not still holding/eating someone, turn on the attacker
                 //FIXME: if can't nav to my enemy, take this guy if I can nav to him
@@ -509,7 +526,9 @@ pub unsafe fn Rancor_Swing(tryGrab: c_int) {
 
     i = 0;
     while i < numEnts {
-        let radiusEnt: *mut gentity_t = core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add(radiusEntNums[i as usize] as usize);
+        let radiusEnt: *mut gentity_t = core::ptr::addr_of_mut!(g_entities)
+            .cast::<gentity_t>()
+            .add(radiusEntNums[i as usize] as usize);
         if (*radiusEnt).inuse == 0 {
             i += 1;
             continue;
@@ -641,13 +660,7 @@ pub unsafe fn Rancor_Smash() {
     let mut i: c_int;
     let mut boltOrg: vec3_t = [0.0; 3];
 
-    AddSoundEvent(
-        NPC,
-        &(*NPC).r.currentOrigin,
-        512.0,
-        AEL_DANGER,
-        QFALSE,
-    ); //, qtrue );
+    AddSoundEvent(NPC, &(*NPC).r.currentOrigin, 512.0, AEL_DANGER, QFALSE); //, qtrue );
 
     numEnts = NPC_GetEntsNearBolt(
         radiusEntNums.as_mut_ptr(),
@@ -658,7 +671,9 @@ pub unsafe fn Rancor_Smash() {
 
     i = 0;
     while i < numEnts {
-        let radiusEnt: *mut gentity_t = core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add(radiusEntNums[i as usize] as usize);
+        let radiusEnt: *mut gentity_t = core::ptr::addr_of_mut!(g_entities)
+            .cast::<gentity_t>()
+            .add(radiusEntNums[i as usize] as usize);
         if (*radiusEnt).inuse == 0 {
             i += 1;
             continue;
@@ -736,7 +751,9 @@ pub unsafe fn Rancor_Bite() {
 
     i = 0;
     while i < numEnts {
-        let radiusEnt: *mut gentity_t = core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add(radiusEntNums[i as usize] as usize);
+        let radiusEnt: *mut gentity_t = core::ptr::addr_of_mut!(g_entities)
+            .cast::<gentity_t>()
+            .add(radiusEntNums[i as usize] as usize);
         if (*radiusEnt).inuse == 0 {
             i += 1;
             continue;
@@ -1134,7 +1151,13 @@ pub unsafe fn NPC_BSRancor_Default() {
     }
     if TIMER_Done(NPC, c"rageTime".as_ptr()) == QFALSE {
         //do nothing but roar first time we see an enemy
-        AddSoundEvent(NPC, &(*NPC).r.currentOrigin, 1024.0, AEL_DANGER_GREAT, QFALSE); //, qfalse );
+        AddSoundEvent(
+            NPC,
+            &(*NPC).r.currentOrigin,
+            1024.0,
+            AEL_DANGER_GREAT,
+            QFALSE,
+        ); //, qfalse );
         NPC_FaceEnemy(QTRUE);
         return;
     }
@@ -1160,7 +1183,13 @@ pub unsafe fn NPC_BSRancor_Default() {
 
             TIMER_Set(NPC, c"angrynoise".as_ptr(), Q_irand(5000, 10000));
         } else {
-            AddSoundEvent(NPC, &(*NPC).r.currentOrigin, 512.0, AEL_DANGER_GREAT, QFALSE);
+            AddSoundEvent(
+                NPC,
+                &(*NPC).r.currentOrigin,
+                512.0,
+                AEL_DANGER_GREAT,
+                QFALSE,
+            );
             //, qfalse );
         }
         if (*NPC).count == 2 && (*(*NPC).client).ps.legsAnim == BOTH_ATTACK3 {
@@ -1169,8 +1198,7 @@ pub unsafe fn NPC_BSRancor_Default() {
             return;
         }
         //else, if he's in our hand, we eat, else if he's on the ground, we keep attacking his dead body for a while
-        if !(*(*NPC).enemy).client.is_null()
-            && (*(*(*NPC).enemy).client).NPC_class == CLASS_RANCOR
+        if !(*(*NPC).enemy).client.is_null() && (*(*(*NPC).enemy).client).NPC_class == CLASS_RANCOR
         {
             //got mad at another Rancor, look for a valid enemy
             if TIMER_Done(NPC, c"rancorInfight".as_ptr()) != QFALSE {
@@ -1220,7 +1248,8 @@ pub unsafe fn NPC_BSRancor_Default() {
             );
 
             TIMER_Set(NPC, c"idlenoise".as_ptr(), Q_irand(2000, 4000));
-            AddSoundEvent(NPC, &(*NPC).r.currentOrigin, 384.0, AEL_DANGER, QFALSE); //, qfalse );
+            AddSoundEvent(NPC, &(*NPC).r.currentOrigin, 384.0, AEL_DANGER, QFALSE);
+            //, qfalse );
         }
         if (*NPCInfo).scriptFlags & SCF_LOOK_FOR_ENEMIES != 0 {
             Rancor_Patrol();

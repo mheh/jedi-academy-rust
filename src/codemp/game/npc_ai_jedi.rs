@@ -46,6 +46,7 @@ extern "C" {
     fn atof(s: *const c_char) -> f64;
 }
 
+use crate::codemp::game::ai_wpnav::G_TestLine;
 use crate::codemp::game::anims::{
     animNumber_t, BOTH_A2_STABBACK1, BOTH_ARIAL_LEFT, BOTH_ARIAL_RIGHT, BOTH_ATTACK_BACK,
     BOTH_BUTTERFLY_LEFT, BOTH_BUTTERFLY_RIGHT, BOTH_CARTWHEEL_LEFT, BOTH_CARTWHEEL_RIGHT,
@@ -57,20 +58,10 @@ use crate::codemp::game::anims::{
 };
 use crate::codemp::game::b_local_h::MIN_ROCKET_DIST_SQUARED;
 use crate::codemp::game::b_public_h::{
-    BS_DEFAULT, BS_HUNT_AND_KILL, NPCAI_BLOCKED, NPCAI_CUSTOM_GRAVITY, RANK_CAPTAIN, RANK_CIVILIAN, RANK_COMMANDER, RANK_CREWMAN, RANK_ENSIGN,
-    RANK_LT, RANK_LT_COMM, RANK_LT_JG, SCF_ALT_FIRE, SCF_CHASE_ENEMIES, SCF_DONT_FIRE,
-    SCF_FIRE_WEAPON,
-    SCF_LOOK_FOR_ENEMIES, SCF_NO_ACROBATICS, SPOT_HEAD,
-};
-use crate::codemp::game::bg_public::{
-    BG_GiveMeVectorFromMatrix, EF2_FLYING, EV_CONFUSE1, EV_CONFUSE3, EV_DEFLECT1, EV_DEFLECT3,
-    EV_COMBAT1, EV_COMBAT3, EV_GENERAL_SOUND, EV_GLOAT1, EV_JCHASE1, EV_JCHASE3, EV_JLOST1,
-    EV_JLOST3, EV_JUMP, EV_VICTORY1, EV_VICTORY3, WEAPON_FIRING,
-    EV_ANGER1, EV_ANGER3, EV_GLOAT3, EV_JDETECTED1, EV_JDETECTED3, EV_PUSHED1, EV_PUSHED3,
-    EV_PUSHFAIL, EV_TAUNT1, EV_TAUNT3, ET_PLAYER, HANDEXTEND_JEDITAUNT, HANDEXTEND_NONE,
-    JUMP_VELOCITY, MASK_SHOT, MOD_LAVA, PMF_DUCKED, PMF_TIME_KNOCKBACK, PW_CLOAKED, PW_DISINT_4,
-    PW_PULL, SETANIM_BOTH, SETANIM_FLAG_HOLD, SETANIM_FLAG_OVERRIDE, SETANIM_LEGS, SETANIM_TORSO,
-    STEPSIZE, TEAM_NUM_TEAMS,
+    BS_DEFAULT, BS_HUNT_AND_KILL, NPCAI_BLOCKED, NPCAI_CUSTOM_GRAVITY, RANK_CAPTAIN, RANK_CIVILIAN,
+    RANK_COMMANDER, RANK_CREWMAN, RANK_ENSIGN, RANK_LT, RANK_LT_COMM, RANK_LT_JG, SCF_ALT_FIRE,
+    SCF_CHASE_ENEMIES, SCF_DONT_FIRE, SCF_FIRE_WEAPON, SCF_LOOK_FOR_ENEMIES, SCF_NO_ACROBATICS,
+    SPOT_HEAD,
 };
 use crate::codemp::game::bg_misc::{BG_EvaluateTrajectory, BG_FindItemForAmmo};
 use crate::codemp::game::bg_panimate::{
@@ -79,6 +70,15 @@ use crate::codemp::game::bg_panimate::{
     PM_SaberInParry, PM_SaberInStart,
 };
 use crate::codemp::game::bg_pmove::{forceJumpStrength, BG_SabersOff, PM_RollingAnim};
+use crate::codemp::game::bg_public::{
+    BG_GiveMeVectorFromMatrix, EF2_FLYING, ET_PLAYER, EV_ANGER1, EV_ANGER3, EV_COMBAT1, EV_COMBAT3,
+    EV_CONFUSE1, EV_CONFUSE3, EV_DEFLECT1, EV_DEFLECT3, EV_GENERAL_SOUND, EV_GLOAT1, EV_GLOAT3,
+    EV_JCHASE1, EV_JCHASE3, EV_JDETECTED1, EV_JDETECTED3, EV_JLOST1, EV_JLOST3, EV_JUMP,
+    EV_PUSHED1, EV_PUSHED3, EV_PUSHFAIL, EV_TAUNT1, EV_TAUNT3, EV_VICTORY1, EV_VICTORY3,
+    HANDEXTEND_JEDITAUNT, HANDEXTEND_NONE, JUMP_VELOCITY, MASK_SHOT, MOD_LAVA, PMF_DUCKED,
+    PMF_TIME_KNOCKBACK, PW_CLOAKED, PW_DISINT_4, PW_PULL, SETANIM_BOTH, SETANIM_FLAG_HOLD,
+    SETANIM_FLAG_OVERRIDE, SETANIM_LEGS, SETANIM_TORSO, STEPSIZE, TEAM_NUM_TEAMS, WEAPON_FIRING,
+};
 use crate::codemp::game::bg_saber::{bg_parryDebounce, PM_SaberInBrokenParry};
 use crate::codemp::game::bg_weapons_h::{
     AMMO_FORCE, WP_BLASTER, WP_BOWCASTER, WP_BRYAR_PISTOL, WP_DEMP2, WP_DET_PACK, WP_DISRUPTOR,
@@ -86,7 +86,6 @@ use crate::codemp::game::bg_weapons_h::{
     WP_STUN_BATON, WP_THERMAL, WP_TRIP_MINE, WP_TURRET,
 };
 use crate::codemp::game::g_combat::{gPainPoint, G_Damage};
-use crate::codemp::game::ai_wpnav::G_TestLine;
 use crate::codemp::game::g_items::RegisterItem;
 use crate::codemp::game::g_local::{
     gentity_t, AEL_DANGER, AEL_MINOR, DAMAGE_IGNORE_TEAM, DAMAGE_NO_ARMOR, DAMAGE_NO_KNOCKBACK,
@@ -96,49 +95,48 @@ use crate::codemp::game::g_main::{
     d_JediAI, d_slowmodeath, g_entities, g_gravity, g_saberRealisticCombat, g_spskill, level,
     Com_Printf,
 };
+use crate::codemp::game::g_nav::{navInfo_t, NAV_CheckAhead, NIF_COLLISION, NIF_MACRO_NAV};
 use crate::codemp::game::g_public_h::{Q3_INFINITE, SVF_GLASS_BRUSH};
 use crate::codemp::game::g_timer::{TIMER_Done, TIMER_Get, TIMER_Set, TIMER_Start};
-use crate::codemp::game::g_nav::{navInfo_t, NAV_CheckAhead, NIF_COLLISION, NIF_MACRO_NAV};
 use crate::codemp::game::g_utils::{
     G_AddEvent, G_EffectIndex, G_FreeEntity, G_PlayEffectID, G_SetOrigin, G_Sound, G_SoundIndex,
     G_SoundOnEnt, G_Spawn, GetAnglesForDirection, ShortestLineSegBewteen2LineSegs,
 };
 use crate::codemp::game::g_weapon::WP_SpeedOfMissileForWeapon;
-use crate::codemp::game::npc::{ucmd, NPC_SetAnim, NPCInfo, NPC};
+use crate::codemp::game::npc::{ucmd, NPCInfo, NPC_SetAnim, NPC};
+use crate::codemp::game::npc_ai_sniper::NPC_BSSniper_Default;
+use crate::codemp::game::npc_ai_stormtrooper::NPC_BSST_Patrol;
+use crate::codemp::game::npc_behavior::NPC_BSFollowLeader;
 use crate::codemp::game::npc_combat::{
     G_AddVoiceEvent, G_ClearEnemy, G_SetEnemy, NPC_ChangeWeapon, NPC_CheckEnemy, NPC_ShotEntity,
     WeaponThink,
 };
-use crate::codemp::game::npc_ai_sniper::NPC_BSSniper_Default;
-use crate::codemp::game::npc_ai_stormtrooper::NPC_BSST_Patrol;
-use crate::codemp::game::npc_behavior::NPC_BSFollowLeader;
+use crate::codemp::game::npc_goal::UpdateGoal;
 use crate::codemp::game::npc_move::{G_UcmdMoveForDir, NAV_GetLastMove, NPC_MoveToGoal};
 use crate::codemp::game::npc_reactions::NPC_Pain;
 use crate::codemp::game::npc_senses::{InFOV, InFront, NPC_CheckAlertEvents};
-use crate::codemp::game::npc_goal::UpdateGoal;
 use crate::codemp::game::npc_utils::{
-    CalcEntitySpot, NPC_ClearLookTarget, NPC_ClearLOS4, NPC_FaceEnemy, NPC_FaceEntity,
+    CalcEntitySpot, NPC_ClearLOS4, NPC_ClearLookTarget, NPC_FaceEnemy, NPC_FaceEntity,
     NPC_SetLookTarget, NPC_SomeoneLookingAtMe, NPC_UpdateAngles, NPC_ValidEnemy,
 };
+use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_math::{
     flrand, vec3_origin, vectoangles, AngleNormalize360, AngleVectors, Distance,
     DistanceHorizontalSquared, DistanceSquared, DotProduct, VectorClear, VectorCompare, VectorCopy,
     VectorLength, VectorLengthSquared, VectorMA, VectorNormalize, VectorNormalize2, VectorScale,
     VectorSet, VectorSubtract,
 };
-use crate::codemp::game::q_shared::{Q_stricmp};
-use crate::codemp::game::q_math::Q_irand;
+use crate::codemp::game::q_shared::Q_stricmp;
 use crate::codemp::game::q_shared_h::{
     mdxaBone_t, trace_t, trajectory_t, usercmd_t, vec3_t, BLOCKED_ATK_BOUNCE, BLOCKED_LOWER_LEFT,
-    BLOCKED_LOWER_RIGHT,
-    BLOCKED_NONE, BLOCKED_PARRY_BROKEN, BLOCKED_TOP, BLOCKED_UPPER_LEFT, BLOCKED_UPPER_RIGHT,
-    BUTTON_ALT_ATTACK, BUTTON_ATTACK, BUTTON_FORCEGRIP, SOLID_BMODEL, TR_GRAVITY, TR_STATIONARY,
-    BUTTON_FORCE_DRAIN, BUTTON_FORCE_LIGHTNING, BUTTON_WALKING, CHAN_BODY, CHAN_ITEM, CHAN_WEAPON,
-    ENTITYNUM_NONE, ENTITYNUM_WORLD, FORCE_LEVEL_1, FORCE_LEVEL_2, FORCE_LEVEL_3, FORCE_LEVEL_4,
-    FORCE_LEVEL_5, FP_ABSORB, FP_DRAIN, FP_GRIP, FP_HEAL, FP_LEVITATION, FP_LIGHTNING, FP_PROTECT,
-    FP_PULL, FP_PUSH, FP_RAGE, FP_SABERTHROW, FP_SABER_DEFENSE,
-    FP_SABER_OFFENSE, FP_SPEED, MAX_CLIENTS, MAX_GENTITIES, NEGATIVE_Y, ORIGIN, PITCH, ROLL,
-    SFL_NO_CARTWHEELS, SFL_NO_WALL_FLIPS, SFL_NO_WALL_RUNS, YAW,
+    BLOCKED_LOWER_RIGHT, BLOCKED_NONE, BLOCKED_PARRY_BROKEN, BLOCKED_TOP, BLOCKED_UPPER_LEFT,
+    BLOCKED_UPPER_RIGHT, BUTTON_ALT_ATTACK, BUTTON_ATTACK, BUTTON_FORCEGRIP, BUTTON_FORCE_DRAIN,
+    BUTTON_FORCE_LIGHTNING, BUTTON_WALKING, CHAN_BODY, CHAN_ITEM, CHAN_WEAPON, ENTITYNUM_NONE,
+    ENTITYNUM_WORLD, FORCE_LEVEL_1, FORCE_LEVEL_2, FORCE_LEVEL_3, FORCE_LEVEL_4, FORCE_LEVEL_5,
+    FP_ABSORB, FP_DRAIN, FP_GRIP, FP_HEAL, FP_LEVITATION, FP_LIGHTNING, FP_PROTECT, FP_PULL,
+    FP_PUSH, FP_RAGE, FP_SABERTHROW, FP_SABER_DEFENSE, FP_SABER_OFFENSE, FP_SPEED, MAX_CLIENTS,
+    MAX_GENTITIES, NEGATIVE_Y, ORIGIN, PITCH, ROLL, SFL_NO_CARTWHEELS, SFL_NO_WALL_FLIPS,
+    SFL_NO_WALL_RUNS, SOLID_BMODEL, TR_GRAVITY, TR_STATIONARY, YAW,
 };
 use crate::codemp::game::surfaceflags_h::{
     CONTENTS_BODY, CONTENTS_BOTCLIP, CONTENTS_MONSTERCLIP, CONTENTS_SOLID,
@@ -164,8 +162,7 @@ use crate::trap;
 /// `static int jediSpeechDebounceTime[TEAM_NUM_TEAMS]` (NPC_AI_Jedi.c:94) — used
 /// to stop several Jedi from speaking all at once. File-scoped process-global.
 #[allow(dead_code)] // first written by Jedi_BattleTaunt; other readers land later
-static mut jediSpeechDebounceTime: [c_int; TEAM_NUM_TEAMS as usize] =
-    [0; TEAM_NUM_TEAMS as usize];
+static mut jediSpeechDebounceTime: [c_int; TEAM_NUM_TEAMS as usize] = [0; TEAM_NUM_TEAMS as usize];
 
 /// `qboolean Boba_StopKnockdown( gentity_t *self, gentity_t *pusher, vec3_t pushDir,
 /// qboolean forceKnockdown )` (NPC_AI_Jedi.c:272; `forceKnockdown` defaults to qfalse
@@ -327,7 +324,9 @@ pub unsafe fn Boba_Flying(self_: *mut gentity_t) -> qboolean {
 pub unsafe fn Boba_FireFlameThrower(self_: *mut gentity_t) {
     let damage: c_int = Q_irand(20, 30);
     let traceEnt: *mut gentity_t;
-    let mut boltMatrix: mdxaBone_t = mdxaBone_t { matrix: [[0.0; 4]; 3] };
+    let mut boltMatrix: mdxaBone_t = mdxaBone_t {
+        matrix: [[0.0; 4]; 3],
+    };
     let mut start: vec3_t = [0.0; 3];
     let mut end: vec3_t = [0.0; 3];
     let mut dir: vec3_t = [0.0; 3];
@@ -388,7 +387,9 @@ pub unsafe fn Boba_FireFlameThrower(self_: *mut gentity_t) {
 /// `self`/`self->client` and the `NPC` global (+ its ghoul2/client) must be valid.
 pub unsafe fn Boba_StartFlameThrower(self_: *mut gentity_t) {
     let flameTime: c_int = 4000; //Q_irand( 1000, 3000 );
-    let mut boltMatrix: mdxaBone_t = mdxaBone_t { matrix: [[0.0; 4]; 3] };
+    let mut boltMatrix: mdxaBone_t = mdxaBone_t {
+        matrix: [[0.0; 4]; 3],
+    };
     let mut org: vec3_t = [0.0; 3];
     let mut dir: vec3_t = [0.0; 3];
 
@@ -538,7 +539,12 @@ pub unsafe fn Boba_FireDecide() {
         &mut enemyDir,
     );
     VectorNormalize(&mut enemyDir);
-    AngleVectors(&(*(*NPC).client).ps.viewangles, Some(&mut shootDir), None, None);
+    AngleVectors(
+        &(*(*NPC).client).ps.viewangles,
+        Some(&mut shootDir),
+        None,
+        None,
+    );
     dot = DotProduct(&enemyDir, &shootDir);
     if dot > 0.5f32 || (enemyDist * (1.0f32 - dot)) < 10000.0 {
         //enemy is in front of me or they're very close and not behind me
@@ -604,7 +610,8 @@ pub unsafe fn Boba_FireDecide() {
                 } else if enemyInFOV != QFALSE {
                     //if enemy is FOV, go ahead and check for shooting
                     let hit: c_int = NPC_ShotEntity((*NPC).enemy, &mut impactPos);
-                    let hitEnt: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(hit as usize);
+                    let hitEnt: *mut gentity_t =
+                        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(hit as usize);
 
                     if hit == (*(*NPC).enemy).s.number
                         || (!hitEnt.is_null()
@@ -753,11 +760,7 @@ pub unsafe fn Boba_FireDecide() {
 
                         if tooClose == QFALSE && tooFar == QFALSE {
                             //okay too shoot at last pos
-                            VectorSubtract(
-                                &(*NPCInfo).enemyLastSeenLocation,
-                                &muzzle,
-                                &mut dir,
-                            );
+                            VectorSubtract(&(*NPCInfo).enemyLastSeenLocation, &muzzle, &mut dir);
                             VectorNormalize(&mut dir);
                             vectoangles(&dir, &mut angles);
 
@@ -1291,8 +1294,7 @@ pub unsafe fn NPC_MoveDirClear(forwardmove: c_int, rightmove: c_int, reset: qboo
     if !(*NPCInfo).goalEntity.is_null() {
         if (*(*NPCInfo).goalEntity).r.currentOrigin[2] < (*NPC).r.currentOrigin[2] {
             //goal is below me, okay to step off at least that far plus stepheight
-            bottom_max +=
-                (*(*NPCInfo).goalEntity).r.currentOrigin[2] - (*NPC).r.currentOrigin[2];
+            bottom_max += (*(*NPCInfo).goalEntity).r.currentOrigin[2] - (*NPC).r.currentOrigin[2];
         }
     }
     VectorCopy(&trace.endpos, &mut testPos);
@@ -1787,7 +1789,8 @@ unsafe fn Jedi_CombatDistance(enemy_dist: c_int) {
         //first, check some tactical force power decisions
         if !(*NPC).enemy.is_null()
             && !(*(*NPC).enemy).client.is_null()
-            && (*(*(*NPC).enemy).client).ps.fd.forceGripBeingGripped > (*addr_of!(level)).time as f32
+            && (*(*(*NPC).enemy).client).ps.fd.forceGripBeingGripped
+                > (*addr_of!(level)).time as f32
         {
             //They're being gripped, rush them!
             if (*(*(*NPC).enemy).client).ps.groundEntityNum != ENTITYNUM_NONE {
@@ -2156,7 +2159,12 @@ pub unsafe fn Jedi_CheckFlipEvasions(
         let mut anim: c_int = -1;
         let animLength: c_int;
 
-        VectorSet(&mut fwdAngles, 0.0, (*(*self_).client).ps.viewangles[YAW], 0.0);
+        VectorSet(
+            &mut fwdAngles,
+            0.0,
+            (*(*self_).client).ps.viewangles[YAW],
+            0.0,
+        );
 
         AngleVectors(&fwdAngles, None, Some(&mut right), None);
 
@@ -2257,7 +2265,12 @@ pub unsafe fn Jedi_CheckFlipEvasions(
 
         VectorSet(&mut mins, (*self_).r.mins[0], (*self_).r.mins[1], 0.0);
         VectorSet(&mut maxs, (*self_).r.maxs[0], (*self_).r.maxs[1], 24.0);
-        VectorSet(&mut fwdAngles, 0.0, (*(*self_).client).ps.viewangles[YAW], 0.0);
+        VectorSet(
+            &mut fwdAngles,
+            0.0,
+            (*(*self_).client).ps.viewangles[YAW],
+            0.0,
+        );
 
         AngleVectors(&fwdAngles, Some(&mut fwd), Some(&mut right), None);
 
@@ -2334,7 +2347,8 @@ pub unsafe fn Jedi_CheckFlipEvasions(
 
             VectorSubtract(&(*self_).r.currentOrigin, &traceto, &mut idealNormal);
             VectorNormalize(&mut idealNormal);
-            traceEnt = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(trace.entityNum as usize);
+            traceEnt = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add(trace.entityNum as usize);
             if ((trace.entityNum as c_int) < ENTITYNUM_WORLD
                 && !traceEnt.is_null()
                 && (*traceEnt).s.solid != SOLID_BMODEL)
@@ -2363,44 +2377,55 @@ pub unsafe fn Jedi_CheckFlipEvasions(
                         if trace.fraction >= 1.0 {
                             //it's clear, let's do it
                             if allowWallFlips {
-                            //okay to do wall-flips with this saber
-                            //FIXME: check for drops?
-                            //turn the cartwheel into a wallflip in the other dir
-                            if rightdot > 0.0 {
-                                anim = BOTH_WALL_FLIP_LEFT;
-                                (*(*self_).client).ps.velocity[0] = 0.0;
-                                (*(*self_).client).ps.velocity[1] = 0.0;
-                                let vel = (*(*self_).client).ps.velocity;
-                                VectorMA(&vel, 150.0, &right, &mut (*(*self_).client).ps.velocity);
-                            } else {
-                                anim = BOTH_WALL_FLIP_RIGHT;
-                                (*(*self_).client).ps.velocity[0] = 0.0;
-                                (*(*self_).client).ps.velocity[1] = 0.0;
-                                let vel = (*(*self_).client).ps.velocity;
-                                VectorMA(&vel, -150.0, &right, &mut (*(*self_).client).ps.velocity);
-                            }
-                            (*(*self_).client).ps.velocity[2] =
-                                forceJumpStrength[FORCE_LEVEL_2 as usize] / 2.25;
-                            //animate me
-                            parts = if (*(*self_).client).ps.weaponTime == 0 {
-                                SETANIM_BOTH
-                            } else {
-                                SETANIM_LEGS
-                            };
-                            NPC_SetAnim(
-                                self_,
-                                parts,
-                                anim,
-                                SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD,
-                            );
-                            (*(*self_).client).ps.fd.forceJumpZStart = (*self_).r.currentOrigin[2]; //so we don't take damage if we land at same height
-                                                                                                    //self->client->ps.pm_flags |= (PMF_JUMPING|PMF_SLOW_MO_FALL);
-                            if (*(*self_).client).NPC_class == CLASS_BOBAFETT {
-                                G_AddEvent(self_, EV_JUMP, 0);
-                            } else {
-                                G_SoundOnEnt(self_, CHAN_BODY, "sound/weapons/force/jump.wav");
-                            }
-                            return EVASION_OTHER;
+                                //okay to do wall-flips with this saber
+                                //FIXME: check for drops?
+                                //turn the cartwheel into a wallflip in the other dir
+                                if rightdot > 0.0 {
+                                    anim = BOTH_WALL_FLIP_LEFT;
+                                    (*(*self_).client).ps.velocity[0] = 0.0;
+                                    (*(*self_).client).ps.velocity[1] = 0.0;
+                                    let vel = (*(*self_).client).ps.velocity;
+                                    VectorMA(
+                                        &vel,
+                                        150.0,
+                                        &right,
+                                        &mut (*(*self_).client).ps.velocity,
+                                    );
+                                } else {
+                                    anim = BOTH_WALL_FLIP_RIGHT;
+                                    (*(*self_).client).ps.velocity[0] = 0.0;
+                                    (*(*self_).client).ps.velocity[1] = 0.0;
+                                    let vel = (*(*self_).client).ps.velocity;
+                                    VectorMA(
+                                        &vel,
+                                        -150.0,
+                                        &right,
+                                        &mut (*(*self_).client).ps.velocity,
+                                    );
+                                }
+                                (*(*self_).client).ps.velocity[2] =
+                                    forceJumpStrength[FORCE_LEVEL_2 as usize] / 2.25;
+                                //animate me
+                                parts = if (*(*self_).client).ps.weaponTime == 0 {
+                                    SETANIM_BOTH
+                                } else {
+                                    SETANIM_LEGS
+                                };
+                                NPC_SetAnim(
+                                    self_,
+                                    parts,
+                                    anim,
+                                    SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD,
+                                );
+                                (*(*self_).client).ps.fd.forceJumpZStart =
+                                    (*self_).r.currentOrigin[2]; //so we don't take damage if we land at same height
+                                                                 //self->client->ps.pm_flags |= (PMF_JUMPING|PMF_SLOW_MO_FALL);
+                                if (*(*self_).client).NPC_class == CLASS_BOBAFETT {
+                                    G_AddEvent(self_, EV_JUMP, 0);
+                                } else {
+                                    G_SoundOnEnt(self_, CHAN_BODY, "sound/weapons/force/jump.wav");
+                                }
+                                return EVASION_OTHER;
                             }
                         } else {
                             //boxed in on both sides
@@ -2452,39 +2477,39 @@ pub unsafe fn Jedi_CheckFlipEvasions(
                         }
                     }
                     if allowWallRuns {
-                    //okay to do wallruns with this saber
-                    let parts2: c_int;
+                        //okay to do wallruns with this saber
+                        let parts2: c_int;
 
-                    //FIXME: check for long enough wall and a drop at the end?
-                    if bestCheckDist > 0.0 {
-                        //it was to the right
-                        anim = BOTH_WALL_RUN_RIGHT;
-                    } else {
-                        //it was to the left
-                        anim = BOTH_WALL_RUN_LEFT;
-                    }
-                    (*(*self_).client).ps.velocity[2] =
-                        forceJumpStrength[FORCE_LEVEL_2 as usize] / 2.25;
-                    //animate me
-                    parts2 = if (*(*self_).client).ps.weaponTime == 0 {
-                        SETANIM_BOTH
-                    } else {
-                        SETANIM_LEGS
-                    };
-                    NPC_SetAnim(
-                        self_,
-                        parts2,
-                        anim,
-                        SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD,
-                    );
-                    (*(*self_).client).ps.fd.forceJumpZStart = (*self_).r.currentOrigin[2]; //so we don't take damage if we land at same height
-                                                                                            //self->client->ps.pm_flags |= (PMF_JUMPING|PMF_SLOW_MO_FALL);
-                    if (*(*self_).client).NPC_class == CLASS_BOBAFETT {
-                        G_AddEvent(self_, EV_JUMP, 0);
-                    } else {
-                        G_SoundOnEnt(self_, CHAN_BODY, "sound/weapons/force/jump.wav");
-                    }
-                    return EVASION_OTHER;
+                        //FIXME: check for long enough wall and a drop at the end?
+                        if bestCheckDist > 0.0 {
+                            //it was to the right
+                            anim = BOTH_WALL_RUN_RIGHT;
+                        } else {
+                            //it was to the left
+                            anim = BOTH_WALL_RUN_LEFT;
+                        }
+                        (*(*self_).client).ps.velocity[2] =
+                            forceJumpStrength[FORCE_LEVEL_2 as usize] / 2.25;
+                        //animate me
+                        parts2 = if (*(*self_).client).ps.weaponTime == 0 {
+                            SETANIM_BOTH
+                        } else {
+                            SETANIM_LEGS
+                        };
+                        NPC_SetAnim(
+                            self_,
+                            parts2,
+                            anim,
+                            SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD,
+                        );
+                        (*(*self_).client).ps.fd.forceJumpZStart = (*self_).r.currentOrigin[2]; //so we don't take damage if we land at same height
+                                                                                                //self->client->ps.pm_flags |= (PMF_JUMPING|PMF_SLOW_MO_FALL);
+                        if (*(*self_).client).NPC_class == CLASS_BOBAFETT {
+                            G_AddEvent(self_, EV_JUMP, 0);
+                        } else {
+                            G_SoundOnEnt(self_, CHAN_BODY, "sound/weapons/force/jump.wav");
+                        }
+                        return EVASION_OTHER;
                     }
                 }
                 //else check for wall in front, do backflip off wall
@@ -2507,17 +2532,14 @@ pub unsafe fn Jedi_CheckFlipEvasions(
 // faithful: the C sets `baseTime = 500/150` before the `switch` overwrites it (dead
 // stores) — preserved verbatim.
 #[allow(unused_assignments)]
-pub unsafe fn Jedi_ReCalcParryTime(
-    self_: *mut gentity_t,
-    evasionType: evasionType_t,
-) -> c_int {
+pub unsafe fn Jedi_ReCalcParryTime(self_: *mut gentity_t, evasionType: evasionType_t) -> c_int {
     if (*self_).client.is_null() {
         return 0;
     }
     if (*self_).s.number == 0 {
         //player
-        return bg_parryDebounce[(*(*self_).client).ps.fd.forcePowerLevel[FP_SABER_DEFENSE as usize]
-            as usize];
+        return bg_parryDebounce
+            [(*(*self_).client).ps.fd.forcePowerLevel[FP_SABER_DEFENSE as usize] as usize];
     } else if !(*self_).NPC.is_null() {
         if (*addr_of!(g_saberRealisticCombat)).integer == 0
             && ((*addr_of!(g_spskill)).integer == 2
@@ -2681,7 +2703,8 @@ pub unsafe fn Jedi_FindEnemyInCone(
     numListedEntities = trap::EntitiesInBox(&mins, &maxs, &mut entityList);
 
     for e in 0..numListedEntities {
-        check = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entityList[e as usize] as usize);
+        check = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add(entityList[e as usize] as usize);
         if check == self_ {
             //me
             continue;
@@ -2786,8 +2809,8 @@ unsafe fn Jedi_SetEnemyInfo(
         );
         //figure out what dir the enemy's estimated position is from me and how far from the tip of my saber he is
         VectorSubtract(enemy_dest, &(*NPC).r.currentOrigin, enemy_dir); //NPC->client->renderInfo.muzzlePoint
-        //FIXME: enemy_dist calc needs to include all blade lengths, and include distance from hand to start of blade....
-        //just use the blade 0 len I guess
+                                                                        //FIXME: enemy_dist calc needs to include all blade lengths, and include distance from hand to start of blade....
+                                                                        //just use the blade 0 len I guess
         *enemy_dist = VectorNormalize(enemy_dir)
             - ((*(*NPC).client).saber[0].blade[0].lengthMax + (*NPC).r.maxs[0] * 1.5 + 16.0);
         //FIXME: keep a group of enemies around me and use that info to make decisions...
@@ -3267,7 +3290,8 @@ unsafe fn Jedi_Jump(dest: &vec3_t, goalEntNum: c_int) -> qboolean {
                         blocked = QTRUE;
                         break;
                     }
-                    if trace.plane.normal[2] > 0.7 && DistanceSquared(&trace.endpos, dest) < 4096.0 {
+                    if trace.plane.normal[2] > 0.7 && DistanceSquared(&trace.endpos, dest) < 4096.0
+                    {
                         //hit within 64 of desired location, should be okay
                         //close enough!
                         break;
@@ -3360,7 +3384,11 @@ unsafe fn Jedi_TryJump(goal: *mut gentity_t) -> qboolean {
             {
                 //enemy is on terra firma
                 let mut goal_diff: vec3_t = [0.0; 3];
-                VectorSubtract(&(*goal).r.currentOrigin, &(*NPC).r.currentOrigin, &mut goal_diff);
+                VectorSubtract(
+                    &(*goal).r.currentOrigin,
+                    &(*NPC).r.currentOrigin,
+                    &mut goal_diff,
+                );
                 let goal_z_diff = goal_diff[2];
                 goal_diff[2] = 0.0;
                 let goal_xy_dist = VectorNormalize(&mut goal_diff);
@@ -3638,7 +3666,12 @@ unsafe fn Jedi_CheckEnemyMovement(enemy_dist: f32) {
 
                             VectorCopy(&(*(*(*NPC).enemy).client).ps.velocity, &mut enemyFwd);
                             VectorNormalize(&mut enemyFwd);
-                            VectorMA(&(*(*NPC).enemy).r.currentOrigin, -64.0, &enemyFwd, &mut dest);
+                            VectorMA(
+                                &(*(*NPC).enemy).r.currentOrigin,
+                                -64.0,
+                                &enemyFwd,
+                                &mut dest,
+                            );
                             VectorSubtract(&dest, &(*NPC).r.currentOrigin, &mut dir);
                             if VectorNormalize(&mut dir) > 32.0 {
                                 G_UcmdMoveForDir(NPC, addr_of_mut!(ucmd), &mut dir);
@@ -3683,7 +3716,12 @@ unsafe fn Jedi_CheckEnemyMovement(enemy_dist: f32) {
                                 None,
                                 None,
                             );
-                            VectorMA(&(*(*NPC).enemy).r.currentOrigin, -32.0, &enemyFwd, &mut dest);
+                            VectorMA(
+                                &(*(*NPC).enemy).r.currentOrigin,
+                                -32.0,
+                                &enemyFwd,
+                                &mut dest,
+                            );
                             VectorSubtract(&dest, &(*NPC).r.currentOrigin, &mut dir);
                             if VectorNormalize(&mut dir) > 64.0 {
                                 G_UcmdMoveForDir(NPC, addr_of_mut!(ucmd), &mut dir);
@@ -3831,8 +3869,9 @@ unsafe fn Jedi_CheckJumps() {
             //hit ground!
             if (trace.entityNum as c_int) < ENTITYNUM_WORLD {
                 //landed on an ent
-                let groundEnt: *mut gentity_t =
-                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(trace.entityNum as usize);
+                let groundEnt: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities)
+                    .cast::<gentity_t>())
+                .add(trace.entityNum as usize);
                 if (*groundEnt).r.svFlags & SVF_GLASS_BRUSH != 0 {
                     //don't land on breakable glass!
                     break 'jump_unsafe;
@@ -3860,7 +3899,11 @@ unsafe fn Jedi_CheckJumps() {
 ///
 /// # Safety
 /// `self`/`attacker` must be valid; `self->client`/`self->NPC` must be valid.
-pub unsafe extern "C" fn NPC_Jedi_Pain(self_: *mut gentity_t, attacker: *mut gentity_t, damage: c_int) {
+pub unsafe extern "C" fn NPC_Jedi_Pain(
+    self_: *mut gentity_t,
+    attacker: *mut gentity_t,
+    damage: c_int,
+) {
     let other: *mut gentity_t = attacker;
     let mut point: vec3_t = [0.0; 3];
 
@@ -3880,10 +3923,12 @@ pub unsafe extern "C" fn NPC_Jedi_Pain(self_: *mut gentity_t, attacker: *mut gen
                 (*addr_of!(level)).time + (3 - (*addr_of!(g_spskill)).integer) * 50;
         } else if (*(*self_).NPC).rank >= RANK_LT_JG {
             (*(*self_).client).ps.fd.forcePowerDebounce[FP_SABER_DEFENSE as usize] =
-                (*addr_of!(level)).time + (3 - (*addr_of!(g_spskill)).integer) * 100; //300
+                (*addr_of!(level)).time + (3 - (*addr_of!(g_spskill)).integer) * 100;
+        //300
         } else {
             (*(*self_).client).ps.fd.forcePowerDebounce[FP_SABER_DEFENSE as usize] =
-                (*addr_of!(level)).time + (3 - (*addr_of!(g_spskill)).integer) * 200; //500
+                (*addr_of!(level)).time + (3 - (*addr_of!(g_spskill)).integer) * 200;
+            //500
         }
         if Q_irand(0, 3) == 0 {
             //ouch... maybe switch up which saber power level we're using
@@ -3979,7 +4024,9 @@ pub unsafe fn Jedi_CheckDanger() -> qboolean {
     let alertEvent: c_int = NPC_CheckAlertEvents(QTRUE, QTRUE, -1, QFALSE, AEL_MINOR);
     if (*addr_of!(level)).alertEvents[alertEvent as usize].level >= AEL_DANGER {
         //run away!
-        if (*addr_of!(level)).alertEvents[alertEvent as usize].owner.is_null()
+        if (*addr_of!(level)).alertEvents[alertEvent as usize]
+            .owner
+            .is_null()
             || (*(*addr_of!(level)).alertEvents[alertEvent as usize].owner)
                 .client
                 .is_null()
@@ -3991,7 +4038,10 @@ pub unsafe fn Jedi_CheckDanger() -> qboolean {
             //no owner
             return QFALSE;
         }
-        G_SetEnemy(NPC, (*addr_of!(level)).alertEvents[alertEvent as usize].owner);
+        G_SetEnemy(
+            NPC,
+            (*addr_of!(level)).alertEvents[alertEvent as usize].owner,
+        );
         (*NPCInfo).enemyLastSeenTime = (*addr_of!(level)).time;
         TIMER_Set(NPC, c"attackDelay".as_ptr(), Q_irand(500, 2500));
         return QTRUE;
@@ -4010,7 +4060,8 @@ pub unsafe fn Jedi_CheckDanger() -> qboolean {
 /// be initialised.
 pub unsafe fn Jedi_CheckAmbushPlayer() -> qboolean {
     for i in 0..MAX_CLIENTS as c_int {
-        let player: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
+        let player: *mut gentity_t =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
 
         if player.is_null() || (*player).client.is_null() {
             continue;
@@ -4156,7 +4207,8 @@ unsafe fn Jedi_Patrol() {
             let mut best_enemy_dist: f32 = Q3_INFINITE as f32;
             let mut i: c_int = 0;
             while i < ENTITYNUM_WORLD {
-                let enemy: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
+                let enemy: *mut gentity_t =
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
                 let enemy_dist: f32;
                 if !enemy.is_null()
                     && !(*enemy).client.is_null()
@@ -4185,8 +4237,9 @@ unsafe fn Jedi_Patrol() {
                                 let saberDist: f32;
                                 let mut saberDir2Me: vec3_t = [0.0; 3];
                                 let mut saberMoveDir: vec3_t = [0.0; 3];
-                                let saber: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
-                                    .add((*(*enemy).client).ps.saberEntityNum as usize);
+                                let saber: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities)
+                                    .cast::<gentity_t>())
+                                .add((*(*enemy).client).ps.saberEntityNum as usize);
                                 VectorSubtract(
                                     &(*NPC).r.currentOrigin,
                                     &(*saber).r.currentOrigin,
@@ -5330,9 +5383,9 @@ pub unsafe fn Jedi_SaberBlockGo(
                             );
                             (*(*self_).client).ps.velocity[2] = 225.0;
                             (*(*self_).client).ps.fd.forceJumpZStart = (*self_).r.currentOrigin[2]; //so we don't take damage if we land at same height
-                                                                                                   //	self->client->ps.pm_flags |= PMF_JUMPING|PMF_SLOW_MO_FALL;
-                                                                                                   //	self->client->ps.SaberActivateTrail( 300 );//FIXME: reset this when done!
-                                                                                                   //Ah well. No hacking from the server for now.
+                                                                                                    //	self->client->ps.pm_flags |= PMF_JUMPING|PMF_SLOW_MO_FALL;
+                                                                                                    //	self->client->ps.SaberActivateTrail( 300 );//FIXME: reset this when done!
+                                                                                                    //Ah well. No hacking from the server for now.
                             if (*(*self_).client).NPC_class == CLASS_BOBAFETT {
                                 G_AddEvent(self_, EV_JUMP, 0);
                             } else {
@@ -5564,7 +5617,8 @@ unsafe fn Jedi_SaberBlock(saberNum: c_int, bladeNum: c_int) -> qboolean {
         return QFALSE;
     }
 
-    if (*(*NPC).client).ps.fd.forcePowerDebounce[FP_SABER_DEFENSE as usize] > (*addr_of!(level)).time
+    if (*(*NPC).client).ps.fd.forcePowerDebounce[FP_SABER_DEFENSE as usize]
+        > (*addr_of!(level)).time
     {
         //can't move the saber to another position yet
         return QFALSE;
@@ -5785,7 +5839,11 @@ unsafe fn Jedi_SaberBlock(saberNum: c_int, bladeNum: c_int) -> qboolean {
 
         //debounce our parry recalc time
         parryReCalcTime = Jedi_ReCalcParryTime(NPC, evasionType);
-        TIMER_Set(NPC, c"parryReCalcTime".as_ptr(), Q_irand(0, parryReCalcTime));
+        TIMER_Set(
+            NPC,
+            c"parryReCalcTime".as_ptr(),
+            Q_irand(0, parryReCalcTime),
+        );
         if d_JediAI.integer != 0 {
             Com_Printf(&format!(
                 "Keep parry choice until: {}\n",
@@ -5957,8 +6015,9 @@ unsafe fn Jedi_EvasionSaber(enemy_movedir: &vec3_t, enemy_dist: f32, enemy_dir: 
                     let saberDist: f32;
                     let mut saberDir2Me: vec3_t = [0.0; 3];
                     let mut saberMoveDir: vec3_t = [0.0; 3];
-                    let saber: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
-                        .add((*(*(*NPC).enemy).client).ps.saberEntityNum as usize);
+                    let saber: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities)
+                        .cast::<gentity_t>())
+                    .add((*(*(*NPC).enemy).client).ps.saberEntityNum as usize);
                     VectorSubtract(
                         &(*NPC).r.currentOrigin,
                         &(*saber).r.currentOrigin,
@@ -5998,12 +6057,7 @@ unsafe fn Jedi_EvasionSaber(enemy_movedir: &vec3_t, enemy_dist: f32, enemy_dir: 
                     //he's getting close and swinging at me
                     let mut fwd: vec3_t = [0.0; 3];
                     //see if I'm facing him
-                    AngleVectors(
-                        &(*(*NPC).client).ps.viewangles,
-                        Some(&mut fwd),
-                        None,
-                        None,
-                    );
+                    AngleVectors(&(*(*NPC).client).ps.viewangles, Some(&mut fwd), None, None);
                     if DotProduct(enemy_dir, &fwd) < 0.5 {
                         //I'm not really facing him, best option is to strafe
                         whichDefense = Q_irand(5, 16);
@@ -6067,7 +6121,8 @@ unsafe fn Jedi_EvasionSaber(enemy_movedir: &vec3_t, enemy_dist: f32, enemy_dir: 
                                     && (*NPCInfo).scriptFlags & SCF_NO_ACROBATICS == 0
                                     && (*(*NPC).client).ps.fd.forceRageRecoveryTime
                                         < (*addr_of!(level)).time
-                                    && (*(*NPC).client).ps.fd.forcePowersActive & (1 << FP_RAGE) == 0
+                                    && (*(*NPC).client).ps.fd.forcePowersActive & (1 << FP_RAGE)
+                                        == 0
                                     && PM_InKnockDown(&mut (*(*NPC).client).ps) == QFALSE
                                 {
                                     //FIXME: make this a function call?
@@ -6104,7 +6159,8 @@ unsafe fn Jedi_EvasionSaber(enemy_movedir: &vec3_t, enemy_dist: f32, enemy_dir: 
                             Com_Printf("def strafe\n");
                         }
                         if (*NPCInfo).scriptFlags & SCF_NO_ACROBATICS == 0
-                            && (*(*NPC).client).ps.fd.forceRageRecoveryTime < (*addr_of!(level)).time
+                            && (*(*NPC).client).ps.fd.forceRageRecoveryTime
+                                < (*addr_of!(level)).time
                             && (*(*NPC).client).ps.fd.forcePowersActive & (1 << FP_RAGE) == 0
                             && ((*NPCInfo).rank == RANK_CREWMAN || (*NPCInfo).rank > RANK_LT_JG)
                             && PM_InKnockDown(&mut (*(*NPC).client).ps) == QFALSE
@@ -6156,10 +6212,11 @@ pub unsafe fn NPC_BSJedi_FollowLeader() {
         {
             //player is 0
             //
-            if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*NPC).client).ps.saberEntityNum as usize))
-                .s
-                .pos
-                .trType
+            if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*(*NPC).client).ps.saberEntityNum as usize))
+            .s
+            .pos
+            .trType
                 == TR_STATIONARY
             {
                 //fell to the ground, try to pick it up...
@@ -6169,8 +6226,9 @@ pub unsafe fn NPC_BSJedi_FollowLeader() {
                     //		otherwise we could end up running away from it while it's on its
                     //		way back to us and we could lose it again.
                     (*(*NPC).client).ps.saberBlocked = BLOCKED_NONE;
-                    (*NPCInfo).goalEntity =
-                        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*NPC).client).ps.saberEntityNum as usize);
+                    (*NPCInfo).goalEntity = (core::ptr::addr_of_mut!(g_entities)
+                        .cast::<gentity_t>())
+                    .add((*(*NPC).client).ps.saberEntityNum as usize);
                     ucmd.buttons |= BUTTON_ATTACK;
                     if !(*NPC).enemy.is_null() && (*(*NPC).enemy).health > 0 {
                         //get our saber back NOW!
@@ -6547,8 +6605,9 @@ pub unsafe fn Jedi_Attack() {
                 if true {
                     //no matter
                     (*(*NPC).client).ps.saberBlocked = BLOCKED_NONE;
-                    (*NPCInfo).goalEntity = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
-                        .add((*(*NPC).client).saberStoredIndex as usize);
+                    (*NPCInfo).goalEntity = (core::ptr::addr_of_mut!(g_entities)
+                        .cast::<gentity_t>())
+                    .add((*(*NPC).client).saberStoredIndex as usize);
                     ucmd.buttons |= BUTTON_ATTACK;
                     if !(*NPC).enemy.is_null() && (*(*NPC).enemy).health > 0 {
                         //get our saber back NOW!
@@ -6887,10 +6946,10 @@ pub unsafe fn NPC_BSJedi_Default() {
 #[cfg(all(test, feature = "oracle"))]
 mod oracle_tests {
     use super::*;
-    use crate::codemp::game::g_local::{gclient_t, gentity_t};
     use crate::codemp::game::b_public_h::{gNPC_t, RANK_ENSIGN, RANK_LT};
+    use crate::codemp::game::g_local::{gclient_t, gentity_t};
     use crate::codemp::game::teams_h::{CLASS_DESANN, CLASS_REBORN};
-    use crate::codemp::game::w_saber_h::{EVASION_NONE, evasionType_t};
+    use crate::codemp::game::w_saber_h::{evasionType_t, EVASION_NONE};
     use core::ptr::addr_of_mut;
 
     extern "C" {
@@ -6926,7 +6985,13 @@ mod oracle_tests {
         ];
         // NPC branch params.
         let classes = [CLASS_TAVION, CLASS_DESANN, CLASS_REBORN, CLASS_JEDI];
-        let ranks = [RANK_CIVILIAN, RANK_CREWMAN, RANK_LT_JG, RANK_LT, RANK_ENSIGN];
+        let ranks = [
+            RANK_CIVILIAN,
+            RANK_CREWMAN,
+            RANK_LT_JG,
+            RANK_LT,
+            RANK_ENSIGN,
+        ];
         let evasions: [evasionType_t; 10] = [
             EVASION_NONE,
             EVASION_PARRY,
@@ -6941,16 +7006,16 @@ mod oracle_tests {
         ];
 
         let check = |has_client: bool,
-                         number: i32,
-                         saberDefenseLevel: i32,
-                         npc_present: bool,
-                         npc_class: c_int,
-                         npc_rank: c_int,
-                         torso_timer: i32,
-                         saber_in_flight: bool,
-                         evasion: evasionType_t,
-                         real_combat: i32,
-                         spskill: i32| {
+                     number: i32,
+                     saberDefenseLevel: i32,
+                     npc_present: bool,
+                     npc_class: c_int,
+                     npc_rank: c_int,
+                     torso_timer: i32,
+                     saber_in_flight: bool,
+                     evasion: evasionType_t,
+                     real_combat: i32,
+                     spskill: i32| {
             let mut client: gclient_t = unsafe { core::mem::zeroed() };
             client.NPC_class = npc_class;
             client.ps.fd.forcePowerLevel[FP_SABER_DEFENSE as usize] = saberDefenseLevel;
@@ -7010,7 +7075,19 @@ mod oracle_tests {
         // Player / no-client branches (no Q_irand consumption).
         for &(has_client, number, def) in players {
             for &spskill in &[0i32, 1, 2, 3] {
-                check(has_client, number, def, false, CLASS_JEDI, RANK_LT_JG, 250, false, EVASION_PARRY, 0, spskill);
+                check(
+                    has_client,
+                    number,
+                    def,
+                    false,
+                    CLASS_JEDI,
+                    RANK_LT_JG,
+                    250,
+                    false,
+                    EVASION_PARRY,
+                    0,
+                    spskill,
+                );
             }
         }
 
@@ -7023,8 +7100,17 @@ mod oracle_tests {
                         for &spskill in &[0i32, 1, 2, 3] {
                             for &saber_in_flight in &[false, true] {
                                 check(
-                                    true, 1, 2, true, npc_class, npc_rank, 250,
-                                    saber_in_flight, evasion, real_combat, spskill,
+                                    true,
+                                    1,
+                                    2,
+                                    true,
+                                    npc_class,
+                                    npc_rank,
+                                    250,
+                                    saber_in_flight,
+                                    evasion,
+                                    real_combat,
+                                    spskill,
                                 );
                             }
                         }
@@ -7040,4 +7126,3 @@ mod oracle_tests {
         crate::oracle::Rand_Init(seed as core::ffi::c_int);
     }
 }
-

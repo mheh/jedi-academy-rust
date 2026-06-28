@@ -16,6 +16,7 @@
 use core::ffi::c_int;
 use core::ptr::{addr_of, addr_of_mut};
 
+use crate::codemp::game::ai_main::InFieldOfVision;
 use crate::codemp::game::anims::{
     animNumber_t, BOTH_BOW, BOTH_DUAL_TAUNT, BOTH_ENGAGETAUNT, BOTH_GESTURE1, BOTH_MEDITATE,
     BOTH_SHOWOFF_DUAL, BOTH_SHOWOFF_FAST, BOTH_SHOWOFF_MEDIUM, BOTH_SHOWOFF_STAFF,
@@ -24,8 +25,8 @@ use crate::codemp::game::anims::{
     BOTH_STAND5IDLE1, BOTH_VICTORY_DUAL, BOTH_VICTORY_FAST, BOTH_VICTORY_MEDIUM,
     BOTH_VICTORY_STAFF, BOTH_VICTORY_STRONG, MAX_ANIMATIONS, TORSO_RAISEWEAP1,
 };
+use crate::codemp::game::bg_g2_utils::BG_AttachToRancor;
 use crate::codemp::game::bg_lib::rand;
-use crate::codemp::game::bg_vehicles_h::{VH_SPEEDER, VH_WALKER};
 use crate::codemp::game::bg_misc::{
     vectoyaw, BG_GiveMeVectorFromMatrix, BG_PlayerStateToEntityState,
     BG_PlayerStateToEntityStateExtraPolate, BG_PlayerTouchesItem,
@@ -35,100 +36,98 @@ use crate::codemp::game::bg_panimate::{
     PM_SaberInStart, PM_SaberInTransition,
 };
 use crate::codemp::game::bg_pmove::BG_KnockDownable;
-use crate::codemp::game::bg_saga::bgSiegeClasses;
-use crate::codemp::game::teams_h::{
-    CLASS_ATST, CLASS_GONK, CLASS_MARK1, CLASS_MARK2, CLASS_MOUSE, CLASS_PROBE, CLASS_PROTOCOL,
-    CLASS_R2D2, CLASS_R5D2, CLASS_RANCOR, CLASS_REMOTE, CLASS_SEEKER, CLASS_VEHICLE, NPCTEAM_PLAYER,
-};
 use crate::codemp::game::bg_pmove::Pmove;
 use crate::codemp::game::bg_public::{
-    bgEntity_t, pmove_t, EF_DEAD, EF_FIRING, EF_INVULNERABLE, EF_PLAYER_EVENT, EF_TALK, ET_EVENTS,
-    ET_ITEM, ET_NPC, ET_PUSH_TRIGGER, ET_TELEPORT_TRIGGER, EV_ALT_FIRE, EV_FIRE_WEAPON, EV_PAIN,
-    EV_POWERUP_BATTLESUIT, EV_TAUNT, GT_DUEL, GT_JEDIMASTER, GT_POWERDUEL, HANDEXTEND_NONE,
-    HANDEXTEND_TAUNT, LS_READY, MASK_PLAYERSOLID, MOD_LAVA, MOD_SLIME, MOD_WATER, PMF_FOLLOW,
-    PM_DEAD, PM_SPECTATOR, PW_BATTLESUIT, SETANIM_BOTH, SETANIM_FLAG_HOLD,
-    PMF_SCOREBOARD, SETANIM_FLAG_OVERRIDE, STAT_ARMOR, STAT_HEALTH, STAT_MAX_HEALTH,
-    TEAM_SPECTATOR, WEAPON_CHARGING, WEAPON_CHARGING_ALT, WEAPON_READY, MOD_CRUSH, MOD_FALLING,
-    DF_NO_FOOTSTEPS,
-    DF_NO_FALLING, ET_PLAYER, EV_FALL, EV_ROLL, EV_SABER_ATTACK, EV_USE_ITEM0, EV_USE_ITEM1,
+    bgEntity_t, pmove_t, DF_NO_FALLING, DF_NO_FOOTSTEPS, EF2_GENERIC_NPC_FLAG, EF2_HELD_BY_MONSTER,
+    EF2_SHIP_DEATH, EF_BODYPUSH, EF_CONNECTION, EF_DEAD, EF_DISINTEGRATION, EF_FIRING,
+    EF_INVULNERABLE, EF_JETPACK, EF_JETPACK_ACTIVE, EF_JETPACK_FLAMING, EF_NODRAW, EF_PLAYER_EVENT,
+    EF_TALK, ET_BODY, ET_EVENTS, ET_ITEM, ET_NPC, ET_PLAYER, ET_PUSH_TRIGGER, ET_TELEPORT_TRIGGER,
+    EV_ALT_FIRE, EV_FALL, EV_FIRE_WEAPON, EV_PAIN, EV_POWERUP_BATTLESUIT, EV_PRIVATE_DUEL, EV_ROLL,
+    EV_SABER_ATTACK, EV_TAUNT, EV_USE_ITEM0, EV_USE_ITEM1, EV_USE_ITEM10, EV_USE_ITEM11,
     EV_USE_ITEM2, EV_USE_ITEM3, EV_USE_ITEM4, EV_USE_ITEM5, EV_USE_ITEM6, EV_USE_ITEM7,
-    EV_USE_ITEM8, EV_USE_ITEM9, EV_USE_ITEM10, EV_USE_ITEM11, GT_SIEGE,
-    EF_BODYPUSH, EF_CONNECTION, EF_DISINTEGRATION, EF_JETPACK, EF_JETPACK_ACTIVE,
-    EF_JETPACK_FLAMING, EF_NODRAW,
-    EF2_GENERIC_NPC_FLAG, EF2_HELD_BY_MONSTER, EF2_SHIP_DEATH, ET_BODY, EV_PRIVATE_DUEL,
-    HANDEXTEND_DRAGGING, HANDEXTEND_KNOCKDOWN, HANDEXTEND_POSTTHROW, HANDEXTEND_POSTTHROWN,
-    HANDEXTEND_WEAPONREADY, HI_AMMODISP, HI_BINOCULARS, HI_CLOAK, HI_EWEB, HI_HEALTHDISP,
-    HI_JETPACK, HI_MEDPAC, HI_MEDPAC_BIG, HI_SEEKER, HI_SENTRY_GUN, HI_SHIELD, MOD_MELEE, MOD_SABER,
-    PDSOUND_FORCEJUMP, PM_JETPACK, PM_NOCLIP, PM_NORMAL, PW_CLOAKED, STAT_HOLDABLE_ITEMS,
+    EV_USE_ITEM8, EV_USE_ITEM9, GT_DUEL, GT_JEDIMASTER, GT_POWERDUEL, GT_SIEGE,
+    HANDEXTEND_DRAGGING, HANDEXTEND_KNOCKDOWN, HANDEXTEND_NONE, HANDEXTEND_POSTTHROW,
+    HANDEXTEND_POSTTHROWN, HANDEXTEND_TAUNT, HANDEXTEND_WEAPONREADY, HI_AMMODISP, HI_BINOCULARS,
+    HI_CLOAK, HI_EWEB, HI_HEALTHDISP, HI_JETPACK, HI_MEDPAC, HI_MEDPAC_BIG, HI_SEEKER,
+    HI_SENTRY_GUN, HI_SHIELD, LS_READY, MASK_PLAYERSOLID, MOD_CRUSH, MOD_FALLING, MOD_LAVA,
+    MOD_MELEE, MOD_SABER, MOD_SLIME, MOD_WATER, PDSOUND_FORCEJUMP, PMF_FOLLOW, PMF_SCOREBOARD,
+    PM_DEAD, PM_JETPACK, PM_NOCLIP, PM_NORMAL, PM_SPECTATOR, PW_BATTLESUIT, PW_CLOAKED,
+    SETANIM_BOTH, SETANIM_FLAG_HOLD, SETANIM_FLAG_OVERRIDE, STAT_ARMOR, STAT_HEALTH,
+    STAT_HOLDABLE_ITEMS, STAT_MAX_HEALTH, TEAM_SPECTATOR, WEAPON_CHARGING, WEAPON_CHARGING_ALT,
+    WEAPON_READY,
 };
+use crate::codemp::game::bg_saga::bgSiegeClasses;
+use crate::codemp::game::bg_vehicles_h::{VH_SPEEDER, VH_WALKER};
 use crate::codemp::game::bg_weapons_h::{WP_MELEE, WP_SABER};
+use crate::codemp::game::g_client::respawn;
 use crate::codemp::game::g_client::{ClientBegin, SetClientViewAngle};
 use crate::codemp::game::g_cmds::{
     Cmd_EngageDuel_f, Cmd_FollowCycle_f, Cmd_SaberAttackCycle_f, Cmd_ToggleSaber_f, G_ItemUsable,
     SetTeam, StopFollowing,
 };
-use crate::codemp::game::ai_main::InFieldOfVision;
 use crate::codemp::game::g_combat::{
     gGAvoidDismember, G_ApplyKnockback, G_CheckForDismemberment, G_Damage,
 };
-use crate::codemp::game::g_local::{
-    clientPersistant_t, gclient_t, gentity_t, CON_CONNECTED, DAMAGE_NO_ARMOR, DAMAGE_NO_PROTECTION,
-    FL_BBRUSH, FL_FORCE_GESTURE, FL_GODMODE, SPECTATOR_FOLLOW, SPECTATOR_FREE, SPECTATOR_SCOREBOARD,
-};
-use crate::codemp::game::g_team::OnSameTeam;
-use crate::codemp::game::w_force::{
-    ForceAbsorb, ForceHeal, ForceProtect, ForceRage, ForceSeeing, ForceSpeed, ForceTeamForceReplenish,
-    ForceTeamHeal, ForceThrow, G_PreDefSound,
-};
-use crate::codemp::game::g_weapon::FireWeapon;
 use crate::codemp::game::g_items::{
     ItemUse_Binoculars, ItemUse_Jetpack, ItemUse_MedPack, ItemUse_MedPack_Big, ItemUse_Seeker,
     ItemUse_Shield, ItemUse_UseEWeb,
 };
-use crate::codemp::game::g_main::{
-    g_debugMelee, g_debugMove, g_dmflags, g_entities, g_forcerespawn, g_friendlyFire, g_gametype,
-    g_gravity, g_inactivity, g_noSpecMove, g_saberLockRandomNess, g_siegeRespawn, g_smoothClients,
-    g_spawnInvulnerability, g_speed, g_stepSlideFix, g_synchronousClients, g_timeouttospec,
-    gDoSlowMoDuel, level, pmove_fixed, pmove_msec, G_GetStringEdString,
+use crate::codemp::game::g_local::{
+    clientPersistant_t, gclient_t, gentity_t, CON_CONNECTED, DAMAGE_NO_ARMOR, DAMAGE_NO_PROTECTION,
+    FL_BBRUSH, FL_FORCE_GESTURE, FL_GODMODE, SPECTATOR_FOLLOW, SPECTATOR_FREE,
+    SPECTATOR_SCOREBOARD,
 };
-use crate::codemp::game::g_client::respawn;
-use crate::codemp::game::g_utils::{G_EntitySound, G_MuteSound};
-use crate::codemp::game::q_shared::{va, Sz};
+use crate::codemp::game::g_main::{
+    gDoSlowMoDuel, g_debugMelee, g_debugMove, g_dmflags, g_entities, g_forcerespawn,
+    g_friendlyFire, g_gametype, g_gravity, g_inactivity, g_noSpecMove, g_saberLockRandomNess,
+    g_siegeRespawn, g_smoothClients, g_spawnInvulnerability, g_speed, g_stepSlideFix,
+    g_synchronousClients, g_timeouttospec, level, pmove_fixed, pmove_msec, G_GetStringEdString,
+};
 use crate::codemp::game::g_mover::Touch_DoorTrigger;
+use crate::codemp::game::g_nav::FlyingCreature;
 use crate::codemp::game::g_public_h::{SVF_BOT, SVF_GLASS_BRUSH, SVF_NOTSINGLECLIENT};
+use crate::codemp::game::g_team::OnSameTeam;
 use crate::codemp::game::g_utils::{
     G_AddEvent, G_SetAngles, G_SetAnim, G_SetOrigin, G_Sound, G_SoundIndex, G_TempEntity,
 };
-use crate::codemp::game::bg_g2_utils::BG_AttachToRancor;
-use crate::codemp::game::g_nav::FlyingCreature;
+use crate::codemp::game::g_utils::{G_EntitySound, G_MuteSound};
+use crate::codemp::game::g_weapon::FireWeapon;
 use crate::codemp::game::npc::NPC_SetAnim;
-use crate::codemp::game::q_math::{
-    vectoangles, AngleVectors, DotProduct, VectorAdd, VectorClear, VectorCompare, VectorCopy,
-    VectorLength, VectorLengthSquared, VectorMA, VectorNormalize, VectorNormalize2, VectorScale,
-    VectorSet, VectorSubtract, vec3_origin,
-};
 use crate::codemp::game::q_math::Q_irand;
+use crate::codemp::game::q_math::{
+    vec3_origin, vectoangles, AngleVectors, DotProduct, VectorAdd, VectorClear, VectorCompare,
+    VectorCopy, VectorLength, VectorLengthSquared, VectorMA, VectorNormalize, VectorNormalize2,
+    VectorScale, VectorSet, VectorSubtract,
+};
+use crate::codemp::game::q_shared::{va, Sz};
 use crate::codemp::game::q_shared_h::{
-    playerState_t, qboolean, trace_t, usercmd_t, vec3_t, vec_t, BLOCKED_NONE, BUTTON_ALT_ATTACK,
-    BUTTON_ATTACK, BUTTON_FORCE_DRAIN, BUTTON_FORCE_LIGHTNING, BUTTON_FORCEGRIP, BUTTON_FORCEPOWER,
-    BUTTON_GESTURE, BUTTON_USE, BUTTON_USE_HOLDABLE, CHAN_AUTO, CHAN_VOICE, CHAN_WEAPON,
-    ENTITYNUM_NONE, FP_SEE,
-    MAX_CLIENTS, MAX_GENTITIES, MAX_PS_EVENTS, PITCH, SS_DESANN, SS_DUAL, SS_FAST, SS_MEDIUM,
-    SS_STAFF, SS_STRONG, SS_TAVION, YAW, QFALSE, QTRUE, ENTITYNUM_WORLD, TR_GRAVITY, MAT_GLASS,
-    MAT_GLASS_METAL, MAT_GRATE1, MAX_POWERUPS,
-    mdxaBone_t, BUTTON_TALK, FORCE_LEVEL_3, FP_RAGE,
-    GENCMD_BOW, GENCMD_ENGAGE_DUEL, GENCMD_FLOURISH, GENCMD_FORCE_ABSORB, GENCMD_FORCE_DISTRACT,
-    GENCMD_FORCE_FORCEPOWEROTHER, GENCMD_FORCE_HEAL, GENCMD_FORCE_HEALOTHER, GENCMD_FORCE_PROTECT,
-    GENCMD_FORCE_PULL, GENCMD_FORCE_RAGE, GENCMD_FORCE_SEEING, GENCMD_FORCE_SPEED,
-    GENCMD_FORCE_THROW, GENCMD_GLOAT, GENCMD_MEDITATE, GENCMD_SABERATTACKCYCLE, GENCMD_SABERSWITCH,
-    GENCMD_TAUNT, GENCMD_USE_AMMODISP, GENCMD_USE_BACTA, GENCMD_USE_BACTABIG, GENCMD_USE_CLOAK,
-    GENCMD_USE_ELECTROBINOCULARS, GENCMD_USE_EWEB, GENCMD_USE_FIELD, GENCMD_USE_HEALTHDISP,
-    GENCMD_USE_JETPACK, GENCMD_USE_SEEKER, GENCMD_USE_SENTRY, GENCMD_ZOOM, NEGATIVE_Y, ORIGIN,
-    ROLL, SS_NONE, SS_NUM_SABER_STYLES,
+    mdxaBone_t, playerState_t, qboolean, trace_t, usercmd_t, vec3_t, vec_t, BLOCKED_NONE,
+    BUTTON_ALT_ATTACK, BUTTON_ATTACK, BUTTON_FORCEGRIP, BUTTON_FORCEPOWER, BUTTON_FORCE_DRAIN,
+    BUTTON_FORCE_LIGHTNING, BUTTON_GESTURE, BUTTON_TALK, BUTTON_USE, BUTTON_USE_HOLDABLE,
+    CHAN_AUTO, CHAN_VOICE, CHAN_WEAPON, ENTITYNUM_NONE, ENTITYNUM_WORLD, FORCE_LEVEL_3, FP_RAGE,
+    FP_SEE, GENCMD_BOW, GENCMD_ENGAGE_DUEL, GENCMD_FLOURISH, GENCMD_FORCE_ABSORB,
+    GENCMD_FORCE_DISTRACT, GENCMD_FORCE_FORCEPOWEROTHER, GENCMD_FORCE_HEAL, GENCMD_FORCE_HEALOTHER,
+    GENCMD_FORCE_PROTECT, GENCMD_FORCE_PULL, GENCMD_FORCE_RAGE, GENCMD_FORCE_SEEING,
+    GENCMD_FORCE_SPEED, GENCMD_FORCE_THROW, GENCMD_GLOAT, GENCMD_MEDITATE, GENCMD_SABERATTACKCYCLE,
+    GENCMD_SABERSWITCH, GENCMD_TAUNT, GENCMD_USE_AMMODISP, GENCMD_USE_BACTA, GENCMD_USE_BACTABIG,
+    GENCMD_USE_CLOAK, GENCMD_USE_ELECTROBINOCULARS, GENCMD_USE_EWEB, GENCMD_USE_FIELD,
+    GENCMD_USE_HEALTHDISP, GENCMD_USE_JETPACK, GENCMD_USE_SEEKER, GENCMD_USE_SENTRY, GENCMD_ZOOM,
+    MAT_GLASS, MAT_GLASS_METAL, MAT_GRATE1, MAX_CLIENTS, MAX_GENTITIES, MAX_POWERUPS,
+    MAX_PS_EVENTS, NEGATIVE_Y, ORIGIN, PITCH, QFALSE, QTRUE, ROLL, SS_DESANN, SS_DUAL, SS_FAST,
+    SS_MEDIUM, SS_NONE, SS_NUM_SABER_STYLES, SS_STAFF, SS_STRONG, SS_TAVION, TR_GRAVITY, YAW,
 };
 use crate::codemp::game::surfaceflags_h::{
     CONTENTS_BODY, CONTENTS_LAVA, CONTENTS_MONSTERCLIP, CONTENTS_SLIME, CONTENTS_SOLID,
     CONTENTS_TRIGGER, CONTENTS_WATER,
+};
+use crate::codemp::game::teams_h::{
+    CLASS_ATST, CLASS_GONK, CLASS_MARK1, CLASS_MARK2, CLASS_MOUSE, CLASS_PROBE, CLASS_PROTOCOL,
+    CLASS_R2D2, CLASS_R5D2, CLASS_RANCOR, CLASS_REMOTE, CLASS_SEEKER, CLASS_VEHICLE,
+    NPCTEAM_PLAYER,
+};
+use crate::codemp::game::w_force::{
+    ForceAbsorb, ForceHeal, ForceProtect, ForceRage, ForceSeeing, ForceSpeed,
+    ForceTeamForceReplenish, ForceTeamHeal, ForceThrow, G_PreDefSound,
 };
 
 // `taunt` selector for [`G_SetTauntAnim`]. In C this is an anonymous enum duplicated
@@ -326,7 +325,11 @@ pub unsafe fn DoImpact(self_: *mut gentity_t, other: *mut gentity_t, damageSelf:
                 //a brush with no origin
                 VectorCopy(&dir1, &mut dir2);
             } else {
-                VectorSubtract(&(*other).r.currentOrigin, &(*self_).r.currentOrigin, &mut dir2);
+                VectorSubtract(
+                    &(*other).r.currentOrigin,
+                    &(*self_).r.currentOrigin,
+                    &mut dir2,
+                );
                 VectorNormalize(&mut dir2);
             }
 
@@ -708,7 +711,11 @@ pub unsafe fn ClientIntermissionThink(client: *mut gclient_t) {
     // swap and latch button actions
     (*client).oldbuttons = (*client).buttons;
     (*client).buttons = (*client).pers.cmd.buttons;
-    if (*client).buttons & (BUTTON_ATTACK | BUTTON_USE_HOLDABLE) & ((*client).oldbuttons ^ (*client).buttons) != 0 {
+    if (*client).buttons
+        & (BUTTON_ATTACK | BUTTON_USE_HOLDABLE)
+        & ((*client).oldbuttons ^ (*client).buttons)
+        != 0
+    {
         // this used to be an ^1 but once a player says ready, it should stick
         (*client).readyToExit = 1;
     }
@@ -797,8 +804,7 @@ pub unsafe fn G_SetTauntAnim(ent: *mut gentity_t, taunt: c_int) {
                 } else {
                     match (*client).ps.fd.saberAnimLevel {
                         SS_FAST | SS_TAVION => {
-                            if (*client).ps.saberHolstered == 1
-                                && (*client).saber[1].model[0] != 0
+                            if (*client).ps.saberHolstered == 1 && (*client).saber[1].model[0] != 0
                             {
                                 // turn off second saber
                                 G_Sound(ent, CHAN_WEAPON, (*client).saber[1].soundOff);
@@ -813,8 +819,7 @@ pub unsafe fn G_SetTauntAnim(ent: *mut gentity_t, taunt: c_int) {
                             anim = BOTH_ENGAGETAUNT;
                         }
                         SS_DUAL => {
-                            if (*client).ps.saberHolstered == 1
-                                && (*client).saber[1].model[0] != 0
+                            if (*client).ps.saberHolstered == 1 && (*client).saber[1].model[0] != 0
                             {
                                 // turn on second saber
                                 G_Sound(ent, CHAN_WEAPON, (*client).saber[1].soundOn);
@@ -961,8 +966,8 @@ pub unsafe fn G_SetTauntAnim(ent: *mut gentity_t, taunt: c_int) {
             if (*client).ps.groundEntityNum != ENTITYNUM_NONE {
                 (*client).ps.forceHandExtend = HANDEXTEND_TAUNT;
                 (*client).ps.forceDodgeAnim = anim;
-                (*client).ps.forceHandExtendTime =
-                    (*addr_of!(level)).time + BG_AnimLength((*ent).localAnimIndex, anim as animNumber_t);
+                (*client).ps.forceHandExtendTime = (*addr_of!(level)).time
+                    + BG_AnimLength((*ent).localAnimIndex, anim as animNumber_t);
             }
             if taunt != TAUNT_MEDITATE && taunt != TAUNT_BOW {
                 // no sound for meditate or bow
@@ -1018,8 +1023,8 @@ pub unsafe fn P_WorldEffects(ent: *mut gentity_t) {
 
     waterlevel = (*ent).waterlevel;
 
-    envirosuit =
-        ((*(*ent).client).ps.powerups[PW_BATTLESUIT as usize] > (*addr_of!(level)).time) as qboolean;
+    envirosuit = ((*(*ent).client).ps.powerups[PW_BATTLESUIT as usize] > (*addr_of!(level)).time)
+        as qboolean;
 
     //
     // check for drowning
@@ -1043,7 +1048,11 @@ pub unsafe fn P_WorldEffects(ent: *mut gentity_t) {
 
                 // play a gurp sound instead of a normal pain sound
                 if (*ent).health <= (*ent).damage {
-                    G_Sound(ent, CHAN_VOICE, G_SoundIndex(/*"*drown.wav"*/ "sound/player/gurp1.wav"));
+                    G_Sound(
+                        ent,
+                        CHAN_VOICE,
+                        G_SoundIndex(/*"*drown.wav"*/ "sound/player/gurp1.wav"),
+                    );
                 } else if rand() & 1 != 0 {
                     G_Sound(ent, CHAN_VOICE, G_SoundIndex("sound/player/gurp1.wav"));
                 } else {
@@ -1133,8 +1142,8 @@ pub unsafe fn ClientImpacts(ent: *mut gentity_t, pm: *mut pmove_t) {
             i += 1;
             continue; // duplicated
         }
-        let other: *mut gentity_t =
-            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*pm).touchents[i as usize] as usize);
+        let other: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*pm).touchents[i as usize] as usize);
 
         if ((*ent).r.svFlags & SVF_BOT) != 0 && (*ent).touch.is_some() {
             ((*ent).touch.unwrap())(ent, other, &mut trace);
@@ -1192,7 +1201,8 @@ pub unsafe fn G_TouchTriggers(ent: *mut gentity_t) {
 
     i = 0;
     while i < num {
-        let hit: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(touch[i as usize] as usize);
+        let hit: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add(touch[i as usize] as usize);
 
         if (*hit).touch.is_none() && (*ent).touch.is_none() {
             i += 1;
@@ -1313,7 +1323,8 @@ pub unsafe fn G_MoverTouchPushTriggers(ent: *mut gentity_t, old_org: &vec3_t) {
 
         i = 0;
         while i < num {
-            let hit: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(touch[i as usize] as usize);
+            let hit: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add(touch[i as usize] as usize);
 
             if (*hit).s.eType != ET_PUSH_TRIGGER {
                 i += 1;
@@ -1521,7 +1532,8 @@ pub unsafe fn G_VehicleAttachDroidUnit(vehEnt: *mut gentity_t) {
 /// # Safety
 /// `entNum` must index `g_entities[]`; the `g_entities`/`level` globals must be initialised.
 pub unsafe fn G_CheapWeaponFire(entNum: c_int, ev: c_int) {
-    let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entNum as usize);
+    let ent: *mut gentity_t =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entNum as usize);
 
     if (*ent).inuse == QFALSE || (*ent).client.is_null() {
         return;
@@ -1535,8 +1547,9 @@ pub unsafe fn G_CheapWeaponFire(entNum: c_int, ev: c_int) {
                 && (*(*ent).client).ps.m_iVehicleNum != 0
             {
                 //a speeder with a pilot
-                let rider: *mut gentity_t =
-                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(((*(*ent).client).ps.m_iVehicleNum - 1) as usize);
+                let rider: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities)
+                    .cast::<gentity_t>())
+                .add(((*(*ent).client).ps.m_iVehicleNum - 1) as usize);
                 if (*rider).inuse != QFALSE && !(*rider).client.is_null() {
                     //pilot is valid...
                     if (*(*rider).client).ps.weapon != WP_MELEE
@@ -1588,8 +1601,8 @@ unsafe fn G_UpdateForceSightBroadcasts(self_: *mut gentity_t) {
     // Any clients with force sight on should see this client
     let mut i: c_int = 0;
     while i < (*addr_of!(level)).numConnectedClients {
-        let ent: *mut gentity_t =
-            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*addr_of!(level)).sortedClients[i as usize] as usize);
+        let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*addr_of!(level)).sortedClients[i as usize] as usize);
         let mut angles: vec3_t = [0.0; 3];
 
         if ent == self_ {
@@ -1619,8 +1632,11 @@ unsafe fn G_UpdateForceSightBroadcasts(self_: *mut gentity_t) {
         }
 
         // If not within the field of view then forget it
-        if InFieldOfVision(&(*(*ent).client).ps.viewangles, MAX_SIGHT_FOV as f32, &mut angles)
-            == QFALSE as c_int
+        if InFieldOfVision(
+            &(*(*ent).client).ps.viewangles,
+            MAX_SIGHT_FOV as f32,
+            &mut angles,
+        ) == QFALSE as c_int
         {
             break;
         }
@@ -1658,8 +1674,8 @@ unsafe fn G_UpdateJediMasterBroadcasts(self_: *mut gentity_t) {
     // Broadcast ourself to all clients within range
     let mut i: c_int = 0;
     while i < (*addr_of!(level)).numConnectedClients {
-        let ent: *mut gentity_t =
-            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*addr_of!(level)).sortedClients[i as usize] as usize);
+        let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*addr_of!(level)).sortedClients[i as usize] as usize);
         let mut angles: vec3_t = [0.0; 3];
 
         if ent == self_ {
@@ -1823,10 +1839,7 @@ pub unsafe fn G_CheckClientIdle(ent: *mut gentity_t, ucmd: *mut usercmd_t) {
         (*(*ent).client).idleHealth =
             (*ent).health + (*(*ent).client).ps.stats[STAT_ARMOR as usize];
         let viewangles = (*(*ent).client).ps.viewangles;
-        crate::codemp::game::q_math::VectorCopy(
-            &viewangles,
-            &mut (*(*ent).client).idleViewAngles,
-        );
+        crate::codemp::game::q_math::VectorCopy(&viewangles, &mut (*(*ent).client).idleViewAngles);
         if (*(*ent).client).idleTime < (*addr_of!(level)).time {
             (*(*ent).client).idleTime = (*addr_of!(level)).time;
         }
@@ -1860,7 +1873,8 @@ pub unsafe fn G_CheckClientIdle(ent: *mut gentity_t, ucmd: *mut usercmd_t) {
             idleAnim = BOTH_STAND2IDLE2;
         }
 
-        if idleAnim != -1 && /*PM_HasAnimation( ent, idleAnim )*/idleAnim > 0 && idleAnim < MAX_ANIMATIONS {
+        if idleAnim != -1 && /*PM_HasAnimation( ent, idleAnim )*/idleAnim > 0 && idleAnim < MAX_ANIMATIONS
+        {
             G_SetAnim(
                 ent,
                 ucmd,
@@ -1913,9 +1927,7 @@ pub unsafe fn SpectatorClientEndFrame(ent: *mut gentity_t) {
         }
         if clientNum >= 0 {
             cl = (*addr_of!(level)).clients.add(clientNum as usize);
-            if (*cl).pers.connected == CON_CONNECTED
-                && (*cl).sess.sessionTeam != TEAM_SPECTATOR
-            {
+            if (*cl).pers.connected == CON_CONNECTED && (*cl).sess.sessionTeam != TEAM_SPECTATOR {
                 //flags = (cl->mGameFlags & ~(PSG_VOTED | PSG_TEAMVOTED)) | (ent->client->mGameFlags & (PSG_VOTED | PSG_TEAMVOTED));
                 //ent->client->mGameFlags = flags;
                 (*(*ent).client).ps.eFlags = (*cl).ps.eFlags;
@@ -1985,7 +1997,8 @@ pub unsafe fn ClientEvents(ent: *mut gentity_t, mut oldEventSequence: c_int) {
 
         match event {
             _ if event == EV_FALL || event == EV_ROLL => {
-                let delta: c_int = (*client).ps.eventParms[(i & (MAX_PS_EVENTS as c_int - 1)) as usize];
+                let delta: c_int =
+                    (*client).ps.eventParms[(i & (MAX_PS_EVENTS as c_int - 1)) as usize];
                 let mut knockDownage: qboolean = QFALSE;
 
                 if !(*ent).client.is_null() && (*(*ent).client).ps.fallingToDeath != 0 {
@@ -2137,7 +2150,8 @@ pub unsafe fn NPC_Accelerate(ent: *mut gentity_t, fullWalkAcc: qboolean, fullRun
     //FIXME:  in cinematics always accel/decel?
     else if (*(*ent).NPC).desiredSpeed <= (*(*ent).NPC).stats.walkSpeed {
         //Only accelerate if at walkSpeeds
-        if (*(*ent).NPC).desiredSpeed > (*(*ent).NPC).currentSpeed + (*(*ent).NPC).stats.acceleration
+        if (*(*ent).NPC).desiredSpeed
+            > (*(*ent).NPC).currentSpeed + (*(*ent).NPC).stats.acceleration
         {
             //ent->client->ps.friction = 0;
             (*(*ent).NPC).currentSpeed += (*(*ent).NPC).stats.acceleration;
@@ -2288,13 +2302,11 @@ unsafe fn NPC_GetRunSpeed(ent: *mut gentity_t) -> c_int {
 // longer stubbed here.
 
 unsafe fn G_HeldByMonster(ent: *mut gentity_t, ucmd: *mut *mut usercmd_t) {
-    if !ent.is_null()
-        && !(*ent).client.is_null()
-        && (*(*ent).client).ps.hasLookTarget != QFALSE
+    if !ent.is_null() && !(*ent).client.is_null() && (*(*ent).client).ps.hasLookTarget != QFALSE
     //NOTE: lookTarget is an entity number, so this presumes that client 0 is NOT a Rancor...
     {
-        let monster: *mut gentity_t =
-            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*ent).client).ps.lookTarget as usize);
+        let monster: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*(*ent).client).ps.lookTarget as usize);
         if !monster.is_null() && !(*monster).client.is_null() {
             //take the monster's waypoint as your own
             (*ent).waypoint = (*monster).waypoint;
@@ -2434,12 +2446,13 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
     // being set to 1 when in vehicles.
     if (*ent).s.number < MAX_CLIENTS as c_int && (*(*ent).client).ps.m_iVehicleNum != 0 {
         //driving a vehicle
-        if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*ent).client).ps.m_iVehicleNum as usize))
-            .client
-            .is_null()
+        if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*(*ent).client).ps.m_iVehicleNum as usize))
+        .client
+        .is_null()
         {
-            let veh: *mut gentity_t =
-                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*ent).client).ps.m_iVehicleNum as usize);
+            let veh: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*(*ent).client).ps.m_iVehicleNum as usize);
 
             if !(*veh).m_pVehicle.is_null()
                 && (*(*veh).m_pVehicle).m_pPilot == ent as *mut bgEntity_t
@@ -2656,7 +2669,8 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
     const MIN_NPC_SPEED: c_int = 16;
 
     if (*client).bodyGrabIndex != ENTITYNUM_NONE {
-        let grabbed: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*client).bodyGrabIndex as usize);
+        let grabbed: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*client).bodyGrabIndex as usize);
 
         if (*grabbed).inuse == QFALSE
             || (*grabbed).s.eType != ET_BODY
@@ -2680,7 +2694,12 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
                 (*(*ent).client).ps.forceHandExtendTime = (*addr_of!(level)).time + 1000;
             }
 
-            VectorSet(&mut tAng, 0.0, (*(*ent).client).ps.viewangles[YAW as usize], 0.0);
+            VectorSet(
+                &mut tAng,
+                0.0,
+                (*(*ent).client).ps.viewangles[YAW as usize],
+                0.0,
+            );
             crate::trap::G2API_GetBoltMatrix(
                 (*ent).ghoul2,
                 0,
@@ -2843,8 +2862,7 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
 
         //Check for a siege class speed multiplier
         if (*addr_of!(g_gametype)).integer == GT_SIEGE && (*client).siegeClass != -1 {
-            (*client).ps.speed *=
-                (*addr_of!(bgSiegeClasses))[(*client).siegeClass as usize].speed;
+            (*client).ps.speed *= (*addr_of!(bgSiegeClasses))[(*client).siegeClass as usize].speed;
         }
 
         if (*client).bodyGrabIndex != ENTITYNUM_NONE {
@@ -2886,8 +2904,8 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
     }
 
     if (*(*ent).client).ps.duelInProgress != 0 {
-        let duelAgainst: *mut gentity_t =
-            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*ent).client).ps.duelIndex as usize);
+        let duelAgainst: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*(*ent).client).ps.duelIndex as usize);
 
         //Keep the time updated, so once this duel ends this player can't engage in a duel for another
         //10 seconds. This will give other people a chance to engage in duels in case this player wants
@@ -2924,10 +2942,18 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
                 (*(*duelAgainst).client).ps.saberHolstered = 0;
 
                 if (*(*duelAgainst).client).saber[0].soundOn != 0 {
-                    G_Sound(duelAgainst, CHAN_AUTO, (*(*duelAgainst).client).saber[0].soundOn);
+                    G_Sound(
+                        duelAgainst,
+                        CHAN_AUTO,
+                        (*(*duelAgainst).client).saber[0].soundOn,
+                    );
                 }
                 if (*(*duelAgainst).client).saber[1].soundOn != 0 {
-                    G_Sound(duelAgainst, CHAN_AUTO, (*(*duelAgainst).client).saber[1].soundOn);
+                    G_Sound(
+                        duelAgainst,
+                        CHAN_AUTO,
+                        (*(*duelAgainst).client).saber[1].soundOn,
+                    );
                 }
 
                 G_AddEvent(duelAgainst, EV_PRIVATE_DUEL, 2);
@@ -2997,7 +3023,10 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
                     -1,
                     &format!(
                         "cp \"{}\n\"",
-                        Sz(G_GetStringEdString(c"MP_SVGAME".as_ptr(), c"PLDUELTIE".as_ptr(),)),
+                        Sz(G_GetStringEdString(
+                            c"MP_SVGAME".as_ptr(),
+                            c"PLDUELTIE".as_ptr(),
+                        )),
                     ),
                 );
             }
@@ -3023,7 +3052,10 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
                     -1,
                     &format!(
                         "print \"{}\n\"",
-                        Sz(G_GetStringEdString(c"MP_SVGAME".as_ptr(), c"PLDUELSTOP".as_ptr(),)),
+                        Sz(G_GetStringEdString(
+                            c"MP_SVGAME".as_ptr(),
+                            c"PLDUELSTOP".as_ptr(),
+                        )),
                     ),
                 );
             }
@@ -3031,8 +3063,8 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
     }
 
     if (*(*ent).client).doingThrow > (*addr_of!(level)).time {
-        let throwee: *mut gentity_t =
-            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*ent).client).throwingIndex as usize);
+        let throwee: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*(*ent).client).throwingIndex as usize);
 
         if (*throwee).inuse == QFALSE
             || (*throwee).client.is_null()
@@ -3056,8 +3088,8 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
     }
 
     if (*(*ent).client).beingThrown > (*addr_of!(level)).time {
-        let thrower: *mut gentity_t =
-            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*ent).client).throwingIndex as usize);
+        let thrower: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*(*ent).client).throwingIndex as usize);
 
         if (*thrower).inuse == QFALSE
             || (*thrower).client.is_null()
@@ -3151,7 +3183,12 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
                     (*(*ent).client).beingThrown = 0;
                     (*(*thrower).client).doingThrow = 0;
 
-                    AngleVectors(&(*(*thrower).client).ps.viewangles, Some(&mut vDif), None, None);
+                    AngleVectors(
+                        &(*(*thrower).client).ps.viewangles,
+                        Some(&mut vDif),
+                        None,
+                        None,
+                    );
                     (*(*ent).client).ps.velocity[0] = vDif[0] * vScale;
                     (*(*ent).client).ps.velocity[1] = vDif[1] * vScale;
                     (*(*ent).client).ps.velocity[2] = 400.0;
@@ -3259,8 +3296,8 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
             if (*(*ent).client).ps.otherKillerTime > (*addr_of!(level)).time
                 && (*(*ent).client).ps.otherKiller != ENTITYNUM_NONE
             {
-                otherKiller =
-                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*ent).client).ps.otherKiller as usize);
+                otherKiller = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*(*ent).client).ps.otherKiller as usize);
 
                 if (*otherKiller).inuse == QFALSE {
                     otherKiller = ent;
@@ -3377,8 +3414,8 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
     pm.entSize = core::mem::size_of::<gentity_t>() as c_int;
 
     if (*(*ent).client).ps.saberLockTime > (*addr_of!(level)).time {
-        let blockOpp: *mut gentity_t =
-            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*ent).client).ps.saberLockEnemy as usize);
+        let blockOpp: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*(*ent).client).ps.saberLockEnemy as usize);
 
         if !blockOpp.is_null() && (*blockOpp).inuse != QFALSE && !(*blockOpp).client.is_null() {
             let mut lockDir: vec3_t = [0.0; 3];
@@ -3405,7 +3442,7 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
                     //have moved to next frame since last saberlock attack button press
                     let mut lockHits: c_int = 0;
                     (*(*ent).client).ps.saberLockHitIncrementTime = (*addr_of!(level)).time; //so we don't register an attack key press more than once per server frame
-                    //NOTE: FP_SABER_OFFENSE level already taken into account in PM_SaberLocked
+                                                                                             //NOTE: FP_SABER_OFFENSE level already taken into account in PM_SaberLocked
                     if (*(*ent).client).ps.fd.forcePowersActive & (1 << FP_RAGE) != 0 {
                         //raging: push harder
                         lockHits = 1 + (*(*ent).client).ps.fd.forcePowerLevel[FP_RAGE as usize];
@@ -3505,8 +3542,9 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
             if (*(*(*ent).m_pVehicle).m_pVehicleInfo).r#type == VH_WALKER {
                 if (*(*ent).client).ps.groundEntityNum != ENTITYNUM_NONE {
                     //ATST crushes anything underneath it
-                    let under: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
-                        .add((*(*ent).client).ps.groundEntityNum as usize);
+                    let under: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities)
+                        .cast::<gentity_t>())
+                    .add((*(*ent).client).ps.groundEntityNum as usize);
                     if !under.is_null() && (*under).health != 0 && (*under).takedamage != QFALSE {
                         let mut down: vec3_t = [0.0, 0.0, -1.0];
                         //FIXME: we'll be doing traces down from each foot, so we'll have a real impact origin
@@ -3546,11 +3584,15 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
         if pm.checkDuelLoss > 0
             && (pm.checkDuelLoss <= MAX_CLIENTS as c_int
                 || (pm.checkDuelLoss < (MAX_GENTITIES as c_int - 1)
-                    && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((pm.checkDuelLoss - 1) as usize)).s.eType
+                    && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((pm.checkDuelLoss - 1) as usize))
+                    .s
+                    .eType
                         == ET_NPC))
         {
-            let clientLost: *mut gentity_t =
-                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((pm.checkDuelLoss - 1) as usize);
+            let clientLost: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities)
+                .cast::<gentity_t>())
+            .add((pm.checkDuelLoss - 1) as usize);
 
             if !clientLost.is_null()
                 && (*clientLost).inuse != QFALSE
@@ -3673,8 +3715,7 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
                 ForceSeeing(ent);
             }
             x if x == GENCMD_USE_SEEKER => {
-                if ((*(*ent).client).ps.stats[STAT_HOLDABLE_ITEMS as usize] & (1 << HI_SEEKER))
-                    != 0
+                if ((*(*ent).client).ps.stats[STAT_HOLDABLE_ITEMS as usize] & (1 << HI_SEEKER)) != 0
                     && G_ItemUsable(&mut (*(*ent).client).ps, HI_SEEKER) != 0
                 {
                     ItemUse_Seeker(ent);
@@ -3683,8 +3724,7 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
                 }
             }
             x if x == GENCMD_USE_FIELD => {
-                if ((*(*ent).client).ps.stats[STAT_HOLDABLE_ITEMS as usize] & (1 << HI_SHIELD))
-                    != 0
+                if ((*(*ent).client).ps.stats[STAT_HOLDABLE_ITEMS as usize] & (1 << HI_SHIELD)) != 0
                     && G_ItemUsable(&mut (*(*ent).client).ps, HI_SHIELD) != 0
                 {
                     ItemUse_Shield(ent);
@@ -3693,8 +3733,7 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
                 }
             }
             x if x == GENCMD_USE_BACTA => {
-                if ((*(*ent).client).ps.stats[STAT_HOLDABLE_ITEMS as usize] & (1 << HI_MEDPAC))
-                    != 0
+                if ((*(*ent).client).ps.stats[STAT_HOLDABLE_ITEMS as usize] & (1 << HI_MEDPAC)) != 0
                     && G_ItemUsable(&mut (*(*ent).client).ps, HI_MEDPAC) != 0
                 {
                     ItemUse_MedPack(ent);
@@ -3703,8 +3742,7 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
                 }
             }
             x if x == GENCMD_USE_BACTABIG => {
-                if ((*(*ent).client).ps.stats[STAT_HOLDABLE_ITEMS as usize]
-                    & (1 << HI_MEDPAC_BIG))
+                if ((*(*ent).client).ps.stats[STAT_HOLDABLE_ITEMS as usize] & (1 << HI_MEDPAC_BIG))
                     != 0
                     && G_ItemUsable(&mut (*(*ent).client).ps, HI_MEDPAC_BIG) != 0
                 {
@@ -3715,8 +3753,7 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
                 }
             }
             x if x == GENCMD_USE_ELECTROBINOCULARS => {
-                if ((*(*ent).client).ps.stats[STAT_HOLDABLE_ITEMS as usize]
-                    & (1 << HI_BINOCULARS))
+                if ((*(*ent).client).ps.stats[STAT_HOLDABLE_ITEMS as usize] & (1 << HI_BINOCULARS))
                     != 0
                     && G_ItemUsable(&mut (*(*ent).client).ps, HI_BINOCULARS) != 0
                 {
@@ -3729,8 +3766,7 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
                 }
             }
             x if x == GENCMD_ZOOM => {
-                if ((*(*ent).client).ps.stats[STAT_HOLDABLE_ITEMS as usize]
-                    & (1 << HI_BINOCULARS))
+                if ((*(*ent).client).ps.stats[STAT_HOLDABLE_ITEMS as usize] & (1 << HI_BINOCULARS))
                     != 0
                     && G_ItemUsable(&mut (*(*ent).client).ps, HI_BINOCULARS) != 0
                 {
@@ -3743,8 +3779,7 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
                 }
             }
             x if x == GENCMD_USE_SENTRY => {
-                if ((*(*ent).client).ps.stats[STAT_HOLDABLE_ITEMS as usize]
-                    & (1 << HI_SENTRY_GUN))
+                if ((*(*ent).client).ps.stats[STAT_HOLDABLE_ITEMS as usize] & (1 << HI_SENTRY_GUN))
                     != 0
                     && G_ItemUsable(&mut (*(*ent).client).ps, HI_SENTRY_GUN) != 0
                 {
@@ -3765,8 +3800,7 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
                 }
             }
             x if x == GENCMD_USE_HEALTHDISP => {
-                if ((*(*ent).client).ps.stats[STAT_HOLDABLE_ITEMS as usize]
-                    & (1 << HI_HEALTHDISP))
+                if ((*(*ent).client).ps.stats[STAT_HOLDABLE_ITEMS as usize] & (1 << HI_HEALTHDISP))
                     != 0
                     && G_ItemUsable(&mut (*(*ent).client).ps, HI_HEALTHDISP) != 0
                 {
@@ -3792,8 +3826,7 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
                 }
             }
             x if x == GENCMD_USE_CLOAK => {
-                if ((*(*ent).client).ps.stats[STAT_HOLDABLE_ITEMS as usize] & (1 << HI_CLOAK))
-                    != 0
+                if ((*(*ent).client).ps.stats[STAT_HOLDABLE_ITEMS as usize] & (1 << HI_CLOAK)) != 0
                     && G_ItemUsable(&mut (*(*ent).client).ps, HI_CLOAK) != 0
                 {
                     if (*(*ent).client).ps.powerups[PW_CLOAKED as usize] != 0 {
@@ -3912,13 +3945,12 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
 
     // Did we kick someone in our pmove sequence?
     if (*client).ps.forceKickFlip != 0 {
-        let faceKicked: *mut gentity_t =
-            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(((*client).ps.forceKickFlip - 1) as usize);
+        let faceKicked: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add(((*client).ps.forceKickFlip - 1) as usize);
 
         if !faceKicked.is_null()
             && !(*faceKicked).client.is_null()
-            && (OnSameTeam(ent, faceKicked) == QFALSE
-                || (*addr_of!(g_friendlyFire)).integer != 0)
+            && (OnSameTeam(ent, faceKicked) == QFALSE || (*addr_of!(g_friendlyFire)).integer != 0)
             && ((*(*faceKicked).client).ps.duelInProgress == QFALSE
                 || (*(*faceKicked).client).ps.duelIndex == (*ent).s.number)
             && ((*(*ent).client).ps.duelInProgress == QFALSE
@@ -3971,8 +4003,7 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
                         }
 
                         (*(*faceKicked).client).ps.otherKiller = (*ent).s.number;
-                        (*(*faceKicked).client).ps.otherKillerTime =
-                            (*addr_of!(level)).time + 5000;
+                        (*(*faceKicked).client).ps.otherKillerTime = (*addr_of!(level)).time + 5000;
                         (*(*faceKicked).client).ps.otherKillerDebounceTime =
                             (*addr_of!(level)).time + 100;
 
@@ -4021,9 +4052,7 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
                 forceRes = 1;
             }
 
-            if forceRes > 0
-                && ((*addr_of!(level)).time - (*client).respawnTime) > forceRes * 1000
-            {
+            if forceRes > 0 && ((*addr_of!(level)).time - (*client).respawnTime) > forceRes * 1000 {
                 respawn(ent);
                 return;
             }
@@ -4051,11 +4080,14 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
     if (*ent).s.number < MAX_CLIENTS as c_int && (*(*ent).client).ps.m_iVehicleNum != 0 {
         //driving a vehicle
         //run it
-        if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*ent).client).ps.m_iVehicleNum as usize)).inuse
+        if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*(*ent).client).ps.m_iVehicleNum as usize))
+        .inuse
             != QFALSE
-            && !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*ent).client).ps.m_iVehicleNum as usize))
-                .client
-                .is_null()
+            && !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*(*ent).client).ps.m_iVehicleNum as usize))
+            .client
+            .is_null()
         {
             ClientThink(
                 (*(*ent).client).ps.m_iVehicleNum,
@@ -4174,9 +4206,7 @@ pub unsafe fn ClientEndFrame(ent: *mut gentity_t) {
     // the player any normal movement attributes
     //
     if (*addr_of!(level)).intermissiontime != 0 {
-        if (*ent).s.number < MAX_CLIENTS as c_int
-            || (*(*ent).client).NPC_class == CLASS_VEHICLE
-        {
+        if (*ent).s.number < MAX_CLIENTS as c_int || (*(*ent).client).NPC_class == CLASS_VEHICLE {
             //players and vehicles do nothing in intermissions
             return;
         }
@@ -4228,8 +4258,8 @@ mod tests {
     use super::*;
     use crate::codemp::game::anims::{BOTH_STAND1, BOTH_STAND2, BOTH_STAND3, BOTH_STAND4};
     use crate::codemp::game::q_shared_h::{
-        BUTTON_ALT_ATTACK, BUTTON_ATTACK, BUTTON_FORCE_DRAIN, BUTTON_FORCE_LIGHTNING,
-        BUTTON_FORCEGRIP, BUTTON_FORCEPOWER, BUTTON_GESTURE, BUTTON_USE, BUTTON_USE_HOLDABLE,
+        BUTTON_ALT_ATTACK, BUTTON_ATTACK, BUTTON_FORCEGRIP, BUTTON_FORCEPOWER, BUTTON_FORCE_DRAIN,
+        BUTTON_FORCE_LIGHTNING, BUTTON_GESTURE, BUTTON_USE, BUTTON_USE_HOLDABLE,
     };
     use crate::oracle;
 
@@ -4330,11 +4360,13 @@ mod tests {
                     &mut c_armor,
                 );
 
-                assert_eq!(client.timeResidual, c_residual, "timeResidual {msec},{residual}");
+                assert_eq!(
+                    client.timeResidual, c_residual,
+                    "timeResidual {msec},{residual}"
+                );
                 assert_eq!(ent.health, c_health, "health {msec},{residual}");
                 assert_eq!(
-                    client.ps.stats[STAT_ARMOR as usize],
-                    c_armor,
+                    client.ps.stats[STAT_ARMOR as usize], c_armor,
                     "armor {msec},{residual}"
                 );
             }
@@ -4365,20 +4397,55 @@ mod tests {
         }
         let cases = [
             // no push: early return (pushVec stays, nothing changes)
-            Case { view: [0.0, 0.0, 0.0], fwd: 127, rgt: 0, speed: 250.0,
-                   push: [0.0, 0.0, 0.0], push_time: 0, level_time: 0 },
+            Case {
+                view: [0.0, 0.0, 0.0],
+                fwd: 127,
+                rgt: 0,
+                speed: 250.0,
+                push: [0.0, 0.0, 0.0],
+                push_time: 0,
+                level_time: 0,
+            },
             // forward push, time not expired -> pushVec retained
-            Case { view: [0.0, 90.0, 0.0], fwd: 127, rgt: 0, speed: 250.0,
-                   push: [100.0, 0.0, 0.0], push_time: 5000, level_time: 1000 },
+            Case {
+                view: [0.0, 90.0, 0.0],
+                fwd: 127,
+                rgt: 0,
+                speed: 250.0,
+                push: [100.0, 0.0, 0.0],
+                push_time: 5000,
+                level_time: 1000,
+            },
             // diagonal command + push, time expired -> pushVec cleared
-            Case { view: [10.0, 45.0, 0.0], fwd: 64, rgt: -64, speed: 200.0,
-                   push: [50.0, -30.0, 10.0], push_time: 500, level_time: 1000 },
+            Case {
+                view: [10.0, 45.0, 0.0],
+                fwd: 64,
+                rgt: -64,
+                speed: 200.0,
+                push: [50.0, -30.0, 10.0],
+                push_time: 500,
+                level_time: 1000,
+            },
             // backward, pushVecTime == levelTime (not <, so retained)
-            Case { view: [-15.0, 180.0, 0.0], fwd: -127, rgt: 0, speed: 300.0,
-                   push: [0.0, 200.0, 0.0], push_time: 2000, level_time: 2000 },
+            Case {
+                view: [-15.0, 180.0, 0.0],
+                fwd: -127,
+                rgt: 0,
+                speed: 300.0,
+                push: [0.0, 200.0, 0.0],
+                push_time: 2000,
+                level_time: 2000,
+            },
             // zero move command but active push
-            Case { view: [0.0, 0.0, 0.0], fwd: 0, rgt: 0, speed: 150.0,
-                   push: [0.0, 0.0, 100.0], push_time: 0, level_time: 5000 },
+            Case {
+                view: [0.0, 0.0, 0.0],
+                fwd: 0,
+                rgt: 0,
+                speed: 150.0,
+                push: [0.0, 0.0, 100.0],
+                push_time: 0,
+                level_time: 5000,
+            },
         ];
 
         for (i, c) in cases.iter().enumerate() {
@@ -4413,7 +4480,11 @@ mod tests {
                     c.level_time,
                 );
 
-                assert_eq!(client.ps.speed.to_bits(), c_speed.to_bits(), "speed case {i}");
+                assert_eq!(
+                    client.ps.speed.to_bits(),
+                    c_speed.to_bits(),
+                    "speed case {i}"
+                );
                 assert_eq!(ucmd.forwardmove, c_fwd, "forwardmove case {i}");
                 assert_eq!(ucmd.rightmove, c_rgt, "rightmove case {i}");
                 for k in 0..3 {

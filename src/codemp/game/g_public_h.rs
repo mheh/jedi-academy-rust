@@ -78,12 +78,11 @@ pub struct entityShared_t {
     pub singleClient: c_int, // only send to this client when SVF_SINGLECLIENT is set
 
     pub bmodel: qboolean, // if false, assume an explicit mins / maxs bounding box
-                          // only set by trap_SetBrushModel
+    // only set by trap_SetBrushModel
     pub mins: vec3_t,
     pub maxs: vec3_t,
     pub contents: c_int, // CONTENTS_TRIGGER, CONTENTS_SOLID, CONTENTS_BODY, etc
-                         // a non-solid entity should set to 0
-
+    // a non-solid entity should set to 0
     pub absmin: vec3_t, // derived from mins/maxs and origin + rotation
     pub absmax: vec3_t,
 

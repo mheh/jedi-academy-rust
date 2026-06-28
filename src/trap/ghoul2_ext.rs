@@ -132,7 +132,11 @@ pub fn G2API_AbsurdSmoothing(ghoul2: *mut c_void, status: qboolean) {
 /// `trap_G2API_SetRagDoll` — kick the instance into ragdoll using `params`.
 pub fn G2API_SetRagDoll(ghoul2: *mut c_void, params: &mut sharedRagDollParams_t) {
     unsafe {
-        syscall!(G_G2_SETRAGDOLL, ghoul2, params as *mut sharedRagDollParams_t);
+        syscall!(
+            G_G2_SETRAGDOLL,
+            ghoul2,
+            params as *mut sharedRagDollParams_t
+        );
     }
 }
 //rww - RAGDOLL_END

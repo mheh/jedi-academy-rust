@@ -506,7 +506,10 @@ mod oracle_tests {
                     u[2].as_ptr(),
                 )
             };
-            assert_eq!(r, c, "coplanar_tri_tri mismatch for N={n:?} V={v:?} U={u:?}");
+            assert_eq!(
+                r, c,
+                "coplanar_tri_tri mismatch for N={n:?} V={v:?} U={u:?}"
+            );
         }
     }
 }

@@ -47,8 +47,7 @@ use crate::codemp::game::g_utils::{
     G_SoundOnEnt, G_Spawn, G_Throw,
 };
 use crate::codemp::game::g_weapon::WP_LobFire;
-use crate::codemp::game::w_saber_h::ARMOR_EFFECT_TIME;
-use crate::codemp::game::npc::{ucmd, NPC_SetAnim, NPC, NPCInfo};
+use crate::codemp::game::npc::{ucmd, NPCInfo, NPC_SetAnim, NPC};
 use crate::codemp::game::npc_ai_stormtrooper::NPC_CheckPlayerTeamStealth;
 use crate::codemp::game::npc_combat::{
     NPC_AimAdjust, NPC_ChangeWeapon, NPC_FreeCombatPoint, NPC_ShotEntity, WeaponThink,
@@ -63,15 +62,15 @@ use crate::codemp::game::npc_utils::{
     NPC_UpdateAngles,
 };
 use crate::codemp::game::q_math::{
-    flrand, vec3_origin, vectoangles, AngleNormalize360, AngleVectors, DistanceSquared,
+    flrand, vec3_origin, vectoangles, AngleNormalize360, AngleVectors, DistanceSquared, Q_irand,
     VectorClear, VectorCompare, VectorCopy, VectorMA, VectorNormalize, VectorSet, VectorSubtract,
-    Q_irand,
 };
 use crate::codemp::game::q_shared::{crandom, Q_stricmp};
 use crate::codemp::game::q_shared_h::{
     mdxaBone_t, trace_t, vec3_t, BUTTON_WALKING, CHAN_AUTO, NEGATIVE_Y, ORIGIN, PITCH, YAW,
 };
 use crate::codemp::game::surfaceflags_h::CONTENTS_LIGHTSABER;
+use crate::codemp::game::w_saber_h::ARMOR_EFFECT_TIME;
 use crate::ffi::types::{qboolean, QFALSE, QTRUE};
 use crate::trap;
 
@@ -128,9 +127,9 @@ pub unsafe fn NPC_GalakMech_Init(ent: *mut gentity_t) {
         (*(*ent).NPC).investigateCount = 0;
         (*(*ent).NPC).investigateDebounceTime = 0;
         (*ent).flags |= FL_SHIELDED; //reflect normal shots
-        //rwwFIXMEFIXME: Support PW_GALAK_SHIELD
-        //ent->client->ps.powerups[PW_GALAK_SHIELD] = Q3_INFINITE;//temp, for effect
-        //ent->fx_time = level.time;
+                                     //rwwFIXMEFIXME: Support PW_GALAK_SHIELD
+                                     //ent->client->ps.powerups[PW_GALAK_SHIELD] = Q3_INFINITE;//temp, for effect
+                                     //ent->fx_time = level.time;
         VectorSet(&mut (*ent).r.mins, -60.0, -60.0, -24.0);
         VectorSet(&mut (*ent).r.maxs, 60.0, 60.0, 80.0);
         (*ent).flags |= FL_NO_KNOCKBACK; //don't get pushed
@@ -324,7 +323,11 @@ NPC_GM_Pain
 -------------------------
 */
 
-pub unsafe extern "C" fn NPC_GM_Pain(self_: *mut gentity_t, attacker: *mut gentity_t, damage: c_int) {
+pub unsafe extern "C" fn NPC_GM_Pain(
+    self_: *mut gentity_t,
+    attacker: *mut gentity_t,
+    damage: c_int,
+) {
     let mut point: vec3_t = [0.0; 3];
     let inflictor: *mut gentity_t = attacker;
     let hitLoc: c_int = 1;
@@ -570,7 +573,12 @@ unsafe fn GM_CheckFireState() {
                     //vec3_t	mins = {-2,-2,-2}, maxs = {2,2,2};
                     let mut forward: vec3_t = [0.0; 3];
                     let mut end: vec3_t = [0.0; 3];
-                    AngleVectors(&(*(*NPC).client).ps.viewangles, Some(&mut forward), None, None);
+                    AngleVectors(
+                        &(*(*NPC).client).ps.viewangles,
+                        Some(&mut forward),
+                        None,
+                        None,
+                    );
                     VectorMA(&muzzle, 8192.0, &forward, &mut end);
                     let tr = trap::Trace(
                         &muzzle,
@@ -584,7 +592,8 @@ unsafe fn GM_CheckFireState() {
                 }
 
                 //see if impact would be too close to me
-                distThreshold = 16384.0; /*128*128*/ //default
+                distThreshold = 16384.0; /*128*128*/
+ //default
                 if (*NPC).s.weapon == WP_REPEATER {
                     if (*NPCInfo).scriptFlags & SCF_ALT_FIRE != 0 {
                         distThreshold = 65536.0; /*256*256*/
@@ -599,7 +608,8 @@ unsafe fn GM_CheckFireState() {
                 } else if (*addr_of!(level)).time - (*NPCInfo).enemyLastSeenTime > 5000 {
                     //we've haven't seen them in the last 5 seconds
                     //see if it's too far from where he is
-                    distThreshold = 65536.0; /*256*256*/ //default
+                    distThreshold = 65536.0; /*256*256*/
+ //default
                     if (*NPC).s.weapon == WP_REPEATER {
                         if (*NPCInfo).scriptFlags & SCF_ALT_FIRE != 0 {
                             distThreshold = 262144.0; /*512*512*/
@@ -1251,7 +1261,10 @@ pub unsafe fn NPC_BSGM_Attack() {
         //we want to face in the dir we're running
         if move4 == 0 {
             //if we haven't moved, we should look in the direction we last looked?
-            VectorCopy(&(*(*NPC).client).ps.viewangles, &mut (*NPCInfo).lastPathAngles);
+            VectorCopy(
+                &(*(*NPC).client).ps.viewangles,
+                &mut (*NPCInfo).lastPathAngles,
+            );
         }
         if move4 != 0 {
             //don't run away and shoot
@@ -1371,7 +1384,9 @@ pub unsafe fn NPC_BSGM_Attack() {
         }
     }
 
-    if (*NPCInfo).movementSpeech < 3 && (*NPCInfo).blockedSpeechDebounceTime <= (*addr_of!(level)).time {
+    if (*NPCInfo).movementSpeech < 3
+        && (*NPCInfo).blockedSpeechDebounceTime <= (*addr_of!(level)).time
+    {
         if !(*NPC).enemy.is_null()
             && (*(*NPC).enemy).health > 0
             && (*(*NPC).enemy).painDebounceTime > (*addr_of!(level)).time

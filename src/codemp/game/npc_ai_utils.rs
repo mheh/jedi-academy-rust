@@ -47,8 +47,8 @@ use crate::codemp::game::g_timer::TIMER_Done;
 use crate::codemp::game::npc_ai_stormtrooper::{ST_AggressionAdjust, ST_MarkToCover, ST_StartFlee};
 use crate::codemp::game::npc_combat::G_SetEnemy;
 use crate::codemp::game::npc_move::NAV_GetLastMove;
-use crate::codemp::game::q_math::{DistanceSquared, VectorCopy};
 use crate::codemp::game::q_math::Q_irand;
+use crate::codemp::game::q_math::{DistanceSquared, VectorCopy};
 use crate::codemp::game::q_shared_h::{vec3_t, ENTITYNUM_NONE, ENTITYNUM_WORLD};
 use crate::codemp::game::teams_h::{
     CLASS_ATST, CLASS_HOWLER, CLASS_INTERROGATOR, CLASS_MARK1, CLASS_MARK2, CLASS_MINEMONSTER,
@@ -94,7 +94,8 @@ pub unsafe fn AI_GetGroupSize(
     //Cull this list
     let mut j = 0;
     while j < numEnts {
-        let check = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(radiusEnts[j as usize] as usize);
+        let check = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add(radiusEnts[j as usize] as usize);
 
         //Validate clients
         if (*check).client.is_null() {
@@ -168,7 +169,8 @@ pub unsafe fn AI_ClosestGroupEntityNumToPoint(group: *mut AIGroupInfo_t, point: 
     }
 
     markerWP = NAV_FindClosestWaypointForPoint(
-        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*group).member[0].number as usize),
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*group).member[0].number as usize),
         point,
     );
 
@@ -201,12 +203,14 @@ pub unsafe fn AI_SetClosestBuddy(group: *mut AIGroupInfo_t) {
         let mut bestDist = Q3_INFINITE;
         for j in 0..(*group).numGroup {
             let dist = DistanceSquared(
-                &(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*group).member[i as usize].number as usize))
-                    .r
-                    .currentOrigin,
-                &(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*group).member[j as usize].number as usize))
-                    .r
-                    .currentOrigin,
+                &(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*group).member[i as usize].number as usize))
+                .r
+                .currentOrigin,
+                &(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*group).member[j as usize].number as usize))
+                .r
+                .currentOrigin,
             ) as c_int;
             if dist < bestDist {
                 bestDist = dist;
@@ -231,7 +235,8 @@ pub unsafe fn AI_SetClosestBuddy(group: *mut AIGroupInfo_t) {
 /// # Safety
 /// `group` must point to a valid `AIGroupInfo_t`.
 pub unsafe fn AI_SortGroupByPathCostToEnemy(group: *mut AIGroupInfo_t) {
-    let mut bestMembers: [AIGroupMember_t; MAX_GROUP_MEMBERS] = [AIGroupMember_t::default(); MAX_GROUP_MEMBERS];
+    let mut bestMembers: [AIGroupMember_t; MAX_GROUP_MEMBERS] =
+        [AIGroupMember_t::default(); MAX_GROUP_MEMBERS];
     let mut sort: qboolean = QFALSE;
 
     if !(*group).enemy.is_null() {
@@ -352,9 +357,7 @@ pub unsafe fn AI_InsertGroupMember(group: *mut AIGroupInfo_t, member: *mut genti
         (*group).member[idx as usize].number = (*member).s.number;
         (*group).numState[(*(*member).NPC).squadState as usize] += 1;
     }
-    if (*group).commander.is_null()
-        || (*(*member).NPC).rank > (*(*(*group).commander).NPC).rank
-    {
+    if (*group).commander.is_null() || (*(*member).NPC).rank > (*(*(*group).commander).NPC).rank {
         //keep track of highest rank
         (*group).commander = member;
     }
@@ -449,9 +452,10 @@ pub unsafe fn AI_ValidateNoEnemyGroupMember(
             return QFALSE;
         }
         VectorCopy(
-            &(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*group).member[0].number as usize))
-                .r
-                .currentOrigin,
+            &(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*group).member[0].number as usize))
+            .r
+            .currentOrigin,
             &mut center,
         );
     }
@@ -537,9 +541,9 @@ pub unsafe fn AI_ValidateGroupMember(
 		|| (*(*member).client).ps.weapon == WP_STUN_BATON
 		|| (*(*member).client).ps.weapon == WP_TURRET
     /*||			// turret guns
-		member->client->ps.weapon == WP_ATST_MAIN ||
-		member->client->ps.weapon == WP_ATST_SIDE ||
-		member->client->ps.weapon == WP_TIE_FIGHTER*/
+    member->client->ps.weapon == WP_ATST_MAIN ||
+    member->client->ps.weapon == WP_ATST_SIDE ||
+    member->client->ps.weapon == WP_TIE_FIGHTER*/
     {
         //not really a squad-type guy
         return QFALSE;
@@ -722,7 +726,8 @@ pub unsafe fn AI_SetNewGroupCommander(group: *mut AIGroupInfo_t) {
 
     (*group).commander = null_mut();
     for i in 0..(*group).numGroup {
-        member = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*group).member[i as usize].number as usize);
+        member = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*group).member[i as usize].number as usize);
 
         if (*group).commander.is_null()
             || (!member.is_null()
@@ -749,11 +754,14 @@ pub unsafe fn AI_DeleteGroupMember(group: *mut AIGroupInfo_t, memberNum: c_int) 
     {
         (*group).commander = null_mut();
     }
-    if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*group).member[memberNum as usize].number as usize))
-        .NPC
-        .is_null()
+    if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+        .add((*group).member[memberNum as usize].number as usize))
+    .NPC
+    .is_null()
     {
-        (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*group).member[memberNum as usize].number as usize)).NPC)
+        (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*group).member[memberNum as usize].number as usize))
+        .NPC)
             .group = null_mut();
     }
     for i in memberNum..((*group).numGroup - 1) {
@@ -817,7 +825,8 @@ pub unsafe fn AI_GroupMemberKilled(self_: *mut gentity_t) {
     (*group).moraleAdjust -= (*(*self_).NPC).rank;
     //go through and drop aggression on my teammates (more cover, worse aim)
     for i in 0..(*group).numGroup {
-        member = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*group).member[i as usize].number as usize);
+        member = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*group).member[i as usize].number as usize);
         if member == self_ {
             continue;
         }
@@ -838,7 +847,8 @@ pub unsafe fn AI_GroupMemberKilled(self_: *mut gentity_t) {
     if noflee == QFALSE {
         (*(*(*self_).NPC).group).speechDebounceTime = 0;
         for i in 0..(*group).numGroup {
-            member = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*group).member[i as usize].number as usize);
+            member = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*group).member[i as usize].number as usize);
             if member == self_ {
                 continue;
             }
@@ -860,10 +870,8 @@ pub unsafe fn AI_GroupMemberKilled(self_: *mut gentity_t) {
                         3000,
                         5000,
                     );
-                } else if DistanceSquared(
-                    &(*member).r.currentOrigin,
-                    &(*self_).r.currentOrigin,
-                ) < 65536.0
+                } else if DistanceSquared(&(*member).r.currentOrigin, &(*self_).r.currentOrigin)
+                    < 65536.0
                 /*256*256*/
                 {
                     //those close to me run away!
@@ -988,7 +996,8 @@ pub unsafe fn AI_RefreshGroup(group: *mut AIGroupInfo_t) -> qboolean {
                 //combine the members of mine into theirs
                 let mut j: c_int = 0;
                 while j < (*group).numGroup {
-                    member = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*group).member[j as usize].number as usize);
+                    member = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*group).member[j as usize].number as usize);
                     if level.groups[i as usize].enemy.is_null() {
                         //special case for groups without enemies, must be in range
                         if AI_ValidateNoEnemyGroupMember(
@@ -1049,7 +1058,8 @@ pub unsafe fn AI_RefreshGroup(group: *mut AIGroupInfo_t) -> qboolean {
             continue;
         }
         */
-        member = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*group).member[i as usize].number as usize);
+        member = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*group).member[i as usize].number as usize);
 
         //Must be alive
         if (*member).health <= 0 {
@@ -1100,7 +1110,8 @@ pub unsafe fn AI_RefreshGroup(group: *mut AIGroupInfo_t) -> qboolean {
     //calc the morale of this group
     (*group).morale = (*group).moraleAdjust;
     for i in 0..(*group).numGroup {
-        member = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*group).member[i as usize].number as usize);
+        member = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*group).member[i as usize].number as usize);
         if (*(*member).NPC).rank < RANK_ENSIGN {
             //grunts
             (*group).morale += 1;
@@ -1237,24 +1248,24 @@ pub unsafe fn AI_GroupContainsEntNum(group: *mut AIGroupInfo_t, entNum: c_int) -
 /*
 void AI_GetGroup( AIGroupInfo_t &group, gentity_t *ent, int radius )
 {
-	if ( ent->client == NULL )
-		return;
+    if ( ent->client == NULL )
+        return;
 
-	vec3_t	temp, angles;
+    vec3_t	temp, angles;
 
-	//FIXME: This is specialized code.. move?
-	if ( ent->enemy )
-	{
-		VectorSubtract( ent->enemy->r.currentOrigin, ent->r.currentOrigin, temp );
-		VectorNormalize( temp );	//FIXME: Needed?
-		vectoangles( temp, angles );
-	}
-	else
-	{
-		VectorCopy( ent->currentAngles, angles );
-	}
+    //FIXME: This is specialized code.. move?
+    if ( ent->enemy )
+    {
+        VectorSubtract( ent->enemy->r.currentOrigin, ent->r.currentOrigin, temp );
+        VectorNormalize( temp );	//FIXME: Needed?
+        vectoangles( temp, angles );
+    }
+    else
+    {
+        VectorCopy( ent->currentAngles, angles );
+    }
 
-	AI_GetGroup( group, ent->r.currentOrigin, ent->currentAngles, DEFAULT_RADIUS, radius, ent->client->playerTeam, ent, ent->enemy );
+    AI_GetGroup( group, ent->r.currentOrigin, ent->currentAngles, DEFAULT_RADIUS, radius, ent->client->playerTeam, ent, ent->enemy );
 }
 */
 /*
@@ -1337,7 +1348,9 @@ pub unsafe fn AI_DistributeAttack(
     if enemy != (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(0) {
         //rwwFIXMEFIXME: care about all clients not just 0
         let aroundPlayer = AI_GetGroupSize(
-            &(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(0)).r.currentOrigin,
+            &(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(0))
+                .r
+                .currentOrigin,
             48,
             team,
             attacker,
@@ -1367,7 +1380,8 @@ pub unsafe fn AI_DistributeAttack(
 
     //Cull this list
     for j in 0..numEnts {
-        let check = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(radiusEnts[j as usize] as usize);
+        let check = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add(radiusEnts[j as usize] as usize);
 
         //Validate clients
         if (*check).client.is_null() {

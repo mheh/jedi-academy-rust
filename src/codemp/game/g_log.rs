@@ -42,9 +42,9 @@ use crate::codemp::game::g_local::gentity_t;
 use crate::codemp::game::g_main::{
     g_entities, g_gametype, g_maxclients, g_statLog, g_statLogFile, level, G_LogPrintf,
 };
-use crate::codemp::game::w_saber::HasSetSaberOnly;
 use crate::codemp::game::q_shared::{Com_sprintf, Info_ValueForKey, Sz};
 use crate::codemp::game::q_shared_h::{FS_APPEND, MAX_CLIENTS};
+use crate::codemp::game::w_saber::HasSetSaberOnly;
 use crate::ffi::types::{qboolean, QFALSE, QTRUE};
 use crate::trap;
 
@@ -511,8 +511,13 @@ pub fn G_LogWeaponOutput() {
         for i in 0..MAX_CLIENTS {
             if (*addr_of!(G_WeaponLogClientTouch))[i] != 0 {
                 // Ignore any entity/clients we don't care about!
-                if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i)).client.is_null() {
-                    nameptr = (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i)).client)
+                if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i))
+                    .client
+                    .is_null()
+                {
+                    nameptr = (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add(i))
+                    .client)
                         .pers
                         .netname
                         .as_ptr();
@@ -552,8 +557,13 @@ pub fn G_LogWeaponOutput() {
         for i in 0..MAX_CLIENTS {
             if (*addr_of!(G_WeaponLogClientTouch))[i] != 0 {
                 // Ignore any entity/clients we don't care about!
-                if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i)).client.is_null() {
-                    nameptr = (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i)).client)
+                if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i))
+                    .client
+                    .is_null()
+                {
+                    nameptr = (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add(i))
+                    .client)
                         .pers
                         .netname
                         .as_ptr();
@@ -593,8 +603,13 @@ pub fn G_LogWeaponOutput() {
         for i in 0..MAX_CLIENTS {
             if (*addr_of!(G_WeaponLogClientTouch))[i] != 0 {
                 // Ignore any entity/clients we don't care about!
-                if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i)).client.is_null() {
-                    nameptr = (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i)).client)
+                if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i))
+                    .client
+                    .is_null()
+                {
+                    nameptr = (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add(i))
+                    .client)
                         .pers
                         .netname
                         .as_ptr();
@@ -634,8 +649,13 @@ pub fn G_LogWeaponOutput() {
         for i in 0..MAX_CLIENTS {
             if (*addr_of!(G_WeaponLogClientTouch))[i] != 0 {
                 // Ignore any entity/clients we don't care about!
-                if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i)).client.is_null() {
-                    nameptr = (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i)).client)
+                if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i))
+                    .client
+                    .is_null()
+                {
+                    nameptr = (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add(i))
+                    .client)
                         .pers
                         .netname
                         .as_ptr();
@@ -682,12 +702,18 @@ pub fn G_LogWeaponOutput() {
                 for j in 0..MOD_MAX {
                     if j <= MOD_SENTRY {
                         curwp = weaponFromMOD[j as usize];
-                        percharacter[curwp as usize] += (*addr_of!(G_WeaponLogDamage))[i][j as usize];
+                        percharacter[curwp as usize] +=
+                            (*addr_of!(G_WeaponLogDamage))[i][j as usize];
                     }
                 }
 
-                if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i)).client.is_null() {
-                    nameptr = (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i)).client)
+                if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i))
+                    .client
+                    .is_null()
+                {
+                    nameptr = (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add(i))
+                    .client)
                         .pers
                         .netname
                         .as_ptr();
@@ -734,12 +760,18 @@ pub fn G_LogWeaponOutput() {
                 for j in 0..MOD_MAX {
                     if j <= MOD_SENTRY {
                         curwp = weaponFromMOD[j as usize];
-                        percharacter[curwp as usize] += (*addr_of!(G_WeaponLogKills))[i][j as usize];
+                        percharacter[curwp as usize] +=
+                            (*addr_of!(G_WeaponLogKills))[i][j as usize];
                     }
                 }
 
-                if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i)).client.is_null() {
-                    nameptr = (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i)).client)
+                if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i))
+                    .client
+                    .is_null()
+                {
+                    nameptr = (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add(i))
+                    .client)
                         .pers
                         .netname
                         .as_ptr();
@@ -779,8 +811,13 @@ pub fn G_LogWeaponOutput() {
         for i in 0..MAX_CLIENTS {
             if (*addr_of!(G_WeaponLogClientTouch))[i] != 0 {
                 // Ignore any entity/clients we don't care about!
-                if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i)).client.is_null() {
-                    nameptr = (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i)).client)
+                if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i))
+                    .client
+                    .is_null()
+                {
+                    nameptr = (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add(i))
+                    .client)
                         .pers
                         .netname
                         .as_ptr();
@@ -820,8 +857,13 @@ pub fn G_LogWeaponOutput() {
         for i in 0..MAX_CLIENTS {
             if (*addr_of!(G_WeaponLogClientTouch))[i] != 0 {
                 // Ignore any entity/clients we don't care about!
-                if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i)).client.is_null() {
-                    nameptr = (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i)).client)
+                if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i))
+                    .client
+                    .is_null()
+                {
+                    nameptr = (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add(i))
+                    .client)
                         .pers
                         .netname
                         .as_ptr();
@@ -933,7 +975,8 @@ pub unsafe fn CalculateSharpshooter(ent: *mut gentity_t, frags: *mut c_int) -> q
 pub unsafe fn CalculateUntouchable(ent: *mut gentity_t) -> qboolean {
     let playTime: c_int = ((*addr_of!(level)).time - (*(*ent).client).pers.enterTime) / 60000;
 
-    if (*addr_of!(g_gametype)).integer == GT_JEDIMASTER && (*(*ent).client).ps.isJediMaster != QFALSE
+    if (*addr_of!(g_gametype)).integer == GT_JEDIMASTER
+        && (*(*ent).client).ps.isJediMaster != QFALSE
     {
         // Jedi Master (was Borg queen) can only be killed once anyway
         return QFALSE;
@@ -1006,7 +1049,8 @@ pub unsafe fn CalculateTactician(ent: *mut gentity_t, kills: *mut c_int) -> qboo
         // duh, only 1 weapon
         return QFALSE;
     }
-    if (*addr_of!(g_gametype)).integer == GT_JEDIMASTER && (*(*ent).client).ps.isJediMaster != QFALSE
+    if (*addr_of!(g_gametype)).integer == GT_JEDIMASTER
+        && (*(*ent).client).ps.isJediMaster != QFALSE
     {
         // Jedi Master (was Borg queen) has only 1 weapon
         return QFALSE;
@@ -1034,7 +1078,9 @@ pub unsafe fn CalculateTactician(ent: *mut gentity_t, kills: *mut c_int) -> qboo
 
     //------------------------------------------------------ FOR EVERY PERSON, CHECK FOR CANDIDATE
     for person in 0..(*addr_of!(g_maxclients)).integer {
-        let player = addr_of_mut!(g_entities).cast::<gentity_t>().add(person as usize);
+        let player = addr_of_mut!(g_entities)
+            .cast::<gentity_t>()
+            .add(person as usize);
         if (*player).inuse == QFALSE {
             continue;
         }
@@ -1052,8 +1098,7 @@ pub unsafe fn CalculateTactician(ent: *mut gentity_t, kills: *mut c_int) -> qboo
         let mut weapon = WP_STUN_BATON; // Start At Stun Baton
                                         //   keep looking through weapons if weapon is not on map, or if it is and we used it
         while weapon < WP_NUM_WEAPONS
-            && (wasPickedUpBySomeone[weapon as usize] == 0
-                || killsWithWeapon[weapon as usize] > 0)
+            && (wasPickedUpBySomeone[weapon as usize] == 0 || killsWithWeapon[weapon as usize] > 0)
         {
             weapon += 1;
             nKills += killsWithWeapon[weapon as usize]; // Update the number of kills
@@ -1402,7 +1447,11 @@ pub unsafe fn CalculateAwards(ent: *mut gentity_t, msg: *mut c_char) {
     // buf1/buf2 already zeroed (the C memsets them).
     if CalculateEfficiency(ent, &mut efficiency) != QFALSE {
         awardFlags |= 1 << AWARD_EFFICIENCY;
-        Com_sprintf(buf1.as_mut_ptr(), AWARDS_MSG_LENGTH, format_args!(" {}", efficiency));
+        Com_sprintf(
+            buf1.as_mut_ptr(),
+            AWARDS_MSG_LENGTH,
+            format_args!(" {}", efficiency),
+        );
     }
     if CalculateSharpshooter(ent, &mut kills) != QFALSE {
         awardFlags |= 1 << AWARD_SHARPSHOOTER;

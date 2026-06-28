@@ -11,92 +11,88 @@ use core::ptr::{addr_of, addr_of_mut, null_mut, write_bytes};
 
 use crate::codemp::game::ai_main_h::{
     bot_state_t, boteventtracker_t, BASE_FLAGWAIT_DISTANCE, BASE_GETENEMYFLAG_DISTANCE,
-    BASE_GUARD_DISTANCE, BOT_FLAG_GET_DISTANCE, BOT_MAX_WEAPON_CHASE_CTF, BOT_MAX_WEAPON_GATHER_TIME,
-    BOT_MIN_SIEGE_GOAL_SHOOT, BOT_MIN_SIEGE_GOAL_TRAVEL,
-    BOT_PLANT_BLOW_DISTANCE, BOT_RUN_HEALTH,
-    BWEAPONRANGE_LONG, BWEAPONRANGE_MELEE,
-    BWEAPONRANGE_MID, BWEAPONRANGE_SABER, CTFSTATE_ATTACKER, CTFSTATE_DEFENDER,
+    BASE_GUARD_DISTANCE, BOT_FLAG_GET_DISTANCE, BOT_MAX_WEAPON_CHASE_CTF,
+    BOT_MAX_WEAPON_CHASE_TIME, BOT_MAX_WEAPON_GATHER_TIME, BOT_MIN_SIEGE_GOAL_SHOOT,
+    BOT_MIN_SIEGE_GOAL_TRAVEL, BOT_PLANT_BLOW_DISTANCE, BOT_PLANT_DISTANCE, BOT_PLANT_INTERVAL,
+    BOT_RUN_HEALTH, BOT_SABER_THROW_RANGE, BOT_WPTOUCH_DISTANCE, BWEAPONRANGE_LONG,
+    BWEAPONRANGE_MELEE, BWEAPONRANGE_MID, BWEAPONRANGE_SABER, CTFSTATE_ATTACKER, CTFSTATE_DEFENDER,
     CTFSTATE_GETFLAGHOME, CTFSTATE_GUARDCARRIER, CTFSTATE_MAXCTFSTATES, CTFSTATE_NONE,
-    CTFSTATE_RETRIEVAL, BOT_MAX_WEAPON_CHASE_TIME, SIEGESTATE_ATTACKER, SIEGESTATE_DEFENDER,
-    SIEGESTATE_MAXSIEGESTATES, SIEGESTATE_NONE, TEAMPLAYSTATE_MAXTPSTATES,
-    WPFLAG_SIEGE_IMPERIALOBJ, WPFLAG_SIEGE_REBELOBJ,
-    TEAMPLAYSTATE_NONE, ENEMY_FORGET_MS,
-    LEVELFLAG_IGNOREINFALLBACK, LEVELFLAG_IMUSTNTRUNAWAY, MAX_CHICKENWUSS_TIME, MELEE_ATTACK_RANGE,
-    SABER_ATTACK_RANGE, TEAMPLAYSTATE_ASSISTING, TEAMPLAYSTATE_FOLLOWING, TEAMPLAYSTATE_REGROUP,
-    WPFLAG_BLUE_FLAG, WPFLAG_DUCK, WPFLAG_GOALPOINT, WPFLAG_JUMP, WPFLAG_NOMOVEFUNC,
-    WPFLAG_ONEWAY_BACK,
-    WPFLAG_ONEWAY_FWD, WPFLAG_RED_FLAG, WPFLAG_SNIPEORCAMP, WPFLAG_SNIPEORCAMPSTAND, WP_KEEP_FLAG_DIST,
-    BOT_PLANT_DISTANCE, BOT_PLANT_INTERVAL, BOT_SABER_THROW_RANGE, BOT_WPTOUCH_DISTANCE,
-    LEVELFLAG_NOPOINTPREDICTION, WPFLAG_NOVIS, WPFLAG_WAITFORFUNC,
+    CTFSTATE_RETRIEVAL, ENEMY_FORGET_MS, LEVELFLAG_IGNOREINFALLBACK, LEVELFLAG_IMUSTNTRUNAWAY,
+    LEVELFLAG_NOPOINTPREDICTION, MAX_CHICKENWUSS_TIME, MELEE_ATTACK_RANGE, SABER_ATTACK_RANGE,
+    SIEGESTATE_ATTACKER, SIEGESTATE_DEFENDER, SIEGESTATE_MAXSIEGESTATES, SIEGESTATE_NONE,
+    TEAMPLAYSTATE_ASSISTING, TEAMPLAYSTATE_FOLLOWING, TEAMPLAYSTATE_MAXTPSTATES,
+    TEAMPLAYSTATE_NONE, TEAMPLAYSTATE_REGROUP, WPFLAG_BLUE_FLAG, WPFLAG_DUCK, WPFLAG_GOALPOINT,
+    WPFLAG_JUMP, WPFLAG_NOMOVEFUNC, WPFLAG_NOVIS, WPFLAG_ONEWAY_BACK, WPFLAG_ONEWAY_FWD,
+    WPFLAG_RED_FLAG, WPFLAG_SIEGE_IMPERIALOBJ, WPFLAG_SIEGE_REBELOBJ, WPFLAG_SNIPEORCAMP,
+    WPFLAG_SNIPEORCAMPSTAND, WPFLAG_WAITFORFUNC, WP_KEEP_FLAG_DIST,
 };
-use crate::codemp::game::ai_wpnav::{gLevelFlags, gWPArray, gWPNum};
 use crate::codemp::game::ai_util::{B_Alloc, BotDoChat, BotUtilizePersonality};
-use crate::codemp::game::botlib_h::{
-    bot_input_t, ACTION_ALT_ATTACK, ACTION_ATTACK, ACTION_CROUCH, ACTION_DELAYEDJUMP,
-    ACTION_FORCEPOWER, ACTION_GESTURE, ACTION_JUMP, ACTION_MOVEBACK, ACTION_MOVEFORWARD,
-    ACTION_MOVELEFT, ACTION_MOVERIGHT, ACTION_RESPAWN, ACTION_USE, ACTION_WALK, PRT_FATAL,
-};
-use crate::codemp::game::bg_panimate::{BG_SaberInKata, BG_SaberInSpecial};
-use crate::codemp::game::bg_public::{LS_SPINATTACK, LS_SPINATTACK_DUAL};
-use crate::codemp::game::bg_pmove::forceJumpStrength;
+use crate::codemp::game::ai_wpnav::gDeactivated;
+use crate::codemp::game::ai_wpnav::{gBotEdit, BotWaypointRender};
+use crate::codemp::game::ai_wpnav::{gLevelFlags, gWPArray, gWPNum};
 use crate::codemp::game::be_aas_h::aas_entityinfo_t;
+use crate::codemp::game::bg_lib::rand;
+use crate::codemp::game::bg_misc::BG_GetItemIndexByTag;
+use crate::codemp::game::bg_panimate::{BG_SaberInKata, BG_SaberInSpecial};
+use crate::codemp::game::bg_pmove::forceJumpStrength;
+use crate::codemp::game::bg_pmove::forcePowerNeeded;
 use crate::codemp::game::bg_public::{
-    ET_SPECIAL, EV_ALT_FIRE, EV_FIRE_WEAPON, EV_FOOTSTEP, EV_FOOTSTEP_METAL, EV_FOOTWADE,
-    EV_GLOBAL_SOUND, EV_JUMP, EV_ROLL, EV_SABER_ATTACK, EV_STEP_12, EV_STEP_16, EV_STEP_4,
-    EV_STEP_8, GT_CTF, GT_CTY, GT_DUEL, GT_JEDIMASTER, GT_POWERDUEL, GT_SIEGE, GT_SINGLE_PLAYER,
-    GT_TEAM,
-    HI_MEDPAC, HI_MEDPAC_BIG, HI_SEEKER, HI_SENTRY_GUN, HI_SHIELD, IT_AMMO, IT_HOLDABLE, IT_POWERUP,
-    IT_WEAPON, MASK_PLAYERSOLID, MASK_SOLID, PM_INTERMISSION, PM_SPECTATOR, PW_BLUEFLAG, PW_REDFLAG,
-    STAT_HOLDABLE_ITEM, STAT_HOLDABLE_ITEMS, STAT_WEAPONS, TEAM_BLUE, TEAM_RED, TEAM_SPECTATOR,
-    WEAPON_CHARGING, WEAPON_CHARGING_ALT, DEFAULT_MAXS_2, ET_NPC, PMF_JUMP_HELD, WEAPON_READY,
+    DEFAULT_MAXS_2, ET_NPC, ET_SPECIAL, EV_ALT_FIRE, EV_FIRE_WEAPON, EV_FOOTSTEP,
+    EV_FOOTSTEP_METAL, EV_FOOTWADE, EV_GLOBAL_SOUND, EV_JUMP, EV_ROLL, EV_SABER_ATTACK, EV_STEP_12,
+    EV_STEP_16, EV_STEP_4, EV_STEP_8, GT_CTF, GT_CTY, GT_DUEL, GT_JEDIMASTER, GT_POWERDUEL,
+    GT_SIEGE, GT_SINGLE_PLAYER, GT_TEAM, HI_MEDPAC, HI_MEDPAC_BIG, HI_SEEKER, HI_SENTRY_GUN,
+    HI_SHIELD, IT_AMMO, IT_HOLDABLE, IT_POWERUP, IT_WEAPON, MASK_PLAYERSOLID, MASK_SOLID,
+    PMF_JUMP_HELD, PM_INTERMISSION, PM_SPECTATOR, PW_BLUEFLAG, PW_REDFLAG, STAT_HOLDABLE_ITEM,
+    STAT_HOLDABLE_ITEMS, STAT_WEAPONS, TEAM_BLUE, TEAM_RED, TEAM_SPECTATOR, WEAPON_CHARGING,
+    WEAPON_CHARGING_ALT, WEAPON_READY,
 };
+use crate::codemp::game::bg_public::{LS_SPINATTACK, LS_SPINATTACK_DUAL};
+use crate::codemp::game::bg_saga_h::SIEGETEAM_TEAM1;
 use crate::codemp::game::bg_weapons::weaponData;
 use crate::codemp::game::bg_weapons_h::{
     WP_BLASTER, WP_BOWCASTER, WP_BRYAR_PISTOL, WP_DEMP2, WP_DET_PACK, WP_DISRUPTOR, WP_FLECHETTE,
     WP_MELEE, WP_NONE, WP_NUM_WEAPONS, WP_REPEATER, WP_ROCKET_LAUNCHER, WP_SABER, WP_STUN_BATON,
     WP_THERMAL, WP_TRIP_MINE,
 };
-use crate::codemp::game::bg_lib::rand;
+use crate::codemp::game::botlib_h::{
+    bot_input_t, ACTION_ALT_ATTACK, ACTION_ATTACK, ACTION_CROUCH, ACTION_DELAYEDJUMP,
+    ACTION_FORCEPOWER, ACTION_GESTURE, ACTION_JUMP, ACTION_MOVEBACK, ACTION_MOVEFORWARD,
+    ACTION_MOVELEFT, ACTION_MOVERIGHT, ACTION_RESPAWN, ACTION_USE, ACTION_WALK, PRT_FATAL,
+};
+use crate::codemp::game::g_bot::G_CheckBotSpawn;
+use crate::codemp::game::g_client::gJMSaberEnt;
+use crate::codemp::game::g_cmds::{Cmd_EngageDuel_f, Cmd_SaberAttackCycle_f, Cmd_ToggleSaber_f};
+use crate::codemp::game::g_combat::G_ThereIsAMaster;
 use crate::codemp::game::g_local::{
     bot_settings_t, gclient_t, gentity_t, CON_CONNECTED, CON_DISCONNECTED, FL_DROPPED_ITEM,
 };
 use crate::codemp::game::g_main::{
-    g_entities, g_forcePowerDisable, g_friendlyFire, g_gametype, g_privateDuel, g_RMG, level,
+    g_RMG, g_entities, g_forcePowerDisable, g_friendlyFire, g_gametype, g_privateDuel, level,
 };
-use crate::codemp::game::g_cmds::{Cmd_EngageDuel_f, Cmd_SaberAttackCycle_f, Cmd_ToggleSaber_f};
-use crate::codemp::game::w_force::ForcePowerUsableOn;
-use crate::codemp::game::bg_pmove::forcePowerNeeded;
-use crate::codemp::game::w_saber_h::{
-    FORCE_LIGHTNING_RADIUS, MAX_DRAIN_DISTANCE, MAX_GRIP_DISTANCE, MAX_TRICK_DISTANCE,
-};
-use crate::codemp::game::teams_h::CLASS_VEHICLE;
-use crate::codemp::game::ai_wpnav::gDeactivated;
-use crate::codemp::game::ai_wpnav::{gBotEdit, BotWaypointRender};
-use crate::codemp::game::q_shared::Q_stricmp;
-use crate::codemp::game::g_bot::G_CheckBotSpawn;
-use crate::codemp::game::g_combat::G_ThereIsAMaster;
 use crate::codemp::game::g_public_h::SVF_NOCLIENT;
-use crate::codemp::game::bg_misc::BG_GetItemIndexByTag;
-use crate::codemp::game::bg_saga_h::SIEGETEAM_TEAM1;
-use crate::codemp::game::g_client::gJMSaberEnt;
 use crate::codemp::game::g_saga::{imperial_attackers, rebel_attackers};
 use crate::codemp::game::g_team::OnSameTeam;
 use crate::codemp::game::g_utils::G_Find;
+use crate::codemp::game::q_math::Q_irand;
 use crate::codemp::game::q_math::{
     vec3_origin, vectoangles, AngleMod, AngleVectors, DotProduct, VectorCopy, VectorLength,
     VectorNormalize, VectorSubtract,
 };
-use crate::codemp::game::q_math::Q_irand;
+use crate::codemp::game::q_shared::Q_stricmp;
 use crate::codemp::game::q_shared_h::{
     entityState_t, forcedata_t, playerState_t, usercmd_t, vec3_t, wpobject_t, Q_IsColorString,
     ANGLE2SHORT, BUTTON_ALT_ATTACK, BUTTON_ATTACK, BUTTON_FORCEPOWER, BUTTON_GESTURE, BUTTON_USE,
-    CA_ACTIVE, CA_AUTHORIZING,
-    BUTTON_USE_HOLDABLE, BUTTON_WALKING, CVAR_CHEAT, ENTITYNUM_NONE, FP_LEVITATION, FP_RAGE,
-    MAX_CLIENTS, MAX_PS_EVENTS, PITCH, ROLL, SHORT2ANGLE, YAW,
-    FP_ABSORB, FP_DRAIN, FP_GRIP, FP_HEAL, FP_LIGHTNING, FP_PROTECT, FP_PULL, FP_PUSH, FP_SABERTHROW,
-    FP_SABER_OFFENSE, FP_SEE, FP_SPEED, FP_TEAM_FORCE, FP_TEAM_HEAL, FP_TELEPATHY,
-    FORCE_DARKSIDE, FORCE_LEVEL_1, FORCE_LIGHTSIDE, MAX_GENTITIES, SS_DUAL, SS_FAST, SS_MEDIUM,
-    SS_STAFF, SS_STRONG,
+    BUTTON_USE_HOLDABLE, BUTTON_WALKING, CA_ACTIVE, CA_AUTHORIZING, CVAR_CHEAT, ENTITYNUM_NONE,
+    FORCE_DARKSIDE, FORCE_LEVEL_1, FORCE_LIGHTSIDE, FP_ABSORB, FP_DRAIN, FP_GRIP, FP_HEAL,
+    FP_LEVITATION, FP_LIGHTNING, FP_PROTECT, FP_PULL, FP_PUSH, FP_RAGE, FP_SABERTHROW,
+    FP_SABER_OFFENSE, FP_SEE, FP_SPEED, FP_TEAM_FORCE, FP_TEAM_HEAL, FP_TELEPATHY, MAX_CLIENTS,
+    MAX_GENTITIES, MAX_PS_EVENTS, PITCH, ROLL, SHORT2ANGLE, SS_DUAL, SS_FAST, SS_MEDIUM, SS_STAFF,
+    SS_STRONG, YAW,
+};
+use crate::codemp::game::teams_h::CLASS_VEHICLE;
+use crate::codemp::game::w_force::ForcePowerUsableOn;
+use crate::codemp::game::w_saber_h::{
+    FORCE_LIGHTNING_RADIUS, MAX_DRAIN_DISTANCE, MAX_GRIP_DISTANCE, MAX_TRICK_DISTANCE,
 };
 use crate::ffi::types::{qboolean, vmCvar_t, QFALSE, QTRUE};
 use crate::trap;
@@ -292,7 +288,9 @@ pub unsafe fn BotMindTricked(botClient: c_int, enemyClient: c_int) -> c_int {
         return 0;
     }
 
-    fd = &mut (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(enemyClient as usize)).client)
+    fd = &mut (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+        .add(enemyClient as usize))
+    .client)
         .ps
         .fd;
 
@@ -515,7 +513,8 @@ pub fn PlayersInGame() -> c_int {
 
     while i < MAX_CLIENTS {
         unsafe {
-            let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i);
+            let ent: *mut gentity_t =
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i);
 
             if !ent.is_null()
                 && !(*ent).client.is_null()
@@ -569,13 +568,25 @@ pub unsafe fn WPOrgVisible(
     let tr = trap::Trace(org1, &vec3_origin, &vec3_origin, org2, ignore, MASK_SOLID);
 
     if tr.fraction == 1.0 {
-        let tr = trap::Trace(org1, &vec3_origin, &vec3_origin, org2, ignore, MASK_PLAYERSOLID);
+        let tr = trap::Trace(
+            org1,
+            &vec3_origin,
+            &vec3_origin,
+            org2,
+            ignore,
+            MASK_PLAYERSOLID,
+        );
 
         if tr.fraction != 1.0
             && tr.entityNum as c_int != ENTITYNUM_NONE
-            && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(tr.entityNum as usize)).s.eType == ET_SPECIAL
+            && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add(tr.entityNum as usize))
+            .s
+            .eType
+                == ET_SPECIAL
         {
-            let hitent = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(tr.entityNum as usize);
+            let hitent = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add(tr.entityNum as usize);
             if !(*hitent).parent.is_null() && !(*(*hitent).parent).client.is_null() {
                 ownent = (*hitent).parent;
 
@@ -903,7 +914,10 @@ pub unsafe fn BotIsAChickenWuss(bs: *mut bot_state_t) -> c_int {
 
     (*bs).chickenWussCalculationTime = ((*addr_of!(level)).time + MAX_CHICKENWUSS_TIME) as f32;
 
-    if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).health < BOT_RUN_HEALTH {
+    if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize))
+        .health
+        < BOT_RUN_HEALTH
+    {
         //we're low on health, let's get away
         return 1;
     }
@@ -1002,7 +1016,11 @@ pub unsafe fn PassStandardEnemyChecks(bs: *mut bot_state_t, en: *mut gentity_t) 
         return 0;
     }
 
-    if OnSameTeam((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize), en) != QFALSE {
+    if OnSameTeam(
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize),
+        en,
+    ) != QFALSE
+    {
         //don't attack teammates
         return 0;
     }
@@ -1059,7 +1077,6 @@ pub unsafe fn PassStandardEnemyChecks(bs: *mut bot_state_t, en: *mut gentity_t) 
     1
 }
 
-
 //We cannot hurt the ones we love. Unless of course this
 //function says we can.
 /// `int PassLovedOneCheck(bot_state_t *bs, gentity_t *ent)` (ai_main.c:2053) — return 0 only
@@ -1110,8 +1127,10 @@ pub unsafe fn PassLovedOneCheck(bs: *mut bot_state_t, ent: *mut gentity_t) -> c_
                 return 1;
             } else if IsTeamplay() != 0
                 && OnSameTeam(
-                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize),
-                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*loved).client as usize),
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*bs).client as usize),
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*loved).client as usize),
                 ) == QFALSE
                 && (*bs).loved[i as usize].level < 2
             {
@@ -1127,7 +1146,6 @@ pub unsafe fn PassLovedOneCheck(bs: *mut bot_state_t, ent: *mut gentity_t) -> c_
 
     1
 }
-
 
 /// `int GetLoveLevel(bot_state_t *bs, bot_state_t *love)` (ai_main.c:5245) — look up how much
 /// `bs` "loves" the bot `love` by matching `love`'s netname against `bs`'s attachment list;
@@ -1163,7 +1181,9 @@ pub unsafe fn GetLoveLevel(bs: *mut bot_state_t, love: *mut bot_state_t) -> c_in
         return 1;
     }
 
-    lname = (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*love).client as usize)).client)
+    lname = (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+        .add((*love).client as usize))
+    .client)
         .pers
         .netname
         .as_ptr();
@@ -1182,7 +1202,6 @@ pub unsafe fn GetLoveLevel(bs: *mut bot_state_t, love: *mut bot_state_t) -> c_in
 
     0
 }
-
 
 //standard check to find a new enemy.
 /// `int ScanForEnemies(bot_state_t *bs)` (ai_main.c:2109) — sweep every client for the closest
@@ -1236,7 +1255,11 @@ pub unsafe fn ScanForEnemies(bs: *mut bot_state_t) -> c_int {
         let ent = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
         if i != (*bs).client
             && !(*ent).client.is_null()
-            && OnSameTeam((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize), ent) == QFALSE
+            && OnSameTeam(
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*bs).client as usize),
+                ent,
+            ) == QFALSE
             && PassStandardEnemyChecks(bs, ent) != 0
             && BotPVSCheck(&(*(*ent).client).ps.origin, &(*bs).eye) != QFALSE
             && PassLovedOneCheck(bs, ent) != 0
@@ -1286,7 +1309,6 @@ pub unsafe fn ScanForEnemies(bs: *mut bot_state_t) -> c_int {
     bestindex
 }
 
-
 //Notifies the bot that he has taken damage from "attacker".
 /// `void BotDamageNotification(gclient_t *bot, gentity_t *attacker)` (ai_main.c:1836) — record
 /// that `attacker` hurt the bot. Bot-vs-bot transfers "lastAttacked" exclusivity; a real-client
@@ -1318,14 +1340,16 @@ pub unsafe fn BotDamageNotification(bot: *mut gclient_t, attacker: *mut gentity_
 
     if !bs_a.is_null() {
         //if the client attacking us is a bot as well
-        (*bs_a).lastAttacked = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bot).ps.clientNum as usize);
+        (*bs_a).lastAttacked = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*bot).ps.clientNum as usize);
         i = 0;
 
         while i < MAX_CLIENTS as c_int {
             if !(*addr_of!(botstates))[i as usize].is_null()
                 && i != (*bs_a).client
                 && (*(*addr_of!(botstates))[i as usize]).lastAttacked
-                    == (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bot).ps.clientNum as usize)
+                    == (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*bot).ps.clientNum as usize)
             {
                 (*(*addr_of!(botstates))[i as usize]).lastAttacked = null_mut();
             }
@@ -1339,7 +1363,8 @@ pub unsafe fn BotDamageNotification(bot: *mut gclient_t, attacker: *mut gentity_
         while i < MAX_CLIENTS as c_int {
             if !(*addr_of!(botstates))[i as usize].is_null()
                 && (*(*addr_of!(botstates))[i as usize]).lastAttacked
-                    == (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bot).ps.clientNum as usize)
+                    == (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*bot).ps.clientNum as usize)
             {
                 (*(*addr_of!(botstates))[i as usize]).lastAttacked = null_mut();
             }
@@ -1372,7 +1397,6 @@ pub unsafe fn BotDamageNotification(bot: *mut gclient_t, attacker: *mut gentity_
         (*bs).enemySeenTime = ((*addr_of!(level)).time + ENEMY_FORGET_MS) as f32;
     }
 }
-
 
 /// `gentity_t *CheckForFriendInLOF(bot_state_t *bs)` (ai_main.c:5520) — trace 2048 units along
 /// the bot's view; if the first client hit is a teammate (teamplay) or a sufficiently-loved bot
@@ -1407,11 +1431,16 @@ pub unsafe fn CheckForFriendInLOF(bs: *mut bot_state_t) -> *mut gentity_t {
     let tr = trap::Trace(&trfrom, &mins, &maxs, &trto, (*bs).client, MASK_PLAYERSOLID);
 
     if tr.fraction != 1.0 && (tr.entityNum as c_int) <= MAX_CLIENTS as c_int {
-        trent = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(tr.entityNum as usize);
+        trent =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(tr.entityNum as usize);
 
         if !trent.is_null() && !(*trent).client.is_null() {
             if IsTeamplay() != 0
-                && OnSameTeam((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize), trent) != QFALSE
+                && OnSameTeam(
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*bs).client as usize),
+                    trent,
+                ) != QFALSE
             {
                 return trent;
             }
@@ -1426,7 +1455,6 @@ pub unsafe fn CheckForFriendInLOF(bs: *mut bot_state_t) -> *mut gentity_t {
 
     null_mut()
 }
-
 
 //get the nearest possible waypoint to the flag since it's not in its original position
 /// `void GetNewFlagPoint(wpobject_t *wp, gentity_t *flagEnt, int team)` (ai_main.c:2714) — when a
@@ -1509,7 +1537,6 @@ pub unsafe fn GetNewFlagPoint(wp: *mut wpobject_t, flag_ent: *mut gentity_t, tea
         }
     }
 }
-
 
 /// `float BotWeaponCanLead(bot_state_t *bs)` (ai_main.c:4546) — per-weapon aim-lead factor for
 /// the bot's current weapon; `0` for weapons we don't lead with.
@@ -1680,7 +1707,14 @@ pub unsafe fn BotSurfaceNear(bs: *mut bot_state_t) -> c_int {
     fwd[1] = (*bs).origin[1] + (fwd[1] * 64.0);
     fwd[2] = (*bs).origin[2] + (fwd[2] * 64.0);
 
-    let tr = trap::Trace(&(*bs).origin, &vec3_origin, &vec3_origin, &fwd, (*bs).client, MASK_SOLID);
+    let tr = trap::Trace(
+        &(*bs).origin,
+        &vec3_origin,
+        &vec3_origin,
+        &fwd,
+        (*bs).client,
+        MASK_SOLID,
+    );
 
     if tr.fraction != 1.0 {
         return 1;
@@ -1832,7 +1866,8 @@ pub unsafe fn BotHasAssociated(bs: *mut bot_state_t, wp: *mut wpobject_t) -> c_i
         return 1;
     }
 
-    as_ = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*wp).associated_entity as usize);
+    as_ = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+        .add((*wp).associated_entity as usize);
 
     if as_.is_null() || (*as_).item.is_null() {
         return 0;
@@ -1921,7 +1956,14 @@ pub unsafe fn BotTrace_Strafe(bs: *mut bot_state_t, traceto: &vec3_t) -> c_int {
     to[1] = from[1] + forward[1] * 32.0;
     to[2] = from[2] + forward[2] * 32.0;
 
-    let tr = trap::Trace(&from, &player_mins, &player_maxs, &to, (*bs).client, MASK_PLAYERSOLID);
+    let tr = trap::Trace(
+        &from,
+        &player_mins,
+        &player_maxs,
+        &to,
+        (*bs).client,
+        MASK_PLAYERSOLID,
+    );
 
     if tr.fraction == 1.0 {
         return 0;
@@ -1937,7 +1979,14 @@ pub unsafe fn BotTrace_Strafe(bs: *mut bot_state_t, traceto: &vec3_t) -> c_int {
     to[1] += right[1] * 32.0;
     to[2] += right[2] * 32.0;
 
-    let tr = trap::Trace(&from, &player_mins, &player_maxs, &to, (*bs).client, MASK_PLAYERSOLID);
+    let tr = trap::Trace(
+        &from,
+        &player_mins,
+        &player_maxs,
+        &to,
+        (*bs).client,
+        MASK_PLAYERSOLID,
+    );
 
     if tr.fraction == 1.0 {
         return STRAFEAROUND_RIGHT;
@@ -1951,7 +2000,14 @@ pub unsafe fn BotTrace_Strafe(bs: *mut bot_state_t, traceto: &vec3_t) -> c_int {
     to[1] -= right[1] * 64.0;
     to[2] -= right[2] * 64.0;
 
-    let tr = trap::Trace(&from, &player_mins, &player_maxs, &to, (*bs).client, MASK_PLAYERSOLID);
+    let tr = trap::Trace(
+        &from,
+        &player_mins,
+        &player_maxs,
+        &to,
+        (*bs).client,
+        MASK_PLAYERSOLID,
+    );
 
     if tr.fraction == 1.0 {
         return STRAFEAROUND_LEFT;
@@ -2178,7 +2234,10 @@ pub unsafe fn BotAimLeading(bs: *mut bot_state_t, headlevel: &vec3_t, lead_amoun
 
     //G_Printf("Leadin target with a velocity total of %f\n", vtotal);
 
-    VectorCopy(&(*(*(*bs).currentEnemy).client).ps.velocity, &mut movement_vector);
+    VectorCopy(
+        &(*(*(*bs).currentEnemy).client).ps.velocity,
+        &mut movement_vector,
+    );
 
     VectorNormalize(&mut movement_vector);
 
@@ -2189,7 +2248,8 @@ pub unsafe fn BotAimLeading(bs: *mut bot_state_t, headlevel: &vec3_t, lead_amoun
     }
 
     if vtotal != 0.0 {
-        x = (((*bs).frame_Enemy_Len * 0.9) * lead_amount * (vtotal * 0.0012)) as c_int; //hardly calculated with an exact science, but it works
+        x = (((*bs).frame_Enemy_Len * 0.9) * lead_amount * (vtotal * 0.0012)) as c_int;
+    //hardly calculated with an exact science, but it works
     } else {
         x = (((*bs).frame_Enemy_Len * 0.9) * lead_amount) as c_int; //hardly calculated with an exact science, but it works
     }
@@ -2246,7 +2306,8 @@ pub unsafe fn BotAimOffsetGoalAngles(bs: *mut bot_state_t) {
 
     acc_val = (*bs).skills.accuracy / (*bs).settings.skill;
 
-    if !(*bs).currentEnemy.is_null() && BotMindTricked((*bs).client, (*(*bs).currentEnemy).s.number) != 0
+    if !(*bs).currentEnemy.is_null()
+        && BotMindTricked((*bs).client, (*(*bs).currentEnemy).s.number) != 0
     {
         //having to judge where they are by hearing them, so we should be quite inaccurate here
         acc_val *= 7.0;
@@ -2275,9 +2336,23 @@ pub unsafe fn BotAimOffsetGoalAngles(bs: *mut bot_state_t) {
             acc_val += acc_val * 0.25; //if he's moving he's this much harder to hit
         }
 
-        if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).s.pos.trDelta[0] != 0.0
-            || (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).s.pos.trDelta[1] != 0.0
-            || (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).s.pos.trDelta[2] != 0.0
+        if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize))
+            .s
+            .pos
+            .trDelta[0]
+            != 0.0
+            || (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*bs).client as usize))
+            .s
+            .pos
+            .trDelta[1]
+                != 0.0
+            || (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*bs).client as usize))
+            .s
+            .pos
+            .trDelta[2]
+                != 0.0
         {
             acc_val += acc_val * 0.15; //make it somewhat harder to aim if we're moving also
         }
@@ -2332,8 +2407,7 @@ pub unsafe fn ShouldSecondaryFire(bs: *mut bot_state_t) -> c_int {
         return 0;
     }
 
-    if (*bs).cur_ps.weaponstate == WEAPON_CHARGING_ALT
-        && (*bs).cur_ps.weapon == WP_ROCKET_LAUNCHER
+    if (*bs).cur_ps.weaponstate == WEAPON_CHARGING_ALT && (*bs).cur_ps.weapon == WP_ROCKET_LAUNCHER
     {
         let held_time: f32 = ((*addr_of!(level)).time - (*bs).cur_ps.weaponChargeTime) as f32;
 
@@ -2414,7 +2488,8 @@ pub unsafe fn PassWayCheck(bs: *mut bot_state_t, windex: c_int) -> c_int {
     if (*bs).wpDirection != 0 && ((*gWPArray[windex as usize]).flags & WPFLAG_ONEWAY_FWD) != 0 {
         //we're not travelling in a direction on the trail that will allow us to pass this point
         return 0;
-    } else if (*bs).wpDirection == 0 && ((*gWPArray[windex as usize]).flags & WPFLAG_ONEWAY_BACK) != 0
+    } else if (*bs).wpDirection == 0
+        && ((*gWPArray[windex as usize]).flags & WPFLAG_ONEWAY_BACK) != 0
     {
         //we're not travelling in a direction on the trail that will allow us to pass this point
         return 0;
@@ -2651,8 +2726,7 @@ pub unsafe fn WPConstantRoutine(bs: *mut bot_state_t) {
         let _ = height_dif;
 
         if (*bs).cur_ps.fd.forceJumpCharge
-            < (forceJumpStrength
-                [(*bs).cur_ps.fd.forcePowerLevel[FP_LEVITATION as usize] as usize]
+            < (forceJumpStrength[(*bs).cur_ps.fd.forcePowerLevel[FP_LEVITATION as usize] as usize]
                 - 100.0)
         {
             (*bs).forceJumpChargeTime = (*addr_of!(level)).time + 200;
@@ -2982,10 +3056,7 @@ pub unsafe fn MeleeCombatHandling(bs: *mut bot_state_t) {
     }
 
     if !(*(*bs).currentEnemy).client.is_null() {
-        VectorCopy(
-            &(*(*(*bs).currentEnemy).client).ps.origin,
-            &mut usethisvec,
-        );
+        VectorCopy(&(*(*(*bs).currentEnemy).client).ps.origin, &mut usethisvec);
     } else {
         VectorCopy(&(*(*bs).currentEnemy).s.origin, &mut usethisvec);
     }
@@ -3067,10 +3138,7 @@ pub unsafe fn SaberCombatHandling(bs: *mut bot_state_t) {
     }
 
     if !(*(*bs).currentEnemy).client.is_null() {
-        VectorCopy(
-            &(*(*(*bs).currentEnemy).client).ps.origin,
-            &mut usethisvec,
-        );
+        VectorCopy(&(*(*(*bs).currentEnemy).client).ps.origin, &mut usethisvec);
     } else {
         VectorCopy(&(*(*bs).currentEnemy).s.origin, &mut usethisvec);
     }
@@ -3323,16 +3391,29 @@ pub unsafe fn CommanderBotCTFAI(bs: *mut bot_state_t) {
 
         if !ent.is_null() && !(*ent).client.is_null() {
             if (*(*ent).client).ps.powerups[enemyFlag as usize] != 0
-                && OnSameTeam((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize), ent) != QFALSE
+                && OnSameTeam(
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*bs).client as usize),
+                    ent,
+                ) != QFALSE
             {
                 weHaveEnemyFlag = 1;
             } else if (*(*ent).client).ps.powerups[myFlag as usize] != 0
-                && OnSameTeam((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize), ent) == QFALSE
+                && OnSameTeam(
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*bs).client as usize),
+                    ent,
+                ) == QFALSE
             {
                 enemyHasOurFlag = 1;
             }
 
-            if OnSameTeam((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize), ent) != QFALSE {
+            if OnSameTeam(
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*bs).client as usize),
+                ent,
+            ) != QFALSE
+            {
                 numOnMyTeam += 1;
             } else {
                 numOnEnemyTeam += 1;
@@ -3364,7 +3445,10 @@ pub unsafe fn CommanderBotCTFAI(bs: *mut bot_state_t) {
             && !(*ent).client.is_null()
             && !(*addr_of!(botstates))[i as usize].is_null()
             && !(*(*addr_of!(botstates))[i as usize]).squadLeader.is_null()
-            && (*(*(*addr_of!(botstates))[i as usize]).squadLeader).s.number == (*bs).client
+            && (*(*(*addr_of!(botstates))[i as usize]).squadLeader)
+                .s
+                .number
+                == (*bs).client
             && i != (*bs).client
         {
             squad[squadmates as usize] = ent;
@@ -3374,7 +3458,8 @@ pub unsafe fn CommanderBotCTFAI(bs: *mut bot_state_t) {
         i += 1;
     }
 
-    squad[squadmates as usize] = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize);
+    squad[squadmates as usize] =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize);
     squadmates += 1;
 
     i = 0;
@@ -3406,8 +3491,8 @@ pub unsafe fn CommanderBotCTFAI(bs: *mut bot_state_t) {
                             guardDefendPriority = 1;
                         }
                     } else {
-                        (*(*addr_of!(botstates))[(*squad[i as usize]).s.number as usize]).ctfState =
-                            CTFSTATE_DEFENDER;
+                        (*(*addr_of!(botstates))[(*squad[i as usize]).s.number as usize])
+                            .ctfState = CTFSTATE_DEFENDER;
                     }
                     defendAttackPriority = 0;
                 } else {
@@ -3422,8 +3507,8 @@ pub unsafe fn CommanderBotCTFAI(bs: *mut bot_state_t) {
                             attackRetrievePriority = 1;
                         }
                     } else {
-                        (*(*addr_of!(botstates))[(*squad[i as usize]).s.number as usize]).ctfState =
-                            CTFSTATE_ATTACKER;
+                        (*(*addr_of!(botstates))[(*squad[i as usize]).s.number as usize])
+                            .ctfState = CTFSTATE_ATTACKER;
                     }
                     defendAttackPriority = 1;
                 }
@@ -3459,7 +3544,11 @@ pub unsafe fn CommanderBotSiegeAI(bs: *mut bot_state_t) {
 
         if !ent.is_null()
             && !(*ent).client.is_null()
-            && OnSameTeam((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize), ent) != QFALSE
+            && OnSameTeam(
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*bs).client as usize),
+                ent,
+            ) != QFALSE
             && !(*addr_of!(botstates))[(*ent).s.number as usize].is_null()
         {
             bst = (*addr_of!(botstates))[(*ent).s.number as usize];
@@ -3475,7 +3564,11 @@ pub unsafe fn CommanderBotSiegeAI(bs: *mut bot_state_t) {
 
         if !ent.is_null()
             && !(*ent).client.is_null()
-            && OnSameTeam((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize), ent) != QFALSE
+            && OnSameTeam(
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*bs).client as usize),
+                ent,
+            ) != QFALSE
         {
             teammates += 1;
         }
@@ -3533,7 +3626,11 @@ pub unsafe fn CommanderBotTeamplayAI(bs: *mut bot_state_t) {
 
         if !ent.is_null()
             && !(*ent).client.is_null()
-            && OnSameTeam((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize), ent) != QFALSE
+            && OnSameTeam(
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*bs).client as usize),
+                ent,
+            ) != QFALSE
             && !(*addr_of!(botstates))[(*ent).s.number as usize].is_null()
         {
             bst = (*addr_of!(botstates))[(*ent).s.number as usize];
@@ -3553,7 +3650,11 @@ pub unsafe fn CommanderBotTeamplayAI(bs: *mut bot_state_t) {
 
         if !ent.is_null()
             && !(*ent).client.is_null()
-            && OnSameTeam((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize), ent) != QFALSE
+            && OnSameTeam(
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*bs).client as usize),
+                ent,
+            ) != QFALSE
         {
             teammates += 1;
 
@@ -3580,14 +3681,16 @@ pub unsafe fn CommanderBotTeamplayAI(bs: *mut bot_state_t) {
             if teammate_indanger >= 0 && teammate_helped == 0 {
                 //send someone out to help whoever needs help most at the moment
                 (*bst).teamplayState = TEAMPLAYSTATE_ASSISTING;
-                (*bst).squadLeader = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(teammate_indanger as usize);
+                (*bst).squadLeader = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add(teammate_indanger as usize);
                 teammate_helped = 1;
             } else if (teammate_indanger == -1 || teammate_helped != 0)
                 && (*bst).teamplayState == TEAMPLAYSTATE_ASSISTING
             {
                 //no teammates need help badly, but this guy is trying to help them anyway, so stop
                 (*bst).teamplayState = TEAMPLAYSTATE_FOLLOWING;
-                (*bst).squadLeader = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize);
+                (*bst).squadLeader = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*bs).client as usize);
             }
 
             if (*bs).squadRegroupInterval < (*addr_of!(level)).time && Q_irand(1, 10) < 5 {
@@ -4029,9 +4132,15 @@ pub fn BotSelectWeapon(client: c_int, weapon: c_int) {
 /// `bs` must be a valid [`bot_state_t`] pointer.
 pub unsafe fn BotReportStatus(bs: *mut bot_state_t) {
     if (*addr_of!(g_gametype)).integer == GT_TEAM {
-        trap::ea::EA_SayTeam((*bs).client, teamplayStateDescriptions[(*bs).teamplayState as usize]);
+        trap::ea::EA_SayTeam(
+            (*bs).client,
+            teamplayStateDescriptions[(*bs).teamplayState as usize],
+        );
     } else if (*addr_of!(g_gametype)).integer == GT_SIEGE {
-        trap::ea::EA_SayTeam((*bs).client, siegeStateDescriptions[(*bs).siegeState as usize]);
+        trap::ea::EA_SayTeam(
+            (*bs).client,
+            siegeStateDescriptions[(*bs).siegeState as usize],
+        );
     } else if (*addr_of!(g_gametype)).integer == GT_CTF || (*addr_of!(g_gametype)).integer == GT_CTY
     {
         trap::ea::EA_SayTeam((*bs).client, ctfStateDescriptions[(*bs).ctfState as usize]);
@@ -4093,7 +4202,10 @@ pub unsafe fn BotOrder(ent: *mut gentity_t, clientnum: c_int, ordernum: c_int) {
     }
 
     if clientnum != -1
-        && OnSameTeam(ent, (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(clientnum as usize)) == QFALSE
+        && OnSameTeam(
+            ent,
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(clientnum as usize),
+        ) == QFALSE
     {
         return;
     }
@@ -4141,7 +4253,10 @@ pub unsafe fn BotOrder(ent: *mut gentity_t, clientnum: c_int, ordernum: c_int) {
     } else {
         while i < MAX_CLIENTS as c_int {
             if !botstates[i as usize].is_null()
-                && OnSameTeam(ent, (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize)) != QFALSE
+                && OnSameTeam(
+                    ent,
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize),
+                ) != QFALSE
             {
                 if ordernum == -1 {
                     BotReportStatus(botstates[i as usize]);
@@ -4202,7 +4317,14 @@ pub unsafe fn BotFallbackNavigation(bs: *mut bot_state_t) -> c_int {
     trto[1] = (*bs).origin[1] + fwd[1] * 16.0;
     trto[2] = (*bs).origin[2] + fwd[2] * 16.0;
 
-    let tr = trap::Trace(&(*bs).origin, &mins, &maxs, &trto, ENTITYNUM_NONE, MASK_SOLID);
+    let tr = trap::Trace(
+        &(*bs).origin,
+        &mins,
+        &maxs,
+        &trto,
+        ENTITYNUM_NONE,
+        MASK_SOLID,
+    );
 
     if tr.fraction == 1.0 {
         VectorCopy(&trto, &mut (*bs).goalPosition);
@@ -4339,7 +4461,11 @@ pub unsafe fn BotSelectIdealWeapon(bs: *mut bot_state_t) -> c_int {
 ///
 /// # Safety
 /// `bs` must be a valid [`bot_state_t`] pointer.
-pub unsafe fn BotSelectChoiceWeapon(bs: *mut bot_state_t, weapon: c_int, doselection: c_int) -> c_int {
+pub unsafe fn BotSelectChoiceWeapon(
+    bs: *mut bot_state_t,
+    weapon: c_int,
+    doselection: c_int,
+) -> c_int {
     let mut i: c_int;
     let mut hasit: c_int = 0;
 
@@ -4415,8 +4541,10 @@ pub unsafe fn BotLovedOneDied(bs: *mut bot_state_t, loved: *mut bot_state_t, lov
         if lovelevel < 2 {
             return;
         }
-    } else if OnSameTeam((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize), (*loved).lastHurt)
-        != QFALSE
+    } else if OnSameTeam(
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize),
+        (*loved).lastHurt,
+    ) != QFALSE
     {
         //don't hate teammates no matter what
         return;
@@ -4549,7 +4677,14 @@ pub unsafe fn StrafeTracing(bs: *mut bot_state_t) {
 
     drorg[2] -= 32.0;
 
-    tr = trap::Trace(&rorg, &vec3_origin, &vec3_origin, &drorg, (*bs).client, MASK_SOLID);
+    tr = trap::Trace(
+        &rorg,
+        &vec3_origin,
+        &vec3_origin,
+        &drorg,
+        (*bs).client,
+        MASK_SOLID,
+    );
 
     if tr.fraction == 1.0 {
         //this may be a dangerous ledge, so don't strafe over it just in case
@@ -4580,7 +4715,12 @@ pub unsafe fn BotScanForLeader(bs: *mut bot_state_t) {
             && (*botstates[i as usize]).isSquadLeader != 0
             && (*bs).client != i
         {
-            if OnSameTeam((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize), ent) != QFALSE {
+            if OnSameTeam(
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*bs).client as usize),
+                ent,
+            ) != QFALSE
+            {
                 (*bs).squadLeader = ent;
                 break;
             }
@@ -4614,7 +4754,8 @@ pub unsafe fn BotReplyGreetings(bs: *mut bot_state_t) {
             && i != (*bs).client
         {
             (*(*addr_of_mut!(botstates))[i as usize]).chatObject =
-                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize);
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*bs).client as usize);
             (*(*addr_of_mut!(botstates))[i as usize]).chatAltObject = null_mut();
             if BotDoChat(
                 (*addr_of!(botstates))[i as usize],
@@ -4677,9 +4818,7 @@ pub unsafe fn CTFFlagMovement(bs: *mut bot_state_t) {
     }
 
     if !(*addr_of!(flagRed)).is_null() && !(*addr_of!(flagBlue)).is_null() {
-        if (*bs).wpDestination == *addr_of!(flagRed)
-            || (*bs).wpDestination == *addr_of!(flagBlue)
-        {
+        if (*bs).wpDestination == *addr_of!(flagRed) || (*bs).wpDestination == *addr_of!(flagBlue) {
             if (*bs).wpDestination == *addr_of!(flagRed)
                 && !(*addr_of!(droppedRedFlag)).is_null()
                 && (*(*addr_of!(droppedRedFlag))).flags & FL_DROPPED_ITEM != 0
@@ -4809,14 +4948,21 @@ pub unsafe fn BotUseInventoryItem(bs: *mut bot_state_t) -> c_int {
     let mut wantuseitem = false;
 
     if (*bs).cur_ps.stats[STAT_HOLDABLE_ITEMS as usize] & (1 << HI_MEDPAC) != 0 {
-        if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).health <= 75 {
+        if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize))
+            .health
+            <= 75
+        {
             (*bs).cur_ps.stats[STAT_HOLDABLE_ITEM as usize] =
                 BG_GetItemIndexByTag(HI_MEDPAC, IT_HOLDABLE);
             wantuseitem = true;
         }
     }
-    if !wantuseitem && (*bs).cur_ps.stats[STAT_HOLDABLE_ITEMS as usize] & (1 << HI_MEDPAC_BIG) != 0 {
-        if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).health <= 50 {
+    if !wantuseitem && (*bs).cur_ps.stats[STAT_HOLDABLE_ITEMS as usize] & (1 << HI_MEDPAC_BIG) != 0
+    {
+        if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize))
+            .health
+            <= 50
+        {
             (*bs).cur_ps.stats[STAT_HOLDABLE_ITEM as usize] =
                 BG_GetItemIndexByTag(HI_MEDPAC_BIG, IT_HOLDABLE);
             wantuseitem = true;
@@ -4829,7 +4975,8 @@ pub unsafe fn BotUseInventoryItem(bs: *mut bot_state_t) -> c_int {
             wantuseitem = true;
         }
     }
-    if !wantuseitem && (*bs).cur_ps.stats[STAT_HOLDABLE_ITEMS as usize] & (1 << HI_SENTRY_GUN) != 0 {
+    if !wantuseitem && (*bs).cur_ps.stats[STAT_HOLDABLE_ITEMS as usize] & (1 << HI_SENTRY_GUN) != 0
+    {
         if !(*bs).currentEnemy.is_null() && (*bs).frame_Enemy_Vis != 0 {
             (*bs).cur_ps.stats[STAT_HOLDABLE_ITEM as usize] =
                 BG_GetItemIndexByTag(HI_SENTRY_GUN, IT_HOLDABLE);
@@ -4854,8 +5001,9 @@ pub unsafe fn BotUseInventoryItem(bs: *mut bot_state_t) -> c_int {
     }
 
     // wantuseitem:
-    (*(*addr_of!(level)).clients.add((*bs).client as usize)).ps.stats
-        [STAT_HOLDABLE_ITEM as usize] = (*bs).cur_ps.stats[STAT_HOLDABLE_ITEM as usize];
+    (*(*addr_of!(level)).clients.add((*bs).client as usize))
+        .ps
+        .stats[STAT_HOLDABLE_ITEM as usize] = (*bs).cur_ps.stats[STAT_HOLDABLE_ITEM as usize];
 
     1
 }
@@ -4912,9 +5060,10 @@ pub unsafe fn BotAISetupClient(
     let bs: *mut bot_state_t;
 
     if botstates[client as usize].is_null() {
-        botstates[client as usize] = B_Alloc(core::mem::size_of::<bot_state_t>() as c_int)
-            as *mut bot_state_t; //G_Alloc(sizeof(bot_state_t));
-                                 //rww - G_Alloc bad! B_Alloc good.
+        botstates[client as usize] =
+            B_Alloc(core::mem::size_of::<bot_state_t>() as c_int) as *mut bot_state_t;
+        //G_Alloc(sizeof(bot_state_t));
+        //rww - G_Alloc bad! B_Alloc good.
     }
 
     write_bytes(botstates[client as usize], 0, 1);
@@ -4922,7 +5071,10 @@ pub unsafe fn BotAISetupClient(
     bs = botstates[client as usize];
 
     if !bs.is_null() && (*bs).inuse != 0 {
-        BotAI_Print(PRT_FATAL, c"BotAISetupClient: client %d already setup\n".as_ptr() as *mut c_char);
+        BotAI_Print(
+            PRT_FATAL,
+            c"BotAISetupClient: client %d already setup\n".as_ptr() as *mut c_char,
+        );
         return QFALSE as c_int;
     }
 
@@ -5068,12 +5220,15 @@ pub unsafe fn GetNearestBadThing(bs: *mut bot_state_t) -> *mut gentity_t {
                 && (*ent).inuse != 0
                 && (*ent).health > 0
                 && (*ent).genericValue3 != (*bs).client
-                && !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*ent).genericValue3 as usize))
-                    .client
-                    .is_null()
+                && !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*ent).genericValue3 as usize))
+                .client
+                .is_null()
                 && OnSameTeam(
-                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize),
-                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*ent).genericValue3 as usize),
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*bs).client as usize),
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*ent).genericValue3 as usize),
                 ) == QFALSE)
         {
             //try to escape from anything with a non-0 s.weapon and non-0 damage. This hopefully only means dangerous projectiles.
@@ -5100,19 +5255,23 @@ pub unsafe fn GetNearestBadThing(bs: *mut bot_state_t) -> *mut gentity_t {
                 && ((*ent).r.ownerNum == (*bs).client
                     || ((*ent).r.ownerNum > 0
                         && (*ent).r.ownerNum < MAX_CLIENTS as c_int
-                        && !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*ent).r.ownerNum as usize))
-                            .client
-                            .is_null()
+                        && !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                            .add((*ent).r.ownerNum as usize))
+                        .client
+                        .is_null()
                         && OnSameTeam(
-                            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize),
-                            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*ent).r.ownerNum as usize),
+                            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                                .add((*bs).client as usize),
+                            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                                .add((*ent).r.ownerNum as usize),
                         ) != QFALSE))
             {
                 //don't be afraid of your own rockets or your teammates' rockets
                 factor = 0.0;
             }
 
-            if glen < bestdist * factor && BotPVSCheck(&(*bs).origin, &(*ent).s.pos.trBase) != QFALSE
+            if glen < bestdist * factor
+                && BotPVSCheck(&(*bs).origin, &(*ent).s.pos.trBase) != QFALSE
             {
                 let tr = trap::Trace(
                     &(*bs).origin,
@@ -5140,7 +5299,8 @@ pub unsafe fn GetNearestBadThing(bs: *mut bot_state_t) -> *mut gentity_t {
             && (*ent).r.ownerNum >= 0
         {
             //if we're in danger of a projectile belonging to someone and don't have an enemy, set the enemy to them
-            let projOwner = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*ent).r.ownerNum as usize);
+            let projOwner = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*ent).r.ownerNum as usize);
 
             if !projOwner.is_null() && (*projOwner).inuse != 0 && !(*projOwner).client.is_null() {
                 if (*bs).currentEnemy.is_null() {
@@ -5277,7 +5437,11 @@ pub unsafe fn BotGetFlagBack(bs: *mut bot_state_t) -> c_int {
         if !ent.is_null()
             && !(*ent).client.is_null()
             && (*(*ent).client).ps.powerups[myFlag as usize] != 0
-            && OnSameTeam((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize), ent) == QFALSE
+            && OnSameTeam(
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*bs).client as usize),
+                ent,
+            ) == QFALSE
         {
             foundCarrier = 1;
             break;
@@ -5341,7 +5505,11 @@ pub unsafe fn BotGuardFlagCarrier(bs: *mut bot_state_t) -> c_int {
         if !ent.is_null()
             && !(*ent).client.is_null()
             && (*(*ent).client).ps.powerups[enemyFlag as usize] != 0
-            && OnSameTeam((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize), ent) != QFALSE
+            && OnSameTeam(
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*bs).client as usize),
+                ent,
+            ) != QFALSE
         {
             foundCarrier = 1;
             break;
@@ -5444,9 +5612,10 @@ pub unsafe fn Siege_TargetClosestObjective(bs: *mut bot_state_t, flag: c_int) ->
         if !(*bs).wpDestination.is_null()
             && (*(*bs).wpDestination).flags & flag != 0
             && (*(*bs).wpDestination).associated_entity != ENTITYNUM_NONE
-            && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*bs).wpDestination).associated_entity as usize))
-                .r#use
-                .is_some()
+            && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*(*bs).wpDestination).associated_entity as usize))
+            .r#use
+            .is_some()
         {
             break 'hasPoint;
         }
@@ -5461,7 +5630,11 @@ pub unsafe fn Siege_TargetClosestObjective(bs: *mut bot_state_t, flag: c_int) ->
                 .r#use
                 .is_some()
             {
-                VectorSubtract(&(*(*addr_of!(gWPArray))[i as usize]).origin, &(*bs).origin, &mut a);
+                VectorSubtract(
+                    &(*(*addr_of!(gWPArray))[i as usize]).origin,
+                    &(*bs).origin,
+                    &mut a,
+                );
                 testdistance = VectorLength(&a);
 
                 if testdistance < bestdistance {
@@ -5480,7 +5653,8 @@ pub unsafe fn Siege_TargetClosestObjective(bs: *mut bot_state_t, flag: c_int) ->
         }
     }
     // hasPoint:
-    goalent = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*bs).wpDestination).associated_entity as usize);
+    goalent = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+        .add((*(*bs).wpDestination).associated_entity as usize);
 
     if goalent.is_null() {
         return 0;
@@ -5497,8 +5671,14 @@ pub unsafe fn Siege_TargetClosestObjective(bs: *mut bot_state_t, flag: c_int) ->
 
     if (*goalent).takedamage != QFALSE
         && testdistance < BOT_MIN_SIEGE_GOAL_SHOOT as f32
-        && EntityVisibleBox(&(*bs).origin, &mins, &maxs, &dif, (*bs).client, (*goalent).s.number)
-            != 0
+        && EntityVisibleBox(
+            &(*bs).origin,
+            &mins,
+            &maxs,
+            &dif,
+            (*bs).client,
+            (*goalent).s.number,
+        ) != 0
     {
         (*bs).shootGoal = goalent;
         (*bs).touchGoal = null_mut();
@@ -5545,7 +5725,9 @@ pub unsafe fn Siege_DefendFromAttackers(bs: *mut bot_state_t) {
         if !ent.is_null()
             && !(*ent).client.is_null()
             && (*(*ent).client).sess.sessionTeam
-                != (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).client)
+                != (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*bs).client as usize))
+                .client)
                     .sess
                     .sessionTeam
             && (*ent).health > 0
@@ -5569,7 +5751,10 @@ pub unsafe fn Siege_DefendFromAttackers(bs: *mut bot_state_t) {
     }
 
     wpClose = GetNearestVisibleWP(
-        &(*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(bestindex as usize)).client).ps.origin,
+        &(*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(bestindex as usize))
+            .client)
+            .ps
+            .origin,
         -1,
     );
 
@@ -5600,7 +5785,9 @@ pub unsafe fn Siege_CountDefenders(bs: *mut bot_state_t) -> c_int {
         if !ent.is_null() && !(*ent).client.is_null() && !bot.is_null() {
             if (*bot).siegeState == SIEGESTATE_DEFENDER
                 && (*(*ent).client).sess.sessionTeam
-                    == (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).client)
+                    == (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*bs).client as usize))
+                    .client)
                         .sess
                         .sessionTeam
             {
@@ -5628,7 +5815,9 @@ pub unsafe fn Siege_CountTeammates(bs: *mut bot_state_t) -> c_int {
 
         if !ent.is_null() && !(*ent).client.is_null() {
             if (*(*ent).client).sess.sessionTeam
-                == (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).client)
+                == (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*bs).client as usize))
+                .client)
                     .sess
                     .sessionTeam
             {
@@ -5815,16 +6004,29 @@ pub unsafe fn CTFTakesPriority(bs: *mut bot_state_t) -> c_int {
 
         if !ent.is_null() && !(*ent).client.is_null() {
             if (*(*ent).client).ps.powerups[enemyFlag as usize] != 0
-                && OnSameTeam((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize), ent) != QFALSE
+                && OnSameTeam(
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*bs).client as usize),
+                    ent,
+                ) != QFALSE
             {
                 weHaveEnemyFlag = 1;
             } else if (*(*ent).client).ps.powerups[myFlag as usize] != 0
-                && OnSameTeam((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize), ent) == QFALSE
+                && OnSameTeam(
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*bs).client as usize),
+                    ent,
+                ) == QFALSE
             {
                 enemyHasOurFlag = 1;
             }
 
-            if OnSameTeam((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize), ent) != QFALSE {
+            if OnSameTeam(
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*bs).client as usize),
+                ent,
+            ) != QFALSE
+            {
                 numOnMyTeam += 1;
             } else {
                 numOnEnemyTeam += 1;
@@ -5944,7 +6146,8 @@ pub unsafe fn SiegeTakesPriority(bs: *mut bot_state_t) -> c_int {
         return 0;
     }
 
-    bcl = (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).client;
+    bcl = (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize))
+        .client;
 
     if bcl.is_null() {
         return 0;
@@ -6117,9 +6320,16 @@ pub unsafe fn JMTakesPriority(bs: *mut bot_state_t) -> c_int {
     (*bs).jmState = -1;
 
     while i < MAX_CLIENTS as c_int {
-        if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize)).client.is_null()
-            && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize)).inuse != 0
-            && (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize)).client).ps.isJediMaster != QFALSE
+        if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize))
+            .client
+            .is_null()
+            && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize)).inuse
+                != 0
+            && (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize))
+                .client)
+                .ps
+                .isJediMaster
+                != QFALSE
         {
             (*bs).jmState = i;
             break;
@@ -6129,7 +6339,8 @@ pub unsafe fn JMTakesPriority(bs: *mut bot_state_t) -> c_int {
     }
 
     if (*bs).jmState != -1 {
-        theImportantEntity = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).jmState as usize);
+        theImportantEntity =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).jmState as usize);
     } else {
         theImportantEntity = *addr_of!(gJMSaberEnt);
     }
@@ -6264,7 +6475,11 @@ pub unsafe fn GetIdealDestination(bs: *mut bot_state_t) {
             && (*(*addr_of!(gWPArray))[tempInt as usize]).inuse != 0
             && ((*bs).escapeDirTime as c_int) < (*addr_of!(level)).time
         {
-            VectorSubtract(&(*badthing).s.pos.trBase, &(*(*bs).wpCurrent).origin, &mut a);
+            VectorSubtract(
+                &(*badthing).s.pos.trBase,
+                &(*(*bs).wpCurrent).origin,
+                &mut a,
+            );
             plusLen = VectorLength(&a);
             VectorSubtract(
                 &(*badthing).s.pos.trBase,
@@ -6406,7 +6621,8 @@ pub unsafe fn GetIdealDestination(bs: *mut bot_state_t) {
         }
     }
 
-    if (*bs).wpDestination.is_null() && ((*bs).wpDestSwitchTime as c_int) < (*addr_of!(level)).time {
+    if (*bs).wpDestination.is_null() && ((*bs).wpDestSwitchTime as c_int) < (*addr_of!(level)).time
+    {
         idleWP = GetBestIdleGoal(bs);
 
         if idleWP != -1
@@ -6459,9 +6675,14 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
         return;
     }
 
-    if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).inuse != QFALSE
-        && !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).client.is_null()
-        && (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).client)
+    if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).inuse
+        != QFALSE
+        && !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize))
+            .client
+            .is_null()
+        && (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+            .add((*bs).client as usize))
+        .client)
             .sess
             .sessionTeam
             == TEAM_SPECTATOR
@@ -6476,7 +6697,8 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
     // #ifndef FINAL_BUILD
     if (*addr_of!(bot_getinthecarrr)).integer != 0 {
         //stupid vehicle debug, I tire of having to connect another client to test passengers.
-        let botEnt: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize);
+        let botEnt: *mut gentity_t =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize);
 
         if (*botEnt).inuse != QFALSE
             && !(*botEnt).client.is_null()
@@ -6519,7 +6741,8 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
             }
             if i as usize != MAX_GENTITIES {
                 //broke before end so we must've found something
-                let vehicle: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
+                let vehicle: *mut gentity_t =
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i as usize);
                 let mut v: vec3_t = vec3_origin;
 
                 VectorSubtract(&(*(*vehicle).client).ps.origin, &(*bs).origin, &mut v);
@@ -6562,13 +6785,18 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
 
         if (*addr_of!(bot_forgimmick)).integer == 4 {
             //constantly move toward client 0
-            if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(0)).client.is_null()
-                && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(0)).inuse != QFALSE
+            if !(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(0))
+                .client
+                .is_null()
+                && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(0)).inuse
+                    != QFALSE
             {
                 let mut mdir: vec3_t = vec3_origin;
 
                 VectorSubtract(
-                    &(*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(0)).client).ps.origin,
+                    &(*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(0)).client)
+                        .ps
+                        .origin,
                     &(*bs).origin,
                     &mut mdir,
                 );
@@ -6602,7 +6830,10 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
         (*bs).lastDeadTime = (*addr_of!(level)).time;
     }
 
-    if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).health < 1 {
+    if (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize))
+        .health
+        < 1
+    {
         (*bs).lastDeadTime = (*addr_of!(level)).time;
 
         if (*bs).deathActivitiesDone == 0
@@ -6620,7 +6851,8 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
                 && !(*addr_of!(botstates))[(*(*bs).lastHurt).s.number as usize].is_null()
                 && PassLovedOneCheck(
                     (*addr_of!(botstates))[(*(*bs).lastHurt).s.number as usize],
-                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize),
+                    (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*bs).client as usize),
                 ) != 0
             {
                 //killed by a bot that I love, but that does not love me
@@ -6697,7 +6929,11 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
         && (*bs).frame_Enemy_Vis != 0
         && (*bs).forceJumpChargeTime < (*addr_of!(level)).time
     {
-        VectorSubtract(&(*(*(*bs).currentEnemy).client).ps.origin, &(*bs).eye, &mut a_fo);
+        VectorSubtract(
+            &(*(*(*bs).currentEnemy).client).ps.origin,
+            &(*bs).eye,
+            &mut a_fo,
+        );
         let a_fo_copy = a_fo;
         vectoangles(&a_fo_copy, &mut a_fo);
 
@@ -6770,7 +7006,10 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
                 useTheForce = 1;
                 forceHostile = 1;
             } else if ((*bs).cur_ps.fd.forcePowersKnown & (1 << FP_RAGE)) != 0
-                && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).health < 25
+                && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*bs).client as usize))
+                .health
+                    < 25
                 && (*(*addr_of!(level)).clients.add((*bs).client as usize))
                     .ps
                     .fd
@@ -6866,7 +7105,10 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
                 useTheForce = 1;
                 forceHostile = 1;
             } else if ((*bs).cur_ps.fd.forcePowersKnown & (1 << FP_ABSORB)) != 0
-                && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).health < 75
+                && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*bs).client as usize))
+                .health
+                    < 75
                 && (*(*(*bs).currentEnemy).client).ps.fd.forceSide == FORCE_DARKSIDE
                 && (*(*addr_of!(level)).clients.add((*bs).client as usize))
                     .ps
@@ -6885,7 +7127,10 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
                 useTheForce = 1;
                 forceHostile = 0;
             } else if ((*bs).cur_ps.fd.forcePowersKnown & (1 << FP_PROTECT)) != 0
-                && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).health < 35
+                && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*bs).client as usize))
+                .health
+                    < 35
                 && (*(*addr_of!(level)).clients.add((*bs).client as usize))
                     .ps
                     .fd
@@ -6927,7 +7172,10 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
                 useTheForce = 1;
                 forceHostile = 1;
             } else if ((*bs).cur_ps.fd.forcePowersKnown & (1 << FP_SPEED)) != 0
-                && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).health < 25
+                && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*bs).client as usize))
+                .health
+                    < 25
                 && (*(*addr_of!(level)).clients.add((*bs).client as usize))
                     .ps
                     .fd
@@ -6984,7 +7232,10 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
     if useTheForce == 0 {
         //try powers that we don't care if we have an enemy for
         if ((*bs).cur_ps.fd.forcePowersKnown & (1 << FP_HEAL)) != 0
-            && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).health < 50
+            && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*bs).client as usize))
+            .health
+                < 50
             && (*(*addr_of!(level)).clients.add((*bs).client as usize))
                 .ps
                 .fd
@@ -6992,8 +7243,7 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
                 > forcePowerNeeded[(*(*addr_of!(level)).clients.add((*bs).client as usize))
                     .ps
                     .fd
-                    .forcePowerLevel[FP_HEAL as usize]
-                    as usize][FP_HEAL as usize]
+                    .forcePowerLevel[FP_HEAL as usize] as usize][FP_HEAL as usize]
             && (*bs).cur_ps.fd.forcePowerLevel[FP_HEAL as usize] > FORCE_LEVEL_1
         {
             (*(*addr_of!(level)).clients.add((*bs).client as usize))
@@ -7003,7 +7253,10 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
             useTheForce = 1;
             forceHostile = 0;
         } else if ((*bs).cur_ps.fd.forcePowersKnown & (1 << FP_HEAL)) != 0
-            && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).health < 50
+            && (*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*bs).client as usize))
+            .health
+                < 50
             && (*(*addr_of!(level)).clients.add((*bs).client as usize))
                 .ps
                 .fd
@@ -7011,8 +7264,7 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
                 > forcePowerNeeded[(*(*addr_of!(level)).clients.add((*bs).client as usize))
                     .ps
                     .fd
-                    .forcePowerLevel[FP_HEAL as usize]
-                    as usize][FP_HEAL as usize]
+                    .forcePowerLevel[FP_HEAL as usize] as usize][FP_HEAL as usize]
             && (*bs).currentEnemy.is_null()
             && (*bs).isCamping > (*addr_of!(level)).time as f32
         {
@@ -7030,7 +7282,8 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
         if !(*bs).currentEnemy.is_null()
             && !(*(*bs).currentEnemy).client.is_null()
             && ForcePowerUsableOn(
-                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize),
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*bs).client as usize),
                 (*bs).currentEnemy,
                 (*(*addr_of!(level)).clients.add((*bs).client as usize))
                     .ps
@@ -7053,8 +7306,7 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
         }
     }
 
-    if (*bs).cur_ps.ammo
-        [weaponData[(*bs).cur_ps.weapon as usize].ammoIndex as usize]
+    if (*bs).cur_ps.ammo[weaponData[(*bs).cur_ps.weapon as usize].ammoIndex as usize]
         < weaponData[(*bs).cur_ps.weapon as usize].energyPerShot
     {
         if BotTryAnotherWeapon(bs) != 0 {
@@ -7191,13 +7443,19 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
             if InFieldOfVision(&(*bs).viewangles, 100.0, &mut e_ang_vec) != 0 {
                 //Our enemy has his saber holstered and has challenged us to a duel, so challenge him back
                 if (*bs).cur_ps.saberHolstered == 0 {
-                    Cmd_ToggleSaber_f((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize));
+                    Cmd_ToggleSaber_f(
+                        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                            .add((*bs).client as usize),
+                    );
                 } else {
                     if (*(*(*bs).currentEnemy).client).ps.duelIndex == (*bs).client
                         && (*(*(*bs).currentEnemy).client).ps.duelTime > (*addr_of!(level)).time
                         && (*bs).cur_ps.duelInProgress == QFALSE
                     {
-                        Cmd_EngageDuel_f((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize));
+                        Cmd_EngageDuel_f(
+                            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                                .add((*bs).client as usize),
+                        );
                     }
                 }
 
@@ -7229,7 +7487,8 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
         enemy = ScanForEnemies(bs);
 
         if enemy != -1 {
-            (*bs).currentEnemy = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(enemy as usize);
+            (*bs).currentEnemy =
+                (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(enemy as usize);
             (*bs).enemySeenTime = ((*addr_of!(level)).time + ENEMY_FORGET_MS) as f32;
         }
     }
@@ -7467,7 +7726,11 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
         //for RMG if the bot sticks around an area too long, jump around randomly some to spread to a new area (horrible hacky method)
         let mut vSubDif: vec3_t = vec3_origin;
 
-        VectorSubtract(&(*bs).origin, &(*bs).lastSignificantAreaChange, &mut vSubDif);
+        VectorSubtract(
+            &(*bs).origin,
+            &(*bs).lastSignificantAreaChange,
+            &mut vSubDif,
+        );
         if VectorLength(&vSubDif) > 1500.0 {
             VectorCopy(&(*bs).origin, &mut (*bs).lastSignificantAreaChange);
             (*bs).lastSignificantChangeTime = (*addr_of!(level)).time + 20000;
@@ -7624,7 +7887,11 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
         if BotGetWeaponRange(bs) == BWEAPONRANGE_SABER {
             let mut saberRange: c_int = SABER_ATTACK_RANGE;
 
-            VectorSubtract(&(*(*(*bs).currentEnemy).client).ps.origin, &(*bs).eye, &mut a_fo);
+            VectorSubtract(
+                &(*(*(*bs).currentEnemy).client).ps.origin,
+                &(*bs).eye,
+                &mut a_fo,
+            );
             let a_fo_copy = a_fo;
             vectoangles(&a_fo_copy, &mut a_fo);
 
@@ -7639,25 +7906,33 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
                 (*bs).saberPowerTime = (*addr_of!(level)).time + Q_irand(3000, 15000);
             }
 
-            if (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).client)
+            if (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*bs).client as usize))
+            .client)
                 .ps
                 .fd
                 .saberAnimLevel
                 != SS_STAFF
-                && (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).client)
+                && (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*bs).client as usize))
+                .client)
                     .ps
                     .fd
                     .saberAnimLevel
                     != SS_DUAL
             {
                 if (*(*bs).currentEnemy).health > 75
-                    && (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).client)
+                    && (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*bs).client as usize))
+                    .client)
                         .ps
                         .fd
                         .forcePowerLevel[FP_SABER_OFFENSE as usize]
                         > 2
                 {
-                    if (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).client)
+                    if (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*bs).client as usize))
+                    .client)
                         .ps
                         .fd
                         .saberAnimLevel
@@ -7665,33 +7940,48 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
                         && (*bs).saberPower != QFALSE
                     {
                         //if we are up against someone with a lot of health and we have a strong attack available, then h4q them
-                        Cmd_SaberAttackCycle_f((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize));
+                        Cmd_SaberAttackCycle_f(
+                            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                                .add((*bs).client as usize),
+                        );
                     }
                 } else if (*(*bs).currentEnemy).health > 40
-                    && (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).client)
+                    && (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*bs).client as usize))
+                    .client)
                         .ps
                         .fd
                         .forcePowerLevel[FP_SABER_OFFENSE as usize]
                         > 1
                 {
-                    if (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).client)
+                    if (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*bs).client as usize))
+                    .client)
                         .ps
                         .fd
                         .saberAnimLevel
                         != SS_MEDIUM
                     {
                         //they're down on health a little, use level 2 if we can
-                        Cmd_SaberAttackCycle_f((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize));
+                        Cmd_SaberAttackCycle_f(
+                            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                                .add((*bs).client as usize),
+                        );
                     }
                 } else {
-                    if (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).client)
+                    if (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                        .add((*bs).client as usize))
+                    .client)
                         .ps
                         .fd
                         .saberAnimLevel
                         != SS_FAST
                     {
                         //they've gone below 40 health, go at them with quick attacks
-                        Cmd_SaberAttackCycle_f((core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize));
+                        Cmd_SaberAttackCycle_f(
+                            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                                .add((*bs).client as usize),
+                        );
                     }
                 }
             }
@@ -7781,7 +8071,9 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
 
     CTFFlagMovement(bs);
 
-    if /*bs->wpDestination &&*/ !(*bs).shootGoal.is_null()
+    if
+    /*bs->wpDestination &&*/
+    !(*bs).shootGoal.is_null()
         /*bs->wpDestination->associated_entity == bs->shootGoal->s.number &&*/
         && (*(*bs).shootGoal).health > 0
         && (*(*bs).shootGoal).takedamage != QFALSE
@@ -7965,9 +8257,8 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
     }
 
     if (*bs).forceJumpChargeTime > (*addr_of!(level)).time {
-        (*bs).jumpHoldTime =
-            (((*bs).forceJumpChargeTime - (*addr_of!(level)).time) / 2 + (*addr_of!(level)).time)
-                as f32;
+        (*bs).jumpHoldTime = (((*bs).forceJumpChargeTime - (*addr_of!(level)).time) / 2
+            + (*addr_of!(level)).time) as f32;
         (*bs).forceJumpChargeTime = 0;
     }
 
@@ -7987,12 +8278,16 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
             } else {
                 trap::ea::EA_MoveForward((*bs).client);
             }
-            if (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).client)
+            if (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*bs).client as usize))
+            .client)
                 .ps
                 .groundEntityNum
                 == ENTITYNUM_NONE
             {
-                (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*bs).client as usize)).client)
+                (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                    .add((*bs).client as usize))
+                .client)
                     .ps
                     .pm_flags |= PMF_JUMP_HELD;
             }
@@ -8010,15 +8305,18 @@ pub unsafe fn StandardBotAI(bs: *mut bot_state_t, thinktime: f32) {
         && (*(*bs).dangerousObject).health > 0
         && (*(*bs).dangerousObject).takedamage != QFALSE
         && ((*bs).frame_Enemy_Vis == 0 || (*bs).currentEnemy.is_null())
-        && (BotGetWeaponRange(bs) == BWEAPONRANGE_MID
-            || BotGetWeaponRange(bs) == BWEAPONRANGE_LONG)
+        && (BotGetWeaponRange(bs) == BWEAPONRANGE_MID || BotGetWeaponRange(bs) == BWEAPONRANGE_LONG)
         && (*bs).cur_ps.weapon != WP_DET_PACK
         && (*bs).cur_ps.weapon != WP_TRIP_MINE
         && (*bs).shootGoal.is_null()
     {
         let danLen: f32;
 
-        VectorSubtract(&(*(*bs).dangerousObject).r.currentOrigin, &(*bs).eye, &mut a);
+        VectorSubtract(
+            &(*(*bs).dangerousObject).r.currentOrigin,
+            &(*bs).eye,
+            &mut a,
+        );
 
         danLen = VectorLength(&a);
 
@@ -8367,7 +8665,11 @@ pub unsafe fn BotAIStartFrame(time: c_int) -> c_int {
         if (*(*addr_of!(botstates))[i]).botthink_residual >= thinktime {
             (*(*addr_of!(botstates))[i]).botthink_residual -= thinktime;
 
-            if (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i)).client).pers.connected == CON_CONNECTED {
+            if (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i)).client)
+                .pers
+                .connected
+                == CON_CONNECTED
+            {
                 BotAI(i as c_int, thinktime as f32 / 1000.0);
             }
         }
@@ -8381,7 +8683,11 @@ pub unsafe fn BotAIStartFrame(time: c_int) -> c_int {
             i += 1;
             continue;
         }
-        if (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i)).client).pers.connected != CON_CONNECTED {
+        if (*(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(i)).client)
+            .pers
+            .connected
+            != CON_CONNECTED
+        {
             i += 1;
             continue;
         }
@@ -8458,8 +8764,7 @@ mod oracle_tests {
     #[test]
     fn AngleDifference_matches_oracle_bit_exact() {
         use crate::codemp::game::ai_main::AngleDifference;
-        let samples: [f32; 9] =
-            [0.0, 10.0, 90.0, 179.0, 181.0, 359.0, -45.0, -200.0, 720.0];
+        let samples: [f32; 9] = [0.0, 10.0, 90.0, 179.0, 181.0, 359.0, -45.0, -200.0, 720.0];
         for &a in &samples {
             for &b in &samples {
                 let rust = AngleDifference(a, b);

@@ -41,8 +41,8 @@ pub const SEF_LOCK_WON: c_int = 0x100; // Won a saberLock
 pub const SES_LEAVING: c_int = 1;
 pub const SES_HOVERING: c_int = 1; //2
 pub const SES_RETURNING: c_int = 1; //3
-// This is a hack because ATM the saberEntityState is only non-0 if out or 0 if in, and we
-// at least want NPCs knowing when their saber is out regardless.
+                                    // This is a hack because ATM the saberEntityState is only non-0 if out or 0 if in, and we
+                                    // at least want NPCs knowing when their saber is out regardless.
 
 pub const JSF_AMBUSH: c_int = 16; // ambusher Jedi
 

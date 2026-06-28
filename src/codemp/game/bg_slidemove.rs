@@ -38,21 +38,22 @@ use crate::codemp::game::bg_public::{
     EV_PLAY_EFFECT_ID, EV_STEP_12, EV_STEP_16, EV_STEP_4, EV_STEP_8, HANDEXTEND_KNOCKDOWN,
     MOD_COLLISION, MOD_FALLING, PMF_STUCK_TO_WALL, STEPSIZE,
 };
-use crate::codemp::game::bg_weapons_h::WP_NONE;
 use crate::codemp::game::bg_vehicles_h::{
-    Vehicle_t, MIN_LANDING_SLOPE, MIN_LANDING_SPEED, VEH_CRASHING, VH_FIGHTER, VH_SPEEDER, VH_WALKER,
+    Vehicle_t, MIN_LANDING_SLOPE, MIN_LANDING_SPEED, VEH_CRASHING, VH_FIGHTER, VH_SPEEDER,
+    VH_WALKER,
 };
+use crate::codemp::game::bg_weapons_h::WP_NONE;
 use crate::codemp::game::fighternpc::FighterIsLanded;
+use crate::codemp::game::g_active::Client_CheckImpactBBrush;
 use crate::codemp::game::g_combat::{G_Damage, G_DamageFromKiller};
 use crate::codemp::game::g_local::{gentity_t, DAMAGE_NO_ARMOR};
 use crate::codemp::game::g_main::{g_entities, level};
-use crate::codemp::game::g_active::Client_CheckImpactBBrush;
 use crate::codemp::game::g_utils::G_AddEvent;
 use crate::codemp::game::g_vehicles::G_FlyVehicleSurfaceDestruction;
 use crate::codemp::game::q_math::{
-    AngleNormalize180, AngleVectors, AnglesSubtract, CrossProduct, DotProduct, VectorAdd,
-    VectorClear, VectorCompare, VectorCopy, VectorLength, VectorMA, VectorNormalize,
-    VectorNormalize2, VectorScale, VectorSet, VectorSubtract, vec3_origin, vectoangles,
+    vec3_origin, vectoangles, AngleNormalize180, AngleVectors, AnglesSubtract, CrossProduct,
+    DotProduct, VectorAdd, VectorClear, VectorCompare, VectorCopy, VectorLength, VectorMA,
+    VectorNormalize, VectorNormalize2, VectorScale, VectorSet, VectorSubtract,
 };
 use crate::codemp::game::q_shared::Q_stricmp;
 use crate::codemp::game::q_shared_h::{
@@ -82,9 +83,8 @@ pub unsafe fn PM_VehicleImpact(pEnt: *mut bgEntity_t, trace: *mut trace_t) {
     let pmv = *addr_of!(pm);
     // See if the vehicle has crashed into the ground.
     let pSelfVeh: *mut Vehicle_t = (*pEnt).m_pVehicle;
-    let mut magnitude: f32 = VectorLength(&(*(*pmv).ps).velocity)
-        * (*(*pSelfVeh).m_pVehicleInfo).mass as f32
-        / 50.0;
+    let mut magnitude: f32 =
+        VectorLength(&(*(*pmv).ps).velocity) * (*(*pSelfVeh).m_pVehicleInfo).mass as f32 / 50.0;
     let mut forceSurfDestruction: qboolean = QFALSE;
     // #ifdef QAGAME
     let hitEnt: *mut gentity_t = if !trace.is_null() {
@@ -370,11 +370,7 @@ pub unsafe fn PM_VehicleImpact(pEnt: *mut bgEntity_t, trace: *mut trace_t) {
                         let bounceDirIn = bounceDir;
                         VectorScale(&bounceDirIn, -1.0, &mut bounceDir);
                         //do bounce
-                        VectorScale(
-                            &bounceDir,
-                            ((*(*pmv).ps).speed + l) * 0.5,
-                            &mut pushDir,
-                        );
+                        VectorScale(&bounceDir, ((*(*pmv).ps).speed + l) * 0.5, &mut pushDir);
                         let pushDirIn = pushDir;
                         VectorScale(
                             &pushDirIn,
@@ -389,14 +385,9 @@ pub unsafe fn PM_VehicleImpact(pEnt: *mut bgEntity_t, trace: *mut trace_t) {
                         let pushDirIn = pushDir;
                         VectorScale(&pushDirIn, bounceDot, &mut pushDir);
                         let hitVelIn = (*(*hitEnt).client).ps.velocity;
-                        VectorAdd(
-                            &hitVelIn,
-                            &pushDir,
-                            &mut (*(*hitEnt).client).ps.velocity,
-                        );
+                        VectorAdd(&hitVelIn, &pushDir, &mut (*(*hitEnt).client).ps.velocity);
                         //turn
-                        turnDivider =
-                            (*(*(*hitEnt).m_pVehicle).m_pVehicleInfo).mass as f32 / 400.0;
+                        turnDivider = (*(*(*hitEnt).m_pVehicle).m_pVehicleInfo).mass as f32 / 400.0;
                         if turnHitEnt != QFALSE {
                             //don't turn as much when hit another ship
                             turnDivider *= 4.0;
@@ -425,12 +416,10 @@ pub unsafe fn PM_VehicleImpact(pEnt: *mut bgEntity_t, trace: *mut trace_t) {
                                 pitchTurnStrength
                             };
                             //hitEnt->m_pVehicle->m_vOrientation[PITCH] = AngleNormalize180(hitEnt->m_pVehicle->m_vOrientation[PITCH]+pitchTurnStrength/turnDivider*pSelfVeh->m_fTimeModifier);
-                            (*(*hitEnt).m_pVehicle).m_vFullAngleVelocity[PITCH] =
-                                AngleNormalize180(
-                                    *(*(*hitEnt).m_pVehicle).m_vOrientation.add(PITCH)
-                                        + pitchTurnStrength / turnDivider
-                                            * (*pSelfVeh).m_fTimeModifier,
-                                );
+                            (*(*hitEnt).m_pVehicle).m_vFullAngleVelocity[PITCH] = AngleNormalize180(
+                                *(*(*hitEnt).m_pVehicle).m_vOrientation.add(PITCH)
+                                    + pitchTurnStrength / turnDivider * (*pSelfVeh).m_fTimeModifier,
+                            );
                         }
                         //now do yaw
                         if bounceDir[0] == 0.0 && bounceDir[1] == 0.0 {
@@ -534,7 +523,8 @@ pub unsafe fn PM_VehicleImpact(pEnt: *mut bgEntity_t, trace: *mut trace_t) {
                             noDamage = qtrue;
                         }
                         */
-                        killer = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*hitEnt).r.ownerNum as usize);
+                        killer = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                            .add((*hitEnt).r.ownerNum as usize);
                     }
                 }
                 if noDamage == QFALSE {
@@ -590,13 +580,15 @@ pub unsafe fn PM_VehicleImpact(pEnt: *mut bgEntity_t, trace: *mut trace_t) {
                         //smash!
                         if (*(*hitEnt).client).ps.forceHandExtend != HANDEXTEND_KNOCKDOWN {
                             (*(*hitEnt).client).ps.forceHandExtend = HANDEXTEND_KNOCKDOWN;
-                            (*(*hitEnt).client).ps.forceHandExtendTime = (*pmv).cmd.serverTime + 1100;
+                            (*(*hitEnt).client).ps.forceHandExtendTime =
+                                (*pmv).cmd.serverTime + 1100;
                             (*(*hitEnt).client).ps.forceDodgeAnim = 0; //this toggles between 1 and 0, when it's 1 we should play the get up anim
                         }
 
                         (*(*hitEnt).client).ps.otherKiller = (*pEnt).s.number;
                         (*(*hitEnt).client).ps.otherKillerTime = (*pmv).cmd.serverTime + 5000;
-                        (*(*hitEnt).client).ps.otherKillerDebounceTime = (*pmv).cmd.serverTime + 100;
+                        (*(*hitEnt).client).ps.otherKillerDebounceTime =
+                            (*pmv).cmd.serverTime + 100;
                         (*(*hitEnt).client).otherKillerMOD = MOD_COLLISION;
                         (*(*hitEnt).client).otherKillerVehWeapon = 0;
                         (*(*hitEnt).client).otherKillerWeaponType = WP_NONE;
@@ -701,7 +693,8 @@ pub unsafe fn PM_ClientImpact(trace: *mut trace_t) -> qboolean {
         return QFALSE;
     }
 
-    traceEnt = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(otherEntityNum as usize);
+    traceEnt =
+        (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(otherEntityNum as usize);
 
     if VectorLength(&(*(*pmv).ps).velocity) >= 100.0
         && (*(*addr_of!(pm_entSelf))).s.NPC_class != CLASS_VEHICLE
@@ -802,7 +795,12 @@ pub unsafe fn PM_SlideMove(gravity: qboolean) -> qboolean {
     let mut bumpcount: c_int = 0;
     while bumpcount < numbumps {
         // calculate position we are trying to move to
-        VectorMA(&(*(*pmv).ps).origin, time_left, &(*(*pmv).ps).velocity, &mut end);
+        VectorMA(
+            &(*(*pmv).ps).origin,
+            time_left,
+            &(*(*pmv).ps).velocity,
+            &mut end,
+        );
 
         // see if we can make it there
         trace = core::mem::zeroed();
@@ -1147,8 +1145,7 @@ pub unsafe fn PM_StepSlideMove(gravity: qboolean) {
     );
 
     if (*pmv).stepSlideFix != 0 {
-        if (*(*pmv).ps).clientNum < MAX_CLIENTS as c_int
-            && trace.plane.normal[2] < MIN_WALK_NORMAL
+        if (*(*pmv).ps).clientNum < MAX_CLIENTS as c_int && trace.plane.normal[2] < MIN_WALK_NORMAL
         {
             //normal players cannot step up slopes that are too steep to walk on!
             let mut stepVec: vec3_t = [0.0; 3];

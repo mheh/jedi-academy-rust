@@ -15,7 +15,11 @@ use crate::ffi::GameImport::*;
 /// `trap_AAS_EntityInfo`.
 pub fn AAS_EntityInfo(entnum: i32, info: &mut aas_entityinfo_t) {
     unsafe {
-        syscall!(BOTLIB_AAS_ENTITY_INFO, entnum, info as *mut aas_entityinfo_t);
+        syscall!(
+            BOTLIB_AAS_ENTITY_INFO,
+            entnum,
+            info as *mut aas_entityinfo_t
+        );
     }
 }
 
@@ -73,7 +77,12 @@ pub fn AAS_TraceAreas(
 }
 
 /// `trap_AAS_BBoxAreas`.
-pub fn AAS_BBoxAreas(absmins: &vec3_t, absmaxs: &vec3_t, areas: &mut [c_int], maxareas: i32) -> i32 {
+pub fn AAS_BBoxAreas(
+    absmins: &vec3_t,
+    absmaxs: &vec3_t,
+    areas: &mut [c_int],
+    maxareas: i32,
+) -> i32 {
     unsafe {
         syscall!(
             BOTLIB_AAS_BBOX_AREAS,
@@ -117,7 +126,14 @@ pub fn AAS_ValueForBSPEpairKey(ent: i32, key: &str, value: &mut [c_char], size: 
 /// `trap_AAS_VectorForBSPEpairKey`.
 pub fn AAS_VectorForBSPEpairKey(ent: i32, key: &str, v: &mut vec3_t) -> i32 {
     let k = super::cstr(key);
-    unsafe { syscall!(BOTLIB_AAS_VECTOR_FOR_BSP_EPAIR_KEY, ent, k.as_ptr(), v.as_mut_ptr()) as i32 }
+    unsafe {
+        syscall!(
+            BOTLIB_AAS_VECTOR_FOR_BSP_EPAIR_KEY,
+            ent,
+            k.as_ptr(),
+            v.as_mut_ptr()
+        ) as i32
+    }
 }
 
 /// `trap_AAS_FloatForBSPEpairKey`.

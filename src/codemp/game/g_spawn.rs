@@ -18,28 +18,29 @@ use core::mem::{offset_of, size_of};
 use core::ptr::{addr_of, addr_of_mut, copy_nonoverlapping, null_mut};
 
 use crate::codemp::game::bg_misc::{bg_itemlist, BG_FindItem, BG_ParseField};
-use crate::codemp::game::bg_panimate::{bgHumanoidAnimations, BGPAFtextLoaded, BG_ParseAnimationFile};
+use crate::codemp::game::bg_panimate::{
+    bgHumanoidAnimations, BGPAFtextLoaded, BG_ParseAnimationFile,
+};
 use crate::codemp::game::bg_public::{
     gitem_t, BG_field_t, CS_GAME_VERSION, CS_GLOBAL_AMBIENT_SET, CS_LEVEL_START_TIME,
     CS_LIGHT_STYLES, CS_MESSAGE, CS_MOTD, CS_MUSIC, CS_WARMUP, EF_PERMANENT, ET_MOVER, F_ANGLEHACK,
-    F_FLOAT, F_IGNORE,
-    F_INT, F_LSTRING, F_PARM1, F_PARM10, F_PARM11, F_PARM12, F_PARM13, F_PARM14, F_PARM15, F_PARM16,
-    F_PARM2, F_PARM3, F_PARM4, F_PARM5, F_PARM6, F_PARM7, F_PARM8, F_PARM9, F_VECTOR, GAME_VERSION,
-    GT_FFA, GT_MAX_GAME_TYPE, GT_SIEGE, GT_SINGLE_PLAYER, GT_TEAM, MAX_SPAWN_VARS,
-    MAX_SPAWN_VARS_CHARS, TEAM_BLUE, TEAM_RED,
+    F_FLOAT, F_IGNORE, F_INT, F_LSTRING, F_PARM1, F_PARM10, F_PARM11, F_PARM12, F_PARM13, F_PARM14,
+    F_PARM15, F_PARM16, F_PARM2, F_PARM3, F_PARM4, F_PARM5, F_PARM6, F_PARM7, F_PARM8, F_PARM9,
+    F_VECTOR, GAME_VERSION, GT_FFA, GT_MAX_GAME_TYPE, GT_SIEGE, GT_SINGLE_PLAYER, GT_TEAM,
+    MAX_SPAWN_VARS, MAX_SPAWN_VARS_CHARS, TEAM_BLUE, TEAM_RED,
 };
 use crate::codemp::game::g_client::g2SaberInstance;
 use crate::codemp::game::g_items::{EWebPrecache, G_SpawnItem};
 use crate::codemp::game::g_local::gentity_t;
+use crate::codemp::game::g_main::{
+    g_entities, g_gametype, g_motd, g_restarted, level, Com_Error, G_Error, G_Printf,
+};
+use crate::codemp::game::g_mem::G_Alloc;
 use crate::codemp::game::g_public_h::{
     BSET_ANGER, BSET_ATTACK, BSET_AWAKE, BSET_BLOCKED, BSET_DEATH, BSET_DELAYED, BSET_FFDEATH,
     BSET_FFIRE, BSET_FLEE, BSET_LOSTENEMY, BSET_MINDTRICK, BSET_PAIN, BSET_SPAWN, BSET_USE,
     BSET_VICTORY,
 };
-use crate::codemp::game::g_main::{
-    g_entities, g_gametype, g_motd, g_restarted, level, Com_Error, G_Error, G_Printf,
-};
-use crate::codemp::game::g_mem::G_Alloc;
 use crate::codemp::game::g_target::scriptrunner_run;
 use crate::codemp::game::g_utils::{
     G_BSPIndex, G_FreeEntity, G_SetOrigin, G_SoundIndex, G_SoundSetIndex, G_Spawn,
@@ -111,8 +112,16 @@ static fields: FieldsTable = FieldsTable([
     field(c"alliedTeam", offset_of!(gentity_t, alliedTeam), F_INT), //for misc_turrets
     field(c"roffname", offset_of!(gentity_t, roffname), F_LSTRING),
     field(c"rofftarget", offset_of!(gentity_t, rofftarget), F_LSTRING),
-    field(c"healingclass", offset_of!(gentity_t, healingclass), F_LSTRING),
-    field(c"healingsound", offset_of!(gentity_t, healingsound), F_LSTRING),
+    field(
+        c"healingclass",
+        offset_of!(gentity_t, healingclass),
+        F_LSTRING,
+    ),
+    field(
+        c"healingsound",
+        offset_of!(gentity_t, healingsound),
+        F_LSTRING,
+    ),
     field(c"healingrate", offset_of!(gentity_t, healingrate), F_INT),
     field(c"ownername", offset_of!(gentity_t, ownername), F_LSTRING),
     field(c"origin", offset_of!(gentity_t, s.origin), F_VECTOR),
@@ -126,7 +135,11 @@ static fields: FieldsTable = FieldsTable([
     field(c"target4", offset_of!(gentity_t, target4), F_LSTRING),
     field(c"target5", offset_of!(gentity_t, target5), F_LSTRING),
     field(c"target6", offset_of!(gentity_t, target6), F_LSTRING),
-    field(c"NPC_targetname", offset_of!(gentity_t, NPC_targetname), F_LSTRING),
+    field(
+        c"NPC_targetname",
+        offset_of!(gentity_t, NPC_targetname),
+        F_LSTRING,
+    ),
     field(c"NPC_target", offset_of!(gentity_t, NPC_target), F_LSTRING),
     field(c"NPC_target2", offset_of!(gentity_t, target2), F_LSTRING), //NPC_spawner only
     field(c"NPC_target4", offset_of!(gentity_t, target4), F_LSTRING), //NPC_spawner only
@@ -143,37 +156,117 @@ static fields: FieldsTable = FieldsTable([
     field(c"dmg", offset_of!(gentity_t, damage), F_INT),
     field(c"angles", offset_of!(gentity_t, s.angles), F_VECTOR),
     field(c"angle", offset_of!(gentity_t, s.angles), F_ANGLEHACK),
-    field(c"targetShaderName", offset_of!(gentity_t, targetShaderName), F_LSTRING),
-    field(c"targetShaderNewName", offset_of!(gentity_t, targetShaderNewName), F_LSTRING),
+    field(
+        c"targetShaderName",
+        offset_of!(gentity_t, targetShaderName),
+        F_LSTRING,
+    ),
+    field(
+        c"targetShaderNewName",
+        offset_of!(gentity_t, targetShaderNewName),
+        F_LSTRING,
+    ),
     field(c"linear", offset_of!(gentity_t, alt_fire), F_INT), //for movers to use linear movement
-    field(c"closetarget", offset_of!(gentity_t, closetarget), F_LSTRING), //for doors
+    field(
+        c"closetarget",
+        offset_of!(gentity_t, closetarget),
+        F_LSTRING,
+    ), //for doors
     field(c"opentarget", offset_of!(gentity_t, opentarget), F_LSTRING), //for doors
     field(c"paintarget", offset_of!(gentity_t, paintarget), F_LSTRING), //for doors
     field(c"goaltarget", offset_of!(gentity_t, goaltarget), F_LSTRING), //for siege
     field(c"idealclass", offset_of!(gentity_t, idealclass), F_LSTRING), //for siege spawnpoints
     //rww - icarus stuff:
-    field(c"spawnscript", offset_of!(gentity_t, behaviorSet) + BSET_SPAWN as usize * size_of::<*mut c_char>(), F_LSTRING), //name of script to run
-    field(c"usescript", offset_of!(gentity_t, behaviorSet) + BSET_USE as usize * size_of::<*mut c_char>(), F_LSTRING), //name of script to run
-    field(c"awakescript", offset_of!(gentity_t, behaviorSet) + BSET_AWAKE as usize * size_of::<*mut c_char>(), F_LSTRING), //name of script to run
-    field(c"angerscript", offset_of!(gentity_t, behaviorSet) + BSET_ANGER as usize * size_of::<*mut c_char>(), F_LSTRING), //name of script to run
-    field(c"attackscript", offset_of!(gentity_t, behaviorSet) + BSET_ATTACK as usize * size_of::<*mut c_char>(), F_LSTRING), //name of script to run
-    field(c"victoryscript", offset_of!(gentity_t, behaviorSet) + BSET_VICTORY as usize * size_of::<*mut c_char>(), F_LSTRING), //name of script to run
-    field(c"lostenemyscript", offset_of!(gentity_t, behaviorSet) + BSET_LOSTENEMY as usize * size_of::<*mut c_char>(), F_LSTRING), //name of script to run
-    field(c"painscript", offset_of!(gentity_t, behaviorSet) + BSET_PAIN as usize * size_of::<*mut c_char>(), F_LSTRING), //name of script to run
-    field(c"fleescript", offset_of!(gentity_t, behaviorSet) + BSET_FLEE as usize * size_of::<*mut c_char>(), F_LSTRING), //name of script to run
-    field(c"deathscript", offset_of!(gentity_t, behaviorSet) + BSET_DEATH as usize * size_of::<*mut c_char>(), F_LSTRING), //name of script to run
-    field(c"delayscript", offset_of!(gentity_t, behaviorSet) + BSET_DELAYED as usize * size_of::<*mut c_char>(), F_LSTRING), //name of script to run
-    field(c"delayscripttime", offset_of!(gentity_t, delayScriptTime), F_INT), //name of script to run
-    field(c"blockedscript", offset_of!(gentity_t, behaviorSet) + BSET_BLOCKED as usize * size_of::<*mut c_char>(), F_LSTRING), //name of script to run
-    field(c"ffirescript", offset_of!(gentity_t, behaviorSet) + BSET_FFIRE as usize * size_of::<*mut c_char>(), F_LSTRING), //name of script to run
-    field(c"ffdeathscript", offset_of!(gentity_t, behaviorSet) + BSET_FFDEATH as usize * size_of::<*mut c_char>(), F_LSTRING), //name of script to run
-    field(c"mindtrickscript", offset_of!(gentity_t, behaviorSet) + BSET_MINDTRICK as usize * size_of::<*mut c_char>(), F_LSTRING), //name of script to run
-    field(c"script_targetname", offset_of!(gentity_t, script_targetname), F_LSTRING), //scripts look for this when "affecting"
+    field(
+        c"spawnscript",
+        offset_of!(gentity_t, behaviorSet) + BSET_SPAWN as usize * size_of::<*mut c_char>(),
+        F_LSTRING,
+    ), //name of script to run
+    field(
+        c"usescript",
+        offset_of!(gentity_t, behaviorSet) + BSET_USE as usize * size_of::<*mut c_char>(),
+        F_LSTRING,
+    ), //name of script to run
+    field(
+        c"awakescript",
+        offset_of!(gentity_t, behaviorSet) + BSET_AWAKE as usize * size_of::<*mut c_char>(),
+        F_LSTRING,
+    ), //name of script to run
+    field(
+        c"angerscript",
+        offset_of!(gentity_t, behaviorSet) + BSET_ANGER as usize * size_of::<*mut c_char>(),
+        F_LSTRING,
+    ), //name of script to run
+    field(
+        c"attackscript",
+        offset_of!(gentity_t, behaviorSet) + BSET_ATTACK as usize * size_of::<*mut c_char>(),
+        F_LSTRING,
+    ), //name of script to run
+    field(
+        c"victoryscript",
+        offset_of!(gentity_t, behaviorSet) + BSET_VICTORY as usize * size_of::<*mut c_char>(),
+        F_LSTRING,
+    ), //name of script to run
+    field(
+        c"lostenemyscript",
+        offset_of!(gentity_t, behaviorSet) + BSET_LOSTENEMY as usize * size_of::<*mut c_char>(),
+        F_LSTRING,
+    ), //name of script to run
+    field(
+        c"painscript",
+        offset_of!(gentity_t, behaviorSet) + BSET_PAIN as usize * size_of::<*mut c_char>(),
+        F_LSTRING,
+    ), //name of script to run
+    field(
+        c"fleescript",
+        offset_of!(gentity_t, behaviorSet) + BSET_FLEE as usize * size_of::<*mut c_char>(),
+        F_LSTRING,
+    ), //name of script to run
+    field(
+        c"deathscript",
+        offset_of!(gentity_t, behaviorSet) + BSET_DEATH as usize * size_of::<*mut c_char>(),
+        F_LSTRING,
+    ), //name of script to run
+    field(
+        c"delayscript",
+        offset_of!(gentity_t, behaviorSet) + BSET_DELAYED as usize * size_of::<*mut c_char>(),
+        F_LSTRING,
+    ), //name of script to run
+    field(
+        c"delayscripttime",
+        offset_of!(gentity_t, delayScriptTime),
+        F_INT,
+    ), //name of script to run
+    field(
+        c"blockedscript",
+        offset_of!(gentity_t, behaviorSet) + BSET_BLOCKED as usize * size_of::<*mut c_char>(),
+        F_LSTRING,
+    ), //name of script to run
+    field(
+        c"ffirescript",
+        offset_of!(gentity_t, behaviorSet) + BSET_FFIRE as usize * size_of::<*mut c_char>(),
+        F_LSTRING,
+    ), //name of script to run
+    field(
+        c"ffdeathscript",
+        offset_of!(gentity_t, behaviorSet) + BSET_FFDEATH as usize * size_of::<*mut c_char>(),
+        F_LSTRING,
+    ), //name of script to run
+    field(
+        c"mindtrickscript",
+        offset_of!(gentity_t, behaviorSet) + BSET_MINDTRICK as usize * size_of::<*mut c_char>(),
+        F_LSTRING,
+    ), //name of script to run
+    field(
+        c"script_targetname",
+        offset_of!(gentity_t, script_targetname),
+        F_LSTRING,
+    ), //scripts look for this when "affecting"
     field(c"fullName", offset_of!(gentity_t, fullName), F_LSTRING),
     field(c"soundSet", offset_of!(gentity_t, soundSet), F_LSTRING),
     field(c"radius", offset_of!(gentity_t, radius), F_FLOAT),
     field(c"numchunks", offset_of!(gentity_t, radius), F_FLOAT), //for func_breakables
-    field(c"chunksize", offset_of!(gentity_t, mass), F_FLOAT), //for func_breakables
+    field(c"chunksize", offset_of!(gentity_t, mass), F_FLOAT),   //for func_breakables
     //Script parms - will this handle clamping to 16 or whatever length of parm[0] is?
     field(c"parm1", 0, F_PARM1),
     field(c"parm2", 0, F_PARM2),
@@ -292,13 +385,7 @@ pub unsafe fn G_SpawnVector(
 ) -> qboolean {
     let mut s: *mut c_char = null_mut();
     let present = G_SpawnString(key, defaultString, &mut s);
-    sscanf(
-        s,
-        c"%f %f %f".as_ptr(),
-        out,
-        out.add(1),
-        out.add(2),
-    );
+    sscanf(s, c"%f %f %f".as_ptr(), out, out.add(1), out.add(2));
     present
 }
 
@@ -467,7 +554,10 @@ unsafe fn HandleEntityAdjustment() {
     Com_sprintf(
         temp.as_mut_ptr(),
         MAX_QPATH as c_int,
-        format_args!("{:.0} {:.0} {:.0}", new_origin[0], new_origin[1], new_origin[2]),
+        format_args!(
+            "{:.0} {:.0} {:.0}",
+            new_origin[0], new_origin[1], new_origin[2]
+        ),
     );
     AddSpawnField(c"origin".as_ptr(), temp.as_ptr());
 
@@ -533,43 +623,71 @@ unsafe fn HandleEntityAdjustment() {
     // ---- prefix the target-linkage fields with mTargetAdjust ----
     G_SpawnString(c"targetname".as_ptr(), novalue, &mut value);
     if Q_stricmp(value, novalue) != 0 {
-        Com_sprintf(temp.as_mut_ptr(), MAX_QPATH as c_int, format_args!("{}{}", Sz(mtarget), Sz(value)));
+        Com_sprintf(
+            temp.as_mut_ptr(),
+            MAX_QPATH as c_int,
+            format_args!("{}{}", Sz(mtarget), Sz(value)),
+        );
         AddSpawnField(c"targetname".as_ptr(), temp.as_ptr());
     }
 
     G_SpawnString(c"target".as_ptr(), novalue, &mut value);
     if Q_stricmp(value, novalue) != 0 {
-        Com_sprintf(temp.as_mut_ptr(), MAX_QPATH as c_int, format_args!("{}{}", Sz(mtarget), Sz(value)));
+        Com_sprintf(
+            temp.as_mut_ptr(),
+            MAX_QPATH as c_int,
+            format_args!("{}{}", Sz(mtarget), Sz(value)),
+        );
         AddSpawnField(c"target".as_ptr(), temp.as_ptr());
     }
 
     G_SpawnString(c"killtarget".as_ptr(), novalue, &mut value);
     if Q_stricmp(value, novalue) != 0 {
-        Com_sprintf(temp.as_mut_ptr(), MAX_QPATH as c_int, format_args!("{}{}", Sz(mtarget), Sz(value)));
+        Com_sprintf(
+            temp.as_mut_ptr(),
+            MAX_QPATH as c_int,
+            format_args!("{}{}", Sz(mtarget), Sz(value)),
+        );
         AddSpawnField(c"killtarget".as_ptr(), temp.as_ptr());
     }
 
     G_SpawnString(c"brushparent".as_ptr(), novalue, &mut value);
     if Q_stricmp(value, novalue) != 0 {
-        Com_sprintf(temp.as_mut_ptr(), MAX_QPATH as c_int, format_args!("{}{}", Sz(mtarget), Sz(value)));
+        Com_sprintf(
+            temp.as_mut_ptr(),
+            MAX_QPATH as c_int,
+            format_args!("{}{}", Sz(mtarget), Sz(value)),
+        );
         AddSpawnField(c"brushparent".as_ptr(), temp.as_ptr());
     }
 
     G_SpawnString(c"brushchild".as_ptr(), novalue, &mut value);
     if Q_stricmp(value, novalue) != 0 {
-        Com_sprintf(temp.as_mut_ptr(), MAX_QPATH as c_int, format_args!("{}{}", Sz(mtarget), Sz(value)));
+        Com_sprintf(
+            temp.as_mut_ptr(),
+            MAX_QPATH as c_int,
+            format_args!("{}{}", Sz(mtarget), Sz(value)),
+        );
         AddSpawnField(c"brushchild".as_ptr(), temp.as_ptr());
     }
 
     G_SpawnString(c"enemy".as_ptr(), novalue, &mut value);
     if Q_stricmp(value, novalue) != 0 {
-        Com_sprintf(temp.as_mut_ptr(), MAX_QPATH as c_int, format_args!("{}{}", Sz(mtarget), Sz(value)));
+        Com_sprintf(
+            temp.as_mut_ptr(),
+            MAX_QPATH as c_int,
+            format_args!("{}{}", Sz(mtarget), Sz(value)),
+        );
         AddSpawnField(c"enemy".as_ptr(), temp.as_ptr());
     }
 
     G_SpawnString(c"ICARUSname".as_ptr(), novalue, &mut value);
     if Q_stricmp(value, novalue) != 0 {
-        Com_sprintf(temp.as_mut_ptr(), MAX_QPATH as c_int, format_args!("{}{}", Sz(mtarget), Sz(value)));
+        Com_sprintf(
+            temp.as_mut_ptr(),
+            MAX_QPATH as c_int,
+            format_args!("{}{}", Sz(mtarget), Sz(value)),
+        );
         AddSpawnField(c"ICARUSname".as_ptr(), temp.as_ptr());
     }
 }
@@ -742,7 +860,9 @@ pub unsafe fn G_PrecacheSoundsets() {
 
     let mut i: usize = 0;
     while i < MAX_GENTITIES {
-        let ent: *mut gentity_t = core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add(i);
+        let ent: *mut gentity_t = core::ptr::addr_of_mut!(g_entities)
+            .cast::<gentity_t>()
+            .add(i);
 
         if (*ent).inuse != QFALSE && !(*ent).soundSet.is_null() && *(*ent).soundSet != 0 {
             if countedSets >= MAX_AMBIENT_SETS as c_int {
@@ -784,15 +904,16 @@ use crate::codemp::game::g_misc::{
     SP_CreateRain, SP_CreateSnow, SP_CreateSpaceDust, SP_fx_runner, SP_info_camp, SP_info_notnull,
     SP_info_null, SP_light, SP_misc_G2model, SP_misc_ammo_floor_unit, SP_misc_faller,
     SP_misc_holocron, SP_misc_maglock, SP_misc_model, SP_misc_model_ammo_power_converter,
-    SP_misc_model_health_power_converter, SP_misc_model_shield_power_converter, SP_misc_model_static,
-    SP_misc_portal_camera, SP_misc_portal_surface, SP_misc_shield_floor_unit, SP_misc_skyportal,
-    SP_misc_skyportal_orient, SP_misc_teleporter_dest, SP_misc_weapon_shooter, SP_misc_weather_zone,
-    SP_reference_tag, SP_shooter_blaster, SP_target_escapetrig, SP_target_screenshake,
+    SP_misc_model_health_power_converter, SP_misc_model_shield_power_converter,
+    SP_misc_model_static, SP_misc_portal_camera, SP_misc_portal_surface, SP_misc_shield_floor_unit,
+    SP_misc_skyportal, SP_misc_skyportal_orient, SP_misc_teleporter_dest, SP_misc_weapon_shooter,
+    SP_misc_weather_zone, SP_reference_tag, SP_shooter_blaster, SP_target_escapetrig,
+    SP_target_screenshake,
 };
 use crate::codemp::game::g_target::{
     SP_target_activate, SP_target_counter, SP_target_deactivate, SP_target_delay, SP_target_give,
-    SP_target_kill, SP_target_laser, SP_target_level_change, SP_target_location, SP_target_play_music,
-    SP_target_position, SP_target_print, SP_target_random, SP_target_relay,
+    SP_target_kill, SP_target_laser, SP_target_level_change, SP_target_location,
+    SP_target_play_music, SP_target_position, SP_target_print, SP_target_random, SP_target_relay,
     SP_target_remove_powerups, SP_target_score, SP_target_scriptrunner, SP_target_speaker,
     SP_target_teleporter,
 };
@@ -969,7 +1090,11 @@ unsafe extern "C" fn SP_misc_bsp(ent: *mut gentity_t) {
     G_SpawnInt(c"flatten".as_ptr(), c"0".as_ptr(), &mut tempint);
     (*ent).s.time = tempint;
 
-    Com_sprintf(temp.as_mut_ptr(), MAX_QPATH as c_int, format_args!("#{}", Sz(out)));
+    Com_sprintf(
+        temp.as_mut_ptr(),
+        MAX_QPATH as c_int,
+        format_args!("#{}", Sz(out)),
+    );
     trap::SetBrushModel(ent, &CStr::from_ptr(temp.as_ptr()).to_string_lossy()); // SV_SetBrushModel -- sets mins and maxs
     G_BSPIndex(&CStr::from_ptr(temp.as_ptr()).to_string_lossy());
 
@@ -1041,235 +1166,744 @@ unsafe impl Sync for spawn_t {}
 static spawns: &[spawn_t] = &[
     // info entities don't do anything at all, but provide positional
     // information for things controlled by other processes
-    spawn_t { name: c"info_player_start".as_ptr(), spawn: Some(SP_info_player_start) },
-    spawn_t { name: c"info_player_duel".as_ptr(), spawn: Some(SP_info_player_duel) },
-    spawn_t { name: c"info_player_duel1".as_ptr(), spawn: Some(SP_info_player_duel1) },
-    spawn_t { name: c"info_player_duel2".as_ptr(), spawn: Some(SP_info_player_duel2) },
-    spawn_t { name: c"info_player_deathmatch".as_ptr(), spawn: Some(SP_info_player_deathmatch) },
-    spawn_t { name: c"info_player_siegeteam1".as_ptr(), spawn: Some(SP_info_player_siegeteam1) },
-    spawn_t { name: c"info_player_siegeteam2".as_ptr(), spawn: Some(SP_info_player_siegeteam2) },
-    spawn_t { name: c"info_player_intermission".as_ptr(), spawn: Some(SP_info_player_intermission) },
-    spawn_t { name: c"info_jedimaster_start".as_ptr(), spawn: Some(SP_info_jedimaster_start) },
-    spawn_t { name: c"info_null".as_ptr(), spawn: Some(SP_info_null) },
-    spawn_t { name: c"info_notnull".as_ptr(), spawn: Some(SP_info_notnull) }, // use target_position instead
-    spawn_t { name: c"info_camp".as_ptr(), spawn: Some(SP_info_camp) },
-
-    spawn_t { name: c"info_siege_objective".as_ptr(), spawn: Some(SP_info_siege_objective) },
-    spawn_t { name: c"info_siege_radaricon".as_ptr(), spawn: Some(sp_info_siege_radaricon) },
-    spawn_t { name: c"info_siege_decomplete".as_ptr(), spawn: Some(sp_info_siege_decomplete) },
-    spawn_t { name: c"target_siege_end".as_ptr(), spawn: Some(SP_target_siege_end) },
-    spawn_t { name: c"misc_siege_item".as_ptr(), spawn: Some(sp_misc_siege_item) },
-
-    spawn_t { name: c"func_plat".as_ptr(), spawn: Some(sp_func_plat) },
-    spawn_t { name: c"func_button".as_ptr(), spawn: Some(sp_func_button) },
-    spawn_t { name: c"func_door".as_ptr(), spawn: Some(sp_func_door) },
-    spawn_t { name: c"func_static".as_ptr(), spawn: Some(sp_func_static) },
-    spawn_t { name: c"func_rotating".as_ptr(), spawn: Some(sp_func_rotating) },
-    spawn_t { name: c"func_bobbing".as_ptr(), spawn: Some(sp_func_bobbing) },
-    spawn_t { name: c"func_pendulum".as_ptr(), spawn: Some(sp_func_pendulum) },
-    spawn_t { name: c"func_train".as_ptr(), spawn: Some(sp_func_train) },
-    spawn_t { name: c"func_group".as_ptr(), spawn: Some(SP_info_null) },
-    spawn_t { name: c"func_timer".as_ptr(), spawn: Some(SP_func_timer) }, // rename trigger_timer?
-    spawn_t { name: c"func_breakable".as_ptr(), spawn: Some(sp_func_breakable) },
-    spawn_t { name: c"func_glass".as_ptr(), spawn: Some(sp_func_glass) },
-    spawn_t { name: c"func_usable".as_ptr(), spawn: Some(sp_func_usable) },
-    spawn_t { name: c"func_wall".as_ptr(), spawn: Some(sp_func_wall) },
-
+    spawn_t {
+        name: c"info_player_start".as_ptr(),
+        spawn: Some(SP_info_player_start),
+    },
+    spawn_t {
+        name: c"info_player_duel".as_ptr(),
+        spawn: Some(SP_info_player_duel),
+    },
+    spawn_t {
+        name: c"info_player_duel1".as_ptr(),
+        spawn: Some(SP_info_player_duel1),
+    },
+    spawn_t {
+        name: c"info_player_duel2".as_ptr(),
+        spawn: Some(SP_info_player_duel2),
+    },
+    spawn_t {
+        name: c"info_player_deathmatch".as_ptr(),
+        spawn: Some(SP_info_player_deathmatch),
+    },
+    spawn_t {
+        name: c"info_player_siegeteam1".as_ptr(),
+        spawn: Some(SP_info_player_siegeteam1),
+    },
+    spawn_t {
+        name: c"info_player_siegeteam2".as_ptr(),
+        spawn: Some(SP_info_player_siegeteam2),
+    },
+    spawn_t {
+        name: c"info_player_intermission".as_ptr(),
+        spawn: Some(SP_info_player_intermission),
+    },
+    spawn_t {
+        name: c"info_jedimaster_start".as_ptr(),
+        spawn: Some(SP_info_jedimaster_start),
+    },
+    spawn_t {
+        name: c"info_null".as_ptr(),
+        spawn: Some(SP_info_null),
+    },
+    spawn_t {
+        name: c"info_notnull".as_ptr(),
+        spawn: Some(SP_info_notnull),
+    }, // use target_position instead
+    spawn_t {
+        name: c"info_camp".as_ptr(),
+        spawn: Some(SP_info_camp),
+    },
+    spawn_t {
+        name: c"info_siege_objective".as_ptr(),
+        spawn: Some(SP_info_siege_objective),
+    },
+    spawn_t {
+        name: c"info_siege_radaricon".as_ptr(),
+        spawn: Some(sp_info_siege_radaricon),
+    },
+    spawn_t {
+        name: c"info_siege_decomplete".as_ptr(),
+        spawn: Some(sp_info_siege_decomplete),
+    },
+    spawn_t {
+        name: c"target_siege_end".as_ptr(),
+        spawn: Some(SP_target_siege_end),
+    },
+    spawn_t {
+        name: c"misc_siege_item".as_ptr(),
+        spawn: Some(sp_misc_siege_item),
+    },
+    spawn_t {
+        name: c"func_plat".as_ptr(),
+        spawn: Some(sp_func_plat),
+    },
+    spawn_t {
+        name: c"func_button".as_ptr(),
+        spawn: Some(sp_func_button),
+    },
+    spawn_t {
+        name: c"func_door".as_ptr(),
+        spawn: Some(sp_func_door),
+    },
+    spawn_t {
+        name: c"func_static".as_ptr(),
+        spawn: Some(sp_func_static),
+    },
+    spawn_t {
+        name: c"func_rotating".as_ptr(),
+        spawn: Some(sp_func_rotating),
+    },
+    spawn_t {
+        name: c"func_bobbing".as_ptr(),
+        spawn: Some(sp_func_bobbing),
+    },
+    spawn_t {
+        name: c"func_pendulum".as_ptr(),
+        spawn: Some(sp_func_pendulum),
+    },
+    spawn_t {
+        name: c"func_train".as_ptr(),
+        spawn: Some(sp_func_train),
+    },
+    spawn_t {
+        name: c"func_group".as_ptr(),
+        spawn: Some(SP_info_null),
+    },
+    spawn_t {
+        name: c"func_timer".as_ptr(),
+        spawn: Some(SP_func_timer),
+    }, // rename trigger_timer?
+    spawn_t {
+        name: c"func_breakable".as_ptr(),
+        spawn: Some(sp_func_breakable),
+    },
+    spawn_t {
+        name: c"func_glass".as_ptr(),
+        spawn: Some(sp_func_glass),
+    },
+    spawn_t {
+        name: c"func_usable".as_ptr(),
+        spawn: Some(sp_func_usable),
+    },
+    spawn_t {
+        name: c"func_wall".as_ptr(),
+        spawn: Some(sp_func_wall),
+    },
     // Triggers are brush objects that cause an effect when contacted
     // by a living player, usually involving firing targets.
     // While almost everything could be done with
     // a single trigger class and different targets, triggered effects
     // could not be client side predicted (push and teleport).
-    spawn_t { name: c"trigger_lightningstrike".as_ptr(), spawn: Some(SP_trigger_lightningstrike) },
-
-    spawn_t { name: c"trigger_always".as_ptr(), spawn: Some(SP_trigger_always) },
-    spawn_t { name: c"trigger_multiple".as_ptr(), spawn: Some(SP_trigger_multiple) },
-    spawn_t { name: c"trigger_once".as_ptr(), spawn: Some(SP_trigger_once) },
-    spawn_t { name: c"trigger_push".as_ptr(), spawn: Some(SP_trigger_push) },
-    spawn_t { name: c"trigger_teleport".as_ptr(), spawn: Some(SP_trigger_teleport) },
-    spawn_t { name: c"trigger_hurt".as_ptr(), spawn: Some(SP_trigger_hurt) },
-    spawn_t { name: c"trigger_space".as_ptr(), spawn: Some(SP_trigger_space) },
-    spawn_t { name: c"trigger_shipboundary".as_ptr(), spawn: Some(SP_trigger_shipboundary) },
-    spawn_t { name: c"trigger_hyperspace".as_ptr(), spawn: Some(SP_trigger_hyperspace) },
-
+    spawn_t {
+        name: c"trigger_lightningstrike".as_ptr(),
+        spawn: Some(SP_trigger_lightningstrike),
+    },
+    spawn_t {
+        name: c"trigger_always".as_ptr(),
+        spawn: Some(SP_trigger_always),
+    },
+    spawn_t {
+        name: c"trigger_multiple".as_ptr(),
+        spawn: Some(SP_trigger_multiple),
+    },
+    spawn_t {
+        name: c"trigger_once".as_ptr(),
+        spawn: Some(SP_trigger_once),
+    },
+    spawn_t {
+        name: c"trigger_push".as_ptr(),
+        spawn: Some(SP_trigger_push),
+    },
+    spawn_t {
+        name: c"trigger_teleport".as_ptr(),
+        spawn: Some(SP_trigger_teleport),
+    },
+    spawn_t {
+        name: c"trigger_hurt".as_ptr(),
+        spawn: Some(SP_trigger_hurt),
+    },
+    spawn_t {
+        name: c"trigger_space".as_ptr(),
+        spawn: Some(SP_trigger_space),
+    },
+    spawn_t {
+        name: c"trigger_shipboundary".as_ptr(),
+        spawn: Some(SP_trigger_shipboundary),
+    },
+    spawn_t {
+        name: c"trigger_hyperspace".as_ptr(),
+        spawn: Some(SP_trigger_hyperspace),
+    },
     // targets perform no action by themselves, but must be triggered
     // by another entity
-    spawn_t { name: c"target_give".as_ptr(), spawn: Some(SP_target_give) },
-    spawn_t { name: c"target_remove_powerups".as_ptr(), spawn: Some(SP_target_remove_powerups) },
-    spawn_t { name: c"target_delay".as_ptr(), spawn: Some(SP_target_delay) },
-    spawn_t { name: c"target_speaker".as_ptr(), spawn: Some(SP_target_speaker) },
-    spawn_t { name: c"target_print".as_ptr(), spawn: Some(SP_target_print) },
-    spawn_t { name: c"target_laser".as_ptr(), spawn: Some(SP_target_laser) },
-    spawn_t { name: c"target_score".as_ptr(), spawn: Some(SP_target_score) },
-    spawn_t { name: c"target_teleporter".as_ptr(), spawn: Some(SP_target_teleporter) },
-    spawn_t { name: c"target_relay".as_ptr(), spawn: Some(SP_target_relay) },
-    spawn_t { name: c"target_kill".as_ptr(), spawn: Some(SP_target_kill) },
-    spawn_t { name: c"target_position".as_ptr(), spawn: Some(SP_target_position) },
-    spawn_t { name: c"target_location".as_ptr(), spawn: Some(SP_target_location) },
-    spawn_t { name: c"target_counter".as_ptr(), spawn: Some(SP_target_counter) },
-    spawn_t { name: c"target_random".as_ptr(), spawn: Some(SP_target_random) },
-    spawn_t { name: c"target_scriptrunner".as_ptr(), spawn: Some(SP_target_scriptrunner) },
-    spawn_t { name: c"target_interest".as_ptr(), spawn: Some(SP_target_interest) },
-    spawn_t { name: c"target_activate".as_ptr(), spawn: Some(SP_target_activate) },
-    spawn_t { name: c"target_deactivate".as_ptr(), spawn: Some(SP_target_deactivate) },
-    spawn_t { name: c"target_level_change".as_ptr(), spawn: Some(SP_target_level_change) },
-    spawn_t { name: c"target_play_music".as_ptr(), spawn: Some(SP_target_play_music) },
-    spawn_t { name: c"target_push".as_ptr(), spawn: Some(SP_target_push) },
-
-    spawn_t { name: c"light".as_ptr(), spawn: Some(SP_light) },
-    spawn_t { name: c"path_corner".as_ptr(), spawn: Some(sp_path_corner) },
-
-    spawn_t { name: c"misc_teleporter_dest".as_ptr(), spawn: Some(SP_misc_teleporter_dest) },
-    spawn_t { name: c"misc_model".as_ptr(), spawn: Some(SP_misc_model) },
-    spawn_t { name: c"misc_model_static".as_ptr(), spawn: Some(SP_misc_model_static) },
-    spawn_t { name: c"misc_G2model".as_ptr(), spawn: Some(SP_misc_G2model) },
-    spawn_t { name: c"misc_portal_surface".as_ptr(), spawn: Some(SP_misc_portal_surface) },
-    spawn_t { name: c"misc_portal_camera".as_ptr(), spawn: Some(SP_misc_portal_camera) },
-    spawn_t { name: c"misc_weather_zone".as_ptr(), spawn: Some(SP_misc_weather_zone) },
-
-    spawn_t { name: c"misc_bsp".as_ptr(), spawn: Some(SP_misc_bsp) },
-    spawn_t { name: c"terrain".as_ptr(), spawn: Some(SP_terrain) },
-    spawn_t { name: c"misc_skyportal_orient".as_ptr(), spawn: Some(SP_misc_skyportal_orient) },
-    spawn_t { name: c"misc_skyportal".as_ptr(), spawn: Some(SP_misc_skyportal) },
-
+    spawn_t {
+        name: c"target_give".as_ptr(),
+        spawn: Some(SP_target_give),
+    },
+    spawn_t {
+        name: c"target_remove_powerups".as_ptr(),
+        spawn: Some(SP_target_remove_powerups),
+    },
+    spawn_t {
+        name: c"target_delay".as_ptr(),
+        spawn: Some(SP_target_delay),
+    },
+    spawn_t {
+        name: c"target_speaker".as_ptr(),
+        spawn: Some(SP_target_speaker),
+    },
+    spawn_t {
+        name: c"target_print".as_ptr(),
+        spawn: Some(SP_target_print),
+    },
+    spawn_t {
+        name: c"target_laser".as_ptr(),
+        spawn: Some(SP_target_laser),
+    },
+    spawn_t {
+        name: c"target_score".as_ptr(),
+        spawn: Some(SP_target_score),
+    },
+    spawn_t {
+        name: c"target_teleporter".as_ptr(),
+        spawn: Some(SP_target_teleporter),
+    },
+    spawn_t {
+        name: c"target_relay".as_ptr(),
+        spawn: Some(SP_target_relay),
+    },
+    spawn_t {
+        name: c"target_kill".as_ptr(),
+        spawn: Some(SP_target_kill),
+    },
+    spawn_t {
+        name: c"target_position".as_ptr(),
+        spawn: Some(SP_target_position),
+    },
+    spawn_t {
+        name: c"target_location".as_ptr(),
+        spawn: Some(SP_target_location),
+    },
+    spawn_t {
+        name: c"target_counter".as_ptr(),
+        spawn: Some(SP_target_counter),
+    },
+    spawn_t {
+        name: c"target_random".as_ptr(),
+        spawn: Some(SP_target_random),
+    },
+    spawn_t {
+        name: c"target_scriptrunner".as_ptr(),
+        spawn: Some(SP_target_scriptrunner),
+    },
+    spawn_t {
+        name: c"target_interest".as_ptr(),
+        spawn: Some(SP_target_interest),
+    },
+    spawn_t {
+        name: c"target_activate".as_ptr(),
+        spawn: Some(SP_target_activate),
+    },
+    spawn_t {
+        name: c"target_deactivate".as_ptr(),
+        spawn: Some(SP_target_deactivate),
+    },
+    spawn_t {
+        name: c"target_level_change".as_ptr(),
+        spawn: Some(SP_target_level_change),
+    },
+    spawn_t {
+        name: c"target_play_music".as_ptr(),
+        spawn: Some(SP_target_play_music),
+    },
+    spawn_t {
+        name: c"target_push".as_ptr(),
+        spawn: Some(SP_target_push),
+    },
+    spawn_t {
+        name: c"light".as_ptr(),
+        spawn: Some(SP_light),
+    },
+    spawn_t {
+        name: c"path_corner".as_ptr(),
+        spawn: Some(sp_path_corner),
+    },
+    spawn_t {
+        name: c"misc_teleporter_dest".as_ptr(),
+        spawn: Some(SP_misc_teleporter_dest),
+    },
+    spawn_t {
+        name: c"misc_model".as_ptr(),
+        spawn: Some(SP_misc_model),
+    },
+    spawn_t {
+        name: c"misc_model_static".as_ptr(),
+        spawn: Some(SP_misc_model_static),
+    },
+    spawn_t {
+        name: c"misc_G2model".as_ptr(),
+        spawn: Some(SP_misc_G2model),
+    },
+    spawn_t {
+        name: c"misc_portal_surface".as_ptr(),
+        spawn: Some(SP_misc_portal_surface),
+    },
+    spawn_t {
+        name: c"misc_portal_camera".as_ptr(),
+        spawn: Some(SP_misc_portal_camera),
+    },
+    spawn_t {
+        name: c"misc_weather_zone".as_ptr(),
+        spawn: Some(SP_misc_weather_zone),
+    },
+    spawn_t {
+        name: c"misc_bsp".as_ptr(),
+        spawn: Some(SP_misc_bsp),
+    },
+    spawn_t {
+        name: c"terrain".as_ptr(),
+        spawn: Some(SP_terrain),
+    },
+    spawn_t {
+        name: c"misc_skyportal_orient".as_ptr(),
+        spawn: Some(SP_misc_skyportal_orient),
+    },
+    spawn_t {
+        name: c"misc_skyportal".as_ptr(),
+        spawn: Some(SP_misc_skyportal),
+    },
     //rwwFIXMEFIXME: only for testing rmg team stuff
-    spawn_t { name: c"gametype_item".as_ptr(), spawn: Some(SP_gametype_item) },
-
-    spawn_t { name: c"misc_ammo_floor_unit".as_ptr(), spawn: Some(SP_misc_ammo_floor_unit) },
-    spawn_t { name: c"misc_shield_floor_unit".as_ptr(), spawn: Some(SP_misc_shield_floor_unit) },
-    spawn_t { name: c"misc_model_shield_power_converter".as_ptr(), spawn: Some(SP_misc_model_shield_power_converter) },
-    spawn_t { name: c"misc_model_ammo_power_converter".as_ptr(), spawn: Some(SP_misc_model_ammo_power_converter) },
-    spawn_t { name: c"misc_model_health_power_converter".as_ptr(), spawn: Some(SP_misc_model_health_power_converter) },
-
-    spawn_t { name: c"fx_runner".as_ptr(), spawn: Some(SP_fx_runner) },
-
-    spawn_t { name: c"target_screenshake".as_ptr(), spawn: Some(SP_target_screenshake) },
-    spawn_t { name: c"target_escapetrig".as_ptr(), spawn: Some(SP_target_escapetrig) },
-
-    spawn_t { name: c"misc_maglock".as_ptr(), spawn: Some(SP_misc_maglock) },
-
-    spawn_t { name: c"misc_faller".as_ptr(), spawn: Some(SP_misc_faller) },
-
-    spawn_t { name: c"ref_tag".as_ptr(), spawn: Some(SP_reference_tag) },
-    spawn_t { name: c"ref_tag_huge".as_ptr(), spawn: Some(SP_reference_tag) },
-
-    spawn_t { name: c"misc_weapon_shooter".as_ptr(), spawn: Some(SP_misc_weapon_shooter) },
-
+    spawn_t {
+        name: c"gametype_item".as_ptr(),
+        spawn: Some(SP_gametype_item),
+    },
+    spawn_t {
+        name: c"misc_ammo_floor_unit".as_ptr(),
+        spawn: Some(SP_misc_ammo_floor_unit),
+    },
+    spawn_t {
+        name: c"misc_shield_floor_unit".as_ptr(),
+        spawn: Some(SP_misc_shield_floor_unit),
+    },
+    spawn_t {
+        name: c"misc_model_shield_power_converter".as_ptr(),
+        spawn: Some(SP_misc_model_shield_power_converter),
+    },
+    spawn_t {
+        name: c"misc_model_ammo_power_converter".as_ptr(),
+        spawn: Some(SP_misc_model_ammo_power_converter),
+    },
+    spawn_t {
+        name: c"misc_model_health_power_converter".as_ptr(),
+        spawn: Some(SP_misc_model_health_power_converter),
+    },
+    spawn_t {
+        name: c"fx_runner".as_ptr(),
+        spawn: Some(SP_fx_runner),
+    },
+    spawn_t {
+        name: c"target_screenshake".as_ptr(),
+        spawn: Some(SP_target_screenshake),
+    },
+    spawn_t {
+        name: c"target_escapetrig".as_ptr(),
+        spawn: Some(SP_target_escapetrig),
+    },
+    spawn_t {
+        name: c"misc_maglock".as_ptr(),
+        spawn: Some(SP_misc_maglock),
+    },
+    spawn_t {
+        name: c"misc_faller".as_ptr(),
+        spawn: Some(SP_misc_faller),
+    },
+    spawn_t {
+        name: c"ref_tag".as_ptr(),
+        spawn: Some(SP_reference_tag),
+    },
+    spawn_t {
+        name: c"ref_tag_huge".as_ptr(),
+        spawn: Some(SP_reference_tag),
+    },
+    spawn_t {
+        name: c"misc_weapon_shooter".as_ptr(),
+        spawn: Some(SP_misc_weapon_shooter),
+    },
     //new NPC ents
-    spawn_t { name: c"NPC_spawner".as_ptr(), spawn: Some(SP_NPC_spawner) },
-
-    spawn_t { name: c"NPC_Vehicle".as_ptr(), spawn: Some(SP_NPC_Vehicle) },
-    spawn_t { name: c"NPC_Kyle".as_ptr(), spawn: Some(SP_NPC_Kyle) },
-    spawn_t { name: c"NPC_Lando".as_ptr(), spawn: Some(SP_NPC_Lando) },
-    spawn_t { name: c"NPC_Jan".as_ptr(), spawn: Some(SP_NPC_Jan) },
-    spawn_t { name: c"NPC_Luke".as_ptr(), spawn: Some(SP_NPC_Luke) },
-    spawn_t { name: c"NPC_MonMothma".as_ptr(), spawn: Some(SP_NPC_MonMothma) },
-    spawn_t { name: c"NPC_Tavion".as_ptr(), spawn: Some(SP_NPC_Tavion) },
-
+    spawn_t {
+        name: c"NPC_spawner".as_ptr(),
+        spawn: Some(SP_NPC_spawner),
+    },
+    spawn_t {
+        name: c"NPC_Vehicle".as_ptr(),
+        spawn: Some(SP_NPC_Vehicle),
+    },
+    spawn_t {
+        name: c"NPC_Kyle".as_ptr(),
+        spawn: Some(SP_NPC_Kyle),
+    },
+    spawn_t {
+        name: c"NPC_Lando".as_ptr(),
+        spawn: Some(SP_NPC_Lando),
+    },
+    spawn_t {
+        name: c"NPC_Jan".as_ptr(),
+        spawn: Some(SP_NPC_Jan),
+    },
+    spawn_t {
+        name: c"NPC_Luke".as_ptr(),
+        spawn: Some(SP_NPC_Luke),
+    },
+    spawn_t {
+        name: c"NPC_MonMothma".as_ptr(),
+        spawn: Some(SP_NPC_MonMothma),
+    },
+    spawn_t {
+        name: c"NPC_Tavion".as_ptr(),
+        spawn: Some(SP_NPC_Tavion),
+    },
     //new tavion
-    spawn_t { name: c"NPC_Tavion_New".as_ptr(), spawn: Some(SP_NPC_Tavion_New) },
-
+    spawn_t {
+        name: c"NPC_Tavion_New".as_ptr(),
+        spawn: Some(SP_NPC_Tavion_New),
+    },
     //new alora
-    spawn_t { name: c"NPC_Alora".as_ptr(), spawn: Some(SP_NPC_Alora) },
-
-    spawn_t { name: c"NPC_Reelo".as_ptr(), spawn: Some(SP_NPC_Reelo) },
-    spawn_t { name: c"NPC_Galak".as_ptr(), spawn: Some(SP_NPC_Galak) },
-    spawn_t { name: c"NPC_Desann".as_ptr(), spawn: Some(SP_NPC_Desann) },
-    spawn_t { name: c"NPC_Bartender".as_ptr(), spawn: Some(SP_NPC_Bartender) },
-    spawn_t { name: c"NPC_MorganKatarn".as_ptr(), spawn: Some(SP_NPC_MorganKatarn) },
-    spawn_t { name: c"NPC_Jedi".as_ptr(), spawn: Some(SP_NPC_Jedi) },
-    spawn_t { name: c"NPC_Prisoner".as_ptr(), spawn: Some(SP_NPC_Prisoner) },
-    spawn_t { name: c"NPC_Rebel".as_ptr(), spawn: Some(SP_NPC_Rebel) },
-    spawn_t { name: c"NPC_Stormtrooper".as_ptr(), spawn: Some(SP_NPC_Stormtrooper) },
-    spawn_t { name: c"NPC_StormtrooperOfficer".as_ptr(), spawn: Some(SP_NPC_StormtrooperOfficer) },
-    spawn_t { name: c"NPC_Snowtrooper".as_ptr(), spawn: Some(SP_NPC_Snowtrooper) },
-    spawn_t { name: c"NPC_Tie_Pilot".as_ptr(), spawn: Some(SP_NPC_Tie_Pilot) },
-    spawn_t { name: c"NPC_Ugnaught".as_ptr(), spawn: Some(SP_NPC_Ugnaught) },
-    spawn_t { name: c"NPC_Jawa".as_ptr(), spawn: Some(SP_NPC_Jawa) },
-    spawn_t { name: c"NPC_Gran".as_ptr(), spawn: Some(SP_NPC_Gran) },
-    spawn_t { name: c"NPC_Rodian".as_ptr(), spawn: Some(SP_NPC_Rodian) },
-    spawn_t { name: c"NPC_Weequay".as_ptr(), spawn: Some(SP_NPC_Weequay) },
-    spawn_t { name: c"NPC_Trandoshan".as_ptr(), spawn: Some(SP_NPC_Trandoshan) },
-    spawn_t { name: c"NPC_Tusken".as_ptr(), spawn: Some(SP_NPC_Tusken) },
-    spawn_t { name: c"NPC_Noghri".as_ptr(), spawn: Some(SP_NPC_Noghri) },
-    spawn_t { name: c"NPC_SwampTrooper".as_ptr(), spawn: Some(SP_NPC_SwampTrooper) },
-    spawn_t { name: c"NPC_Imperial".as_ptr(), spawn: Some(SP_NPC_Imperial) },
-    spawn_t { name: c"NPC_ImpWorker".as_ptr(), spawn: Some(SP_NPC_ImpWorker) },
-    spawn_t { name: c"NPC_BespinCop".as_ptr(), spawn: Some(SP_NPC_BespinCop) },
-    spawn_t { name: c"NPC_Reborn".as_ptr(), spawn: Some(SP_NPC_Reborn) },
-    spawn_t { name: c"NPC_ShadowTrooper".as_ptr(), spawn: Some(SP_NPC_ShadowTrooper) },
-    spawn_t { name: c"NPC_Monster_Murjj".as_ptr(), spawn: Some(SP_NPC_Monster_Murjj) },
-    spawn_t { name: c"NPC_Monster_Swamp".as_ptr(), spawn: Some(SP_NPC_Monster_Swamp) },
-    spawn_t { name: c"NPC_Monster_Howler".as_ptr(), spawn: Some(SP_NPC_Monster_Howler) },
-    spawn_t { name: c"NPC_MineMonster".as_ptr(), spawn: Some(SP_NPC_MineMonster) },
-    spawn_t { name: c"NPC_Monster_Claw".as_ptr(), spawn: Some(SP_NPC_Monster_Claw) },
-    spawn_t { name: c"NPC_Monster_Glider".as_ptr(), spawn: Some(SP_NPC_Monster_Glider) },
-    spawn_t { name: c"NPC_Monster_Flier2".as_ptr(), spawn: Some(SP_NPC_Monster_Flier2) },
-    spawn_t { name: c"NPC_Monster_Lizard".as_ptr(), spawn: Some(SP_NPC_Monster_Lizard) },
-    spawn_t { name: c"NPC_Monster_Fish".as_ptr(), spawn: Some(SP_NPC_Monster_Fish) },
-    spawn_t { name: c"NPC_Monster_Wampa".as_ptr(), spawn: Some(SP_NPC_Monster_Wampa) },
-    spawn_t { name: c"NPC_Monster_Rancor".as_ptr(), spawn: Some(SP_NPC_Monster_Rancor) },
-    spawn_t { name: c"NPC_Droid_Interrogator".as_ptr(), spawn: Some(SP_NPC_Droid_Interrogator) },
-    spawn_t { name: c"NPC_Droid_Probe".as_ptr(), spawn: Some(SP_NPC_Droid_Probe) },
-    spawn_t { name: c"NPC_Droid_Mark1".as_ptr(), spawn: Some(SP_NPC_Droid_Mark1) },
-    spawn_t { name: c"NPC_Droid_Mark2".as_ptr(), spawn: Some(SP_NPC_Droid_Mark2) },
-    spawn_t { name: c"NPC_Droid_ATST".as_ptr(), spawn: Some(SP_NPC_Droid_ATST) },
-    spawn_t { name: c"NPC_Droid_Seeker".as_ptr(), spawn: Some(SP_NPC_Droid_Seeker) },
-    spawn_t { name: c"NPC_Droid_Remote".as_ptr(), spawn: Some(SP_NPC_Droid_Remote) },
-    spawn_t { name: c"NPC_Droid_Sentry".as_ptr(), spawn: Some(SP_NPC_Droid_Sentry) },
-    spawn_t { name: c"NPC_Droid_Gonk".as_ptr(), spawn: Some(SP_NPC_Droid_Gonk) },
-    spawn_t { name: c"NPC_Droid_Mouse".as_ptr(), spawn: Some(SP_NPC_Droid_Mouse) },
-    spawn_t { name: c"NPC_Droid_R2D2".as_ptr(), spawn: Some(SP_NPC_Droid_R2D2) },
-    spawn_t { name: c"NPC_Droid_R5D2".as_ptr(), spawn: Some(SP_NPC_Droid_R5D2) },
-    spawn_t { name: c"NPC_Droid_Protocol".as_ptr(), spawn: Some(SP_NPC_Droid_Protocol) },
-
+    spawn_t {
+        name: c"NPC_Alora".as_ptr(),
+        spawn: Some(SP_NPC_Alora),
+    },
+    spawn_t {
+        name: c"NPC_Reelo".as_ptr(),
+        spawn: Some(SP_NPC_Reelo),
+    },
+    spawn_t {
+        name: c"NPC_Galak".as_ptr(),
+        spawn: Some(SP_NPC_Galak),
+    },
+    spawn_t {
+        name: c"NPC_Desann".as_ptr(),
+        spawn: Some(SP_NPC_Desann),
+    },
+    spawn_t {
+        name: c"NPC_Bartender".as_ptr(),
+        spawn: Some(SP_NPC_Bartender),
+    },
+    spawn_t {
+        name: c"NPC_MorganKatarn".as_ptr(),
+        spawn: Some(SP_NPC_MorganKatarn),
+    },
+    spawn_t {
+        name: c"NPC_Jedi".as_ptr(),
+        spawn: Some(SP_NPC_Jedi),
+    },
+    spawn_t {
+        name: c"NPC_Prisoner".as_ptr(),
+        spawn: Some(SP_NPC_Prisoner),
+    },
+    spawn_t {
+        name: c"NPC_Rebel".as_ptr(),
+        spawn: Some(SP_NPC_Rebel),
+    },
+    spawn_t {
+        name: c"NPC_Stormtrooper".as_ptr(),
+        spawn: Some(SP_NPC_Stormtrooper),
+    },
+    spawn_t {
+        name: c"NPC_StormtrooperOfficer".as_ptr(),
+        spawn: Some(SP_NPC_StormtrooperOfficer),
+    },
+    spawn_t {
+        name: c"NPC_Snowtrooper".as_ptr(),
+        spawn: Some(SP_NPC_Snowtrooper),
+    },
+    spawn_t {
+        name: c"NPC_Tie_Pilot".as_ptr(),
+        spawn: Some(SP_NPC_Tie_Pilot),
+    },
+    spawn_t {
+        name: c"NPC_Ugnaught".as_ptr(),
+        spawn: Some(SP_NPC_Ugnaught),
+    },
+    spawn_t {
+        name: c"NPC_Jawa".as_ptr(),
+        spawn: Some(SP_NPC_Jawa),
+    },
+    spawn_t {
+        name: c"NPC_Gran".as_ptr(),
+        spawn: Some(SP_NPC_Gran),
+    },
+    spawn_t {
+        name: c"NPC_Rodian".as_ptr(),
+        spawn: Some(SP_NPC_Rodian),
+    },
+    spawn_t {
+        name: c"NPC_Weequay".as_ptr(),
+        spawn: Some(SP_NPC_Weequay),
+    },
+    spawn_t {
+        name: c"NPC_Trandoshan".as_ptr(),
+        spawn: Some(SP_NPC_Trandoshan),
+    },
+    spawn_t {
+        name: c"NPC_Tusken".as_ptr(),
+        spawn: Some(SP_NPC_Tusken),
+    },
+    spawn_t {
+        name: c"NPC_Noghri".as_ptr(),
+        spawn: Some(SP_NPC_Noghri),
+    },
+    spawn_t {
+        name: c"NPC_SwampTrooper".as_ptr(),
+        spawn: Some(SP_NPC_SwampTrooper),
+    },
+    spawn_t {
+        name: c"NPC_Imperial".as_ptr(),
+        spawn: Some(SP_NPC_Imperial),
+    },
+    spawn_t {
+        name: c"NPC_ImpWorker".as_ptr(),
+        spawn: Some(SP_NPC_ImpWorker),
+    },
+    spawn_t {
+        name: c"NPC_BespinCop".as_ptr(),
+        spawn: Some(SP_NPC_BespinCop),
+    },
+    spawn_t {
+        name: c"NPC_Reborn".as_ptr(),
+        spawn: Some(SP_NPC_Reborn),
+    },
+    spawn_t {
+        name: c"NPC_ShadowTrooper".as_ptr(),
+        spawn: Some(SP_NPC_ShadowTrooper),
+    },
+    spawn_t {
+        name: c"NPC_Monster_Murjj".as_ptr(),
+        spawn: Some(SP_NPC_Monster_Murjj),
+    },
+    spawn_t {
+        name: c"NPC_Monster_Swamp".as_ptr(),
+        spawn: Some(SP_NPC_Monster_Swamp),
+    },
+    spawn_t {
+        name: c"NPC_Monster_Howler".as_ptr(),
+        spawn: Some(SP_NPC_Monster_Howler),
+    },
+    spawn_t {
+        name: c"NPC_MineMonster".as_ptr(),
+        spawn: Some(SP_NPC_MineMonster),
+    },
+    spawn_t {
+        name: c"NPC_Monster_Claw".as_ptr(),
+        spawn: Some(SP_NPC_Monster_Claw),
+    },
+    spawn_t {
+        name: c"NPC_Monster_Glider".as_ptr(),
+        spawn: Some(SP_NPC_Monster_Glider),
+    },
+    spawn_t {
+        name: c"NPC_Monster_Flier2".as_ptr(),
+        spawn: Some(SP_NPC_Monster_Flier2),
+    },
+    spawn_t {
+        name: c"NPC_Monster_Lizard".as_ptr(),
+        spawn: Some(SP_NPC_Monster_Lizard),
+    },
+    spawn_t {
+        name: c"NPC_Monster_Fish".as_ptr(),
+        spawn: Some(SP_NPC_Monster_Fish),
+    },
+    spawn_t {
+        name: c"NPC_Monster_Wampa".as_ptr(),
+        spawn: Some(SP_NPC_Monster_Wampa),
+    },
+    spawn_t {
+        name: c"NPC_Monster_Rancor".as_ptr(),
+        spawn: Some(SP_NPC_Monster_Rancor),
+    },
+    spawn_t {
+        name: c"NPC_Droid_Interrogator".as_ptr(),
+        spawn: Some(SP_NPC_Droid_Interrogator),
+    },
+    spawn_t {
+        name: c"NPC_Droid_Probe".as_ptr(),
+        spawn: Some(SP_NPC_Droid_Probe),
+    },
+    spawn_t {
+        name: c"NPC_Droid_Mark1".as_ptr(),
+        spawn: Some(SP_NPC_Droid_Mark1),
+    },
+    spawn_t {
+        name: c"NPC_Droid_Mark2".as_ptr(),
+        spawn: Some(SP_NPC_Droid_Mark2),
+    },
+    spawn_t {
+        name: c"NPC_Droid_ATST".as_ptr(),
+        spawn: Some(SP_NPC_Droid_ATST),
+    },
+    spawn_t {
+        name: c"NPC_Droid_Seeker".as_ptr(),
+        spawn: Some(SP_NPC_Droid_Seeker),
+    },
+    spawn_t {
+        name: c"NPC_Droid_Remote".as_ptr(),
+        spawn: Some(SP_NPC_Droid_Remote),
+    },
+    spawn_t {
+        name: c"NPC_Droid_Sentry".as_ptr(),
+        spawn: Some(SP_NPC_Droid_Sentry),
+    },
+    spawn_t {
+        name: c"NPC_Droid_Gonk".as_ptr(),
+        spawn: Some(SP_NPC_Droid_Gonk),
+    },
+    spawn_t {
+        name: c"NPC_Droid_Mouse".as_ptr(),
+        spawn: Some(SP_NPC_Droid_Mouse),
+    },
+    spawn_t {
+        name: c"NPC_Droid_R2D2".as_ptr(),
+        spawn: Some(SP_NPC_Droid_R2D2),
+    },
+    spawn_t {
+        name: c"NPC_Droid_R5D2".as_ptr(),
+        spawn: Some(SP_NPC_Droid_R5D2),
+    },
+    spawn_t {
+        name: c"NPC_Droid_Protocol".as_ptr(),
+        spawn: Some(SP_NPC_Droid_Protocol),
+    },
     //maybe put these guys in some day, for now just spawn reborns in their place.
-    spawn_t { name: c"NPC_Reborn_New".as_ptr(), spawn: Some(SP_NPC_Reborn_New) },
-    spawn_t { name: c"NPC_Cultist".as_ptr(), spawn: Some(SP_NPC_Cultist) },
-    spawn_t { name: c"NPC_Cultist_Saber".as_ptr(), spawn: Some(SP_NPC_Cultist_Saber) },
-    spawn_t { name: c"NPC_Cultist_Saber_Powers".as_ptr(), spawn: Some(SP_NPC_Cultist_Saber_Powers) },
-    spawn_t { name: c"NPC_Cultist_Destroyer".as_ptr(), spawn: Some(SP_NPC_Cultist_Destroyer) },
-    spawn_t { name: c"NPC_Cultist_Commando".as_ptr(), spawn: Some(SP_NPC_Cultist_Commando) },
-
+    spawn_t {
+        name: c"NPC_Reborn_New".as_ptr(),
+        spawn: Some(SP_NPC_Reborn_New),
+    },
+    spawn_t {
+        name: c"NPC_Cultist".as_ptr(),
+        spawn: Some(SP_NPC_Cultist),
+    },
+    spawn_t {
+        name: c"NPC_Cultist_Saber".as_ptr(),
+        spawn: Some(SP_NPC_Cultist_Saber),
+    },
+    spawn_t {
+        name: c"NPC_Cultist_Saber_Powers".as_ptr(),
+        spawn: Some(SP_NPC_Cultist_Saber_Powers),
+    },
+    spawn_t {
+        name: c"NPC_Cultist_Destroyer".as_ptr(),
+        spawn: Some(SP_NPC_Cultist_Destroyer),
+    },
+    spawn_t {
+        name: c"NPC_Cultist_Commando".as_ptr(),
+        spawn: Some(SP_NPC_Cultist_Commando),
+    },
     //rwwFIXMEFIXME: Faked for testing NPCs (another other things) in RMG with sof2 assets
-    spawn_t { name: c"NPC_Colombian_Soldier".as_ptr(), spawn: Some(SP_NPC_Reborn) },
-    spawn_t { name: c"NPC_Colombian_Rebel".as_ptr(), spawn: Some(SP_NPC_Reborn) },
-    spawn_t { name: c"NPC_Colombian_EmplacedGunner".as_ptr(), spawn: Some(SP_NPC_ShadowTrooper) },
-    spawn_t { name: c"NPC_Manuel_Vergara_RMG".as_ptr(), spawn: Some(SP_NPC_Desann) },
+    spawn_t {
+        name: c"NPC_Colombian_Soldier".as_ptr(),
+        spawn: Some(SP_NPC_Reborn),
+    },
+    spawn_t {
+        name: c"NPC_Colombian_Rebel".as_ptr(),
+        spawn: Some(SP_NPC_Reborn),
+    },
+    spawn_t {
+        name: c"NPC_Colombian_EmplacedGunner".as_ptr(),
+        spawn: Some(SP_NPC_ShadowTrooper),
+    },
+    spawn_t {
+        name: c"NPC_Manuel_Vergara_RMG".as_ptr(),
+        spawn: Some(SP_NPC_Desann),
+    },
     //	{"info_NPCnav", SP_waypoint},
-
-    spawn_t { name: c"waypoint".as_ptr(), spawn: Some(SP_waypoint) },
-    spawn_t { name: c"waypoint_small".as_ptr(), spawn: Some(SP_waypoint_small) },
-    spawn_t { name: c"waypoint_navgoal".as_ptr(), spawn: Some(SP_waypoint_navgoal) },
-    spawn_t { name: c"waypoint_navgoal_8".as_ptr(), spawn: Some(SP_waypoint_navgoal_8) },
-    spawn_t { name: c"waypoint_navgoal_4".as_ptr(), spawn: Some(SP_waypoint_navgoal_4) },
-    spawn_t { name: c"waypoint_navgoal_2".as_ptr(), spawn: Some(SP_waypoint_navgoal_2) },
-    spawn_t { name: c"waypoint_navgoal_1".as_ptr(), spawn: Some(SP_waypoint_navgoal_1) },
-
-    spawn_t { name: c"fx_spacedust".as_ptr(), spawn: Some(SP_CreateSpaceDust) },
-    spawn_t { name: c"fx_rain".as_ptr(), spawn: Some(SP_CreateRain) },
-    spawn_t { name: c"fx_snow".as_ptr(), spawn: Some(SP_CreateSnow) },
-
-    spawn_t { name: c"point_combat".as_ptr(), spawn: Some(SP_point_combat) },
-
-    spawn_t { name: c"misc_holocron".as_ptr(), spawn: Some(SP_misc_holocron) },
-
-    spawn_t { name: c"shooter_blaster".as_ptr(), spawn: Some(SP_shooter_blaster) },
-
-    spawn_t { name: c"team_CTF_redplayer".as_ptr(), spawn: Some(SP_team_CTF_redplayer) },
-    spawn_t { name: c"team_CTF_blueplayer".as_ptr(), spawn: Some(SP_team_CTF_blueplayer) },
-
-    spawn_t { name: c"team_CTF_redspawn".as_ptr(), spawn: Some(SP_team_CTF_redspawn) },
-    spawn_t { name: c"team_CTF_bluespawn".as_ptr(), spawn: Some(SP_team_CTF_bluespawn) },
-
-    spawn_t { name: c"item_botroam".as_ptr(), spawn: Some(SP_item_botroam) },
-
-    spawn_t { name: c"emplaced_gun".as_ptr(), spawn: Some(sp_emplaced_gun) },
-
-    spawn_t { name: c"misc_turret".as_ptr(), spawn: Some(SP_misc_turret) },
-    spawn_t { name: c"misc_turretG2".as_ptr(), spawn: Some(SP_misc_turretG2) },
-
-    spawn_t { name: null_mut(), spawn: None },
+    spawn_t {
+        name: c"waypoint".as_ptr(),
+        spawn: Some(SP_waypoint),
+    },
+    spawn_t {
+        name: c"waypoint_small".as_ptr(),
+        spawn: Some(SP_waypoint_small),
+    },
+    spawn_t {
+        name: c"waypoint_navgoal".as_ptr(),
+        spawn: Some(SP_waypoint_navgoal),
+    },
+    spawn_t {
+        name: c"waypoint_navgoal_8".as_ptr(),
+        spawn: Some(SP_waypoint_navgoal_8),
+    },
+    spawn_t {
+        name: c"waypoint_navgoal_4".as_ptr(),
+        spawn: Some(SP_waypoint_navgoal_4),
+    },
+    spawn_t {
+        name: c"waypoint_navgoal_2".as_ptr(),
+        spawn: Some(SP_waypoint_navgoal_2),
+    },
+    spawn_t {
+        name: c"waypoint_navgoal_1".as_ptr(),
+        spawn: Some(SP_waypoint_navgoal_1),
+    },
+    spawn_t {
+        name: c"fx_spacedust".as_ptr(),
+        spawn: Some(SP_CreateSpaceDust),
+    },
+    spawn_t {
+        name: c"fx_rain".as_ptr(),
+        spawn: Some(SP_CreateRain),
+    },
+    spawn_t {
+        name: c"fx_snow".as_ptr(),
+        spawn: Some(SP_CreateSnow),
+    },
+    spawn_t {
+        name: c"point_combat".as_ptr(),
+        spawn: Some(SP_point_combat),
+    },
+    spawn_t {
+        name: c"misc_holocron".as_ptr(),
+        spawn: Some(SP_misc_holocron),
+    },
+    spawn_t {
+        name: c"shooter_blaster".as_ptr(),
+        spawn: Some(SP_shooter_blaster),
+    },
+    spawn_t {
+        name: c"team_CTF_redplayer".as_ptr(),
+        spawn: Some(SP_team_CTF_redplayer),
+    },
+    spawn_t {
+        name: c"team_CTF_blueplayer".as_ptr(),
+        spawn: Some(SP_team_CTF_blueplayer),
+    },
+    spawn_t {
+        name: c"team_CTF_redspawn".as_ptr(),
+        spawn: Some(SP_team_CTF_redspawn),
+    },
+    spawn_t {
+        name: c"team_CTF_bluespawn".as_ptr(),
+        spawn: Some(SP_team_CTF_bluespawn),
+    },
+    spawn_t {
+        name: c"item_botroam".as_ptr(),
+        spawn: Some(SP_item_botroam),
+    },
+    spawn_t {
+        name: c"emplaced_gun".as_ptr(),
+        spawn: Some(sp_emplaced_gun),
+    },
+    spawn_t {
+        name: c"misc_turret".as_ptr(),
+        spawn: Some(SP_misc_turret),
+    },
+    spawn_t {
+        name: c"misc_turretG2".as_ptr(),
+        spawn: Some(SP_misc_turretG2),
+    },
+    spawn_t {
+        name: null_mut(),
+        spawn: None,
+    },
 ];
 
 /// `qboolean G_CallSpawn( gentity_t *ent )` (g_spawn.c:675).
@@ -1352,8 +1986,16 @@ pub unsafe fn G_SpawnGEntityFromSpawnVars(_inSubBSP: qboolean) {
     let mut i: c_int;
     // static char *gametypeNames[] = {...}
     static GAMETYPE_NAMES: [&CStr; 10] = [
-        c"ffa", c"holocron", c"jedimaster", c"duel", c"powerduel", c"single", c"team", c"siege",
-        c"ctf", c"cty",
+        c"ffa",
+        c"holocron",
+        c"jedimaster",
+        c"duel",
+        c"powerduel",
+        c"single",
+        c"team",
+        c"siege",
+        c"ctf",
+        c"cty",
     ];
 
     // get the next free entity
@@ -1444,7 +2086,11 @@ static DEFAULT_STYLES: [[&CStr; 3]; 32] = [
     // 0 normal
     [c"z", c"z", c"z"],
     // 1 FLICKER (first variety)
-    [c"mmnmmommommnonmmonqnmmo", c"mmnmmommommnonmmonqnmmo", c"mmnmmommommnonmmonqnmmo"],
+    [
+        c"mmnmmommommnonmmonqnmmo",
+        c"mmnmmommommnonmmonqnmmo",
+        c"mmnmmommommnonmmonqnmmo",
+    ],
     // 2 SLOW STRONG PULSE
     [
         c"abcdefghijklmnopqrstuvwxyzyxwvutsrqponmlkjihgfedcb",
@@ -1466,9 +2112,17 @@ static DEFAULT_STYLES: [[&CStr; 3]; 32] = [
         c"jklmnopqrstuvwxyzyxwvutsrqponmlkj",
     ],
     // 6 FLICKER (second variety)
-    [c"nmonqnmomnmomomno", c"nmonqnmomnmomomno", c"nmonqnmomnmomomno"],
+    [
+        c"nmonqnmomnmomomno",
+        c"nmonqnmomnmomomno",
+        c"nmonqnmomnmomomno",
+    ],
     // 7 CANDLE (second variety)
-    [c"mmmaaaabcdefgmmmmaaaammmaamm", c"mmmaaaabcdefgmmmmaaaammmaamm", c"mmmaaaabcdefgmmmmaaaammmaamm"],
+    [
+        c"mmmaaaabcdefgmmmmaaaammmaamm",
+        c"mmmaaaabcdefgmmmmaaaammmaamm",
+        c"mmmaaaabcdefgmmmmaaaammmaamm",
+    ],
     // 8 CANDLE (third variety)
     [
         c"mmmaaammmaaammmabcdefaaaammmmabcdefmmmaaaa",
@@ -1476,9 +2130,17 @@ static DEFAULT_STYLES: [[&CStr; 3]; 32] = [
         c"mmmaaammmaaammmabcdefaaaammmmabcdefmmmaaaa",
     ],
     // 9 SLOW STROBE (fourth variety)
-    [c"aaaaaaaazzzzzzzz", c"aaaaaaaazzzzzzzz", c"aaaaaaaazzzzzzzz"],
+    [
+        c"aaaaaaaazzzzzzzz",
+        c"aaaaaaaazzzzzzzz",
+        c"aaaaaaaazzzzzzzz",
+    ],
     // 10 FLUORESCENT FLICKER
-    [c"mmamammmmammamamaaamammma", c"mmamammmmammamamaaamammma", c"mmamammmmammamamaaamammma"],
+    [
+        c"mmamammmmammamamaaamammma",
+        c"mmamammmmammamamaaamammma",
+        c"mmamammmmammamamaaamammma",
+    ],
     // 11 SLOW PULSE NOT FADE TO BLACK
     [
         c"abcdefghijklmnopqrrqponmlkjihgfedcba",
@@ -1488,7 +2150,11 @@ static DEFAULT_STYLES: [[&CStr; 3]; 32] = [
     // 12 FAST PULSE FOR JEREMY
     [c"mkigegik", c"mkigegik", c"mkigegik"],
     // 13 Test Blending
-    [c"abcdefghijklmqrstuvwxyz", c"zyxwvutsrqmlkjihgfedcba", c"aammbbzzccllcckkffyyggp"],
+    [
+        c"abcdefghijklmqrstuvwxyz",
+        c"zyxwvutsrqmlkjihgfedcba",
+        c"aammbbzzccllcckkffyyggp",
+    ],
     // 14
     [c"", c"", c""],
     // 15
@@ -1588,7 +2254,11 @@ pub unsafe fn SP_worldspawn() {
 
     //I want to "cull" entities out of net sends to clients to reduce
     //net traffic on our larger open maps -rww
-    G_SpawnFloat(c"distanceCull".as_ptr(), c"6000.0".as_ptr(), addr_of_mut!(g_cullDistance));
+    G_SpawnFloat(
+        c"distanceCull".as_ptr(),
+        c"6000.0".as_ptr(),
+        addr_of_mut!(g_cullDistance),
+    );
     trap::SetServerCull(g_cullDistance);
 
     G_SpawnString(c"classname".as_ptr(), c"".as_ptr(), &mut text);
@@ -1605,7 +2275,9 @@ pub unsafe fn SP_worldspawn() {
                 fields.0.as_ptr() as *mut BG_field_t,
                 (*lvl).spawnVars[i as usize][0],
                 (*lvl).spawnVars[i as usize][1],
-                core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add(ENTITYNUM_WORLD as usize) as *mut u8,
+                core::ptr::addr_of_mut!(g_entities)
+                    .cast::<gentity_t>()
+                    .add(ENTITYNUM_WORLD as usize) as *mut u8,
             );
         }
         i += 1;
@@ -1684,9 +2356,14 @@ pub unsafe fn SP_worldspawn() {
     trap::Cvar_Set("g_enableBreath", &CStr::from_ptr(text).to_string_lossy());
 
     G_SpawnString(c"soundSet".as_ptr(), c"default".as_ptr(), &mut text);
-    trap::SetConfigstring(CS_GLOBAL_AMBIENT_SET, &CStr::from_ptr(text).to_string_lossy());
+    trap::SetConfigstring(
+        CS_GLOBAL_AMBIENT_SET,
+        &CStr::from_ptr(text).to_string_lossy(),
+    );
 
-    let world = core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add(ENTITYNUM_WORLD as usize);
+    let world = core::ptr::addr_of_mut!(g_entities)
+        .cast::<gentity_t>()
+        .add(ENTITYNUM_WORLD as usize);
     (*world).s.number = ENTITYNUM_WORLD;
     (*world).classname = c"worldspawn".as_ptr() as *mut c_char;
 
@@ -1720,7 +2397,11 @@ pub unsafe fn SP_worldspawn() {
     i = 1;
     while i < LS_NUM_STYLES {
         Com_sprintf(temp.as_mut_ptr(), 32, format_args!("ls_{}r", i));
-        G_SpawnString(temp.as_ptr(), DEFAULT_STYLES[i as usize][0].as_ptr(), &mut text);
+        G_SpawnString(
+            temp.as_ptr(),
+            DEFAULT_STYLES[i as usize][0].as_ptr(),
+            &mut text,
+        );
         let length_red = strlen(text) as c_int;
         trap::SetConfigstring(
             CS_LIGHT_STYLES + ((i + LS_STYLES_START) * 3) + 0,
@@ -1728,7 +2409,11 @@ pub unsafe fn SP_worldspawn() {
         );
 
         Com_sprintf(temp.as_mut_ptr(), 32, format_args!("ls_{}g", i));
-        G_SpawnString(temp.as_ptr(), DEFAULT_STYLES[i as usize][1].as_ptr(), &mut text);
+        G_SpawnString(
+            temp.as_ptr(),
+            DEFAULT_STYLES[i as usize][1].as_ptr(),
+            &mut text,
+        );
         let length_green = strlen(text) as c_int;
         trap::SetConfigstring(
             CS_LIGHT_STYLES + ((i + LS_STYLES_START) * 3) + 1,
@@ -1736,7 +2421,11 @@ pub unsafe fn SP_worldspawn() {
         );
 
         Com_sprintf(temp.as_mut_ptr(), 32, format_args!("ls_{}b", i));
-        G_SpawnString(temp.as_ptr(), DEFAULT_STYLES[i as usize][2].as_ptr(), &mut text);
+        G_SpawnString(
+            temp.as_ptr(),
+            DEFAULT_STYLES[i as usize][2].as_ptr(),
+            &mut text,
+        );
         let length_blue = strlen(text) as c_int;
         trap::SetConfigstring(
             CS_LIGHT_STYLES + ((i + LS_STYLES_START) * 3) + 2,
@@ -1801,7 +2490,9 @@ pub unsafe fn G_SpawnEntitiesFromString(inSubBSP: qboolean) {
         G_SpawnGEntityFromSpawnVars(inSubBSP);
     }
 
-    let world = core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>().add(ENTITYNUM_WORLD as usize);
+    let world = core::ptr::addr_of_mut!(g_entities)
+        .cast::<gentity_t>()
+        .add(ENTITYNUM_WORLD as usize);
     if !(*world).behaviorSet[BSET_SPAWN as usize].is_null()
         && *(*world).behaviorSet[BSET_SPAWN as usize] != 0
     {

@@ -34,16 +34,13 @@ use crate::codemp::game::bg_local_h::MIN_WALK_NORMAL;
 use crate::codemp::game::bg_misc::{
     BG_AddPredictableEventToPlayerstate, BG_CanUseFPNow, BG_HasYsalamiri,
 };
-use crate::codemp::game::g_local::gentity_t;
-use crate::codemp::game::g_main::g_entities;
-use crate::codemp::game::npc::NPC_SetAnim;
 use crate::codemp::game::bg_panimate::{
-    BG_FlippingAnim, BG_InKataAnim, BG_InRoll, BG_InSaberLock, BG_InSaberLockOld, BG_InSaberStandAnim,
-    BG_InSpecialJump, BG_KickMove, BG_KickingAnim, BG_SaberInAttack, BG_SaberInIdle, BG_SaberInKata,
-    BG_SaberInSpecial, BG_SaberInSpecialAttack, BG_SaberInTransitionAny, BG_SpinningSaberAnim,
-    BG_SuperBreakLoseAnim, BG_SuperBreakWinAnim, PM_InKnockDown, PM_JumpingAnim,
-    PM_SaberBounceForAttack, PM_SaberInKnockaway, PM_SaberInParry, PM_SaberInReflect,
-    PM_SaberInReturn, PM_SaberInStart, PM_SaberInTransition, PM_SetAnim,
+    BG_FlippingAnim, BG_InKataAnim, BG_InRoll, BG_InSaberLock, BG_InSaberLockOld,
+    BG_InSaberStandAnim, BG_InSpecialJump, BG_KickMove, BG_KickingAnim, BG_SaberInAttack,
+    BG_SaberInIdle, BG_SaberInKata, BG_SaberInSpecial, BG_SaberInSpecialAttack,
+    BG_SaberInTransitionAny, BG_SpinningSaberAnim, BG_SuperBreakLoseAnim, BG_SuperBreakWinAnim,
+    PM_InKnockDown, PM_JumpingAnim, PM_SaberBounceForAttack, PM_SaberInKnockaway, PM_SaberInParry,
+    PM_SaberInReflect, PM_SaberInReturn, PM_SaberInStart, PM_SaberInTransition, PM_SetAnim,
 };
 use crate::codemp::game::bg_pmove::{
     forcePowerNeeded, pm, pml, BG_InKnockDown, BG_InSlopeAnim, BG_KnockDownable, BG_SabersOff,
@@ -52,12 +49,16 @@ use crate::codemp::game::bg_pmove::{
 };
 use crate::codemp::game::bg_public::*;
 use crate::codemp::game::bg_weapons::weaponData;
+use crate::codemp::game::bg_weapons_h::WP_SABER;
+use crate::codemp::game::g_local::gentity_t;
+use crate::codemp::game::g_main::g_entities;
+use crate::codemp::game::npc::NPC_SetAnim;
 use crate::codemp::game::q_math::{
     AngleVectors, DistanceSquared, Q_irand, Q_random, VectorCopy, VectorLength, VectorMA,
     VectorNormalize, VectorScale, VectorSet, VectorSubtract,
 };
 use crate::codemp::game::q_shared_h::{
-    playerState_t, qboolean, trace_t, usercmd_t, vec3_t, BLK_NO, BLK_TIGHT, BLK_WIDE,
+    playerState_t, qboolean, saberInfo_t, trace_t, usercmd_t, vec3_t, BLK_NO, BLK_TIGHT, BLK_WIDE,
     BLOCKED_ATK_BOUNCE, BLOCKED_BOUNCE_MOVE, BLOCKED_LOWER_LEFT, BLOCKED_LOWER_LEFT_PROJ,
     BLOCKED_LOWER_RIGHT, BLOCKED_LOWER_RIGHT_PROJ, BLOCKED_NONE, BLOCKED_PARRY_BROKEN, BLOCKED_TOP,
     BLOCKED_TOP_PROJ, BLOCKED_UPPER_LEFT, BLOCKED_UPPER_LEFT_PROJ, BLOCKED_UPPER_RIGHT,
@@ -65,9 +66,8 @@ use crate::codemp::game::q_shared_h::{
     FORCE_LEVEL_1, FORCE_LEVEL_2, FORCE_LEVEL_3, FP_GRIP, FP_LEVITATION, FP_SABERTHROW,
     FP_SABER_DEFENSE, FP_SABER_OFFENSE, MAX_CLIENTS, NUM_FORCE_POWER_LEVELS, PITCH, QFALSE, QTRUE,
     ROLL, SFL_NO_CARTWHEELS, SFL_NO_MIRROR_ATTACKS, SFL_NO_ROLL_STAB, SFL_NO_STABDOWN, SS_DESANN,
-    SS_DUAL, SS_FAST, SS_MEDIUM, SS_STAFF, SS_STRONG, SS_TAVION, YAW, saberInfo_t,
+    SS_DUAL, SS_FAST, SS_MEDIUM, SS_STAFF, SS_STRONG, SS_TAVION, YAW,
 };
-use crate::codemp::game::bg_weapons_h::WP_SABER;
 use crate::codemp::game::w_saber_h::{
     SABERMAXS_X, SABERMAXS_Y, SABERMAXS_Z, SABERMINS_X, SABERMINS_Y, SABERMINS_Z,
     SABER_MIN_THROW_DIST, SEF_LOCK_WON,
@@ -124,205 +124,1970 @@ const fn smd(
 /// block arc, and the idle/attack moves it chains into. (C note: `NB:randomized`.)
 pub static mut saberMoveData: [saberMoveData_t; LS_MOVE_MAX as usize] = [
     // name			anim(do all styles?)startQ	endQ	setanimflag		blend,	blocking	chain_idle		chain_attack	trailLen
-    smd(c"None", BOTH_STAND1, Q_R, Q_R, AFLAG_IDLE, 350, BLK_NO, LS_NONE, LS_NONE, 0), // LS_NONE		= 0,
-
+    smd(
+        c"None",
+        BOTH_STAND1,
+        Q_R,
+        Q_R,
+        AFLAG_IDLE,
+        350,
+        BLK_NO,
+        LS_NONE,
+        LS_NONE,
+        0,
+    ), // LS_NONE		= 0,
     // General movements with saber
-    smd(c"Ready", BOTH_STAND2, Q_R, Q_R, AFLAG_IDLE, 350, BLK_WIDE, LS_READY, LS_S_R2L, 0), // LS_READY,
-    smd(c"Draw", BOTH_STAND1TO2, Q_R, Q_R, AFLAG_FINISH, 350, BLK_NO, LS_READY, LS_S_R2L, 0), // LS_DRAW,
-    smd(c"Putaway", BOTH_STAND2TO1, Q_R, Q_R, AFLAG_FINISH, 350, BLK_NO, LS_READY, LS_S_R2L, 0), // LS_PUTAWAY,
-
+    smd(
+        c"Ready",
+        BOTH_STAND2,
+        Q_R,
+        Q_R,
+        AFLAG_IDLE,
+        350,
+        BLK_WIDE,
+        LS_READY,
+        LS_S_R2L,
+        0,
+    ), // LS_READY,
+    smd(
+        c"Draw",
+        BOTH_STAND1TO2,
+        Q_R,
+        Q_R,
+        AFLAG_FINISH,
+        350,
+        BLK_NO,
+        LS_READY,
+        LS_S_R2L,
+        0,
+    ), // LS_DRAW,
+    smd(
+        c"Putaway",
+        BOTH_STAND2TO1,
+        Q_R,
+        Q_R,
+        AFLAG_FINISH,
+        350,
+        BLK_NO,
+        LS_READY,
+        LS_S_R2L,
+        0,
+    ), // LS_PUTAWAY,
     // Attacks
     //UL2LR
-    smd(c"TL2BR Att", BOTH_A1_TL_BR, Q_TL, Q_BR, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_R_TL2BR, LS_R_TL2BR, 200), // LS_A_TL2BR
+    smd(
+        c"TL2BR Att",
+        BOTH_A1_TL_BR,
+        Q_TL,
+        Q_BR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_R_TL2BR,
+        LS_R_TL2BR,
+        200,
+    ), // LS_A_TL2BR
     //SLASH LEFT
-    smd(c"L2R Att", BOTH_A1__L__R, Q_L, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_R_L2R, LS_R_L2R, 200), // LS_A_L2R
+    smd(
+        c"L2R Att",
+        BOTH_A1__L__R,
+        Q_L,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_R_L2R,
+        LS_R_L2R,
+        200,
+    ), // LS_A_L2R
     //LL2UR
-    smd(c"BL2TR Att", BOTH_A1_BL_TR, Q_BL, Q_TR, AFLAG_ACTIVE, 50, BLK_TIGHT, LS_R_BL2TR, LS_R_BL2TR, 200), // LS_A_BL2TR
+    smd(
+        c"BL2TR Att",
+        BOTH_A1_BL_TR,
+        Q_BL,
+        Q_TR,
+        AFLAG_ACTIVE,
+        50,
+        BLK_TIGHT,
+        LS_R_BL2TR,
+        LS_R_BL2TR,
+        200,
+    ), // LS_A_BL2TR
     //LR2UL
-    smd(c"BR2TL Att", BOTH_A1_BR_TL, Q_BR, Q_TL, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_R_BR2TL, LS_R_BR2TL, 200), // LS_A_BR2TL
+    smd(
+        c"BR2TL Att",
+        BOTH_A1_BR_TL,
+        Q_BR,
+        Q_TL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_R_BR2TL,
+        LS_R_BR2TL,
+        200,
+    ), // LS_A_BR2TL
     //SLASH RIGHT
-    smd(c"R2L Att", BOTH_A1__R__L, Q_R, Q_L, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_R_R2L, LS_R_R2L, 200), // LS_A_R2L
+    smd(
+        c"R2L Att",
+        BOTH_A1__R__L,
+        Q_R,
+        Q_L,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_R_R2L,
+        LS_R_R2L,
+        200,
+    ), // LS_A_R2L
     //UR2LL
-    smd(c"TR2BL Att", BOTH_A1_TR_BL, Q_TR, Q_BL, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_R_TR2BL, LS_R_TR2BL, 200), // LS_A_TR2BL
+    smd(
+        c"TR2BL Att",
+        BOTH_A1_TR_BL,
+        Q_TR,
+        Q_BL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_R_TR2BL,
+        LS_R_TR2BL,
+        200,
+    ), // LS_A_TR2BL
     //SLASH DOWN
-    smd(c"T2B Att", BOTH_A1_T__B_, Q_T, Q_B, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_R_T2B, LS_R_T2B, 200), // LS_A_T2B
+    smd(
+        c"T2B Att",
+        BOTH_A1_T__B_,
+        Q_T,
+        Q_B,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_R_T2B,
+        LS_R_T2B,
+        200,
+    ), // LS_A_T2B
     //special attacks
-    smd(c"Back Stab", BOTH_A2_STABBACK1, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_A_BACKSTAB
-    smd(c"Back Att", BOTH_ATTACK_BACK, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_A_BACK
-    smd(c"CR Back Att", BOTH_CROUCHATTACKBACK1, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_A_BACK_CR
-    smd(c"RollStab", BOTH_ROLL_STAB, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_ROLL_STAB
-    smd(c"Lunge Att", BOTH_LUNGE2_B__T_, Q_B, Q_T, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_A_LUNGE
-    smd(c"Jump Att", BOTH_FORCELEAP2_T__B_, Q_T, Q_B, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_A_JUMP_T__B_
-    smd(c"Flip Stab", BOTH_JUMPFLIPSTABDOWN, Q_R, Q_T, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_T1_T___R, 200), // LS_A_FLIP_STAB
-    smd(c"Flip Slash", BOTH_JUMPFLIPSLASHDOWN1, Q_L, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_T1__R_T_, 200), // LS_A_FLIP_SLASH
-    smd(c"DualJump Atk", BOTH_JUMPATTACK6, Q_R, Q_BL, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_T1_BL_TR, 200), // LS_JUMPATTACK_DUAL
-
-    smd(c"DualJumpAtkL_A", BOTH_ARIAL_LEFT, Q_R, Q_TL, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_A_TL2BR, 200), // LS_JUMPATTACK_ARIAL_LEFT
-    smd(c"DualJumpAtkR_A", BOTH_ARIAL_RIGHT, Q_R, Q_TR, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_A_TR2BL, 200), // LS_JUMPATTACK_ARIAL_RIGHT
-
-    smd(c"DualJumpAtkL_A", BOTH_CARTWHEEL_LEFT, Q_R, Q_TL, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_T1_TL_BR, 200), // LS_JUMPATTACK_CART_LEFT
-    smd(c"DualJumpAtkR_A", BOTH_CARTWHEEL_RIGHT, Q_R, Q_TR, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_T1_TR_BL, 200), // LS_JUMPATTACK_CART_RIGHT
-
-    smd(c"DualJumpAtkLStaff", BOTH_BUTTERFLY_FL1, Q_R, Q_L, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_T1__L__R, 200), // LS_JUMPATTACK_STAFF_LEFT
-    smd(c"DualJumpAtkRStaff", BOTH_BUTTERFLY_FR1, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_T1__R__L, 200), // LS_JUMPATTACK_STAFF_RIGHT
-
-    smd(c"ButterflyLeft", BOTH_BUTTERFLY_LEFT, Q_R, Q_L, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_T1__L__R, 200), // LS_BUTTERFLY_LEFT
-    smd(c"ButterflyRight", BOTH_BUTTERFLY_RIGHT, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_T1__R__L, 200), // LS_BUTTERFLY_RIGHT
-
-    smd(c"BkFlip Atk", BOTH_JUMPATTACK7, Q_B, Q_T, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_T1_T___R, 200), // LS_A_BACKFLIP_ATK
-    smd(c"DualSpinAtk", BOTH_SPINATTACK6, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_SPINATTACK_DUAL
-    smd(c"StfSpinAtk", BOTH_SPINATTACK7, Q_L, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_SPINATTACK
-    smd(c"LngLeapAtk", BOTH_FORCELONGLEAP_ATTACK, Q_R, Q_L, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_LEAP_ATTACK
-    smd(c"SwoopAtkR", BOTH_VS_ATR_S, Q_R, Q_T, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_SWOOP_ATTACK_RIGHT
-    smd(c"SwoopAtkL", BOTH_VS_ATL_S, Q_L, Q_T, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_SWOOP_ATTACK_LEFT
-    smd(c"TauntaunAtkR", BOTH_VT_ATR_S, Q_R, Q_T, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_TAUNTAUN_ATTACK_RIGHT
-    smd(c"TauntaunAtkL", BOTH_VT_ATL_S, Q_L, Q_T, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_TAUNTAUN_ATTACK_LEFT
-    smd(c"StfKickFwd", BOTH_A7_KICK_F, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200), // LS_KICK_F
-    smd(c"StfKickBack", BOTH_A7_KICK_B, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200), // LS_KICK_B
-    smd(c"StfKickRight", BOTH_A7_KICK_R, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200), // LS_KICK_R
-    smd(c"StfKickLeft", BOTH_A7_KICK_L, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200), // LS_KICK_L
-    smd(c"StfKickSpin", BOTH_A7_KICK_S, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_S_R2L, 200), // LS_KICK_S
-    smd(c"StfKickBkFwd", BOTH_A7_KICK_BF, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_S_R2L, 200), // LS_KICK_BF
-    smd(c"StfKickSplit", BOTH_A7_KICK_RL, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_S_R2L, 200), // LS_KICK_RL
-    smd(c"StfKickFwdAir", BOTH_A7_KICK_F_AIR, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200), // LS_KICK_F_AIR
-    smd(c"StfKickBackAir", BOTH_A7_KICK_B_AIR, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200), // LS_KICK_B_AIR
-    smd(c"StfKickRightAir", BOTH_A7_KICK_R_AIR, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200), // LS_KICK_R_AIR
-    smd(c"StfKickLeftAir", BOTH_A7_KICK_L_AIR, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200), // LS_KICK_L_AIR
-    smd(c"StabDown", BOTH_STABDOWN, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200), // LS_STABDOWN
-    smd(c"StabDownStf", BOTH_STABDOWN_STAFF, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200), // LS_STABDOWN_STAFF
-    smd(c"StabDownDual", BOTH_STABDOWN_DUAL, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_S_R2L, 200), // LS_STABDOWN_DUAL
-    smd(c"dualspinprot", BOTH_A6_SABERPROTECT, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 500), // LS_DUAL_SPIN_PROTECT
-    smd(c"StfSoulCal", BOTH_A7_SOULCAL, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 500), // LS_STAFF_SOULCAL
-    smd(c"specialfast", BOTH_A1_SPECIAL, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000), // LS_A1_SPECIAL
-    smd(c"specialmed", BOTH_A2_SPECIAL, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000), // LS_A2_SPECIAL
-    smd(c"specialstr", BOTH_A3_SPECIAL, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 2000), // LS_A3_SPECIAL
-    smd(c"upsidedwnatk", BOTH_FLIP_ATTACK7, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_UPSIDE_DOWN_ATTACK
-    smd(c"pullatkstab", BOTH_PULL_IMPALE_STAB, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_PULL_ATTACK_STAB
-    smd(c"pullatkswing", BOTH_PULL_IMPALE_SWING, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_PULL_ATTACK_SWING
-    smd(c"AloraSpinAtk", BOTH_ALORA_SPIN_SLASH, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_SPINATTACK_ALORA
-    smd(c"Dual FB Atk", BOTH_A6_FB, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_DUAL_FB
-    smd(c"Dual LR Atk", BOTH_A6_LR, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_DUAL_LR
-    smd(c"StfHiltBash", BOTH_A7_HILT, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_HILT_BASH
-
+    smd(
+        c"Back Stab",
+        BOTH_A2_STABBACK1,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_A_BACKSTAB
+    smd(
+        c"Back Att",
+        BOTH_ATTACK_BACK,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_A_BACK
+    smd(
+        c"CR Back Att",
+        BOTH_CROUCHATTACKBACK1,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_A_BACK_CR
+    smd(
+        c"RollStab",
+        BOTH_ROLL_STAB,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_ROLL_STAB
+    smd(
+        c"Lunge Att",
+        BOTH_LUNGE2_B__T_,
+        Q_B,
+        Q_T,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_A_LUNGE
+    smd(
+        c"Jump Att",
+        BOTH_FORCELEAP2_T__B_,
+        Q_T,
+        Q_B,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_A_JUMP_T__B_
+    smd(
+        c"Flip Stab",
+        BOTH_JUMPFLIPSTABDOWN,
+        Q_R,
+        Q_T,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_T1_T___R,
+        200,
+    ), // LS_A_FLIP_STAB
+    smd(
+        c"Flip Slash",
+        BOTH_JUMPFLIPSLASHDOWN1,
+        Q_L,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_T1__R_T_,
+        200,
+    ), // LS_A_FLIP_SLASH
+    smd(
+        c"DualJump Atk",
+        BOTH_JUMPATTACK6,
+        Q_R,
+        Q_BL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_T1_BL_TR,
+        200,
+    ), // LS_JUMPATTACK_DUAL
+    smd(
+        c"DualJumpAtkL_A",
+        BOTH_ARIAL_LEFT,
+        Q_R,
+        Q_TL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_A_TL2BR,
+        200,
+    ), // LS_JUMPATTACK_ARIAL_LEFT
+    smd(
+        c"DualJumpAtkR_A",
+        BOTH_ARIAL_RIGHT,
+        Q_R,
+        Q_TR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_A_TR2BL,
+        200,
+    ), // LS_JUMPATTACK_ARIAL_RIGHT
+    smd(
+        c"DualJumpAtkL_A",
+        BOTH_CARTWHEEL_LEFT,
+        Q_R,
+        Q_TL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_T1_TL_BR,
+        200,
+    ), // LS_JUMPATTACK_CART_LEFT
+    smd(
+        c"DualJumpAtkR_A",
+        BOTH_CARTWHEEL_RIGHT,
+        Q_R,
+        Q_TR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_T1_TR_BL,
+        200,
+    ), // LS_JUMPATTACK_CART_RIGHT
+    smd(
+        c"DualJumpAtkLStaff",
+        BOTH_BUTTERFLY_FL1,
+        Q_R,
+        Q_L,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_T1__L__R,
+        200,
+    ), // LS_JUMPATTACK_STAFF_LEFT
+    smd(
+        c"DualJumpAtkRStaff",
+        BOTH_BUTTERFLY_FR1,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_T1__R__L,
+        200,
+    ), // LS_JUMPATTACK_STAFF_RIGHT
+    smd(
+        c"ButterflyLeft",
+        BOTH_BUTTERFLY_LEFT,
+        Q_R,
+        Q_L,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_T1__L__R,
+        200,
+    ), // LS_BUTTERFLY_LEFT
+    smd(
+        c"ButterflyRight",
+        BOTH_BUTTERFLY_RIGHT,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_T1__R__L,
+        200,
+    ), // LS_BUTTERFLY_RIGHT
+    smd(
+        c"BkFlip Atk",
+        BOTH_JUMPATTACK7,
+        Q_B,
+        Q_T,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_T1_T___R,
+        200,
+    ), // LS_A_BACKFLIP_ATK
+    smd(
+        c"DualSpinAtk",
+        BOTH_SPINATTACK6,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_SPINATTACK_DUAL
+    smd(
+        c"StfSpinAtk",
+        BOTH_SPINATTACK7,
+        Q_L,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_SPINATTACK
+    smd(
+        c"LngLeapAtk",
+        BOTH_FORCELONGLEAP_ATTACK,
+        Q_R,
+        Q_L,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_LEAP_ATTACK
+    smd(
+        c"SwoopAtkR",
+        BOTH_VS_ATR_S,
+        Q_R,
+        Q_T,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_SWOOP_ATTACK_RIGHT
+    smd(
+        c"SwoopAtkL",
+        BOTH_VS_ATL_S,
+        Q_L,
+        Q_T,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_SWOOP_ATTACK_LEFT
+    smd(
+        c"TauntaunAtkR",
+        BOTH_VT_ATR_S,
+        Q_R,
+        Q_T,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_TAUNTAUN_ATTACK_RIGHT
+    smd(
+        c"TauntaunAtkL",
+        BOTH_VT_ATL_S,
+        Q_L,
+        Q_T,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_TAUNTAUN_ATTACK_LEFT
+    smd(
+        c"StfKickFwd",
+        BOTH_A7_KICK_F,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_S_R2L,
+        200,
+    ), // LS_KICK_F
+    smd(
+        c"StfKickBack",
+        BOTH_A7_KICK_B,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_S_R2L,
+        200,
+    ), // LS_KICK_B
+    smd(
+        c"StfKickRight",
+        BOTH_A7_KICK_R,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_S_R2L,
+        200,
+    ), // LS_KICK_R
+    smd(
+        c"StfKickLeft",
+        BOTH_A7_KICK_L,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_S_R2L,
+        200,
+    ), // LS_KICK_L
+    smd(
+        c"StfKickSpin",
+        BOTH_A7_KICK_S,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_READY,
+        LS_S_R2L,
+        200,
+    ), // LS_KICK_S
+    smd(
+        c"StfKickBkFwd",
+        BOTH_A7_KICK_BF,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_READY,
+        LS_S_R2L,
+        200,
+    ), // LS_KICK_BF
+    smd(
+        c"StfKickSplit",
+        BOTH_A7_KICK_RL,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_READY,
+        LS_S_R2L,
+        200,
+    ), // LS_KICK_RL
+    smd(
+        c"StfKickFwdAir",
+        BOTH_A7_KICK_F_AIR,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_S_R2L,
+        200,
+    ), // LS_KICK_F_AIR
+    smd(
+        c"StfKickBackAir",
+        BOTH_A7_KICK_B_AIR,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_S_R2L,
+        200,
+    ), // LS_KICK_B_AIR
+    smd(
+        c"StfKickRightAir",
+        BOTH_A7_KICK_R_AIR,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_S_R2L,
+        200,
+    ), // LS_KICK_R_AIR
+    smd(
+        c"StfKickLeftAir",
+        BOTH_A7_KICK_L_AIR,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_S_R2L,
+        200,
+    ), // LS_KICK_L_AIR
+    smd(
+        c"StabDown",
+        BOTH_STABDOWN,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_S_R2L,
+        200,
+    ), // LS_STABDOWN
+    smd(
+        c"StabDownStf",
+        BOTH_STABDOWN_STAFF,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_S_R2L,
+        200,
+    ), // LS_STABDOWN_STAFF
+    smd(
+        c"StabDownDual",
+        BOTH_STABDOWN_DUAL,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_S_R2L,
+        200,
+    ), // LS_STABDOWN_DUAL
+    smd(
+        c"dualspinprot",
+        BOTH_A6_SABERPROTECT,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        500,
+    ), // LS_DUAL_SPIN_PROTECT
+    smd(
+        c"StfSoulCal",
+        BOTH_A7_SOULCAL,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        500,
+    ), // LS_STAFF_SOULCAL
+    smd(
+        c"specialfast",
+        BOTH_A1_SPECIAL,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        2000,
+    ), // LS_A1_SPECIAL
+    smd(
+        c"specialmed",
+        BOTH_A2_SPECIAL,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        2000,
+    ), // LS_A2_SPECIAL
+    smd(
+        c"specialstr",
+        BOTH_A3_SPECIAL,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        2000,
+    ), // LS_A3_SPECIAL
+    smd(
+        c"upsidedwnatk",
+        BOTH_FLIP_ATTACK7,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_UPSIDE_DOWN_ATTACK
+    smd(
+        c"pullatkstab",
+        BOTH_PULL_IMPALE_STAB,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_PULL_ATTACK_STAB
+    smd(
+        c"pullatkswing",
+        BOTH_PULL_IMPALE_SWING,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_PULL_ATTACK_SWING
+    smd(
+        c"AloraSpinAtk",
+        BOTH_ALORA_SPIN_SLASH,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_SPINATTACK_ALORA
+    smd(
+        c"Dual FB Atk",
+        BOTH_A6_FB,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_DUAL_FB
+    smd(
+        c"Dual LR Atk",
+        BOTH_A6_LR,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_DUAL_LR
+    smd(
+        c"StfHiltBash",
+        BOTH_A7_HILT,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_HILT_BASH
     //starts
-    smd(c"TL2BR St", BOTH_S1_S1_TL, Q_R, Q_TL, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_A_TL2BR, LS_A_TL2BR, 200), // LS_S_TL2BR
-    smd(c"L2R St", BOTH_S1_S1__L, Q_R, Q_L, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_A_L2R, LS_A_L2R, 200), // LS_S_L2R
-    smd(c"BL2TR St", BOTH_S1_S1_BL, Q_R, Q_BL, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_A_BL2TR, LS_A_BL2TR, 200), // LS_S_BL2TR
-    smd(c"BR2TL St", BOTH_S1_S1_BR, Q_R, Q_BR, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_A_BR2TL, LS_A_BR2TL, 200), // LS_S_BR2TL
-    smd(c"R2L St", BOTH_S1_S1__R, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_A_R2L, LS_A_R2L, 200), // LS_S_R2L
-    smd(c"TR2BL St", BOTH_S1_S1_TR, Q_R, Q_TR, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_A_TR2BL, LS_A_TR2BL, 200), // LS_S_TR2BL
-    smd(c"T2B St", BOTH_S1_S1_T_, Q_R, Q_T, AFLAG_ACTIVE, 100, BLK_TIGHT, LS_A_T2B, LS_A_T2B, 200), // LS_S_T2B
-
+    smd(
+        c"TL2BR St",
+        BOTH_S1_S1_TL,
+        Q_R,
+        Q_TL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_A_TL2BR,
+        LS_A_TL2BR,
+        200,
+    ), // LS_S_TL2BR
+    smd(
+        c"L2R St",
+        BOTH_S1_S1__L,
+        Q_R,
+        Q_L,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_A_L2R,
+        LS_A_L2R,
+        200,
+    ), // LS_S_L2R
+    smd(
+        c"BL2TR St",
+        BOTH_S1_S1_BL,
+        Q_R,
+        Q_BL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_A_BL2TR,
+        LS_A_BL2TR,
+        200,
+    ), // LS_S_BL2TR
+    smd(
+        c"BR2TL St",
+        BOTH_S1_S1_BR,
+        Q_R,
+        Q_BR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_A_BR2TL,
+        LS_A_BR2TL,
+        200,
+    ), // LS_S_BR2TL
+    smd(
+        c"R2L St",
+        BOTH_S1_S1__R,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_A_R2L,
+        LS_A_R2L,
+        200,
+    ), // LS_S_R2L
+    smd(
+        c"TR2BL St",
+        BOTH_S1_S1_TR,
+        Q_R,
+        Q_TR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_A_TR2BL,
+        LS_A_TR2BL,
+        200,
+    ), // LS_S_TR2BL
+    smd(
+        c"T2B St",
+        BOTH_S1_S1_T_,
+        Q_R,
+        Q_T,
+        AFLAG_ACTIVE,
+        100,
+        BLK_TIGHT,
+        LS_A_T2B,
+        LS_A_T2B,
+        200,
+    ), // LS_S_T2B
     //returns
-    smd(c"TL2BR Ret", BOTH_R1_BR_S1, Q_BR, Q_R, AFLAG_FINISH, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_R_TL2BR
-    smd(c"L2R Ret", BOTH_R1__R_S1, Q_R, Q_R, AFLAG_FINISH, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_R_L2R
-    smd(c"BL2TR Ret", BOTH_R1_TR_S1, Q_TR, Q_R, AFLAG_FINISH, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_R_BL2TR
-    smd(c"BR2TL Ret", BOTH_R1_TL_S1, Q_TL, Q_R, AFLAG_FINISH, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_R_BR2TL
-    smd(c"R2L Ret", BOTH_R1__L_S1, Q_L, Q_R, AFLAG_FINISH, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_R_R2L
-    smd(c"TR2BL Ret", BOTH_R1_BL_S1, Q_BL, Q_R, AFLAG_FINISH, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_R_TR2BL
-    smd(c"T2B Ret", BOTH_R1_B__S1, Q_B, Q_R, AFLAG_FINISH, 100, BLK_TIGHT, LS_READY, LS_READY, 200), // LS_R_T2B
-
+    smd(
+        c"TL2BR Ret",
+        BOTH_R1_BR_S1,
+        Q_BR,
+        Q_R,
+        AFLAG_FINISH,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_R_TL2BR
+    smd(
+        c"L2R Ret",
+        BOTH_R1__R_S1,
+        Q_R,
+        Q_R,
+        AFLAG_FINISH,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_R_L2R
+    smd(
+        c"BL2TR Ret",
+        BOTH_R1_TR_S1,
+        Q_TR,
+        Q_R,
+        AFLAG_FINISH,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_R_BL2TR
+    smd(
+        c"BR2TL Ret",
+        BOTH_R1_TL_S1,
+        Q_TL,
+        Q_R,
+        AFLAG_FINISH,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_R_BR2TL
+    smd(
+        c"R2L Ret",
+        BOTH_R1__L_S1,
+        Q_L,
+        Q_R,
+        AFLAG_FINISH,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_R_R2L
+    smd(
+        c"TR2BL Ret",
+        BOTH_R1_BL_S1,
+        Q_BL,
+        Q_R,
+        AFLAG_FINISH,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_R_TR2BL
+    smd(
+        c"T2B Ret",
+        BOTH_R1_B__S1,
+        Q_B,
+        Q_R,
+        AFLAG_FINISH,
+        100,
+        BLK_TIGHT,
+        LS_READY,
+        LS_READY,
+        200,
+    ), // LS_R_T2B
     //Transitions
-    smd(c"BR2R Trans", BOTH_T1_BR__R, Q_BR, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_A_R2L, 150), //# Fast arc bottom right to right
-    smd(c"BR2TR Trans", BOTH_T1_BR_TR, Q_BR, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_TR2BL, 150), //# Fast arc bottom right to top right		(use: BOTH_T1_TR_BR)
-    smd(c"BR2T Trans", BOTH_T1_BR_T_, Q_BR, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_T2B, 150), //# Fast arc bottom right to top			(use: BOTH_T1_T__BR)
-    smd(c"BR2TL Trans", BOTH_T1_BR_TL, Q_BR, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_A_TL2BR, 150), //# Fast weak spin bottom right to top left
-    smd(c"BR2L Trans", BOTH_T1_BR__L, Q_BR, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_A_L2R, 150), //# Fast weak spin bottom right to left
-    smd(c"BR2BL Trans", BOTH_T1_BR_BL, Q_BR, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_A_BL2TR, 150), //# Fast weak spin bottom right to bottom left
-    smd(c"R2BR Trans", BOTH_T1__R_BR, Q_R, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_A_BR2TL, 150), //# Fast arc right to bottom right			(use: BOTH_T1_BR__R)
-    smd(c"R2TR Trans", BOTH_T1__R_TR, Q_R, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_TR2BL, 150), //# Fast arc right to top right
-    smd(c"R2T Trans", BOTH_T1__R_T_, Q_R, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_T2B, 150), //# Fast ar right to top				(use: BOTH_T1_T___R)
-    smd(c"R2TL Trans", BOTH_T1__R_TL, Q_R, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_A_TL2BR, 150), //# Fast arc right to top left
-    smd(c"R2L Trans", BOTH_T1__R__L, Q_R, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_A_L2R, 150), //# Fast weak spin right to left
-    smd(c"R2BL Trans", BOTH_T1__R_BL, Q_R, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_A_BL2TR, 150), //# Fast weak spin right to bottom left
-    smd(c"TR2BR Trans", BOTH_T1_TR_BR, Q_TR, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_A_BR2TL, 150), //# Fast arc top right to bottom right
-    smd(c"TR2R Trans", BOTH_T1_TR__R, Q_TR, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_A_R2L, 150), //# Fast arc top right to right			(use: BOTH_T1__R_TR)
-    smd(c"TR2T Trans", BOTH_T1_TR_T_, Q_TR, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_T2B, 150), //# Fast arc top right to top				(use: BOTH_T1_T__TR)
-    smd(c"TR2TL Trans", BOTH_T1_TR_TL, Q_TR, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_A_TL2BR, 150), //# Fast arc top right to top left
-    smd(c"TR2L Trans", BOTH_T1_TR__L, Q_TR, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_A_L2R, 150), //# Fast arc top right to left
-    smd(c"TR2BL Trans", BOTH_T1_TR_BL, Q_TR, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_A_BL2TR, 150), //# Fast weak spin top right to bottom left
-    smd(c"T2BR Trans", BOTH_T1_T__BR, Q_T, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_A_BR2TL, 150), //# Fast arc top to bottom right
-    smd(c"T2R Trans", BOTH_T1_T___R, Q_T, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_A_R2L, 150), //# Fast arc top to right
-    smd(c"T2TR Trans", BOTH_T1_T__TR, Q_T, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_TR2BL, 150), //# Fast arc top to top right
-    smd(c"T2TL Trans", BOTH_T1_T__TL, Q_T, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_A_TL2BR, 150), //# Fast arc top to top left
-    smd(c"T2L Trans", BOTH_T1_T___L, Q_T, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_A_L2R, 150), //# Fast arc top to left
-    smd(c"T2BL Trans", BOTH_T1_T__BL, Q_T, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_A_BL2TR, 150), //# Fast arc top to bottom left
-    smd(c"TL2BR Trans", BOTH_T1_TL_BR, Q_TL, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_A_BR2TL, 150), //# Fast weak spin top left to bottom right
-    smd(c"TL2R Trans", BOTH_T1_TL__R, Q_TL, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_A_R2L, 150), //# Fast arc top left to right			(use: BOTH_T1__R_TL)
-    smd(c"TL2TR Trans", BOTH_T1_TL_TR, Q_TL, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_TR2BL, 150), //# Fast arc top left to top right			(use: BOTH_T1_TR_TL)
-    smd(c"TL2T Trans", BOTH_T1_TL_T_, Q_TL, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_T2B, 150), //# Fast arc top left to top				(use: BOTH_T1_T__TL)
-    smd(c"TL2L Trans", BOTH_T1_TL__L, Q_TL, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_A_L2R, 150), //# Fast arc top left to left				(use: BOTH_T1__L_TL)
-    smd(c"TL2BL Trans", BOTH_T1_TL_BL, Q_TL, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_A_BL2TR, 150), //# Fast arc top left to bottom left
-    smd(c"L2BR Trans", BOTH_T1__L_BR, Q_L, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_A_BR2TL, 150), //# Fast weak spin left to bottom right
-    smd(c"L2R Trans", BOTH_T1__L__R, Q_L, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_A_R2L, 150), //# Fast weak spin left to right
-    smd(c"L2TR Trans", BOTH_T1__L_TR, Q_L, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_TR2BL, 150), //# Fast arc left to top right			(use: BOTH_T1_TR__L)
-    smd(c"L2T Trans", BOTH_T1__L_T_, Q_L, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_T2B, 150), //# Fast arc left to top				(use: BOTH_T1_T___L)
-    smd(c"L2TL Trans", BOTH_T1__L_TL, Q_L, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_A_TL2BR, 150), //# Fast arc left to top left
-    smd(c"L2BL Trans", BOTH_T1__L_BL, Q_L, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_A_BL2TR, 150), //# Fast arc left to bottom left			(use: BOTH_T1_BL__L)
-    smd(c"BL2BR Trans", BOTH_T1_BL_BR, Q_BL, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_A_BR2TL, 150), //# Fast weak spin bottom left to bottom right
-    smd(c"BL2R Trans", BOTH_T1_BL__R, Q_BL, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_A_R2L, 150), //# Fast weak spin bottom left to right
-    smd(c"BL2TR Trans", BOTH_T1_BL_TR, Q_BL, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_TR2BL, 150), //# Fast weak spin bottom left to top right
-    smd(c"BL2T Trans", BOTH_T1_BL_T_, Q_BL, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_A_T2B, 150), //# Fast arc bottom left to top			(use: BOTH_T1_T__BL)
-    smd(c"BL2TL Trans", BOTH_T1_BL_TL, Q_BL, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_A_TL2BR, 150), //# Fast arc bottom left to top left		(use: BOTH_T1_TL_BL)
-    smd(c"BL2L Trans", BOTH_T1_BL__L, Q_BL, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_A_L2R, 150), //# Fast arc bottom left to left
-
+    smd(
+        c"BR2R Trans",
+        BOTH_T1_BR__R,
+        Q_BR,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_L2R,
+        LS_A_R2L,
+        150,
+    ), //# Fast arc bottom right to right
+    smd(
+        c"BR2TR Trans",
+        BOTH_T1_BR_TR,
+        Q_BR,
+        Q_TR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BL2TR,
+        LS_A_TR2BL,
+        150,
+    ), //# Fast arc bottom right to top right		(use: BOTH_T1_TR_BR)
+    smd(
+        c"BR2T Trans",
+        BOTH_T1_BR_T_,
+        Q_BR,
+        Q_T,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BL2TR,
+        LS_A_T2B,
+        150,
+    ), //# Fast arc bottom right to top			(use: BOTH_T1_T__BR)
+    smd(
+        c"BR2TL Trans",
+        BOTH_T1_BR_TL,
+        Q_BR,
+        Q_TL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BR2TL,
+        LS_A_TL2BR,
+        150,
+    ), //# Fast weak spin bottom right to top left
+    smd(
+        c"BR2L Trans",
+        BOTH_T1_BR__L,
+        Q_BR,
+        Q_L,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_R2L,
+        LS_A_L2R,
+        150,
+    ), //# Fast weak spin bottom right to left
+    smd(
+        c"BR2BL Trans",
+        BOTH_T1_BR_BL,
+        Q_BR,
+        Q_BL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_TR2BL,
+        LS_A_BL2TR,
+        150,
+    ), //# Fast weak spin bottom right to bottom left
+    smd(
+        c"R2BR Trans",
+        BOTH_T1__R_BR,
+        Q_R,
+        Q_BR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_TL2BR,
+        LS_A_BR2TL,
+        150,
+    ), //# Fast arc right to bottom right			(use: BOTH_T1_BR__R)
+    smd(
+        c"R2TR Trans",
+        BOTH_T1__R_TR,
+        Q_R,
+        Q_TR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BL2TR,
+        LS_A_TR2BL,
+        150,
+    ), //# Fast arc right to top right
+    smd(
+        c"R2T Trans",
+        BOTH_T1__R_T_,
+        Q_R,
+        Q_T,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BL2TR,
+        LS_A_T2B,
+        150,
+    ), //# Fast ar right to top				(use: BOTH_T1_T___R)
+    smd(
+        c"R2TL Trans",
+        BOTH_T1__R_TL,
+        Q_R,
+        Q_TL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BR2TL,
+        LS_A_TL2BR,
+        150,
+    ), //# Fast arc right to top left
+    smd(
+        c"R2L Trans",
+        BOTH_T1__R__L,
+        Q_R,
+        Q_L,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_R2L,
+        LS_A_L2R,
+        150,
+    ), //# Fast weak spin right to left
+    smd(
+        c"R2BL Trans",
+        BOTH_T1__R_BL,
+        Q_R,
+        Q_BL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_TR2BL,
+        LS_A_BL2TR,
+        150,
+    ), //# Fast weak spin right to bottom left
+    smd(
+        c"TR2BR Trans",
+        BOTH_T1_TR_BR,
+        Q_TR,
+        Q_BR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_TL2BR,
+        LS_A_BR2TL,
+        150,
+    ), //# Fast arc top right to bottom right
+    smd(
+        c"TR2R Trans",
+        BOTH_T1_TR__R,
+        Q_TR,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_L2R,
+        LS_A_R2L,
+        150,
+    ), //# Fast arc top right to right			(use: BOTH_T1__R_TR)
+    smd(
+        c"TR2T Trans",
+        BOTH_T1_TR_T_,
+        Q_TR,
+        Q_T,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BL2TR,
+        LS_A_T2B,
+        150,
+    ), //# Fast arc top right to top				(use: BOTH_T1_T__TR)
+    smd(
+        c"TR2TL Trans",
+        BOTH_T1_TR_TL,
+        Q_TR,
+        Q_TL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BR2TL,
+        LS_A_TL2BR,
+        150,
+    ), //# Fast arc top right to top left
+    smd(
+        c"TR2L Trans",
+        BOTH_T1_TR__L,
+        Q_TR,
+        Q_L,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_R2L,
+        LS_A_L2R,
+        150,
+    ), //# Fast arc top right to left
+    smd(
+        c"TR2BL Trans",
+        BOTH_T1_TR_BL,
+        Q_TR,
+        Q_BL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_TR2BL,
+        LS_A_BL2TR,
+        150,
+    ), //# Fast weak spin top right to bottom left
+    smd(
+        c"T2BR Trans",
+        BOTH_T1_T__BR,
+        Q_T,
+        Q_BR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_TL2BR,
+        LS_A_BR2TL,
+        150,
+    ), //# Fast arc top to bottom right
+    smd(
+        c"T2R Trans",
+        BOTH_T1_T___R,
+        Q_T,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_L2R,
+        LS_A_R2L,
+        150,
+    ), //# Fast arc top to right
+    smd(
+        c"T2TR Trans",
+        BOTH_T1_T__TR,
+        Q_T,
+        Q_TR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BL2TR,
+        LS_A_TR2BL,
+        150,
+    ), //# Fast arc top to top right
+    smd(
+        c"T2TL Trans",
+        BOTH_T1_T__TL,
+        Q_T,
+        Q_TL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BR2TL,
+        LS_A_TL2BR,
+        150,
+    ), //# Fast arc top to top left
+    smd(
+        c"T2L Trans",
+        BOTH_T1_T___L,
+        Q_T,
+        Q_L,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_R2L,
+        LS_A_L2R,
+        150,
+    ), //# Fast arc top to left
+    smd(
+        c"T2BL Trans",
+        BOTH_T1_T__BL,
+        Q_T,
+        Q_BL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_TR2BL,
+        LS_A_BL2TR,
+        150,
+    ), //# Fast arc top to bottom left
+    smd(
+        c"TL2BR Trans",
+        BOTH_T1_TL_BR,
+        Q_TL,
+        Q_BR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_TL2BR,
+        LS_A_BR2TL,
+        150,
+    ), //# Fast weak spin top left to bottom right
+    smd(
+        c"TL2R Trans",
+        BOTH_T1_TL__R,
+        Q_TL,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_L2R,
+        LS_A_R2L,
+        150,
+    ), //# Fast arc top left to right			(use: BOTH_T1__R_TL)
+    smd(
+        c"TL2TR Trans",
+        BOTH_T1_TL_TR,
+        Q_TL,
+        Q_TR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BL2TR,
+        LS_A_TR2BL,
+        150,
+    ), //# Fast arc top left to top right			(use: BOTH_T1_TR_TL)
+    smd(
+        c"TL2T Trans",
+        BOTH_T1_TL_T_,
+        Q_TL,
+        Q_T,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BL2TR,
+        LS_A_T2B,
+        150,
+    ), //# Fast arc top left to top				(use: BOTH_T1_T__TL)
+    smd(
+        c"TL2L Trans",
+        BOTH_T1_TL__L,
+        Q_TL,
+        Q_L,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_R2L,
+        LS_A_L2R,
+        150,
+    ), //# Fast arc top left to left				(use: BOTH_T1__L_TL)
+    smd(
+        c"TL2BL Trans",
+        BOTH_T1_TL_BL,
+        Q_TL,
+        Q_BL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_TR2BL,
+        LS_A_BL2TR,
+        150,
+    ), //# Fast arc top left to bottom left
+    smd(
+        c"L2BR Trans",
+        BOTH_T1__L_BR,
+        Q_L,
+        Q_BR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_TL2BR,
+        LS_A_BR2TL,
+        150,
+    ), //# Fast weak spin left to bottom right
+    smd(
+        c"L2R Trans",
+        BOTH_T1__L__R,
+        Q_L,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_L2R,
+        LS_A_R2L,
+        150,
+    ), //# Fast weak spin left to right
+    smd(
+        c"L2TR Trans",
+        BOTH_T1__L_TR,
+        Q_L,
+        Q_TR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BL2TR,
+        LS_A_TR2BL,
+        150,
+    ), //# Fast arc left to top right			(use: BOTH_T1_TR__L)
+    smd(
+        c"L2T Trans",
+        BOTH_T1__L_T_,
+        Q_L,
+        Q_T,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BL2TR,
+        LS_A_T2B,
+        150,
+    ), //# Fast arc left to top				(use: BOTH_T1_T___L)
+    smd(
+        c"L2TL Trans",
+        BOTH_T1__L_TL,
+        Q_L,
+        Q_TL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BR2TL,
+        LS_A_TL2BR,
+        150,
+    ), //# Fast arc left to top left
+    smd(
+        c"L2BL Trans",
+        BOTH_T1__L_BL,
+        Q_L,
+        Q_BL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_TR2BL,
+        LS_A_BL2TR,
+        150,
+    ), //# Fast arc left to bottom left			(use: BOTH_T1_BL__L)
+    smd(
+        c"BL2BR Trans",
+        BOTH_T1_BL_BR,
+        Q_BL,
+        Q_BR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_TL2BR,
+        LS_A_BR2TL,
+        150,
+    ), //# Fast weak spin bottom left to bottom right
+    smd(
+        c"BL2R Trans",
+        BOTH_T1_BL__R,
+        Q_BL,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_L2R,
+        LS_A_R2L,
+        150,
+    ), //# Fast weak spin bottom left to right
+    smd(
+        c"BL2TR Trans",
+        BOTH_T1_BL_TR,
+        Q_BL,
+        Q_TR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BL2TR,
+        LS_A_TR2BL,
+        150,
+    ), //# Fast weak spin bottom left to top right
+    smd(
+        c"BL2T Trans",
+        BOTH_T1_BL_T_,
+        Q_BL,
+        Q_T,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BL2TR,
+        LS_A_T2B,
+        150,
+    ), //# Fast arc bottom left to top			(use: BOTH_T1_T__BL)
+    smd(
+        c"BL2TL Trans",
+        BOTH_T1_BL_TL,
+        Q_BL,
+        Q_TL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BR2TL,
+        LS_A_TL2BR,
+        150,
+    ), //# Fast arc bottom left to top left		(use: BOTH_T1_TL_BL)
+    smd(
+        c"BL2L Trans",
+        BOTH_T1_BL__L,
+        Q_BL,
+        Q_L,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_R2L,
+        LS_A_L2R,
+        150,
+    ), //# Fast arc bottom left to left
     //Bounces
-    smd(c"Bounce BR", BOTH_B1_BR___, Q_BR, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_T1_BR_TR, 150),
-    smd(c"Bounce R", BOTH_B1__R___, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_T1__R__L, 150),
-    smd(c"Bounce TR", BOTH_B1_TR___, Q_TR, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_T1_TR_TL, 150),
-    smd(c"Bounce T", BOTH_B1_T____, Q_T, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_T1_T__BL, 150),
-    smd(c"Bounce TL", BOTH_B1_TL___, Q_TL, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_T1_TL_TR, 150),
-    smd(c"Bounce L", BOTH_B1__L___, Q_L, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_T1__L__R, 150),
-    smd(c"Bounce BL", BOTH_B1_BL___, Q_BL, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_T1_BL_TR, 150),
-
+    smd(
+        c"Bounce BR",
+        BOTH_B1_BR___,
+        Q_BR,
+        Q_BR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_TL2BR,
+        LS_T1_BR_TR,
+        150,
+    ),
+    smd(
+        c"Bounce R",
+        BOTH_B1__R___,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_L2R,
+        LS_T1__R__L,
+        150,
+    ),
+    smd(
+        c"Bounce TR",
+        BOTH_B1_TR___,
+        Q_TR,
+        Q_TR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BL2TR,
+        LS_T1_TR_TL,
+        150,
+    ),
+    smd(
+        c"Bounce T",
+        BOTH_B1_T____,
+        Q_T,
+        Q_T,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BL2TR,
+        LS_T1_T__BL,
+        150,
+    ),
+    smd(
+        c"Bounce TL",
+        BOTH_B1_TL___,
+        Q_TL,
+        Q_TL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BR2TL,
+        LS_T1_TL_TR,
+        150,
+    ),
+    smd(
+        c"Bounce L",
+        BOTH_B1__L___,
+        Q_L,
+        Q_L,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_R2L,
+        LS_T1__L__R,
+        150,
+    ),
+    smd(
+        c"Bounce BL",
+        BOTH_B1_BL___,
+        Q_BL,
+        Q_BL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_TR2BL,
+        LS_T1_BL_TR,
+        150,
+    ),
     //Deflected attacks (like bounces, but slide off enemy saber, not straight back)
-    smd(c"Deflect BR", BOTH_D1_BR___, Q_BR, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TL2BR, LS_T1_BR_TR, 150),
-    smd(c"Deflect R", BOTH_D1__R___, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_R_L2R, LS_T1__R__L, 150),
-    smd(c"Deflect TR", BOTH_D1_TR___, Q_TR, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_T1_TR_TL, 150),
-    smd(c"Deflect T", BOTH_B1_T____, Q_T, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_T1_T__BL, 150),
-    smd(c"Deflect TL", BOTH_D1_TL___, Q_TL, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BR2TL, LS_T1_TL_TR, 150),
-    smd(c"Deflect L", BOTH_D1__L___, Q_L, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_R_R2L, LS_T1__L__R, 150),
-    smd(c"Deflect BL", BOTH_D1_BL___, Q_BL, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_R_TR2BL, LS_T1_BL_TR, 150),
-    smd(c"Deflect B", BOTH_D1_B____, Q_B, Q_B, AFLAG_ACTIVE, 100, BLK_NO, LS_R_BL2TR, LS_T1_T__BL, 150),
-
+    smd(
+        c"Deflect BR",
+        BOTH_D1_BR___,
+        Q_BR,
+        Q_BR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_TL2BR,
+        LS_T1_BR_TR,
+        150,
+    ),
+    smd(
+        c"Deflect R",
+        BOTH_D1__R___,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_L2R,
+        LS_T1__R__L,
+        150,
+    ),
+    smd(
+        c"Deflect TR",
+        BOTH_D1_TR___,
+        Q_TR,
+        Q_TR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BL2TR,
+        LS_T1_TR_TL,
+        150,
+    ),
+    smd(
+        c"Deflect T",
+        BOTH_B1_T____,
+        Q_T,
+        Q_T,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BL2TR,
+        LS_T1_T__BL,
+        150,
+    ),
+    smd(
+        c"Deflect TL",
+        BOTH_D1_TL___,
+        Q_TL,
+        Q_TL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BR2TL,
+        LS_T1_TL_TR,
+        150,
+    ),
+    smd(
+        c"Deflect L",
+        BOTH_D1__L___,
+        Q_L,
+        Q_L,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_R2L,
+        LS_T1__L__R,
+        150,
+    ),
+    smd(
+        c"Deflect BL",
+        BOTH_D1_BL___,
+        Q_BL,
+        Q_BL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_TR2BL,
+        LS_T1_BL_TR,
+        150,
+    ),
+    smd(
+        c"Deflect B",
+        BOTH_D1_B____,
+        Q_B,
+        Q_B,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_R_BL2TR,
+        LS_T1_T__BL,
+        150,
+    ),
     //Reflected attacks
-    smd(c"Reflected BR", BOTH_V1_BR_S1, Q_BR, Q_BR, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150), //	LS_V1_BR
-    smd(c"Reflected R", BOTH_V1__R_S1, Q_R, Q_R, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150), //	LS_V1__R
-    smd(c"Reflected TR", BOTH_V1_TR_S1, Q_TR, Q_TR, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150), //	LS_V1_TR
-    smd(c"Reflected T", BOTH_V1_T__S1, Q_T, Q_T, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150), //	LS_V1_T_
-    smd(c"Reflected TL", BOTH_V1_TL_S1, Q_TL, Q_TL, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150), //	LS_V1_TL
-    smd(c"Reflected L", BOTH_V1__L_S1, Q_L, Q_L, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150), //	LS_V1__L
-    smd(c"Reflected BL", BOTH_V1_BL_S1, Q_BL, Q_BL, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150), //	LS_V1_BL
-    smd(c"Reflected B", BOTH_V1_B__S1, Q_B, Q_B, AFLAG_ACTIVE, 100, BLK_NO, LS_READY, LS_READY, 150), //	LS_V1_B_
-
+    smd(
+        c"Reflected BR",
+        BOTH_V1_BR_S1,
+        Q_BR,
+        Q_BR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_READY,
+        LS_READY,
+        150,
+    ), //	LS_V1_BR
+    smd(
+        c"Reflected R",
+        BOTH_V1__R_S1,
+        Q_R,
+        Q_R,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_READY,
+        LS_READY,
+        150,
+    ), //	LS_V1__R
+    smd(
+        c"Reflected TR",
+        BOTH_V1_TR_S1,
+        Q_TR,
+        Q_TR,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_READY,
+        LS_READY,
+        150,
+    ), //	LS_V1_TR
+    smd(
+        c"Reflected T",
+        BOTH_V1_T__S1,
+        Q_T,
+        Q_T,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_READY,
+        LS_READY,
+        150,
+    ), //	LS_V1_T_
+    smd(
+        c"Reflected TL",
+        BOTH_V1_TL_S1,
+        Q_TL,
+        Q_TL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_READY,
+        LS_READY,
+        150,
+    ), //	LS_V1_TL
+    smd(
+        c"Reflected L",
+        BOTH_V1__L_S1,
+        Q_L,
+        Q_L,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_READY,
+        LS_READY,
+        150,
+    ), //	LS_V1__L
+    smd(
+        c"Reflected BL",
+        BOTH_V1_BL_S1,
+        Q_BL,
+        Q_BL,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_READY,
+        LS_READY,
+        150,
+    ), //	LS_V1_BL
+    smd(
+        c"Reflected B",
+        BOTH_V1_B__S1,
+        Q_B,
+        Q_B,
+        AFLAG_ACTIVE,
+        100,
+        BLK_NO,
+        LS_READY,
+        LS_READY,
+        150,
+    ), //	LS_V1_B_
     // Broken parries
-    smd(c"BParry Top", BOTH_H1_S1_T_, Q_T, Q_B, AFLAG_ACTIVE, 50, BLK_NO, LS_READY, LS_READY, 150), // LS_PARRY_UP,
-    smd(c"BParry UR", BOTH_H1_S1_TR, Q_TR, Q_BL, AFLAG_ACTIVE, 50, BLK_NO, LS_READY, LS_READY, 150), // LS_PARRY_UR,
-    smd(c"BParry UL", BOTH_H1_S1_TL, Q_TL, Q_BR, AFLAG_ACTIVE, 50, BLK_NO, LS_READY, LS_READY, 150), // LS_PARRY_UL,
-    smd(c"BParry LR", BOTH_H1_S1_BL, Q_BL, Q_TR, AFLAG_ACTIVE, 50, BLK_NO, LS_READY, LS_READY, 150), // LS_PARRY_LR,
-    smd(c"BParry Bot", BOTH_H1_S1_B_, Q_B, Q_T, AFLAG_ACTIVE, 50, BLK_NO, LS_READY, LS_READY, 150), // LS_PARRY_LL
-    smd(c"BParry LL", BOTH_H1_S1_BR, Q_BR, Q_TL, AFLAG_ACTIVE, 50, BLK_NO, LS_READY, LS_READY, 150), // LS_PARRY_LL
-
+    smd(
+        c"BParry Top",
+        BOTH_H1_S1_T_,
+        Q_T,
+        Q_B,
+        AFLAG_ACTIVE,
+        50,
+        BLK_NO,
+        LS_READY,
+        LS_READY,
+        150,
+    ), // LS_PARRY_UP,
+    smd(
+        c"BParry UR",
+        BOTH_H1_S1_TR,
+        Q_TR,
+        Q_BL,
+        AFLAG_ACTIVE,
+        50,
+        BLK_NO,
+        LS_READY,
+        LS_READY,
+        150,
+    ), // LS_PARRY_UR,
+    smd(
+        c"BParry UL",
+        BOTH_H1_S1_TL,
+        Q_TL,
+        Q_BR,
+        AFLAG_ACTIVE,
+        50,
+        BLK_NO,
+        LS_READY,
+        LS_READY,
+        150,
+    ), // LS_PARRY_UL,
+    smd(
+        c"BParry LR",
+        BOTH_H1_S1_BL,
+        Q_BL,
+        Q_TR,
+        AFLAG_ACTIVE,
+        50,
+        BLK_NO,
+        LS_READY,
+        LS_READY,
+        150,
+    ), // LS_PARRY_LR,
+    smd(
+        c"BParry Bot",
+        BOTH_H1_S1_B_,
+        Q_B,
+        Q_T,
+        AFLAG_ACTIVE,
+        50,
+        BLK_NO,
+        LS_READY,
+        LS_READY,
+        150,
+    ), // LS_PARRY_LL
+    smd(
+        c"BParry LL",
+        BOTH_H1_S1_BR,
+        Q_BR,
+        Q_TL,
+        AFLAG_ACTIVE,
+        50,
+        BLK_NO,
+        LS_READY,
+        LS_READY,
+        150,
+    ), // LS_PARRY_LL
     // Knockaways
-    smd(c"Knock Top", BOTH_K1_S1_T_, Q_R, Q_T, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_T1_T__BR, 150), // LS_PARRY_UP,
-    smd(c"Knock UR", BOTH_K1_S1_TR, Q_R, Q_TR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_T1_TR__R, 150), // LS_PARRY_UR,
-    smd(c"Knock UL", BOTH_K1_S1_TL, Q_R, Q_TL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BR2TL, LS_T1_TL__L, 150), // LS_PARRY_UL,
-    smd(c"Knock LR", BOTH_K1_S1_BL, Q_R, Q_BL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TL2BR, LS_T1_BL_TL, 150), // LS_PARRY_LR,
-    smd(c"Knock LL", BOTH_K1_S1_BR, Q_R, Q_BR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TR2BL, LS_T1_BR_TR, 150), // LS_PARRY_LL
-
+    smd(
+        c"Knock Top",
+        BOTH_K1_S1_T_,
+        Q_R,
+        Q_T,
+        AFLAG_ACTIVE,
+        50,
+        BLK_WIDE,
+        LS_R_BL2TR,
+        LS_T1_T__BR,
+        150,
+    ), // LS_PARRY_UP,
+    smd(
+        c"Knock UR",
+        BOTH_K1_S1_TR,
+        Q_R,
+        Q_TR,
+        AFLAG_ACTIVE,
+        50,
+        BLK_WIDE,
+        LS_R_BL2TR,
+        LS_T1_TR__R,
+        150,
+    ), // LS_PARRY_UR,
+    smd(
+        c"Knock UL",
+        BOTH_K1_S1_TL,
+        Q_R,
+        Q_TL,
+        AFLAG_ACTIVE,
+        50,
+        BLK_WIDE,
+        LS_R_BR2TL,
+        LS_T1_TL__L,
+        150,
+    ), // LS_PARRY_UL,
+    smd(
+        c"Knock LR",
+        BOTH_K1_S1_BL,
+        Q_R,
+        Q_BL,
+        AFLAG_ACTIVE,
+        50,
+        BLK_WIDE,
+        LS_R_TL2BR,
+        LS_T1_BL_TL,
+        150,
+    ), // LS_PARRY_LR,
+    smd(
+        c"Knock LL",
+        BOTH_K1_S1_BR,
+        Q_R,
+        Q_BR,
+        AFLAG_ACTIVE,
+        50,
+        BLK_WIDE,
+        LS_R_TR2BL,
+        LS_T1_BR_TR,
+        150,
+    ), // LS_PARRY_LL
     // Parry
-    smd(c"Parry Top", BOTH_P1_S1_T_, Q_R, Q_T, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_A_T2B, 150), // LS_PARRY_UP,
-    smd(c"Parry UR", BOTH_P1_S1_TR, Q_R, Q_TL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_A_TR2BL, 150), // LS_PARRY_UR,
-    smd(c"Parry UL", BOTH_P1_S1_TL, Q_R, Q_TR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BR2TL, LS_A_TL2BR, 150), // LS_PARRY_UL,
-    smd(c"Parry LR", BOTH_P1_S1_BL, Q_R, Q_BR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TL2BR, LS_A_BR2TL, 150), // LS_PARRY_LR,
-    smd(c"Parry LL", BOTH_P1_S1_BR, Q_R, Q_BL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TR2BL, LS_A_BL2TR, 150), // LS_PARRY_LL
-
+    smd(
+        c"Parry Top",
+        BOTH_P1_S1_T_,
+        Q_R,
+        Q_T,
+        AFLAG_ACTIVE,
+        50,
+        BLK_WIDE,
+        LS_R_BL2TR,
+        LS_A_T2B,
+        150,
+    ), // LS_PARRY_UP,
+    smd(
+        c"Parry UR",
+        BOTH_P1_S1_TR,
+        Q_R,
+        Q_TL,
+        AFLAG_ACTIVE,
+        50,
+        BLK_WIDE,
+        LS_R_BL2TR,
+        LS_A_TR2BL,
+        150,
+    ), // LS_PARRY_UR,
+    smd(
+        c"Parry UL",
+        BOTH_P1_S1_TL,
+        Q_R,
+        Q_TR,
+        AFLAG_ACTIVE,
+        50,
+        BLK_WIDE,
+        LS_R_BR2TL,
+        LS_A_TL2BR,
+        150,
+    ), // LS_PARRY_UL,
+    smd(
+        c"Parry LR",
+        BOTH_P1_S1_BL,
+        Q_R,
+        Q_BR,
+        AFLAG_ACTIVE,
+        50,
+        BLK_WIDE,
+        LS_R_TL2BR,
+        LS_A_BR2TL,
+        150,
+    ), // LS_PARRY_LR,
+    smd(
+        c"Parry LL",
+        BOTH_P1_S1_BR,
+        Q_R,
+        Q_BL,
+        AFLAG_ACTIVE,
+        50,
+        BLK_WIDE,
+        LS_R_TR2BL,
+        LS_A_BL2TR,
+        150,
+    ), // LS_PARRY_LL
     // Reflecting a missile
-    smd(c"Reflect Top", BOTH_P1_S1_T_, Q_R, Q_T, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_A_T2B, 300), // LS_PARRY_UP,
-    smd(c"Reflect UR", BOTH_P1_S1_TL, Q_R, Q_TR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BR2TL, LS_A_TL2BR, 300), // LS_PARRY_UR,
-    smd(c"Reflect UL", BOTH_P1_S1_TR, Q_R, Q_TL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_BL2TR, LS_A_TR2BL, 300), // LS_PARRY_UL,
-    smd(c"Reflect LR", BOTH_P1_S1_BR, Q_R, Q_BL, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TR2BL, LS_A_BL2TR, 300), // LS_PARRY_LR
-    smd(c"Reflect LL", BOTH_P1_S1_BL, Q_R, Q_BR, AFLAG_ACTIVE, 50, BLK_WIDE, LS_R_TL2BR, LS_A_BR2TL, 300), // LS_PARRY_LL,
+    smd(
+        c"Reflect Top",
+        BOTH_P1_S1_T_,
+        Q_R,
+        Q_T,
+        AFLAG_ACTIVE,
+        50,
+        BLK_WIDE,
+        LS_R_BL2TR,
+        LS_A_T2B,
+        300,
+    ), // LS_PARRY_UP,
+    smd(
+        c"Reflect UR",
+        BOTH_P1_S1_TL,
+        Q_R,
+        Q_TR,
+        AFLAG_ACTIVE,
+        50,
+        BLK_WIDE,
+        LS_R_BR2TL,
+        LS_A_TL2BR,
+        300,
+    ), // LS_PARRY_UR,
+    smd(
+        c"Reflect UL",
+        BOTH_P1_S1_TR,
+        Q_R,
+        Q_TL,
+        AFLAG_ACTIVE,
+        50,
+        BLK_WIDE,
+        LS_R_BL2TR,
+        LS_A_TR2BL,
+        300,
+    ), // LS_PARRY_UL,
+    smd(
+        c"Reflect LR",
+        BOTH_P1_S1_BR,
+        Q_R,
+        Q_BL,
+        AFLAG_ACTIVE,
+        50,
+        BLK_WIDE,
+        LS_R_TR2BL,
+        LS_A_BL2TR,
+        300,
+    ), // LS_PARRY_LR
+    smd(
+        c"Reflect LL",
+        BOTH_P1_S1_BL,
+        Q_R,
+        Q_BR,
+        AFLAG_ACTIVE,
+        50,
+        BLK_WIDE,
+        LS_R_TL2BR,
+        LS_A_BR2TL,
+        300,
+    ), // LS_PARRY_LL,
 ];
 
 /// `transitionMove[Q_NUM_QUADS][Q_NUM_QUADS]` (bg_saber.c) — for a [from-quad][to-quad]
@@ -502,9 +2267,7 @@ pub static saberMoveTransitionAngle: [[c_int; Q_NUM_QUADS as usize]; Q_NUM_QUADS
 /// parries, indexed by force-defense level (level 0 = no defense).
 pub static bg_parryDebounce: [c_int; NUM_FORCE_POWER_LEVELS] = [
     500, //if don't even have defense, can't use defense!
-    300,
-    150,
-    50,
+    300, 150, 50,
 ];
 
 /// `PM_irand_timesync` (bg_saber.c:11) — the file's first function: a deterministic
@@ -1024,9 +2787,7 @@ pub unsafe fn PM_CheckEnemyPresence(dir: c_int, radius: f32) -> qboolean {
         //let's see who we hit
         let bgEnt = PM_BGEntForNum(tr.entityNum as c_int);
 
-        if !bgEnt.is_null()
-            && ((*bgEnt).s.eType == ET_PLAYER || (*bgEnt).s.eType == ET_NPC)
-        {
+        if !bgEnt.is_null() && ((*bgEnt).s.eType == ET_PLAYER || (*bgEnt).s.eType == ET_NPC) {
             //this guy can be considered an "enemy"... if he is on the same team, oh well.
             return QTRUE;
         }
@@ -1784,7 +3545,8 @@ pub unsafe fn PM_SaberLockLoseAnim(
     }
     if loseAnim != -1 {
         NPC_SetAnim(
-            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*genemy).clientNum as usize),
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*genemy).clientNum as usize),
             SETANIM_BOTH,
             loseAnim,
             (SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD) as c_int,
@@ -1849,7 +3611,8 @@ pub unsafe fn PM_SaberLockResultAnim(
     } else {
         //other guy
         NPC_SetAnim(
-            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*duelist).clientNum as usize),
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>())
+                .add((*duelist).clientNum as usize),
             SETANIM_BOTH,
             baseAnim,
             (SETANIM_FLAG_OVERRIDE | SETANIM_FLAG_HOLD) as c_int,
@@ -2323,7 +4086,8 @@ pub unsafe fn PM_SaberLocked() {
     if genemy.is_null() {
         return;
     }
-    /*if ( ( (pm->ps->torsoAnim) == BOTH_BF2LOCK || ... ) && ( ... ) ) */ //yeah..
+    /*if ( ( (pm->ps->torsoAnim) == BOTH_BF2LOCK || ... ) && ( ... ) ) */
+ //yeah..
     if (*ps).saberLockFrame != 0
         && (*genemy).saberLockFrame != 0
         && BG_InSaberLock((*ps).torsoAnim) != QFALSE
@@ -2432,7 +4196,12 @@ pub unsafe fn PM_SaberLocked() {
                             genemy,
                         );
                     }
-                    PM_SetAnimFrame(genemy, (*anim).firstFrame as c_int + remaining, QTRUE, QTRUE);
+                    PM_SetAnimFrame(
+                        genemy,
+                        (*anim).firstFrame as c_int + remaining,
+                        QTRUE,
+                        QTRUE,
+                    );
                 } else {
                     PM_SetAnimFrame(
                         genemy,
@@ -2458,7 +4227,12 @@ pub unsafe fn PM_SaberLocked() {
                         QTRUE,
                     );
                 } else {
-                    PM_SetAnimFrame(genemy, (*anim).firstFrame as c_int + remaining, QTRUE, QTRUE);
+                    PM_SetAnimFrame(
+                        genemy,
+                        (*anim).firstFrame as c_int + remaining,
+                        QTRUE,
+                        QTRUE,
+                    );
                 }
             }
         }
@@ -2931,7 +4705,12 @@ pub unsafe fn PM_WeaponLightsaber() {
         {
             PM_SetAnim(SETANIM_TORSO, (*ps).legsAnim, SETANIM_FLAG_OVERRIDE, 100);
         } else if BG_InSlopeAnim((*ps).legsAnim) != QFALSE && (*ps).torsoTimer <= 0 {
-            PM_SetAnim(SETANIM_TORSO, PM_GetSaberStance(), SETANIM_FLAG_OVERRIDE, 100);
+            PM_SetAnim(
+                SETANIM_TORSO,
+                PM_GetSaberStance(),
+                SETANIM_FLAG_OVERRIDE,
+                100,
+            );
         }
 
         if (*ps).weaponTime < 1
@@ -2998,7 +4777,8 @@ pub unsafe fn PM_WeaponLightsaber() {
             } else if (*ps).weaponTime < 1
                 && (*ps).saberCanThrow != QFALSE
                 && BG_HasYsalamiri((*pmv).gametype, ps) == QFALSE
-                && BG_CanUseFPNow((*pmv).gametype, ps, (*pmv).cmd.serverTime, FP_SABERTHROW) != QFALSE
+                && BG_CanUseFPNow((*pmv).gametype, ps, (*pmv).cmd.serverTime, FP_SABERTHROW)
+                    != QFALSE
                 && (*ps).fd.forcePowerLevel[FP_SABERTHROW as usize] > 0
                 && PM_SaberPowerCheck() != QFALSE
             {
@@ -3483,8 +5263,8 @@ pub unsafe fn PM_WeaponLightsaber() {
                 match (*ps).legsAnim {
                     BOTH_WALK1 | BOTH_WALK2 | BOTH_WALK_STAFF | BOTH_WALK_DUAL | BOTH_WALKBACK1
                     | BOTH_WALKBACK2 | BOTH_WALKBACK_STAFF | BOTH_WALKBACK_DUAL | BOTH_RUN1
-                    | BOTH_RUN2 | BOTH_RUN_STAFF | BOTH_RUN_DUAL | BOTH_RUNBACK1 | BOTH_RUNBACK2
-                    | BOTH_RUNBACK_STAFF => {
+                    | BOTH_RUN2 | BOTH_RUN_STAFF | BOTH_RUN_DUAL | BOTH_RUNBACK1
+                    | BOTH_RUNBACK2 | BOTH_RUNBACK_STAFF => {
                         anim = (*ps).legsAnim;
                     }
                     _ => {
@@ -3715,9 +5495,7 @@ pub unsafe fn PM_SetSaberMove(newMove: c_short) {
         } else if BG_SpinningSaberAnim(anim) != QFALSE {
             //spins must be played on entire body
             parts = SETANIM_BOTH;
-        } else if (*pmv).cmd.forwardmove == 0
-            && (*pmv).cmd.rightmove == 0
-            && (*pmv).cmd.upmove == 0
+        } else if (*pmv).cmd.forwardmove == 0 && (*pmv).cmd.rightmove == 0 && (*pmv).cmd.upmove == 0
         {
             //not trying to run, duck or jump
             if BG_FlippingAnim((*ps).legsAnim) == QFALSE
@@ -3737,7 +5515,12 @@ pub unsafe fn PM_SetSaberMove(newMove: c_short) {
             }
         }
 
-        PM_SetAnim(parts, anim, setflags as c_int, saberMoveData[nm as usize].blendTime);
+        PM_SetAnim(
+            parts,
+            anim,
+            setflags as c_int,
+            saberMoveData[nm as usize].blendTime,
+        );
         if parts != SETANIM_LEGS
             && ((*ps).legsAnim == BOTH_ARIAL_LEFT || (*ps).legsAnim == BOTH_ARIAL_RIGHT)
         {
@@ -3853,16 +5636,29 @@ mod tests {
             let c = core::slice::from_raw_parts(jka_bgsab_saberMoveData_ptr(), n);
             for i in 0..n {
                 let (r, cc) = (&rust[i], &c[i]);
-                assert_eq!(CStr::from_ptr(r.name), CStr::from_ptr(cc.name), "saberMoveData[{i}].name");
+                assert_eq!(
+                    CStr::from_ptr(r.name),
+                    CStr::from_ptr(cc.name),
+                    "saberMoveData[{i}].name"
+                );
                 assert_eq!(r.animToUse, cc.animToUse, "saberMoveData[{i}].animToUse");
                 assert_eq!(r.startQuad, cc.startQuad, "saberMoveData[{i}].startQuad");
                 assert_eq!(r.endQuad, cc.endQuad, "saberMoveData[{i}].endQuad");
-                assert_eq!(r.animSetFlags, cc.animSetFlags, "saberMoveData[{i}].animSetFlags");
+                assert_eq!(
+                    r.animSetFlags, cc.animSetFlags,
+                    "saberMoveData[{i}].animSetFlags"
+                );
                 assert_eq!(r.blendTime, cc.blendTime, "saberMoveData[{i}].blendTime");
                 assert_eq!(r.blocking, cc.blocking, "saberMoveData[{i}].blocking");
                 assert_eq!(r.chain_idle, cc.chain_idle, "saberMoveData[{i}].chain_idle");
-                assert_eq!(r.chain_attack, cc.chain_attack, "saberMoveData[{i}].chain_attack");
-                assert_eq!(r.trailLength, cc.trailLength, "saberMoveData[{i}].trailLength");
+                assert_eq!(
+                    r.chain_attack, cc.chain_attack,
+                    "saberMoveData[{i}].chain_attack"
+                );
+                assert_eq!(
+                    r.trailLength, cc.trailLength,
+                    "saberMoveData[{i}].trailLength"
+                );
             }
 
             // transitionMove[8][8] and saberMoveTransitionAngle[8][8] — row-major flat.
@@ -3871,7 +5667,11 @@ mod tests {
             let c_ta = core::slice::from_raw_parts(jka_bgsab_saberMoveTransitionAngle_ptr(), q * q);
             for i in 0..q {
                 for j in 0..q {
-                    assert_eq!(transitionMove[i][j], c_tm[i * q + j], "transitionMove[{i}][{j}]");
+                    assert_eq!(
+                        transitionMove[i][j],
+                        c_tm[i * q + j],
+                        "transitionMove[{i}][{j}]"
+                    );
                     assert_eq!(
                         saberMoveTransitionAngle[i][j],
                         c_ta[i * q + j],
@@ -3881,7 +5681,8 @@ mod tests {
             }
 
             // bg_parryDebounce[NUM_FORCE_POWER_LEVELS].
-            let c_pd = core::slice::from_raw_parts(jka_bgsab_parryDebounce_ptr(), NUM_FORCE_POWER_LEVELS);
+            let c_pd =
+                core::slice::from_raw_parts(jka_bgsab_parryDebounce_ptr(), NUM_FORCE_POWER_LEVELS);
             assert_eq!(&bg_parryDebounce[..], c_pd, "bg_parryDebounce");
         }
     }
@@ -3904,8 +5705,16 @@ mod tests {
         unsafe {
             // Stateless switch/range predicates over a domain covering every LS_*/Q_*.
             for x in -10..=2200 {
-                assert_eq!(PM_AttackMoveForQuad(x), c_AttackMoveForQuad(x), "PM_AttackMoveForQuad({x})");
-                assert_eq!(PM_SaberInBounce(x), c_SaberInBounce(x), "PM_SaberInBounce({x})");
+                assert_eq!(
+                    PM_AttackMoveForQuad(x),
+                    c_AttackMoveForQuad(x),
+                    "PM_AttackMoveForQuad({x})"
+                );
+                assert_eq!(
+                    PM_SaberInBounce(x),
+                    c_SaberInBounce(x),
+                    "PM_SaberInBounce({x})"
+                );
                 assert_eq!(
                     PM_SaberInBrokenParry(x),
                     c_SaberInBrokenParry(x),
@@ -3955,7 +5764,9 @@ mod tests {
     /// a minimal struct, so the comparison is on the resulting field value only.
     #[test]
     fn saber_lock_helpers_match_c() {
-        use crate::oracle::{jka_PM_SetAnimFrame, BG_CheckIncrementLockAnim as c_CheckIncrementLockAnim};
+        use crate::oracle::{
+            jka_PM_SetAnimFrame, BG_CheckIncrementLockAnim as c_CheckIncrementLockAnim,
+        };
         unsafe {
             for anim in -10..=2200 {
                 for wol in -1..=7 {
@@ -3973,7 +5784,11 @@ mod tests {
                 let mut ps: playerState_t = core::mem::zeroed();
                 ps.saberLockFrame = -999; // sentinel, must be overwritten
                 PM_SetAnimFrame(&mut ps, frame, QTRUE, QFALSE);
-                assert_eq!(ps.saberLockFrame, jka_PM_SetAnimFrame(frame), "PM_SetAnimFrame({frame})");
+                assert_eq!(
+                    ps.saberLockFrame,
+                    jka_PM_SetAnimFrame(frame),
+                    "PM_SetAnimFrame({frame})"
+                );
             }
         }
     }

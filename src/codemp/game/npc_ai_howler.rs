@@ -16,15 +16,17 @@
 use core::ffi::c_int;
 
 use crate::codemp::game::anims::{BOTH_ATTACK1, BOTH_PAIN1};
+use crate::codemp::game::b_public_h::SCF_LOOK_FOR_ENEMIES;
 use crate::codemp::game::bg_public::{
     MASK_SHOT, MOD_MELEE, SETANIM_BOTH, SETANIM_FLAG_HOLD, SETANIM_FLAG_OVERRIDE,
 };
-use crate::codemp::game::b_public_h::SCF_LOOK_FOR_ENEMIES;
 use crate::codemp::game::g_combat::G_Damage;
 use crate::codemp::game::g_local::{gentity_t, DAMAGE_NO_KNOCKBACK};
 use crate::codemp::game::g_main::g_entities;
-use crate::codemp::game::g_timer::{TIMER_Done, TIMER_Done2, TIMER_Exists, TIMER_Remove, TIMER_Set};
-use crate::codemp::game::npc::{ucmd, NPC_SetAnim, NPC, NPCInfo};
+use crate::codemp::game::g_timer::{
+    TIMER_Done, TIMER_Done2, TIMER_Exists, TIMER_Remove, TIMER_Set,
+};
+use crate::codemp::game::npc::{ucmd, NPCInfo, NPC_SetAnim, NPC};
 use crate::codemp::game::npc_combat::G_SetEnemy;
 use crate::codemp::game::npc_goal::UpdateGoal;
 use crate::codemp::game::npc_move::NPC_MoveToGoal;
@@ -32,8 +34,8 @@ use crate::codemp::game::npc_utils::{
     NPC_CheckEnemyExt, NPC_ClearLOS4, NPC_FaceEnemy, NPC_UpdateAngles,
 };
 use crate::codemp::game::q_math::{
-    vec3_origin, AngleVectors, DistanceHorizontalSquared, VectorCopy, VectorLengthSquared, VectorMA,
-    VectorSubtract,
+    vec3_origin, AngleVectors, DistanceHorizontalSquared, VectorCopy, VectorLengthSquared,
+    VectorMA, VectorSubtract,
 };
 use crate::codemp::game::q_shared::{crandom, random};
 use crate::codemp::game::q_shared_h::{trace_t, vec3_t, BUTTON_WALKING, ENTITYNUM_WORLD};
@@ -80,18 +82,27 @@ pub unsafe fn Howler_Patrol() {
         ucmd.buttons &= !BUTTON_WALKING;
         NPC_MoveToGoal(QTRUE);
     } else if TIMER_Done(NPC, c"patrolTime".as_ptr()) != QFALSE {
-        TIMER_Set(NPC, c"patrolTime".as_ptr(), (crandom() * 5000.0 + 5000.0) as c_int);
+        TIMER_Set(
+            NPC,
+            c"patrolTime".as_ptr(),
+            (crandom() * 5000.0 + 5000.0) as c_int,
+        );
     }
 
     //rwwFIXMEFIXME: Care about all clients, not just client 0
     VectorSubtract(
-        &(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(0)).r.currentOrigin,
+        &(*(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(0))
+            .r
+            .currentOrigin,
         &(*NPC).r.currentOrigin,
         &mut dif,
     );
 
     if VectorLengthSquared(&dif) < (256 * 256) as f32 {
-        G_SetEnemy(NPC, (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(0));
+        G_SetEnemy(
+            NPC,
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(0),
+        );
     }
 
     if NPC_CheckEnemyExt(QTRUE) == QFALSE {
@@ -155,7 +166,11 @@ pub unsafe fn Howler_TryDamage(enemy: *mut gentity_t, damage: c_int) {
 pub unsafe fn Howler_Attack() {
     if TIMER_Exists(NPC, c"attacking".as_ptr()) == QFALSE {
         // Going to do ATTACK1
-        TIMER_Set(NPC, c"attacking".as_ptr(), 1700 + (random() * 200.0) as c_int);
+        TIMER_Set(
+            NPC,
+            c"attacking".as_ptr(),
+            1700 + (random() * 200.0) as c_int,
+        );
         NPC_SetAnim(
             NPC,
             SETANIM_BOTH,
@@ -219,7 +234,11 @@ pub unsafe fn Howler_Combat() {
 NPC_Howler_Pain
 -------------------------
 */
-pub unsafe extern "C" fn NPC_Howler_Pain(self_: *mut gentity_t, _attacker: *mut gentity_t, damage: c_int) {
+pub unsafe extern "C" fn NPC_Howler_Pain(
+    self_: *mut gentity_t,
+    _attacker: *mut gentity_t,
+    damage: c_int,
+) {
     if damage >= 10 {
         TIMER_Remove(self_, c"attacking".as_ptr());
         TIMER_Set(self_, c"takingPain".as_ptr(), 2900);

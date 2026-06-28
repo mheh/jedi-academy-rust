@@ -13,7 +13,9 @@ use crate::codemp::game::bg_lib::cmp_t;
 use crate::codemp::game::bg_public::{gitem_t, saberMoveData_t, BG_field_t};
 use crate::codemp::game::bg_saga_h::{siegeClass_t, siegeTeam_t};
 use crate::codemp::game::bg_weapons_h::{ammoData_t, weaponData_t};
-use crate::codemp::game::q_shared_h::{bladeInfo_t, cplane_t, qint64, saberInfo_t, stringID_table_t};
+use crate::codemp::game::q_shared_h::{
+    bladeInfo_t, cplane_t, qint64, saberInfo_t, stringID_table_t,
+};
 use core::ffi::{c_char, c_int, c_short, c_uint, c_ulong, c_void};
 
 /// Mirror of the oracle's `jka_saberFace_t` (`{ float v1[3]; v2[3]; v3[3]; }`, w_saber.c:2309) —
@@ -388,12 +390,7 @@ extern "C" {
     ) -> core::ffi::c_int;
     /// `void G_SabCol_CalcPlaneEq(vec3_t x, vec3_t y, vec3_t z, float *planeEq)` (w_saber.c:2436;
     /// oracle: `jka_G_SabCol_CalcPlaneEq`). `vec3_t` -> `*const f32`, `float *planeEq` -> `*mut f32`.
-    pub fn jka_G_SabCol_CalcPlaneEq(
-        x: *const f32,
-        y: *const f32,
-        z: *const f32,
-        planeEq: *mut f32,
-    );
+    pub fn jka_G_SabCol_CalcPlaneEq(x: *const f32, y: *const f32, z: *const f32, planeEq: *mut f32);
     /// `int G_SabCol_PointRelativeToPlane(vec3_t pos, float *side, float *planeEq)`
     /// (w_saber.c:2445; oracle: `jka_G_SabCol_PointRelativeToPlane`). `vec3_t` -> `*const f32`,
     /// the two `float *` params -> `*mut f32` / `*const f32`.
@@ -1447,8 +1444,11 @@ extern "C" {
     pub fn jka_pm_addtouchent(entityNum: c_int, io_numtouch: *mut c_int, io_touchents: *mut c_int);
     pub fn jka_PM_BGEntForNum(baseEnt: c_ulong, entSize: c_int, num: c_int) -> c_ulong;
     pub fn jka_BG_SabersOff(saberHolstered: c_int, saberAnimLevelBase: c_int) -> c_int;
-    pub fn jka_BG_KnockDownable(is_null: c_int, m_iVehicleNum: c_int, emplacedIndex: c_int)
-        -> c_int;
+    pub fn jka_BG_KnockDownable(
+        is_null: c_int,
+        m_iVehicleNum: c_int,
+        emplacedIndex: c_int,
+    ) -> c_int;
     pub fn jka_PM_GetSaberStance(
         saberEntityNum: c_int,
         saberHolstered: c_int,
