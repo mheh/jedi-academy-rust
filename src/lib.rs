@@ -19,12 +19,15 @@
 //! * [`trap`] — safe wrappers over those syscalls (the `trap_*` functions).
 //! * [`codemp::game`] — the ported game-module sources (mirrors the upstream
 //!   `codemp/game/` tree: `q_shared.rs`, `q_math.rs`, `g_main.rs`, …).
+//! * [`code`] — stubs for the original single-player/shared `code/` tree, ready
+//!   for future ported modules.
 
 #![allow(non_snake_case)] // FFI exports & trap_* wrappers intentionally mirror C names
 
 #[macro_use]
 mod macros;
 
+pub mod code;
 pub mod codemp;
 pub mod ffi;
 pub mod trap;
