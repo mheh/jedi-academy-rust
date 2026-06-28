@@ -38,6 +38,7 @@ pub mod bg_vehicles_h;
 pub mod bg_weapons;
 pub mod bg_weapons_h;
 pub mod botlib_h;
+pub mod chars_h;
 pub mod fighternpc;
 pub mod g_ICARUScb;
 pub mod g_active;
