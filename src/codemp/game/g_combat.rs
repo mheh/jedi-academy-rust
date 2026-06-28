@@ -557,7 +557,6 @@ pub unsafe fn G_Knockdown(victim: *mut gentity_t) {
 /// # Safety
 /// Reads the global `g_entities` base pointer; must be called after `G_InitGame` has
 /// allocated it (as all in-game callers are).
-// TODO: Port-Bug
 pub unsafe fn G_GetJediMaster() -> *mut gentity_t {
     let mut i: c_int = 0;
     while i < MAX_CLIENTS as c_int {
