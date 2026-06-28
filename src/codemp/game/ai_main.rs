@@ -4074,12 +4074,11 @@ pub unsafe fn BotStraightTPOrderCheck(ent: *mut gentity_t, ordernum: c_int, bs: 
 /// `void BotOrder(gentity_t *ent, int clientnum, int ordernum)` (ai_main.c:184) — a team-leader
 /// player issues `ordernum` to bot `clientnum` (or every same-team bot when `clientnum == -1`),
 /// validated against the per-gametype state range. `-1` ordernum requests a status report; any
-/// other accepted order runs [`BotStraightTPOrderCheck`] and stamps `state_Forced`. The
-/// commented-out `BotDoChat` blocks are not ported.
+/// other accepted order runs [`BotStraightTPOrderCheck`], stamps `state_Forced`, and issues an
+/// `OrderAccepted` chat.
 ///
 /// # Safety
 /// `ent` must be valid (or null); reads the [`botstates`]/[`g_entities`] globals.
-// TODO: Remove-Xbox
 pub unsafe fn BotOrder(ent: *mut gentity_t, clientnum: c_int, ordernum: c_int) {
     let mut stateMin: c_int = 0;
     let mut stateMax: c_int = 0;
@@ -4128,6 +4127,16 @@ pub unsafe fn BotOrder(ent: *mut gentity_t, clientnum: c_int, ordernum: c_int) {
         } else {
             BotStraightTPOrderCheck(ent, ordernum, botstates[clientnum as usize]);
             (*botstates[clientnum as usize]).state_Forced = ordernum;
+            (*botstates[clientnum as usize]).chatObject = ent;
+            (*botstates[clientnum as usize]).chatAltObject = null_mut();
+            if BotDoChat(
+                botstates[clientnum as usize],
+                c"OrderAccepted".as_ptr() as *mut c_char,
+                1,
+            ) != 0
+            {
+                (*botstates[clientnum as usize]).chatTeam = 1;
+            }
         }
     } else {
         while i < MAX_CLIENTS as c_int {
@@ -4139,6 +4148,16 @@ pub unsafe fn BotOrder(ent: *mut gentity_t, clientnum: c_int, ordernum: c_int) {
                 } else {
                     BotStraightTPOrderCheck(ent, ordernum, botstates[i as usize]);
                     (*botstates[i as usize]).state_Forced = ordernum;
+                    (*botstates[i as usize]).chatObject = ent;
+                    (*botstates[i as usize]).chatAltObject = null_mut();
+                    if BotDoChat(
+                        botstates[i as usize],
+                        c"OrderAccepted".as_ptr() as *mut c_char,
+                        0,
+                    ) != 0
+                    {
+                        (*botstates[i as usize]).chatTeam = 1;
+                    }
                 }
             }
 
