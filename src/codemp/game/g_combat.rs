@@ -3810,7 +3810,11 @@ pub unsafe fn G_Damage(
             //rww - er.. what the? This isn't broadcast, why is it being set on vec3_origin?!
             let ev_ent = G_TempEntity(&(*targ).r.currentOrigin, EV_SHIELD_HIT);
             (*ev_ent).s.otherEntityNum = (*targ).s.number;
-            (*ev_ent).s.eventParm = DirToByte(&*dir);
+            // C `DirToByte( vec3_t dir )` returns 0 for a NULL dir (q_math.c). The Rust
+            // port takes `&vec3_t`, which can't be null, so reproduce that guard here:
+            // `dir` is NULL for e.g. G_KillBox telefrags, and this shield block runs
+            // whenever shield was absorbed (it is not gated by DAMAGE_NO_KNOCKBACK).
+            (*ev_ent).s.eventParm = if dir.is_null() { 0 } else { DirToByte(&*dir) };
             (*ev_ent).s.time2 = shield_absorbed as c_int;
             /*
                     shieldAbsorbed *= 20;
