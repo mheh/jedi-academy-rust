@@ -2289,8 +2289,7 @@ pub unsafe fn SP_target_siege_end(ent: *mut gentity_t) {
 
 /// `void InitSiegeMode( void )` (g_saga.c:95).
 ///
-/// Initialise everything for a Siege game. Bails (`siege_valid = 0`) outside `GT_SIEGE`. Resets
-/// all the file-scope Siege state (a documented bug-fix so levels restart cleanly), clears the
+/// Initialise everything for a Siege game. Bails (`siege_valid = 0`) outside `GT_SIEGE`. Clears the
 /// win-team configstring, restores cross-level persistent timing data when team-switching is on,
 /// then opens `maps/<mapname>.siege` and reads it into `siege_info`. From the parsed file it pulls
 /// the preround state, the two team group names (honouring the `g_siegeTeam1`/`g_siegeTeam2`
@@ -2298,9 +2297,9 @@ pub unsafe fn SP_target_siege_end(ent: *mut gentity_t) {
 /// player classes ([`BG_SiegeLoadClasses`]) and teams ([`BG_SiegeLoadTeams`]), assigns each team's
 /// theme, counts objectives to build the initial `CS_SIEGE_OBJECTIVES` status string, precaches
 /// sabers ([`BG_PrecacheSabersForSiegeTeam`]) and weapons/holdables
-/// ([`G_SiegeRegisterWeaponsAndHoldables`]) for both teams. On any failure it jumps to the
-/// `failure:` label and marks `siege_valid = 0`. No oracle (the full Siege bootstrap: file IO,
-/// cvar, configstring and precache syscalls over process-global Siege state).
+/// ([`G_SiegeRegisterWeaponsAndHoldables`]) for both teams. On any failure it marks `siege_valid = 0`.
+/// No oracle (the full Siege bootstrap: file IO, cvar, configstring and precache syscalls over
+/// process-global Siege state).
 ///
 /// # Safety
 /// Mutates the process-global Siege state (`siege_info`, `siege_valid`, the goal/timer statics,

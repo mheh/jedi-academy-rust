@@ -993,7 +993,7 @@ pub unsafe extern "C" fn scriptrunner_run(self_: *mut gentity_t) {
             }
 
             //if ( !self->activator->sequencer || !self->activator->taskManager )
-            if trap::ICARUS_IsInitialized((*(*self_).activator).s.number) == QFALSE {
+            if trap::ICARUS_IsInitialized((*self_).s.number) == QFALSE {
                 // Need to be initialized through ICARUS
                 if (*(*self_).activator).script_targetname.is_null()
                     || *(*(*self_).activator).script_targetname == 0

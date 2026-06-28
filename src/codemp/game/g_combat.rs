@@ -42,7 +42,8 @@ use crate::codemp::game::bg_public::{
     PMF_STUCK_TO_WALL, PMF_TIME_KNOCKBACK, PW_BATTLESUIT, PW_FORCE_BOON, STAT_ARMOR, STAT_DEAD_YAW,
     STAT_HEALTH,
     STAT_MAX_HEALTH, TEAM_SPECTATOR, WEAPON_CHARGING, WEAPON_CHARGING_ALT, WEAPON_READY,
-    DUELTEAM_DOUBLE, DUELTEAM_LONE, EF2_SHIP_DEATH, EV_DEATH1, EV_OBITUARY, MOD_BLASTER,
+    DUELTEAM_DOUBLE, DUELTEAM_LONE, EF2_SHIP_DEATH, EV_DEATH1, EV_OBITUARY, GT_JEDIMASTER,
+    MOD_COLLISION, MOD_VEH_EXPLOSION,
     MOD_MAX, MOD_STUN_BATON, MOD_TEAM_CHANGE, PERS_EXCELLENT_COUNT, PERS_GAUNTLET_FRAG_COUNT,
     PERS_KILLED, PERS_PLAYEREVENTS, PLAYEREVENT_GAUNTLETREWARD, PM_DEAD, PM_NORMAL,
     PW_BLUEFLAG, PW_NEUTRALFLAG, PW_REDFLAG, SETANIM_BOTH, SETANIM_FLAG_HOLD,
@@ -53,8 +54,11 @@ use crate::codemp::game::bg_misc::{
 };
 use crate::codemp::game::bg_public::bgEntity_t;
 use crate::codemp::game::bg_weapons::weaponData;
-use crate::codemp::game::g_client::{ClientUserinfoChanged, G_BreakArm, G_UpdateClientAnims};
-use crate::codemp::game::g_cmds::Cmd_Score_f;
+use crate::codemp::game::g_client::{
+    ClientUserinfoChanged, G_BreakArm, G_UpdateClientAnims, ThrowSaberToAttacker,
+};
+use crate::codemp::game::g_cmds::{Cmd_Score_f, G_CheckTKAutoKickBan};
+use crate::codemp::game::bg_vehicleLoad::g_vehicleInfo;
 use crate::codemp::game::bg_saga::bgSiegeClasses;
 use crate::codemp::game::bg_saga_h::{CFL_HEAVYMELEE, CFL_STRONGAGAINSTPHYSICAL};
 use crate::codemp::game::bg_vehicles_h::{
@@ -4779,15 +4783,18 @@ pub unsafe extern "C" fn player_die(
     damage: c_int,
     meansOfDeath: c_int,
 ) {
-    let ent: *mut gentity_t;
     let anim: c_int;
     let contents: c_int;
     let mut killer: c_int;
     let mut i: c_int;
     let mut killerName: *const c_char;
     let obit: *const c_char;
-    let wasJediMaster: qboolean = QFALSE;
+    let mut wasJediMaster: qboolean = QFALSE;
     let sPMType: c_int;
+    let mut wasInVehicle: c_int = 0;
+    let mut tempInflictorEnt: *mut gentity_t = inflictor;
+    let mut tempInflictor: qboolean = QFALSE;
+    let mut actualMOD: c_int = meansOfDeath;
 
     if (*(*self_).client).ps.pm_type == PM_DEAD {
         return;
@@ -4840,6 +4847,18 @@ pub unsafe extern "C" fn player_die(
                 if (*murderPilot).inuse != QFALSE && !(*murderPilot).client.is_null() {
                     //give the pilot of the offending vehicle credit for the kill
                     murderer = murderPilot;
+                    actualMOD = (*(*self_).client).otherKillerMOD;
+                    if (*(*self_).client).otherKillerVehWeapon > 0 {
+                        tempInflictorEnt = G_Spawn();
+                        if !tempInflictorEnt.is_null() {
+                            //fake up the inflictor
+                            tempInflictor = QTRUE;
+                            (*tempInflictorEnt).classname = c"vehicle_proj".as_ptr() as *mut c_char;
+                            (*tempInflictorEnt).s.otherEntityNum2 =
+                                (*(*self_).client).otherKillerVehWeapon - 1;
+                            (*tempInflictorEnt).s.weapon = (*(*self_).client).otherKillerWeaponType;
+                        }
+                    }
                 }
             }
         } else if !attacker.is_null() && (*attacker).inuse != QFALSE && !(*attacker).client.is_null()
@@ -4877,7 +4896,11 @@ pub unsafe extern "C" fn player_die(
 
         //no valid murderer.. just use self I guess
         if murderer.is_null() {
-            murderer = self_;
+            if attacker.is_null() {
+                murderer = self_;
+            } else {
+                murderer = attacker;
+            }
         }
 
         if (*(*(*self_).m_pVehicle).m_pVehicleInfo).hideRider != QFALSE {
@@ -4886,13 +4909,13 @@ pub unsafe extern "C" fn player_die(
             if !killEnt.is_null() && (*killEnt).inuse != QFALSE && !(*killEnt).client.is_null() {
                 G_Damage(
                     killEnt,
-                    murderer,
+                    tempInflictorEnt,
                     murderer,
                     null_mut(),
                     addr_of_mut!((*(*killEnt).client).ps.origin),
                     99999,
                     DAMAGE_NO_PROTECTION,
-                    MOD_BLASTER,
+                    actualMOD,
                 );
             }
             if !(*(*self_).m_pVehicle).m_pVehicleInfo.is_null() {
@@ -4914,13 +4937,13 @@ pub unsafe extern "C" fn player_die(
                         if (*killEnt).inuse != QFALSE && !(*killEnt).client.is_null() {
                             G_Damage(
                                 killEnt,
-                                murderer,
+                                tempInflictorEnt,
                                 murderer,
                                 null_mut(),
                                 addr_of_mut!((*(*killEnt).client).ps.origin),
                                 99999,
                                 DAMAGE_NO_PROTECTION,
-                                MOD_BLASTER,
+                                actualMOD,
                             );
                         }
                     }
@@ -4933,15 +4956,21 @@ pub unsafe extern "C" fn player_die(
             (*killEnt).flags &= !FL_UNDYING;
             G_Damage(
                 killEnt,
-                murderer,
+                tempInflictorEnt,
                 murderer,
                 null_mut(),
                 addr_of_mut!((*(*killEnt).client).ps.origin),
                 99999,
                 DAMAGE_NO_PROTECTION,
-                MOD_BLASTER,
+                actualMOD,
             );
         }
+        if tempInflictor != QFALSE {
+            G_FreeEntity(tempInflictorEnt);
+        }
+        tempInflictorEnt = inflictor;
+        tempInflictor = QFALSE;
+        actualMOD = meansOfDeath;
     }
 
     (*(*self_).client).ps.emplacedIndex = 0;
@@ -4975,6 +5004,10 @@ pub unsafe extern "C" fn player_die(
         let veh = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*self_).client).ps.m_iVehicleNum as usize);
 
         if (*veh).inuse != QFALSE && !(*veh).client.is_null() && !(*veh).m_pVehicle.is_null() {
+            //remember it for obit
+            wasInVehicle = (*(*veh).m_pVehicle)
+                .m_pVehicleInfo
+                .offset_from(addr_of!(g_vehicleInfo[0])) as c_int;
             ((*(*(*veh).m_pVehicle).m_pVehicleInfo).Eject.unwrap())(
                 (*veh).m_pVehicle,
                 self_ as *mut bgEntity_t,
@@ -5142,12 +5175,9 @@ pub unsafe extern "C" fn player_die(
     {
         attacker = (*inflictor).activator;
     }
-    /*
-    if (self->client && self->client->ps.isJediMaster)
-    {
-        wasJediMaster = qtrue;
+    if !(*self_).client.is_null() && (*(*self_).client).ps.isJediMaster != 0 {
+        wasJediMaster = QTRUE;
     }
-    */
     //if he was charging or anything else, kill the sound
     G_MuteSound((*self_).s.number, CHAN_WEAPON);
 
@@ -5159,10 +5189,25 @@ pub unsafe extern "C" fn player_die(
         && (meansOfDeath == MOD_CRUSH
             || meansOfDeath == MOD_FALLING
             || meansOfDeath == MOD_TRIGGER_HURT
-            || meansOfDeath == MOD_UNKNOWN)
+            || meansOfDeath == MOD_UNKNOWN
+            || meansOfDeath == MOD_SUICIDE)
         && (*(*self_).client).ps.otherKillerTime > (*addr_of!(level)).time
     {
+        //remember who last attacked us
         attacker = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*(*self_).client).ps.otherKiller as usize);
+        if (*(*self_).client).otherKillerMOD != MOD_UNKNOWN {
+            actualMOD = (*(*self_).client).otherKillerMOD;
+        }
+        if (*(*self_).client).otherKillerVehWeapon > 0 {
+            tempInflictorEnt = G_Spawn();
+            if !tempInflictorEnt.is_null() {
+                //fake up the inflictor
+                tempInflictor = QTRUE;
+                (*tempInflictorEnt).classname = c"vehicle_proj".as_ptr() as *mut c_char;
+                (*tempInflictorEnt).s.otherEntityNum2 = (*(*self_).client).otherKillerVehWeapon - 1;
+                (*tempInflictorEnt).s.weapon = (*(*self_).client).otherKillerWeaponType;
+            }
+        }
     }
 
     // check for an almost capture
@@ -5248,14 +5293,9 @@ pub unsafe extern "C" fn player_die(
         G_LogWeaponFrag(killer, (*self_).s.number);
     }
 
-    // broadcast the death event to everyone
-    if (*self_).s.eType != ET_NPC && g_noPDuelCheck == QFALSE {
-        ent = G_TempEntity(&(*self_).r.currentOrigin, EV_OBITUARY);
-        (*ent).s.eventParm = meansOfDeath;
-        (*ent).s.otherEntityNum = (*self_).s.number;
-        (*ent).s.otherEntityNum2 = killer;
-        (*ent).r.svFlags = SVF_BROADCAST; // send to everyone
-                                          //		ent->s.isJediMaster = wasJediMaster;
+    G_BroadcastObit(self_, inflictor, attacker, killer, actualMOD, wasInVehicle, wasJediMaster);
+    if tempInflictor != QFALSE {
+        G_FreeEntity(tempInflictorEnt);
     }
 
     (*self_).enemy = attacker;
@@ -5271,8 +5311,24 @@ pub unsafe extern "C" fn player_die(
 
         G_CheckVictoryScript(attacker);
 
-        if attacker == self_ || OnSameTeam(self_, attacker) != QFALSE {
-            if (*addr_of!(g_gametype)).integer == GT_DUEL {
+        if (*self_).s.number >= MAX_CLIENTS as c_int //not a player client
+            && !(*self_).client.is_null() //an NPC client
+            && (*(*self_).client).NPC_class != CLASS_VEHICLE //not a vehicle
+            && (*self_).s.m_iVehicleNum != 0
+        //a droid in a vehicle
+        {
+            //no credit for droid, you do get credit for the vehicle kill and the pilot (2 points)
+        } else if meansOfDeath == MOD_COLLISION || meansOfDeath == MOD_VEH_EXPLOSION {
+            //no credit for veh-veh collisions?
+        } else if attacker == self_ || OnSameTeam(self_, attacker) != QFALSE {
+            //killed self or teammate
+            if meansOfDeath == MOD_FALLING
+                && attacker != self_
+                && (*attacker).s.number < MAX_CLIENTS as c_int
+                && (*attacker).s.m_iVehicleNum != 0
+            {
+                //crushed by a teammate in a vehicle, no penalty
+            } else if (*addr_of!(g_gametype)).integer == GT_DUEL {
                 //in duel, if you kill yourself, the person you are dueling against gets a kill for it
                 let mut otherClNum: c_int = -1;
                 if (*addr_of!(level)).sortedClients[0] == (*self_).s.number {
@@ -5297,47 +5353,42 @@ pub unsafe extern "C" fn player_die(
                 }
             } else {
                 AddScore(attacker, &(*self_).r.currentOrigin, -1);
-            }
-        /*
-            if (g_gametype.integer == GT_JEDIMASTER)
-            {
-                if (self->client && self->client->ps.isJediMaster)
-                { //killed ourself so return the saber to the original position
-                  //(to avoid people jumping off ledges and making the saber
-                  //unreachable for 60 seconds)
-                    ThrowSaberToAttacker(self, NULL);
-                    self->client->ps.isJediMaster = qfalse;
+                if attacker != self_
+                    && (*attacker).s.number < MAX_CLIENTS as c_int
+                    && (*self_).s.number < MAX_CLIENTS as c_int
+                {
+                    G_CheckTKAutoKickBan(attacker);
                 }
             }
-        */
+            if (*addr_of!(g_gametype)).integer == GT_JEDIMASTER
+                && !(*self_).client.is_null()
+                && (*(*self_).client).ps.isJediMaster != 0
+            {
+                //killed ourself so return the saber to the original position
+                //(to avoid people jumping off ledges and making the saber
+                //unreachable for 60 seconds)
+                ThrowSaberToAttacker(self_, null_mut());
+                (*(*self_).client).ps.isJediMaster = QFALSE;
+            }
         } else {
-            /*
-            if (g_gametype.integer == GT_JEDIMASTER)
-            {
-                if ((attacker->client && attacker->client->ps.isJediMaster) ||
-                    (self->client && self->client->ps.isJediMaster))
+            if (*addr_of!(g_gametype)).integer == GT_JEDIMASTER {
+                if (!(*attacker).client.is_null() && (*(*attacker).client).ps.isJediMaster != 0)
+                    || (!(*self_).client.is_null() && (*(*self_).client).ps.isJediMaster != 0)
                 {
-                    AddScore( attacker, self->r.currentOrigin, 1 );
+                    AddScore(attacker, &(*self_).r.currentOrigin, 1);
 
-                    if (self->client && self->client->ps.isJediMaster)
-                    {
-                        ThrowSaberToAttacker(self, attacker);
-                        self->client->ps.isJediMaster = qfalse;
+                    if !(*self_).client.is_null() && (*(*self_).client).ps.isJediMaster != 0 {
+                        ThrowSaberToAttacker(self_, attacker);
+                        (*(*self_).client).ps.isJediMaster = QFALSE;
+                    }
+                } else {
+                    let jmEnt = G_GetJediMaster();
+
+                    if !jmEnt.is_null() && !(*jmEnt).client.is_null() {
+                        AddScore(jmEnt, &(*self_).r.currentOrigin, 1);
                     }
                 }
-                else
-                {
-                    gentity_t *jmEnt = G_GetJediMaster();
-
-                    if (jmEnt && jmEnt->client)
-                    {
-                        AddScore( jmEnt, self->r.currentOrigin, 1 );
-                    }
-                }
-            }
-            else
-            */
-            {
+            } else {
                 AddScore(attacker, &(*self_).r.currentOrigin, 1);
             }
 
@@ -5362,16 +5413,17 @@ pub unsafe extern "C" fn player_die(
             }
             (*(*attacker).client).lastKillTime = (*addr_of!(level)).time;
         }
+    } else if meansOfDeath == MOD_COLLISION || meansOfDeath == MOD_VEH_EXPLOSION {
+        //no credit for veh-veh collisions?
     } else {
-        /*
-        if (self->client && self->client->ps.isJediMaster)
-        { //killed ourself so return the saber to the original position
-          //(to avoid people jumping off ledges and making the saber
-          //unreachable for 60 seconds)
-            ThrowSaberToAttacker(self, NULL);
-            self->client->ps.isJediMaster = qfalse;
+        if !(*self_).client.is_null() && (*(*self_).client).ps.isJediMaster != 0 {
+            //killed ourself so return the saber to the original position
+            //(to avoid people jumping off ledges and making the saber
+            //unreachable for 60 seconds)
+            ThrowSaberToAttacker(self_, null_mut());
+            (*(*self_).client).ps.isJediMaster = QFALSE;
         }
-        */
+
         if (*addr_of!(g_gametype)).integer == GT_DUEL {
             //in duel, if you kill yourself, the person you are dueling against gets a kill for it
             let mut otherClNum: c_int = -1;

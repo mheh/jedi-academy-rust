@@ -53,8 +53,8 @@ use crate::codemp::game::bg_pmove::{
 use crate::codemp::game::bg_public::*;
 use crate::codemp::game::bg_weapons::weaponData;
 use crate::codemp::game::q_math::{
-    AngleVectors, DistanceSquared, Q_random, VectorCopy, VectorLength, VectorMA, VectorNormalize,
-    VectorScale, VectorSet, VectorSubtract,
+    AngleVectors, DistanceSquared, Q_irand, Q_random, VectorCopy, VectorLength, VectorMA,
+    VectorNormalize, VectorScale, VectorSet, VectorSubtract,
 };
 use crate::codemp::game::q_shared_h::{
     playerState_t, qboolean, trace_t, usercmd_t, vec3_t, BLK_NO, BLK_TIGHT, BLK_WIDE,
@@ -64,8 +64,8 @@ use crate::codemp::game::q_shared_h::{
     BLOCKED_UPPER_RIGHT_PROJ, BUTTON_ALT_ATTACK, BUTTON_ATTACK, ENTITYNUM_NONE, ENTITYNUM_WORLD,
     FORCE_LEVEL_1, FORCE_LEVEL_2, FORCE_LEVEL_3, FP_GRIP, FP_LEVITATION, FP_SABERTHROW,
     FP_SABER_DEFENSE, FP_SABER_OFFENSE, MAX_CLIENTS, NUM_FORCE_POWER_LEVELS, PITCH, QFALSE, QTRUE,
-    ROLL, SFL_NO_ROLL_STAB, SFL_NO_STABDOWN, SS_DESANN, SS_DUAL, SS_FAST, SS_MEDIUM, SS_STAFF,
-    SS_STRONG, SS_TAVION, YAW, saberInfo_t,
+    ROLL, SFL_NO_CARTWHEELS, SFL_NO_MIRROR_ATTACKS, SFL_NO_ROLL_STAB, SFL_NO_STABDOWN, SS_DESANN,
+    SS_DUAL, SS_FAST, SS_MEDIUM, SS_STAFF, SS_STRONG, SS_TAVION, YAW, saberInfo_t,
 };
 use crate::codemp::game::bg_weapons_h::WP_SABER;
 use crate::codemp::game::w_saber_h::{
@@ -942,6 +942,16 @@ pub unsafe fn PM_CanDoDualDoubleAttacks() -> qboolean {
     let pmv = *addr_of!(pm);
     let ps = (*pmv).ps;
 
+    if (*ps).weapon == WP_SABER {
+        let mut saber: *mut saberInfo_t = BG_MySaber((*ps).clientNum, 0);
+        if !saber.is_null() && (*saber).saberFlags & SFL_NO_MIRROR_ATTACKS != 0 {
+            return QFALSE;
+        }
+        saber = BG_MySaber((*ps).clientNum, 1);
+        if !saber.is_null() && (*saber).saberFlags & SFL_NO_MIRROR_ATTACKS != 0 {
+            return QFALSE;
+        }
+    }
     if BG_SaberInSpecialAttack((*ps).torsoAnim) != QFALSE
         || BG_SaberInSpecialAttack((*ps).legsAnim) != QFALSE
     {
@@ -1256,6 +1266,27 @@ pub unsafe fn PM_SaberFlipOverAttackMove() -> saberMoveName_t {
     //	playerState_t *psData;
     //	bgEntity_t *bgEnt;
 
+    let saber1: *mut saberInfo_t = BG_MySaber((*ps).clientNum, 0);
+    let saber2: *mut saberInfo_t = BG_MySaber((*ps).clientNum, 1);
+    //see if we have an overridden (or cancelled) lunge move
+    if !saber1.is_null() && (*saber1).jumpAtkFwdMove != LS_INVALID {
+        if (*saber1).jumpAtkFwdMove != LS_NONE {
+            return (*saber1).jumpAtkFwdMove as saberMoveName_t;
+        }
+    }
+    if !saber2.is_null() && (*saber2).jumpAtkFwdMove != LS_INVALID {
+        if (*saber2).jumpAtkFwdMove != LS_NONE {
+            return (*saber2).jumpAtkFwdMove as saberMoveName_t;
+        }
+    }
+    //no overrides, cancelled?
+    if !saber1.is_null() && (*saber1).jumpAtkFwdMove == LS_NONE {
+        return LS_A_T2B; //LS_NONE;
+    }
+    if !saber2.is_null() && (*saber2).jumpAtkFwdMove == LS_NONE {
+        return LS_A_T2B; //LS_NONE;
+    }
+
     VectorCopy(&(*ps).viewangles, &mut fwdAngles);
     fwdAngles[PITCH] = 0.0;
     fwdAngles[ROLL] = 0.0;
@@ -1324,8 +1355,31 @@ pub unsafe fn PM_SaberFlipOverAttackMove() -> saberMoveName_t {
 /// `pm` must point to a valid `pmove_t`.
 pub unsafe fn PM_SaberBackflipAttackMove() -> c_int {
     let pmv = *addr_of!(pm);
+    let ps = (*pmv).ps;
+
+    let saber1: *mut saberInfo_t = BG_MySaber((*ps).clientNum, 0);
+    let saber2: *mut saberInfo_t = BG_MySaber((*ps).clientNum, 1);
+    //see if we have an overridden (or cancelled) lunge move
+    if !saber1.is_null() && (*saber1).jumpAtkBackMove != LS_INVALID {
+        if (*saber1).jumpAtkBackMove != LS_NONE {
+            return (*saber1).jumpAtkBackMove as saberMoveName_t;
+        }
+    }
+    if !saber2.is_null() && (*saber2).jumpAtkBackMove != LS_INVALID {
+        if (*saber2).jumpAtkBackMove != LS_NONE {
+            return (*saber2).jumpAtkBackMove as saberMoveName_t;
+        }
+    }
+    //no overrides, cancelled?
+    if !saber1.is_null() && (*saber1).jumpAtkBackMove == LS_NONE {
+        return LS_A_T2B; //LS_NONE;
+    }
+    if !saber2.is_null() && (*saber2).jumpAtkBackMove == LS_NONE {
+        return LS_A_T2B; //LS_NONE;
+    }
+    //just do it
     (*pmv).cmd.upmove = 127;
-    (*(*pmv).ps).velocity[2] = 500.0;
+    (*ps).velocity[2] = 500.0;
     LS_A_BACKFLIP_ATK
 }
 
@@ -1401,22 +1455,51 @@ pub unsafe fn PM_SomeoneInFront(tr: *mut trace_t) -> qboolean {
 ///
 /// # Safety
 /// `pm` must point to a valid `pmove_t`.
-pub unsafe fn PM_SaberLungeAttackMove() -> saberMoveName_t {
+pub unsafe fn PM_SaberLungeAttackMove(noSpecials: qboolean) -> saberMoveName_t {
     let pmv = *addr_of!(pm);
     let ps = (*pmv).ps;
 
     let mut fwdAngles: vec3_t = [0.0; 3];
     let mut jumpFwd: vec3_t = [0.0; 3];
 
-    VectorCopy(&(*ps).viewangles, &mut fwdAngles);
-    fwdAngles[PITCH] = 0.0;
-    fwdAngles[ROLL] = 0.0;
-    //do the lunge
-    AngleVectors(&fwdAngles, Some(&mut jumpFwd), None, None);
-    VectorScale(&jumpFwd, 150.0, &mut (*ps).velocity);
-    PM_AddEvent(EV_JUMP);
+    let saber1: *mut saberInfo_t = BG_MySaber((*ps).clientNum, 0);
+    let saber2: *mut saberInfo_t = BG_MySaber((*ps).clientNum, 1);
+    //see if we have an overridden (or cancelled) lunge move
+    if !saber1.is_null() && (*saber1).lungeAtkMove != LS_INVALID {
+        if (*saber1).lungeAtkMove != LS_NONE {
+            return (*saber1).lungeAtkMove as saberMoveName_t;
+        }
+    }
+    if !saber2.is_null() && (*saber2).lungeAtkMove != LS_INVALID {
+        if (*saber2).lungeAtkMove != LS_NONE {
+            return (*saber2).lungeAtkMove as saberMoveName_t;
+        }
+    }
+    //no overrides, cancelled?
+    if !saber1.is_null() && (*saber1).lungeAtkMove == LS_NONE {
+        return LS_A_T2B; //LS_NONE;
+    }
+    if !saber2.is_null() && (*saber2).lungeAtkMove == LS_NONE {
+        return LS_A_T2B; //LS_NONE;
+    }
+    //just do it
+    if (*ps).fd.saberAnimLevel == SS_FAST {
+        VectorCopy(&(*ps).viewangles, &mut fwdAngles);
+        fwdAngles[PITCH] = 0.0;
+        fwdAngles[ROLL] = 0.0;
+        //do the lunge
+        AngleVectors(&fwdAngles, Some(&mut jumpFwd), None, None);
+        VectorScale(&jumpFwd, 150.0, &mut (*ps).velocity);
+        PM_AddEvent(EV_JUMP);
 
-    LS_A_LUNGE
+        LS_A_LUNGE
+    } else if noSpecials == QFALSE && (*ps).fd.saberAnimLevel == SS_STAFF {
+        LS_SPINATTACK
+    } else if noSpecials == QFALSE {
+        LS_SPINATTACK_DUAL
+    } else {
+        LS_A_T2B
+    }
 }
 
 /// `PM_SaberJumpAttackMove` (bg_saber.c:1770) — launch the strong-style death-from-above
@@ -1430,6 +1513,27 @@ pub unsafe fn PM_SaberJumpAttackMove() -> saberMoveName_t {
 
     let mut fwdAngles: vec3_t = [0.0; 3];
     let mut jumpFwd: vec3_t = [0.0; 3];
+
+    let saber1: *mut saberInfo_t = BG_MySaber((*ps).clientNum, 0);
+    let saber2: *mut saberInfo_t = BG_MySaber((*ps).clientNum, 1);
+    //see if we have an overridden (or cancelled) lunge move
+    if !saber1.is_null() && (*saber1).jumpAtkFwdMove != LS_INVALID {
+        if (*saber1).jumpAtkFwdMove != LS_NONE {
+            return (*saber1).jumpAtkFwdMove as saberMoveName_t;
+        }
+    }
+    if !saber2.is_null() && (*saber2).jumpAtkFwdMove != LS_INVALID {
+        if (*saber2).jumpAtkFwdMove != LS_NONE {
+            return (*saber2).jumpAtkFwdMove as saberMoveName_t;
+        }
+    }
+    //no overrides, cancelled?
+    if !saber1.is_null() && (*saber1).jumpAtkFwdMove == LS_NONE {
+        return LS_A_T2B; //LS_NONE;
+    }
+    if !saber2.is_null() && (*saber2).jumpAtkFwdMove == LS_NONE {
+        return LS_A_T2B; //LS_NONE;
+    }
 
     VectorCopy(&(*ps).viewangles, &mut fwdAngles);
     fwdAngles[PITCH] = 0.0;
@@ -2092,11 +2196,11 @@ pub unsafe fn PM_SaberLockBreak(genemy: *mut playerState_t, victory: qboolean, s
     let ps = (*pmv).ps;
 
     let mut noKnockdown: qboolean = QFALSE;
-    let superBreak: qboolean = if strength + (*ps).saberLockHits > 0 {
+    let superBreak: qboolean = if strength + (*ps).saberLockHits > Q_irand(2, 4) {
         QTRUE
     } else {
         QFALSE
-    }; //Q_irand(2,4));
+    };
 
     let winAnim: c_int = PM_SaberLockWinAnim(victory, superBreak);
     if winAnim != -1 {
@@ -2379,10 +2483,59 @@ pub unsafe fn PM_SaberAttackForMovement(curmove: saberMoveName_t) -> saberMoveNa
 
     let mut newmove: saberMoveName_t = LS_NONE;
     let noSpecials: qboolean = PM_InSecondaryStyle();
+    let mut allowCartwheels: qboolean = QTRUE;
+    let mut overrideJumpRightAttackMove: saberMoveName_t = LS_INVALID;
+    let mut overrideJumpLeftAttackMove: saberMoveName_t = LS_INVALID;
+
+    if (*ps).weapon == WP_SABER {
+        let saber1: *mut saberInfo_t = BG_MySaber((*ps).clientNum, 0);
+        let saber2: *mut saberInfo_t = BG_MySaber((*ps).clientNum, 1);
+
+        if !saber1.is_null() && (*saber1).jumpAtkRightMove != LS_INVALID {
+            if (*saber1).jumpAtkRightMove != LS_NONE {
+                //actually overriding
+                overrideJumpRightAttackMove = (*saber1).jumpAtkRightMove as saberMoveName_t;
+            } else if !saber2.is_null() && (*saber2).jumpAtkRightMove > LS_NONE {
+                //would be cancelling it, but check the second saber, too
+                overrideJumpRightAttackMove = (*saber2).jumpAtkRightMove as saberMoveName_t;
+            } else {
+                //nope, just cancel it
+                overrideJumpRightAttackMove = LS_NONE;
+            }
+        } else if !saber2.is_null() && (*saber2).jumpAtkRightMove != LS_INVALID {
+            //first saber not overridden, check second
+            overrideJumpRightAttackMove = (*saber2).jumpAtkRightMove as saberMoveName_t;
+        }
+
+        if !saber1.is_null() && (*saber1).jumpAtkLeftMove != LS_INVALID {
+            if (*saber1).jumpAtkLeftMove != LS_NONE {
+                //actually overriding
+                overrideJumpLeftAttackMove = (*saber1).jumpAtkLeftMove as saberMoveName_t;
+            } else if !saber2.is_null() && (*saber2).jumpAtkLeftMove > LS_NONE {
+                //would be cancelling it, but check the second saber, too
+                overrideJumpLeftAttackMove = (*saber2).jumpAtkLeftMove as saberMoveName_t;
+            } else {
+                //nope, just cancel it
+                overrideJumpLeftAttackMove = LS_NONE;
+            }
+        } else if !saber2.is_null() && (*saber2).jumpAtkLeftMove != LS_INVALID {
+            //first saber not overridden, check second
+            //NOTE: oracle reads saber1 here (Raven copy-paste bug), preserved verbatim
+            overrideJumpLeftAttackMove = (*saber1).jumpAtkLeftMove as saberMoveName_t;
+        }
+
+        if !saber1.is_null() && (*saber1).saberFlags & SFL_NO_CARTWHEELS != 0 {
+            allowCartwheels = QFALSE;
+        }
+        if !saber2.is_null() && (*saber2).saberFlags & SFL_NO_CARTWHEELS != 0 {
+            allowCartwheels = QFALSE;
+        }
+    }
 
     if (*pmv).cmd.rightmove > 0 {
         //moving right
         if noSpecials == QFALSE
+            && overrideJumpRightAttackMove != LS_NONE
             && (*ps).velocity[2] > 20.0 //pm->ps->groundEntityNum != ENTITYNUM_NONE//on ground
             && (*pmv).cmd.buttons & BUTTON_ATTACK != 0 //hitting attack
             && PM_GroundDistance() < 70.0 //not too high above ground
@@ -2391,32 +2544,36 @@ pub unsafe fn PM_SaberAttackForMovement(curmove: saberMoveName_t) -> saberMoveNa
         //have enough power
         {
             //cartwheel right
-            let mut right: vec3_t = [0.0; 3];
-            let mut fwdAngles: vec3_t = [0.0; 3];
-
-            VectorSet(&mut fwdAngles, 0.0, (*ps).viewangles[YAW], 0.0);
-
             BG_ForcePowerDrain(ps, FP_GRIP, SABER_ALT_ATTACK_POWER_LR);
-
-            AngleVectors(&fwdAngles, None, Some(&mut right), None);
-            (*ps).velocity[1] = 0.0;
-            (*ps).velocity[0] = (*ps).velocity[1];
-            let vtmp = (*ps).velocity;
-            VectorMA(&vtmp, 190.0, &right, &mut (*ps).velocity);
-            if (*ps).fd.saberAnimLevel == SS_STAFF {
-                newmove = LS_BUTTERFLY_RIGHT;
-                (*ps).velocity[2] = 350.0;
+            if overrideJumpRightAttackMove != LS_INVALID {
+                //overridden with another move
+                return overrideJumpRightAttackMove;
             } else {
-                //PM_SetJumped( JUMP_VELOCITY, qtrue );
-                PM_AddEvent(EV_JUMP);
-                (*ps).velocity[2] = 300.0;
+                let mut right: vec3_t = [0.0; 3];
+                let mut fwdAngles: vec3_t = [0.0; 3];
 
-                //if ( !Q_irand( 0, 1 ) )
-                //if (PM_GroundDistance() >= 25.0f)
-                if true {
-                    newmove = LS_JUMPATTACK_ARIAL_RIGHT;
-                } else {
-                    newmove = LS_JUMPATTACK_CART_RIGHT;
+                VectorSet(&mut fwdAngles, 0.0, (*ps).viewangles[YAW], 0.0);
+
+                AngleVectors(&fwdAngles, None, Some(&mut right), None);
+                (*ps).velocity[1] = 0.0;
+                (*ps).velocity[0] = (*ps).velocity[1];
+                let vtmp = (*ps).velocity;
+                VectorMA(&vtmp, 190.0, &right, &mut (*ps).velocity);
+                if (*ps).fd.saberAnimLevel == SS_STAFF {
+                    newmove = LS_BUTTERFLY_RIGHT;
+                    (*ps).velocity[2] = 350.0;
+                } else if allowCartwheels != QFALSE {
+                    //PM_SetJumped( JUMP_VELOCITY, qtrue );
+                    PM_AddEvent(EV_JUMP);
+                    (*ps).velocity[2] = 300.0;
+
+                    //if ( !Q_irand( 0, 1 ) )
+                    //if (PM_GroundDistance() >= 25.0f)
+                    if true {
+                        newmove = LS_JUMPATTACK_ARIAL_RIGHT;
+                    } else {
+                        newmove = LS_JUMPATTACK_CART_RIGHT;
+                    }
                 }
             }
         } else if (*pmv).cmd.forwardmove > 0 {
@@ -2432,6 +2589,7 @@ pub unsafe fn PM_SaberAttackForMovement(curmove: saberMoveName_t) -> saberMoveNa
     } else if (*pmv).cmd.rightmove < 0 {
         //moving left
         if noSpecials == QFALSE
+            && overrideJumpLeftAttackMove != LS_NONE
             && (*ps).velocity[2] > 20.0 //pm->ps->groundEntityNum != ENTITYNUM_NONE//on ground
             && (*pmv).cmd.buttons & BUTTON_ATTACK != 0 //hitting attack
             && PM_GroundDistance() < 70.0 //not too high above ground
@@ -2440,32 +2598,36 @@ pub unsafe fn PM_SaberAttackForMovement(curmove: saberMoveName_t) -> saberMoveNa
         //have enough power
         {
             //cartwheel left
-            let mut right: vec3_t = [0.0; 3];
-            let mut fwdAngles: vec3_t = [0.0; 3];
-
-            VectorSet(&mut fwdAngles, 0.0, (*ps).viewangles[YAW], 0.0);
-
             BG_ForcePowerDrain(ps, FP_GRIP, SABER_ALT_ATTACK_POWER_LR);
 
-            AngleVectors(&fwdAngles, None, Some(&mut right), None);
-            (*ps).velocity[1] = 0.0;
-            (*ps).velocity[0] = (*ps).velocity[1];
-            let vtmp = (*ps).velocity;
-            VectorMA(&vtmp, -190.0, &right, &mut (*ps).velocity);
-            if (*ps).fd.saberAnimLevel == SS_STAFF {
-                newmove = LS_BUTTERFLY_LEFT;
-                (*ps).velocity[2] = 250.0;
+            if overrideJumpLeftAttackMove != LS_INVALID {
+                //overridden with another move
+                return overrideJumpLeftAttackMove;
             } else {
-                //PM_SetJumped( JUMP_VELOCITY, qtrue );
-                PM_AddEvent(EV_JUMP);
-                (*ps).velocity[2] = 350.0;
+                let mut right: vec3_t = [0.0; 3];
+                let mut fwdAngles: vec3_t = [0.0; 3];
 
-                //if ( !Q_irand( 0, 1 ) )
-                //if (PM_GroundDistance() >= 25.0f)
-                if true {
-                    newmove = LS_JUMPATTACK_ARIAL_LEFT;
-                } else {
-                    newmove = LS_JUMPATTACK_CART_LEFT;
+                VectorSet(&mut fwdAngles, 0.0, (*ps).viewangles[YAW], 0.0);
+                AngleVectors(&fwdAngles, None, Some(&mut right), None);
+                (*ps).velocity[1] = 0.0;
+                (*ps).velocity[0] = (*ps).velocity[1];
+                let vtmp = (*ps).velocity;
+                VectorMA(&vtmp, -190.0, &right, &mut (*ps).velocity);
+                if (*ps).fd.saberAnimLevel == SS_STAFF {
+                    newmove = LS_BUTTERFLY_LEFT;
+                    (*ps).velocity[2] = 250.0;
+                } else if allowCartwheels != QFALSE {
+                    //PM_SetJumped( JUMP_VELOCITY, qtrue );
+                    PM_AddEvent(EV_JUMP);
+                    (*ps).velocity[2] = 350.0;
+
+                    //if ( !Q_irand( 0, 1 ) )
+                    //if (PM_GroundDistance() >= 25.0f)
+                    if true {
+                        newmove = LS_JUMPATTACK_ARIAL_LEFT;
+                    } else {
+                        newmove = LS_JUMPATTACK_CART_LEFT;
+                    }
                 }
             }
         } else if (*pmv).cmd.forwardmove > 0 {
@@ -2553,13 +2715,9 @@ pub unsafe fn PM_SaberAttackForMovement(curmove: saberMoveName_t) -> saberMoveNa
                 && BG_EnoughForcePowerForMove(SABER_ALT_ATTACK_POWER_FB) != QFALSE
             {
                 //LUNGE (weak)
-                BG_ForcePowerDrain(ps, FP_GRIP, SABER_ALT_ATTACK_POWER_FB);
-                if (*ps).fd.saberAnimLevel == FORCE_LEVEL_1 {
-                    newmove = PM_SaberLungeAttackMove();
-                } else if noSpecials == QFALSE && (*ps).fd.saberAnimLevel == SS_STAFF {
-                    newmove = LS_SPINATTACK;
-                } else if noSpecials == QFALSE {
-                    newmove = LS_SPINATTACK_DUAL;
+                newmove = PM_SaberLungeAttackMove(noSpecials);
+                if newmove != LS_A_T2B && newmove != LS_NONE {
+                    BG_ForcePowerDrain(ps, FP_GRIP, SABER_ALT_ATTACK_POWER_FB);
                 }
             } else if noSpecials == QFALSE {
                 let stabDownMove: saberMoveName_t = PM_CheckStabDown();

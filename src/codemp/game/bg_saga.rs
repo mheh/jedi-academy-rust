@@ -2129,10 +2129,10 @@ mod tests {
             // SetTeamTheme sets the theme global to FindTeamForTheme(name)
             let mut red = cbuf(b"red");
             BG_SiegeSetTeamTheme(SIEGETEAM_TEAM1, red.as_mut_ptr());
-            assert_eq!(team1Theme, BG_SiegeFindTeamForTheme(red.as_mut_ptr()));
+            assert_eq!(*addr_of!(team1Theme), BG_SiegeFindTeamForTheme(red.as_mut_ptr()));
             let mut blue = cbuf(b"blue");
             BG_SiegeSetTeamTheme(SIEGETEAM_TEAM2, blue.as_mut_ptr());
-            assert_eq!(team2Theme, BG_SiegeFindTeamForTheme(blue.as_mut_ptr()));
+            assert_eq!(*addr_of!(team2Theme), BG_SiegeFindTeamForTheme(blue.as_mut_ptr()));
             let mut green = cbuf(b"green");
             BG_SiegeSetTeamTheme(SIEGETEAM_TEAM1, green.as_mut_ptr());
             assert!(team1Theme.is_null());

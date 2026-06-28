@@ -163,7 +163,7 @@ pub static mut level: level_locals_t = unsafe { core::mem::MaybeUninit::zeroed()
 /// a test in another reads it back; every test that writes those statics must take this one
 /// shared lock so they serialize. (Previously each module kept its own private mutex, which
 /// only serialized within a module — a latent cross-module race.)
-#[cfg(test)]
+#[cfg(all(test, feature = "oracle"))]
 pub(crate) fn level_lock() -> std::sync::MutexGuard<'static, ()> {
     static LEVEL_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
     LEVEL_LOCK.lock().unwrap_or_else(|e| e.into_inner())

@@ -853,7 +853,7 @@ pub unsafe fn NAV_TrueCollision(
     let mut tmaxs: vec3_t = [0.0; 3];
 
     //TODO: Handle all ents
-    if (*self_).client.is_null() {
+    if (*blocker).client.is_null() {
         return QFALSE;
     }
 

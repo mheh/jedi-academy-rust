@@ -6940,7 +6940,7 @@ mod oracle_tests {
             EVASION_OTHER,
         ];
 
-        let mut check = |has_client: bool,
+        let check = |has_client: bool,
                          number: i32,
                          saberDefenseLevel: i32,
                          npc_present: bool,
