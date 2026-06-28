@@ -41,6 +41,14 @@ Use the pairing output to create batches. Prefer files with few includes and few
 
 Delegate work to fresh agents in small batches.
 
+Use cheaper worker models by default for mechanical blind ports:
+
+- small headers: `gpt-5.4-mini` with `reasoning_effort: "medium"`
+- medium C++ headers with classes, overloads, or default arguments: `gpt-5.4-mini` with `reasoning_effort: "high"`, or `gpt-5.4` if dependencies look tangled
+- large `.c` / `.cpp` files, renderer/client core files, parser implementations, or dependency-heavy ports: inherited/current model or `gpt-5.4` with `reasoning_effort: "medium"` or `"high"`
+
+Prefer the cheaper model unless the assigned file has enough semantic or dependency risk to justify a stronger worker.
+
 Each agent receives only:
 
 - `PORTING_STYLE.md`

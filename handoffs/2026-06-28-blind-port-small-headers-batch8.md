@@ -42,6 +42,12 @@ Latest post-batch summary:
 
 ## Next Recommended Batch
 
+Use cheaper workers for the next batch unless a file looks unusually risky:
+
+- small headers: `gpt-5.4-mini`, `reasoning_effort: "medium"`
+- medium C++ headers: `gpt-5.4-mini`, `reasoning_effort: "high"` or `gpt-5.4`
+- large `.c` / `.cpp` files or dependency-heavy ports: inherited/current model or `gpt-5.4`
+
 Good next candidates:
 
 - `oracle/codemp/client/FXExport.h` -> `src/codemp/client/FXExport_h.rs`
