@@ -27,6 +27,8 @@ If no handoff exists, say so and continue with `skills/blind-port-orchestrator/S
 4. Run `scripts/compare-src-oracle.sh`.
 5. Continue from the handoff's next recommended batch, adjusting only for files already committed since the handoff.
 
+Only resume `oracle/code` work. `codemp` is considered complete; do not touch `oracle/codemp/` or `src/codemp/`.
+
 ## Rules
 
 Do not rely on prior chat context.
@@ -35,6 +37,7 @@ Do not test.
 Do not run `cargo check`.
 Do not run `cargo fmt`.
 Do not modify `oracle/`.
+Do not touch `oracle/codemp/` or `src/codemp/`.
 Do not add coauthor trailers to commits.
 
 ## If context grows

@@ -1,6 +1,6 @@
 ---
 name: blind-port-orchestrator
-description: Orchestrate blind high-throughput Jedi Academy source porting from oracle/ to src/ without building or testing. Use when porting many remaining oracle/code or oracle/codemp files, finding unpaired source files, delegating file batches to agents, context approaches 150k tokens, or committing one translated file at a time.
+description: Orchestrate blind high-throughput Jedi Academy source porting from oracle/code to src/code without building or testing. Use when porting many remaining oracle/code files, finding unpaired source files, delegating file batches to agents, context approaches 150k tokens, or committing one translated file at a time.
 ---
 
 # Blind Port Orchestrator
@@ -17,13 +17,14 @@ Read `PORTING_STYLE.md` first. It is the bible.
 
 Use `oracle/` as read-only source truth. Do not modify `oracle/`.
 
+`codemp` is considered complete. Do not touch `oracle/codemp/` or `src/codemp/`.
+
 ## Pair discovery
 
 Run `scripts/compare-src-oracle.sh` before delegation to find `oracle/` files without paired `src/` files.
 
-The script compares:
+The script compares both source roots, but the blind full-port queue must only use `oracle/code/...` results:
 
-- `oracle/codemp/...` against `src/codemp/...`
 - `oracle/code/...` against `src/code/...`
 
 Expected mappings:
@@ -63,6 +64,7 @@ Tell each file agent:
 - Do not make idiomatic Rust improvements.
 - Do not build, test, run cargo check, run cargo fmt, or edit unrelated files.
 - Do not modify `oracle/`.
+- Do not touch `oracle/codemp/` or `src/codemp/`.
 - Keep unported dependencies as explicit stubs only when needed to make the translated file structurally coherent.
 - Report the exact files changed, symbols ported, missing dependencies, and any intentional deviations.
 
@@ -83,7 +85,6 @@ Commit message format:
 Examples:
 
 - `port oracle/code/qcommon/q_math.cpp`
-- `port oracle/codemp/server/sv_game.cpp`
 - `port oracle/code/game/g_local.h`
 
 Do not combine unrelated files in one commit.
@@ -113,6 +114,7 @@ Do not test.
 Do not run `cargo check`.
 Do not run `cargo fmt`.
 Do not modify `oracle/`.
+Do not touch `oracle/codemp/` or `src/codemp/`.
 Do not refactor for idiomatic Rust.
 Do not add coauthor trailers to commits.
 Do not let orchestrator context grow past the handoff threshold just to finish a batch.
