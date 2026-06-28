@@ -63,6 +63,7 @@ pub mod g_misc;
 pub mod g_missile;
 pub mod g_mover;
 pub mod g_nav;
+pub mod g_nav_h;
 pub mod g_navnew;
 pub mod g_object;
 pub mod g_public_h;
