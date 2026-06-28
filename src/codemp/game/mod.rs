@@ -21,6 +21,7 @@ pub mod be_ai_gen_h;
 pub mod be_ai_goal_h;
 pub mod be_ai_move_h;
 pub mod be_ai_weap_h;
+pub mod be_ea_h;
 pub mod bg_g2_utils;
 pub mod bg_lib;
 pub mod bg_local_h;
