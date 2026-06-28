@@ -20,4 +20,5 @@ pub mod mp3struct_h;
 pub mod port_h;
 pub mod small_header_h;
 pub mod tableawd_h;
+pub mod upsf;
 pub mod wavep;
