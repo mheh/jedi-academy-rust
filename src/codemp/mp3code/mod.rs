@@ -1,6 +1,7 @@
 //! Stub for original `codemp/mp3code/` sources.
 
 pub mod config_h;
+pub mod cdct;
 pub mod copyright_h;
 pub mod cup;
 pub mod cupini;
