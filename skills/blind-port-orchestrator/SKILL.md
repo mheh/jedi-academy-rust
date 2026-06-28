@@ -92,6 +92,8 @@ Do not combine unrelated files in one commit.
 
 Do not include coauthor trailers or generated-by trailers in commit messages.
 
+At the end of each cycle, after all translated files have been committed, commit any new or updated `handoffs/` files in a separate final handoff commit. Use a non-`port ...` message such as `record blind port handoff` or `record blind port handoffs`.
+
 ## Handoff
 
 When stopping, write a compact handoff under `handoffs/`.
