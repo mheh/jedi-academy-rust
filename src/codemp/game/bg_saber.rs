@@ -1479,13 +1479,33 @@ pub unsafe fn PM_SaberLungeAttackMove() -> saberMoveName_t {
 ///
 /// # Safety
 /// `pm` must point to a valid `pmove_t`.
-// TODO: Remove-Xbox
 pub unsafe fn PM_SaberJumpAttackMove() -> saberMoveName_t {
     let pmv = *addr_of!(pm);
     let ps = (*pmv).ps;
 
     let mut fwdAngles: vec3_t = [0.0; 3];
     let mut jumpFwd: vec3_t = [0.0; 3];
+
+    let saber1: *mut saberInfo_t = BG_MySaber((*ps).clientNum, 0);
+    let saber2: *mut saberInfo_t = BG_MySaber((*ps).clientNum, 1);
+    //see if we have an overridden (or cancelled) lunge move
+    if !saber1.is_null() && (*saber1).jumpAtkFwdMove != LS_INVALID {
+        if (*saber1).jumpAtkFwdMove != LS_NONE {
+            return (*saber1).jumpAtkFwdMove as saberMoveName_t;
+        }
+    }
+    if !saber2.is_null() && (*saber2).jumpAtkFwdMove != LS_INVALID {
+        if (*saber2).jumpAtkFwdMove != LS_NONE {
+            return (*saber2).jumpAtkFwdMove as saberMoveName_t;
+        }
+    }
+    //no overrides, cancelled?
+    if !saber1.is_null() && (*saber1).jumpAtkFwdMove == LS_NONE {
+        return LS_A_T2B; //LS_NONE;
+    }
+    if !saber2.is_null() && (*saber2).jumpAtkFwdMove == LS_NONE {
+        return LS_A_T2B; //LS_NONE;
+    }
 
     VectorCopy(&(*ps).viewangles, &mut fwdAngles);
     fwdAngles[PITCH] = 0.0;
