@@ -8,6 +8,7 @@ pub mod cupini;
 pub mod cupl1;
 pub mod htable_h;
 pub mod jdw_h;
+pub mod l3init;
 pub mod l3_h;
 pub mod mhead;
 pub mod mhead_h;
