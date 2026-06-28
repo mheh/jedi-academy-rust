@@ -1154,8 +1154,7 @@ Turret that hangs from the ceiling, will aim and shoot at enemies
 /// (applying the model scale), runs [`finish_spawning_turretG2`], and sets the initial shader
 /// frame + radar/shader eFlags. No oracle.
 ///
-/// Central wiring TODO: register `"misc_turretG2"` → `SP_misc_turretG2` in the g_spawn.rs
-/// classname spawn table (owned elsewhere).
+/// Registered as `"misc_turretG2"` in the g_spawn.rs classname spawn table.
 //-----------------------------------------------------
 pub unsafe extern "C" fn SP_misc_turretG2(base: *mut gentity_t) {
     let mut customscaleVal: c_int = 0;
