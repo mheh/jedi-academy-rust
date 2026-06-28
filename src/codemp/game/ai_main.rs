@@ -4393,11 +4393,10 @@ pub unsafe fn BotSelectMelee(bs: *mut bot_state_t) -> c_int {
 /// `void BotLovedOneDied(bot_state_t *bs, bot_state_t *loved, int lovelevel)` (ai_main.c:5291) — a
 /// bot the player `bs` is attached to was killed: subject to teamplay/duel and not-a-teammate
 /// checks, escalate `bs`'s revenge hatred toward the killer (`loved->lastHurt`), or switch revenge
-/// targets if the current grudge is weak enough. The commented-out `BotDoChat` blocks are omitted.
+/// targets if the current grudge is weak enough, issuing the appropriate `BotDoChat`.
 ///
 /// # Safety
 /// `bs`/`loved` must be valid [`bot_state_t`] pointers.
-// TODO: Remove-Xbox
 pub unsafe fn BotLovedOneDied(bs: *mut bot_state_t, loved: *mut bot_state_t, lovelevel: c_int) {
     if (*loved).lastHurt.is_null()
         || (*(*loved).lastHurt).client.is_null()
@@ -4438,6 +4437,10 @@ pub unsafe fn BotLovedOneDied(bs: *mut bot_state_t, loved: *mut bot_state_t, lov
 
     if PassLovedOneCheck(bs, (*loved).lastHurt) == 0 {
         //a loved one killed a loved one.. you cannot hate them
+        (*bs).chatObject = (*loved).lastHurt;
+        (*bs).chatAltObject =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*loved).client as usize);
+        BotDoChat(bs, c"LovedOneKilledLovedOne".as_ptr() as *mut c_char, 0);
         return;
     }
 
@@ -4448,11 +4451,18 @@ pub unsafe fn BotLovedOneDied(bs: *mut bot_state_t, loved: *mut bot_state_t, lov
             if (*bs).revengeHateLevel == (*bs).loved_death_thresh {
                 //broke into the highest anger level
                 //CHAT: Hatred section
+                (*bs).chatObject = (*loved).lastHurt;
+                (*bs).chatAltObject = null_mut();
+                BotDoChat(bs, c"Hatred".as_ptr() as *mut c_char, 1);
             }
         }
     } else if (*bs).revengeHateLevel < (*bs).loved_death_thresh - 1 {
         //only switch hatred if we don't hate the existing revenge-enemy too much
         //CHAT: BelovedKilled section
+        (*bs).chatObject =
+            (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*loved).client as usize);
+        (*bs).chatAltObject = (*loved).lastHurt;
+        BotDoChat(bs, c"BelovedKilled".as_ptr() as *mut c_char, 0);
         (*bs).revengeHateLevel = 0;
         (*bs).revengeEnemy = (*loved).lastHurt;
     }
