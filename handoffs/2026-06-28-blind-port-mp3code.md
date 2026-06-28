@@ -10,9 +10,9 @@ Last pairing command:
 
 Latest post-batch summary:
 
-- Oracle files without a paired Rust file: 1120
+- Oracle files without a paired Rust file: 1118
 - oracle/code: 646
-- oracle/codemp: 474
+- oracle/codemp: 472
 
 ## Delegated
 
@@ -44,6 +44,8 @@ Latest post-batch summary:
 - `oracle/codemp/mp3code/cwin.c` -> `src/codemp/mp3code/cwin.rs`
 - `oracle/codemp/mp3code/csbtl3.c` -> `src/codemp/mp3code/csbtl3.rs`
 - `oracle/codemp/mp3code/cwinb.c` -> `src/codemp/mp3code/cwinb.rs`
+- `oracle/codemp/mp3code/cwinm.c` -> `src/codemp/mp3code/cwinm.rs`
+- `oracle/codemp/mp3code/csbt.c` -> `src/codemp/mp3code/csbt.rs`
 
 ## Committed
 
@@ -74,6 +76,8 @@ Latest post-batch summary:
 - `73321d8 port oracle/codemp/mp3code/cwin.c`
 - `ac509da port oracle/codemp/mp3code/csbtl3.c`
 - `f18b67f port oracle/codemp/mp3code/cwinb.c`
+- `b7993da port oracle/codemp/mp3code/cwinm.c`
+- `1c06629 port oracle/codemp/mp3code/csbt.c`
 
 ## Unresolved Dependencies
 
@@ -93,25 +97,20 @@ Latest post-batch summary:
 - `cwin.rs` now defines 16-bit window helpers but currently carries a private zeroed `wincoef` stub that should be reconciled with `tableawd_h::wincoef`.
 - `csbtl3.rs` now defines Layer III SBT wrappers and leaves DCT/window helpers explicit.
 - `cwinb.rs` now defines byte-output window helpers using `tableawd_h::wincoef`.
-- Remaining unresolved decoder/body dependencies include `sbt_init`, `csbt.c` wrapper bodies, `cwinm.c`, and the `cwin.rs` coefficient-table reconciliation.
+- `cwinm.rs` now re-exports the shared window coefficient table and the 16-bit/byte window bodies from split Rust modules.
+- `csbt.rs` now defines `sbt_init` plus 16-bit SBT wrapper bodies and uses existing DCT/window modules.
+- Remaining unresolved decoder/body dependencies include the `cwin.rs` coefficient-table reconciliation.
 - `wavep.rs` preserves the original `#if 0` body as disabled Rust and keeps missing `wcvt.c` conversion boundaries explicit.
 
 ## Next Recommended Batch
 
-Stay in `oracle/codemp/mp3code/` and continue decoder bodies in dependency-shaped batches.
-
-Good next batch:
-
-- `oracle/codemp/mp3code/csbt.c`
-- `oracle/codemp/mp3code/cwinm.c`
-
-Standalone candidates remain:
+Stay in `oracle/codemp/mp3code/` and finish the remaining standalone source:
 
 - `oracle/codemp/mp3code/towave.c`
 
 ## State
 
 - Branch: `full-port`
-- HEAD before this handoff update: `f18b67f`
+- HEAD before this handoff update: `1c06629`
 - No agent failures.
 - No builds, tests, `cargo check`, or formatting were run.
