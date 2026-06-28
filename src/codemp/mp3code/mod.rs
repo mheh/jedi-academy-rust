@@ -3,6 +3,7 @@
 pub mod config_h;
 pub mod cdct;
 pub mod copyright_h;
+pub mod csbt;
 pub mod csbtb;
 pub mod csbtl3;
 pub mod cup;
