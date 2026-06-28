@@ -29,7 +29,7 @@ use crate::codemp::game::anims::{
 };
 use crate::codemp::game::bg_panimate::{bgAllAnims, BG_SetAnim};
 use crate::codemp::game::bg_pmove::{
-    BG_UnrestrainedPitchRoll, BG_VehicleTurnRateForSpeed, PM_BGEntForNum,
+    pm, BG_UnrestrainedPitchRoll, BG_VehicleTurnRateForSpeed, PM_BGEntForNum,
 };
 use crate::codemp::game::bg_public::{
     bgEntity_t, EF2_HYPERSPACE, EF_DEAD, EF_JETPACK_ACTIVE, HYPERSPACE_SPEED, HYPERSPACE_TELEPORT_FRAC,
@@ -38,7 +38,7 @@ use crate::codemp::game::bg_public::{
 use crate::codemp::game::q_shared_h::CHAN_AUTO;
 use crate::codemp::game::bg_vehicleLoad::{g_vehicleInfo, BG_VehicleGetIndex};
 use crate::codemp::game::bg_vehicles_h::{
-    vehicleInfo_t, Vehicle_t, MAX_VEHICLE_EXHAUSTS, MAX_STRAFE_TIME, MIN_LANDING_SLOPE,
+    vehicleInfo_t, Vehicle_t, MAX_STRAFE_TIME, MIN_LANDING_SLOPE,
     MIN_LANDING_SPEED, SHIPSURF_BROKEN_C, SHIPSURF_BROKEN_D, SHIPSURF_BROKEN_E, SHIPSURF_BROKEN_F,
     SHIPSURF_DAMAGE_BACK_HEAVY, SHIPSURF_DAMAGE_BACK_LIGHT, SHIPSURF_DAMAGE_FRONT_HEAVY,
     SHIPSURF_DAMAGE_FRONT_LIGHT, SHIPSURF_DAMAGE_LEFT_HEAVY, SHIPSURF_DAMAGE_LEFT_LIGHT,
@@ -514,7 +514,6 @@ pub unsafe extern "C" fn FighterSuspended(
 //on the bgEntity structure in the MP codebase) -rww
 // ProcessMoveCommands the Vehicle.
 const FIGHTER_MIN_TAKEOFF_FRACTION: f32 = 0.7;
-// TODO: Remove-Xbox
 pub unsafe extern "C" fn ProcessMoveCommands(pVeh: *mut Vehicle_t) {
     /************************************************************************************/
     /*	BEGIN	Here is where we move the vehicle (forward or back or whatever). BEGIN	*/
@@ -529,8 +528,9 @@ pub unsafe extern "C" fn ProcessMoveCommands(pVeh: *mut Vehicle_t) {
     let mut speedMax: f32;
     let parent: *mut bgEntity_t = (*pVeh).m_pParentEntity;
     let isLandingOrLaunching: qboolean;
-    // #elif QAGAME//MP GAME
-    let curTime: c_int = (*addr_of!(level)).time;
+    //this function should only be called from pmove.. if it gets called elsehwere,
+    //obviously this will explode.
+    let curTime: c_int = (*(*addr_of!(pm))).cmd.serverTime;
 
     let parentPS: *mut playerState_t = (*parent).playerState;
 
@@ -641,23 +641,12 @@ pub unsafe extern "C" fn ProcessMoveCommands(pVeh: *mut Vehicle_t) {
         return;
     }
 
-    // TODO: Remove-Xbox
     if (*pVeh).m_ucmd.upmove > 0 && (*(*pVeh).m_pVehicleInfo).turboSpeed != 0.0 {
         if (curTime - (*pVeh).m_iTurboTime) > (*(*pVeh).m_pVehicleInfo).turboRecharge {
             (*pVeh).m_iTurboTime = curTime + (*(*pVeh).m_pVehicleInfo).turboDuration;
-            if (*(*pVeh).m_pVehicleInfo).iTurboStartFX != 0 {
-                let mut i: c_int = 0;
-                while i < MAX_VEHICLE_EXHAUSTS as c_int {
-                    if (*pVeh).m_iExhaustTag[i as usize] == -1 {
-                        break;
-                    }
-                    //TODO: MP Play Effect?
-                    i += 1;
-                }
-            }
+            // #ifdef QAGAME//MP GAME-side
             //NOTE: turbo sound can't be part of effect if effect is played on every muzzle!
             if (*(*pVeh).m_pVehicleInfo).soundTurbo != 0 {
-                // #elif QAGAME//MP GAME-side
                 G_EntitySound(
                     (*pVeh).m_pParentEntity as *mut gentity_t,
                     CHAN_AUTO,
