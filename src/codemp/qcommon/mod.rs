@@ -2,3 +2,4 @@
 
 pub mod disablewarnings_h;
 pub mod game_version_h;
+pub mod timing_h;
