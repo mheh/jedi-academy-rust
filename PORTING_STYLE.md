@@ -1,0 +1,24 @@
+# Porting Style Notes
+
+- Mirror `oracle/` paths 1:1: `oracle/codemp/game/g_main.c` becomes `src/codemp/game/g_main.rs`.
+- Keep C file/module names visible, including odd casing, with `#[allow(non_snake_case)]` when needed.
+- Preserve original C symbol names for functions, globals, structs, fields, constants, and cvars unless Rust syntax forces an escape.
+- Use `core::ffi::{c_int, c_char, c_void, ...}` for C ABI-sized types instead of Rust-native guesses.
+- Use `#[repr(C)]` on every struct/enum/union-like type that mirrors C layout or crosses an ABI boundary.
+- Add `size_of`/`align_of` asserts for layout-sensitive C structs, especially pointer-free network/game structs.
+- Represent C fixed arrays as Rust fixed arrays, e.g. `vec3_t = [f32; 3]`.
+- Represent C globals as `pub static mut` or private `static mut`, zero-initialized to match BSS semantics.
+- Access `static mut` through raw pointers with `addr_of!`/`addr_of_mut!`, not `&` or `&mut`.
+- Keep dangerous C behavior when it affects parity: raw pointers, null checks, aliasing patterns, wrapping arithmetic, and unchecked indexing.
+- Translate C pointers mechanically as raw pointers; only introduce references when aliasing and lifetime are genuinely Rust-safe.
+- Translate C macros into `const`, `type`, or small `#[inline]` functions while preserving C arithmetic and cast order.
+- Preserve C integer/float promotion behavior explicitly when it affects results.
+- Keep C comments when they explain original behavior, but add Rust comments only to document porting deviations or safety invariants.
+- Mark `unsafe` at the operation boundary and use safety comments for non-obvious pointer/static assumptions.
+- Keep original conditional compilation intent, mapping C defines like `Q3_VM` to Cargo features such as `vm`.
+- Declare libc/engine functions with `extern "C"` when the original called outside the game module.
+- Route engine syscalls through `trap` wrappers instead of scattering raw syscall calls.
+- Preserve original table ordering exactly for cvar tables, enum tables, string tables, item tables, and dispatch tables.
+- Prefer mechanical, reviewable translation over idiomatic Rust refactors during the faithful-port phase.
+- When deviating from C, document the deviation near the code and explain the compatibility reason.
+- Add oracle/parity tests for math, parsing, layout, RNG, serialization, and other behavior where tiny differences matter.
