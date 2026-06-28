@@ -10,9 +10,9 @@ Last pairing command:
 
 Latest post-batch summary:
 
-- Oracle files without a paired Rust file: 1124
+- Oracle files without a paired Rust file: 1120
 - oracle/code: 646
-- oracle/codemp: 478
+- oracle/codemp: 474
 
 ## Delegated
 
@@ -40,6 +40,10 @@ Latest post-batch summary:
 - `oracle/codemp/mp3code/upsf.c` -> `src/codemp/mp3code/upsf.rs`
 - `oracle/codemp/mp3code/uph.c` -> `src/codemp/mp3code/uph.rs`
 - `oracle/codemp/mp3code/cupl3.c` -> `src/codemp/mp3code/cupl3.rs`
+- `oracle/codemp/mp3code/csbtb.c` -> `src/codemp/mp3code/csbtb.rs`
+- `oracle/codemp/mp3code/cwin.c` -> `src/codemp/mp3code/cwin.rs`
+- `oracle/codemp/mp3code/csbtl3.c` -> `src/codemp/mp3code/csbtl3.rs`
+- `oracle/codemp/mp3code/cwinb.c` -> `src/codemp/mp3code/cwinb.rs`
 
 ## Committed
 
@@ -66,6 +70,10 @@ Latest post-batch summary:
 - `4f5fbee port oracle/codemp/mp3code/upsf.c`
 - `27fa9ed port oracle/codemp/mp3code/uph.c`
 - `53f2baa port oracle/codemp/mp3code/cupl3.c`
+- `c43d090 port oracle/codemp/mp3code/csbtb.c`
+- `73321d8 port oracle/codemp/mp3code/cwin.c`
+- `ac509da port oracle/codemp/mp3code/csbtl3.c`
+- `f18b67f port oracle/codemp/mp3code/cwinb.c`
 
 ## Unresolved Dependencies
 
@@ -81,7 +89,11 @@ Latest post-batch summary:
 - `upsf.rs` now defines MPEG1/MPEG2 scale-factor unpacking and leaves `bitget` explicit.
 - `uph.rs` now defines Huffman decode helpers and leaves `bitdat` explicit.
 - `cupl3.rs` now defines the Layer III decode orchestration, bit reader, side-info unpacking, main decode path, transform dispatch, and `L3audio_decode*` functions.
-- Remaining unresolved decoder/body dependencies include `sbt_*`, `sbtB_*`, `sbt_init`, and remaining transform/window bodies.
+- `csbtb.rs` now defines byte-output SBT helpers and leaves DCT/window helpers explicit.
+- `cwin.rs` now defines 16-bit window helpers but currently carries a private zeroed `wincoef` stub that should be reconciled with `tableawd_h::wincoef`.
+- `csbtl3.rs` now defines Layer III SBT wrappers and leaves DCT/window helpers explicit.
+- `cwinb.rs` now defines byte-output window helpers using `tableawd_h::wincoef`.
+- Remaining unresolved decoder/body dependencies include `sbt_init`, `csbt.c` wrapper bodies, `cwinm.c`, and the `cwin.rs` coefficient-table reconciliation.
 - `wavep.rs` preserves the original `#if 0` body as disabled Rust and keeps missing `wcvt.c` conversion boundaries explicit.
 
 ## Next Recommended Batch
@@ -91,10 +103,6 @@ Stay in `oracle/codemp/mp3code/` and continue decoder bodies in dependency-shape
 Good next batch:
 
 - `oracle/codemp/mp3code/csbt.c`
-- `oracle/codemp/mp3code/csbtb.c`
-- `oracle/codemp/mp3code/csbtl3.c`
-- `oracle/codemp/mp3code/cwin.c`
-- `oracle/codemp/mp3code/cwinb.c`
 - `oracle/codemp/mp3code/cwinm.c`
 
 Standalone candidates remain:
@@ -104,6 +112,6 @@ Standalone candidates remain:
 ## State
 
 - Branch: `full-port`
-- HEAD before this handoff update: `53f2baa`
+- HEAD before this handoff update: `f18b67f`
 - No agent failures.
 - No builds, tests, `cargo check`, or formatting were run.
