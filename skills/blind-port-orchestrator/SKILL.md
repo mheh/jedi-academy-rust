@@ -70,6 +70,7 @@ When orchestrator context reaches roughly 150k tokens, stop delegating and run t
 Tell each file agent:
 
 - Translate mechanically, preserving C names, table order, control flow, globals, raw pointers, casts, and dangerous behavior.
+- Preserve original source comments by default, including Raven/id comments, trailing comments, block comments, TODOs, warnings, table notes, and odd historical remarks. Translate comment syntax only as needed for Rust; do not summarize or rewrite original comments.
 - Do not make idiomatic Rust improvements.
 - Do not build, test, run cargo check, run cargo fmt, or edit unrelated files.
 - Do not modify `oracle/`.

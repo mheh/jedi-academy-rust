@@ -14,7 +14,9 @@
 - Translate C pointers mechanically as raw pointers; only introduce references when aliasing and lifetime are genuinely Rust-safe.
 - Translate C macros into `const`, `type`, or small `#[inline]` functions while preserving C arithmetic and cast order.
 - Preserve C integer/float promotion behavior explicitly when it affects results.
-- Keep C comments when they explain original behavior, but add Rust comments only to document porting deviations or safety invariants.
+- Preserve original source comments by default, including Raven/id comments, trailing comments, block comments, TODOs, warnings, table notes, and odd historical remarks. Translate comment syntax only as needed for Rust; do not summarize, omit, or rewrite original comments unless they are purely preprocessor boilerplate with no source meaning.
+- Keep original comments visually near the translated symbol, field, branch, or constant they described. If Rust syntax forces a comment to move, keep the comment text intact and as close as practical.
+- Add new Rust comments only to document porting deviations, safety invariants, or unresolved dependency stubs; keep those porting comments separate from preserved original comments.
 - Mark `unsafe` at the operation boundary and use safety comments for non-obvious pointer/static assumptions.
 - Keep original conditional compilation intent, mapping C defines like `Q3_VM` to Cargo features such as `vm`.
 - Declare libc/engine functions with `extern "C"` when the original called outside the game module.
