@@ -1950,11 +1950,9 @@ pub unsafe fn SpectatorClientEndFrame(ent: *mut gentity_t) {
 // dispatch table stays complete; un-stub when those item subsystems land.
 // (Mirrors the FireVehicleWeapon guarded-stub precedent from cycle 31.)
 
-/// TODO: un-stub when the NPC sentry-gun item subsystem lands (`ItemUse_Sentry`, g_items.c).
-unsafe fn ItemUse_Sentry(_ent: *mut gentity_t) {}
-
-/// TODO: un-stub when the cloak item subsystem lands (`ItemUse_UseCloak`, g_items.c).
-unsafe fn ItemUse_UseCloak(_ent: *mut gentity_t) {}
+// ItemUse_Sentry / ItemUse_UseCloak are ported in g_items.rs — imported here so the
+// EV_USE_ITEM6 / EV_USE_ITEM11 events deploy the sentry / toggle the cloak as in C.
+use crate::codemp::game::g_items::{ItemUse_Sentry, ItemUse_UseCloak};
 
 /// `void ClientEvents( gentity_t *ent, int oldEventSequence )` (g_active.c:913). Walk the
 /// player-state event ring from `oldEventSequence` to the current `eventSequence`, applying the
@@ -2392,18 +2390,17 @@ unsafe fn saberCheckKnockdown_DuelLoss(
 ) {
 }
 
-/// TODO: un-stub when force telepathy/mind-trick lands (`ForceTelepathy`, w_force.c).
-unsafe fn ForceTelepathy(_self_: *mut gentity_t) {}
-
-/// TODO: un-stub when the cloak item subsystem lands (`Jedi_Cloak`, NPC_utils.c).
-unsafe fn Jedi_Cloak(_self_: *mut gentity_t) {}
+// ForceTelepathy (w_force.rs) and Jedi_Cloak (npc_ai_jedi.rs) are ported — imported
+// here so mind-trick and the jedi cloak actually fire as in C.
+use crate::codemp::game::npc_ai_jedi::Jedi_Cloak;
+use crate::codemp::game::w_force::ForceTelepathy;
 
 // `Jedi_Decloak` (NPC_misc.c) is ported in npc_ai_jedi.rs — imported here (the prior no-op
 // stub is dropped, so the cloak actually drops as in C).
 use crate::codemp::game::npc_ai_jedi::Jedi_Decloak;
 
-/// TODO: un-stub when the +use entity-interaction path lands (`TryUse`, g_cmds.c).
-unsafe fn TryUse(_ent: *mut gentity_t) {}
+// TryUse (the +use entity-interaction path) is ported in g_utils.rs — imported here.
+use crate::codemp::game::g_utils::TryUse;
 
 /// `void ClientThink_real( gentity_t *ent )` (g_active.c:1882). The giant per-frame
 /// client think: builds and runs the `Pmove`, then applies all the resulting game-side

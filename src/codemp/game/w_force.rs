@@ -5491,7 +5491,7 @@ unsafe fn ForceTelepathyCheckDirectNPCTarget(
 ///
 /// # Safety
 /// `self_` must be a valid entity with a non-NULL `client`.
-unsafe fn ForceTelepathy(self_: *mut gentity_t) {
+pub unsafe fn ForceTelepathy(self_: *mut gentity_t) {
     let mut tr: trace_t = trace_t::default();
     let mut tto: vec3_t = [0.0; 3];
     let mut thispush_org: vec3_t = [0.0; 3];

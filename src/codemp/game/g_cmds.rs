@@ -3888,38 +3888,22 @@ unsafe fn Cmd_Tell_f(ent: *mut gentity_t) {
 // keystone if-chain lands intact. Replace each with the real port when the owning
 // subsystem lands.
 
-// REVISIT: stub — un-stub when the bot/AI navigation subsystem lands.
-// `int AcceptBotCommand( char *cmd, gentity_t *pl )` (ai_wpnav.c:3501) redirects
-// `bot_*` console commands to a bot. Returns `qfalse` here so no command is consumed
-// and the regular dispatch proceeds (the C `strstr(cmd,"bot_") && AcceptBotCommand(...)`
-// short-circuits to the rest of the chain).
-#[allow(unused_variables)]
-unsafe fn AcceptBotCommand(cmd: *const c_char, pl: *mut gentity_t) -> qboolean {
-    QFALSE
-}
+// AcceptBotCommand (the `bot_*` waypoint-editing console commands) is ported in
+// ai_wpnav.rs — imported here. It is gated by gBotEdit (returns 0 in normal play),
+// so this is inert unless waypoint editing is active.
+use crate::codemp::game::ai_wpnav::AcceptBotCommand;
 
-// REVISIT: stub — un-stub when the bot subsystem lands. `void Bot_SetForcedMovement(
-// int bot, int forward, int right, int up )` (g_active.c / bot infra) forces a bot's
-// movement for the `debugBMove_*` developer commands. No-op stub.
-#[allow(unused_variables)]
-unsafe fn Bot_SetForcedMovement(bot: c_int, forward: c_int, right: c_int, up: c_int) {}
+// Bot_SetForcedMovement (the `debugBMove_*` developer commands) is ported in
+// ai_main.rs — imported here so the commands actually drive the bot.
+use crate::codemp::game::ai_main::Bot_SetForcedMovement;
 
-// REVISIT: stub — un-stub when the saber-drop subsystem lands. `void
-// saberKnockOutOfHand( gentity_t *saberent, gentity_t *saberOwner, vec3_t velocity )`
-// (g_active.c) ejects the saber for the `debugDropSaber` developer command. No-op stub.
-#[allow(unused_variables)]
-unsafe fn saberKnockOutOfHand(
-    saberent: *mut gentity_t,
-    saber_owner: *mut gentity_t,
-    velocity: &vec3_t,
-) {
-}
+// saberKnockOutOfHand (the `debugDropSaber` developer command) is ported in
+// w_saber.rs — imported here so the saber is actually ejected.
+use crate::codemp::game::w_saber::saberKnockOutOfHand;
 
-// REVISIT: stub — un-stub when the vehicle subsystem lands. `void G_SetVehDamageFlags(
-// gentity_t *veh, int shipSurf, int damageLevel )` (g_vehicles.c) sets a vehicle's
-// per-surface damage flags for the `debugShipDamage` developer command. No-op stub.
-#[allow(unused_variables)]
-unsafe fn G_SetVehDamageFlags(veh: *mut gentity_t, ship_surf: c_int, damage_level: c_int) {}
+// G_SetVehDamageFlags (the `debugShipDamage` developer command) is ported in
+// g_vehicles.rs — imported here so the command sets real per-surface damage flags.
+use crate::codemp::game::g_vehicles::G_SetVehDamageFlags;
 
 /// `void Cmd_ToggleSaber_f( gentity_t *ent )` (g_cmds.c) — holster or ignite the player's
 /// saber. Bails out while gripped (and already lit), knocks a thrown saber out of midair,
@@ -4677,7 +4661,7 @@ pub unsafe fn ClientCommand(clientNum: c_int) {
     let cmd = cmd_c.as_ptr();
 
     //rww - redirect bot commands
-    if cmd_s.contains("bot_") && AcceptBotCommand(cmd, ent) != QFALSE {
+    if cmd_s.contains("bot_") && AcceptBotCommand(cmd as *mut c_char, ent) != QFALSE {
         return;
     }
     //end rww

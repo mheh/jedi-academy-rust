@@ -617,9 +617,9 @@ pub fn Svcmd_ForceTeam_f() {
 // still returns `qtrue` exactly as the C does. Replace each with the real port when
 // the owning subsystem lands.
 
-/// TODO: un-stub when `Svcmd_GameMem_f` lands (the `game_memory` diagnostic that
-/// dumps the zone/hunk allocator stats; depends on the game-memory subsystem).
-fn Svcmd_GameMem_f() {}
+// `Svcmd_GameMem_f` (the `game_memory` diagnostic) is ported in g_mem.rs — imported
+// here so the console command reports real pool usage instead of doing nothing.
+use crate::codemp::game::g_mem::Svcmd_GameMem_f;
 
 /*
 =================
