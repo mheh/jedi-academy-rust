@@ -2194,7 +2194,6 @@ NPC_GetWalkSpeed
 ///
 /// # Safety
 /// `ent` must point to a valid `gentity_t`; its `client`/`NPC` may be NULL (handled).
-#[allow(dead_code)] // only consumer is the NPC speed-management block in ClientThink_real (still stubbed)
 unsafe fn NPC_GetWalkSpeed(ent: *mut gentity_t) -> c_int {
     #[allow(unused_assignments)]
     let mut walkSpeed: c_int = 0;
@@ -2231,7 +2230,6 @@ NPC_GetRunSpeed
 ///
 /// # Safety
 /// `ent` must point to a valid `gentity_t`; its `client`/`NPC` may be NULL (handled).
-#[allow(dead_code)] // only consumer is the NPC speed-management block in ClientThink_real (still stubbed)
 unsafe fn NPC_GetRunSpeed(ent: *mut gentity_t) -> c_int {
     #[allow(unused_assignments)]
     let mut runSpeed: c_int = 0;
@@ -2284,19 +2282,10 @@ unsafe fn NPC_GetRunSpeed(ent: *mut gentity_t) -> c_int {
 }
 
 // ---------------------------------------------------------------------------
-// Guarded stubs for the not-yet-ported callees of ClientThink_real. These funnel into
-// NPC AI / saber-lock-knockdown / item subsystems
-// that have not been ported yet. Faithful no-op placeholders keep the keystone
-// dispatcher complete and compiling; un-stub each when its subsystem lands.
-// (Mirrors the FireVehicleWeapon guarded-stub precedent from cycle 31.)
-//
-// NOTE: the large NPC speed/gravity-management block (the `if ( ent->NPC && ... )`
-// chain) is NOT reproduced here at all: it dereferences `ent->NPC->desiredSpeed`,
-// `->aiFlags`, `->distToGoal`, etc., and `gNPC_t` is still an opaque forward-decl
-// (`b_public_h.rs`), so those fields do not exist in the Rust tree. The whole block
-// is gated behind `!(*ent).NPC.is_null()` and replaced by a `// TODO` placeholder;
-// for player clients (`ent->NPC == NULL`) the block is dead anyway. Un-stub when
-// the full `gNPC_t` / NPC AI lands.
+// Guarded stub for one remaining not-yet-ported callee of ClientThink_real
+// (`saberCheckKnockdown_DuelLoss`, below). The NPC speed- and gravity-management
+// blocks are now fully ported inline (gNPC_t is a complete struct), so they are no
+// longer stubbed here.
 
 unsafe fn G_HeldByMonster(ent: *mut gentity_t, ucmd: *mut *mut usercmd_t) {
     if !ent.is_null()
@@ -2661,8 +2650,10 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
         (*client).ps.eFlags &= !EF_JETPACK_FLAMING;
     }
 
-    // #define SLOWDOWN_DIST 128.0f / #define MIN_NPC_SPEED 16.0f — used only by the
-    // not-yet-ported NPC speed-management block below.
+    // `#define SLOWDOWN_DIST 128.0f` / `#define MIN_NPC_SPEED 16.0f` (g_active.c:2203-2204) —
+    // used by the NPC desiredSpeed / turn-slowdown block below.
+    const SLOWDOWN_DIST: f32 = 128.0;
+    const MIN_NPC_SPEED: c_int = 16;
 
     if (*client).bodyGrabIndex != ENTITYNUM_NONE {
         let grabbed: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add((*client).bodyGrabIndex as usize);
@@ -2724,12 +2715,125 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
 
     if !(*ent).NPC.is_null() && (*ent).s.NPC_class != CLASS_VEHICLE {
         //vehicles manage their own speed
-        // TODO: un-stub when the full gNPC_t / NPC AI lands. The entire NPC desiredSpeed/
-        // currentSpeed/distToGoal/aiFlags acceleration-and-turn-slowdown block (g_active.c
-        // ~1971-2125) dereferences opaque `gNPC_t` fields that do not exist in the Rust tree
-        // yet, so it is gated out here. For player clients (ent->NPC == NULL) this branch is
+        // Port of g_active.c:2261-2420 — NPC desiredSpeed selection, distance/turn
+        // slowdown and acceleration. For player clients (ent->NPC == NULL) this branch is
         // never taken.
-        let _ = controlledByPlayer; // referenced only inside the not-yet-ported NPC block
+        let npc = (*ent).NPC;
+        use crate::codemp::game::b_public_h::NPCAI_NO_SLOWDOWN;
+        use crate::codemp::game::bg_public::EF2_FLYING;
+        use crate::codemp::game::q_math::AngleDelta;
+        use crate::codemp::game::q_shared_h::BUTTON_WALKING;
+        use crate::codemp::game::surfaceflags_h::CONTENTS_LADDER;
+        //FIXME: swoop should keep turning (and moving forward?) for a little bit?
+        if (*npc).combatMove == QFALSE {
+            //if ( !(ucmd->buttons & BUTTON_USE) ) / if (1) -- Not leaning
+            let flying = (*ucmd).upmove != 0 && ((*client).ps.eFlags2 & EF2_FLYING) != 0;
+            let climbing = (*ucmd).upmove != 0 && ((*ent).watertype & CONTENTS_LADDER) != 0;
+
+            if (*ucmd).forwardmove != 0 || (*ucmd).rightmove != 0 || flying {
+                //In-Formation NPCs set their desiredSpeed themselves
+                if ((*ucmd).buttons & BUTTON_WALKING) != 0 {
+                    (*npc).desiredSpeed = NPC_GetWalkSpeed(ent);
+                } else {
+                    //running
+                    (*npc).desiredSpeed = NPC_GetRunSpeed(ent);
+                }
+
+                if (*npc).currentSpeed >= 80 && controlledByPlayer == QFALSE {
+                    //At higher speeds, need to slow down close to stuff; slow down as
+                    //you approach your goal
+                    if (*npc).distToGoal < SLOWDOWN_DIST
+                        && ((*npc).aiFlags & NPCAI_NO_SLOWDOWN) == 0
+                    {
+                        if (*npc).desiredSpeed > MIN_NPC_SPEED {
+                            let slowdown_speed =
+                                (*npc).desiredSpeed as f32 * (*npc).distToGoal / SLOWDOWN_DIST;
+                            (*npc).desiredSpeed = slowdown_speed.ceil() as c_int;
+                            if (*npc).desiredSpeed < MIN_NPC_SPEED {
+                                //don't slow down too much
+                                (*npc).desiredSpeed = MIN_NPC_SPEED;
+                            }
+                        }
+                    }
+                }
+            } else if climbing {
+                (*npc).desiredSpeed = (*npc).stats.walkSpeed;
+            } else {
+                //We want to stop
+                (*npc).desiredSpeed = 0;
+            }
+
+            NPC_Accelerate(ent, QFALSE, QFALSE);
+
+            if (*npc).currentSpeed <= 24 && (*npc).desiredSpeed < (*npc).currentSpeed {
+                //No-one walks this slow -- Full stop
+                (*npc).currentSpeed = 0;
+                (*client).ps.speed = 0.0;
+                (*ucmd).forwardmove = 0;
+                (*ucmd).rightmove = 0;
+            } else {
+                if (*npc).currentSpeed <= (*npc).stats.walkSpeed {
+                    //Play the walkanim
+                    (*ucmd).buttons |= BUTTON_WALKING;
+                } else {
+                    (*ucmd).buttons &= !BUTTON_WALKING;
+                }
+
+                if (*npc).currentSpeed > 0 {
+                    //We should be moving
+                    if climbing || flying {
+                        if (*ucmd).upmove == 0 {
+                            //force them to take a couple more steps until stopped
+                            (*ucmd).upmove = (*npc).last_ucmd.upmove;
+                        }
+                    } else if (*ucmd).forwardmove == 0 && (*ucmd).rightmove == 0 {
+                        //force them to take a couple more steps until stopped
+                        (*ucmd).forwardmove = (*npc).last_ucmd.forwardmove;
+                        (*ucmd).rightmove = (*npc).last_ucmd.rightmove;
+                    }
+                }
+
+                (*client).ps.speed = (*npc).currentSpeed as f32;
+
+                //rwwFIXMEFIXME: do this and also check for all real client / if (1)
+                //Slow down on turns - don't orbit!!! (locked-yaw path `if (0)` not taken)
+                let turndelta = (180.0
+                    - AngleDelta((*ent).r.currentAngles[YAW as usize], (*npc).desiredYaw).abs())
+                    / 180.0;
+
+                if turndelta < 0.75 {
+                    (*client).ps.speed = 0.0;
+                } else if (*npc).distToGoal < 100.0 && turndelta < 1.0 {
+                    //Turn is greater than 45 degrees or closer than 100 to goal
+                    (*client).ps.speed = ((*client).ps.speed * turndelta).floor();
+                }
+            }
+        } else {
+            (*npc).desiredSpeed = if ((*ucmd).buttons & BUTTON_WALKING) != 0 {
+                NPC_GetWalkSpeed(ent)
+            } else {
+                NPC_GetRunSpeed(ent)
+            };
+
+            (*client).ps.speed = (*npc).desiredSpeed as f32;
+        }
+
+        if ((*ucmd).buttons & BUTTON_WALKING) != 0 {
+            //sort of a hack since MP handles walking differently from SP (has some proxy
+            //cheat prevention methods)
+            if (*ucmd).forwardmove > 64 {
+                (*ucmd).forwardmove = 64;
+            } else if (*ucmd).forwardmove < -64 {
+                (*ucmd).forwardmove = -64;
+            }
+
+            if (*ucmd).rightmove > 64 {
+                (*ucmd).rightmove = 64;
+            } else if (*ucmd).rightmove < -64 {
+                (*ucmd).rightmove = -64;
+            }
+        }
+        (*client).ps.basespeed = (*client).ps.speed as c_int;
     } else if (*client).ps.m_iVehicleNum == 0
         && ((*ent).NPC.is_null() || (*ent).s.NPC_class != CLASS_VEHICLE)
     {
@@ -2751,27 +2855,33 @@ pub unsafe fn ClientThink_real(ent: *mut gentity_t) {
         (*client).ps.basespeed = (*client).ps.speed as c_int;
     }
 
-    if (*ent).NPC.is_null() {
-        //use global gravity (the `ent->NPC->aiFlags & NPCAI_CUSTOM_GRAVITY` and custom-veh
-        // gravity sub-cases dereference opaque gNPC_t / vehicle-info fields — not yet ported; for
-        // player clients ent->NPC is NULL so we always take the global-gravity path)
-        if (*(*ent).client).inSpaceIndex != 0
+    // Port of g_active.c:2443-2472 — gravity selection.
+    if (*ent).NPC.is_null()
+        || ((*(*ent).NPC).aiFlags & crate::codemp::game::b_public_h::NPCAI_CUSTOM_GRAVITY) == 0
+    {
+        //use global gravity
+        if !(*ent).NPC.is_null()
+            && (*ent).s.NPC_class == CLASS_VEHICLE
+            && !(*ent).m_pVehicle.is_null()
+            && (*(*(*ent).m_pVehicle).m_pVehicleInfo).gravity != 0
+        {
+            //use custom veh gravity
+            (*client).ps.gravity = (*(*(*ent).m_pVehicle).m_pVehicleInfo).gravity;
+        } else if (*(*ent).client).inSpaceIndex != 0
             && (*(*ent).client).inSpaceIndex != ENTITYNUM_NONE
         {
             //in space, so no gravity...
-            (*client).ps.gravity = 1.0 as c_int;
+            (*client).ps.gravity = 1;
             if (*ent).s.number < MAX_CLIENTS as c_int {
                 let vel = (*client).ps.velocity;
                 VectorScale(&vel, 0.8, &mut (*client).ps.velocity);
             }
+        } else if (*client).ps.eFlags2 & EF2_SHIP_DEATH != 0 {
+            //float there
+            VectorClear(&mut (*client).ps.velocity);
+            (*client).ps.gravity = 1;
         } else {
-            if (*client).ps.eFlags2 & EF2_SHIP_DEATH != 0 {
-                //float there
-                VectorClear(&mut (*client).ps.velocity);
-                (*client).ps.gravity = 1.0 as c_int;
-            } else {
-                (*client).ps.gravity = (*addr_of!(g_gravity)).value as c_int;
-            }
+            (*client).ps.gravity = (*addr_of!(g_gravity)).value as c_int;
         }
     }
 
