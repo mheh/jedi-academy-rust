@@ -114,6 +114,7 @@ pub mod q_shared;
 pub mod q_shared_h;
 pub mod speedernpc;
 pub mod surfaceflags_h;
+pub mod syn_h;
 pub mod teams_h;
 pub mod tri_coll_test;
 pub mod w_force;
