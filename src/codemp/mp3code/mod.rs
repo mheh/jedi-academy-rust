@@ -10,6 +10,7 @@ pub mod cupini;
 pub mod cupl1;
 pub mod cupl3;
 pub mod cwin;
+pub mod cwinb;
 pub mod htable_h;
 pub mod hwin;
 pub mod jdw_h;
