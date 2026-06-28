@@ -129,7 +129,8 @@ use crate::codemp::cgame::animtable::animTable;
 use crate::codemp::game::anims::{BOTH_KYLE_GRAB, MAX_ANIMATIONS};
 use crate::codemp::game::bg_saber::saberMoveData;
 use crate::codemp::game::g_main::{
-    d_saberStanceDebug, g_allowDuelSuicide, g_allowVote, g_autoBanTKSpammers, g_autoKickTKSpammers,
+    d_saberStanceDebug, g_allowDuelSuicide, g_allowVote, g_autoBanKillSpammers, g_autoBanTKSpammers,
+    g_autoKickKillSpammers, g_autoKickTKSpammers,
     g_cheats, g_dedicated, g_entities,
     g_gametype,
     g_maxGameClients, g_privateDuel, g_teamForceBalance, g_trueJedi, level, BeginIntermission,
@@ -462,8 +463,10 @@ Cmd_Kill_f
 ///
 /// # Safety
 /// `ent`/`ent->client` must be valid; the game globals must be initialized.
-// TODO: Remove-Xbox
 pub unsafe fn Cmd_Kill_f(ent: *mut gentity_t) {
+    // `EXEC_INSERT` (q_shared.h) — the `EXEC_*` enum's second value, so `1`.
+    const EXEC_INSERT: c_int = 1;
+
     if (*(*ent).client).sess.sessionTeam == TEAM_SPECTATOR {
         return;
     }
@@ -488,6 +491,86 @@ pub unsafe fn Cmd_Kill_f(ent: *mut gentity_t) {
                 ),
             );
             return;
+        }
+    }
+
+    if (*addr_of!(g_autoKickKillSpammers)).integer > 0
+        || (*addr_of!(g_autoBanKillSpammers)).integer > 0
+    {
+        let client = (*ent).client;
+        (*client).sess.killCount += 1;
+        if (*addr_of!(g_autoBanKillSpammers)).integer > 0
+            && (*client).sess.killCount >= (*addr_of!(g_autoBanKillSpammers)).integer
+        {
+            // C tests `if ( ent->client->sess.IPstring )`; `IPstring` is a
+            // `char[32]` array, so the test is always true — ban their IP.
+            AddIP((*client).sess.IPstring.as_ptr());
+
+            trap::SendServerCommand(
+                -1,
+                &format!(
+                    "print \"{} {}\n\"",
+                    Sz((*client).pers.netname.as_ptr()),
+                    Sz(G_GetStringEdString(
+                        c"MP_SVGAME_ADMIN".as_ptr() as *mut c_char,
+                        c"SUICIDEBAN".as_ptr() as *mut c_char,
+                    )),
+                ),
+            );
+            //Com_sprintf ( level.voteString, sizeof(level.voteString ), "clientkick %d", ent->s.number );
+            //Com_sprintf ( level.voteDisplayString, sizeof(level.voteDisplayString), "kick %s", ent->client->pers.netname );
+            //trap_SendConsoleCommand( EXEC_INSERT, va( "banClient %d\n", ent->s.number ) );
+            trap::SendConsoleCommand(EXEC_INSERT, &format!("clientkick {}\n", (*ent).s.number));
+            return;
+        }
+        if (*addr_of!(g_autoKickKillSpammers)).integer > 0
+            && (*client).sess.killCount >= (*addr_of!(g_autoKickKillSpammers)).integer
+        {
+            trap::SendServerCommand(
+                -1,
+                &format!(
+                    "print \"{} {}\n\"",
+                    Sz((*client).pers.netname.as_ptr()),
+                    Sz(G_GetStringEdString(
+                        c"MP_SVGAME_ADMIN".as_ptr() as *mut c_char,
+                        c"SUICIDEKICK".as_ptr() as *mut c_char,
+                    )),
+                ),
+            );
+            //Com_sprintf ( level.voteString, sizeof(level.voteString ), "clientkick %d", ent->s.number );
+            //Com_sprintf ( level.voteDisplayString, sizeof(level.voteDisplayString), "kick %s", ent->client->pers.netname );
+            trap::SendConsoleCommand(EXEC_INSERT, &format!("clientkick {}\n", (*ent).s.number));
+            return;
+        }
+        //okay, not gone (yet), but warn them...
+        if (*addr_of!(g_autoBanKillSpammers)).integer > 0
+            && ((*addr_of!(g_autoKickKillSpammers)).integer <= 0
+                || (*addr_of!(g_autoBanKillSpammers)).integer
+                    < (*addr_of!(g_autoKickKillSpammers)).integer)
+        {
+            //warn about ban
+            trap::SendServerCommand(
+                ent.offset_from(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()) as c_int,
+                &format!(
+                    "print \"{}\n\"",
+                    Sz(G_GetStringEdString(
+                        c"MP_SVGAME_ADMIN".as_ptr() as *mut c_char,
+                        c"WARNINGSUICIDEBAN".as_ptr() as *mut c_char,
+                    )),
+                ),
+            );
+        } else if (*addr_of!(g_autoKickKillSpammers)).integer > 0 {
+            //warn about kick
+            trap::SendServerCommand(
+                ent.offset_from(core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()) as c_int,
+                &format!(
+                    "print \"{}\n\"",
+                    Sz(G_GetStringEdString(
+                        c"MP_SVGAME_ADMIN".as_ptr() as *mut c_char,
+                        c"WARNINGSUICIDEKICK".as_ptr() as *mut c_char,
+                    )),
+                ),
+            );
         }
     }
 
