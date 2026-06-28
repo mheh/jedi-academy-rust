@@ -10,9 +10,9 @@ Last pairing command:
 
 Latest post-batch summary:
 
-- Oracle files without a paired Rust file: 1130
+- Oracle files without a paired Rust file: 1125
 - oracle/code: 646
-- oracle/codemp: 484
+- oracle/codemp: 479
 
 ## Delegated
 
@@ -34,6 +34,11 @@ Latest post-batch summary:
 - `oracle/codemp/mp3code/cdct.c` -> `src/codemp/mp3code/cdct.rs`
 - `oracle/codemp/mp3code/l3init.c` -> `src/codemp/mp3code/l3init.rs`
 - `oracle/codemp/mp3code/msis.c` -> `src/codemp/mp3code/msis.rs`
+- `oracle/codemp/mp3code/l3dq.c` -> `src/codemp/mp3code/l3dq.rs`
+- `oracle/codemp/mp3code/mdct.c` -> `src/codemp/mp3code/mdct.rs`
+- `oracle/codemp/mp3code/hwin.c` -> `src/codemp/mp3code/hwin.rs`
+- `oracle/codemp/mp3code/upsf.c` -> `src/codemp/mp3code/upsf.rs`
+- `oracle/codemp/mp3code/uph.c` -> `src/codemp/mp3code/uph.rs`
 
 ## Committed
 
@@ -54,6 +59,11 @@ Latest post-batch summary:
 - `825abc6 port oracle/codemp/mp3code/cdct.c`
 - `ec5e771 port oracle/codemp/mp3code/l3init.c`
 - `ba5abbb port oracle/codemp/mp3code/msis.c`
+- `6dcec4d port oracle/codemp/mp3code/l3dq.c`
+- `76299c1 port oracle/codemp/mp3code/mdct.c`
+- `76f0d61 port oracle/codemp/mp3code/hwin.c`
+- `4f5fbee port oracle/codemp/mp3code/upsf.c`
+- `27fa9ed port oracle/codemp/mp3code/uph.c`
 
 ## Unresolved Dependencies
 
@@ -63,6 +73,11 @@ Latest post-batch summary:
 - `cdct.rs` now defines DCT coefficient storage/accessors and the `fdct*` transform functions.
 - `l3init.rs` now defines Layer III init entry points and leaves quant/imdct/hwin/msis table-provider boundaries explicit.
 - `msis.rs` now defines antialias, mid/side, and intensity stereo processing plus ms/is table accessors.
+- `l3dq.rs` now defines dequant lookup storage/accessors and `dequant`.
+- `mdct.rs` now defines IMDCT lookup storage/accessors and `imdct18`/`imdct6_3`.
+- `hwin.rs` now defines hybrid window storage/accessors and hybrid/filter helpers.
+- `upsf.rs` now defines MPEG1/MPEG2 scale-factor unpacking and leaves `bitget` explicit.
+- `uph.rs` now defines Huffman decode helpers and leaves `bitdat` explicit.
 - Remaining unresolved decoder/body dependencies include `sbt_*`, `sbtB_*`, `sbt_init`, `L3audio_decode_init`, `L3audio_decode`, and remaining Layer III support/transform bodies.
 - `wavep.rs` preserves the original `#if 0` body as disabled Rust and keeps missing `wcvt.c` conversion boundaries explicit.
 
@@ -72,13 +87,7 @@ Stay in `oracle/codemp/mp3code/` and continue decoder bodies in dependency-shape
 
 Good next batch:
 
-- `oracle/codemp/mp3code/l3dq.c`
-- `oracle/codemp/mp3code/mdct.c`
-- `oracle/codemp/mp3code/hwin.c`
-- `oracle/codemp/mp3code/uph.c`
-- `oracle/codemp/mp3code/upsf.c`
-
-Then `oracle/codemp/mp3code/cupl3.c` as a dedicated large-file port once more Layer III helpers are present.
+- `oracle/codemp/mp3code/cupl3.c` as a dedicated large-file port now that more Layer III helpers are present.
 
 Then transform/window files:
 
@@ -96,6 +105,6 @@ Standalone candidates remain:
 ## State
 
 - Branch: `full-port`
-- HEAD before this handoff update: `ba5abbb`
+- HEAD before this handoff update: `27fa9ed`
 - No agent failures.
 - No builds, tests, `cargo check`, or formatting were run.
