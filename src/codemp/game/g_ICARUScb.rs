@@ -2630,7 +2630,6 @@ unsafe fn sscanf_vec3(data: *const c_char, v: &mut vec3_t) {
 ///
 /// # Safety
 /// `g_entities` must be initialised; `name` must be a valid C string.
-// TODO: Port-Bug
 pub unsafe fn Q3_SetEnemy(entID: c_int, name: *const c_char) {
     let ent: *mut gentity_t = (core::ptr::addr_of_mut!(g_entities).cast::<gentity_t>()).add(entID as usize);
 
@@ -2653,7 +2652,7 @@ pub unsafe fn Q3_SetEnemy(entID: c_int, name: *const c_char) {
                 WL_ERROR,
                 &format!("Q3_SetEnemy: no such enemy: '{}'\n", cstr_or_null(name)),
             );
-            // return;
+            return;
         }
         /*else if(enemy->health <= 0)
         {
