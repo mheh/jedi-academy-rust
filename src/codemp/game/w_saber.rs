@@ -114,7 +114,9 @@ use crate::codemp::game::g_utils::{G_TempEntity, G_Throw};
 use crate::codemp::game::bg_saber::{
     saberMoveData, BG_CheckIncrementLockAnim, PM_SaberInBounce, PM_SaberInBrokenParry,
 };
-use crate::codemp::game::bg_saberLoad::WP_SaberBladeUseSecondBladeStyle;
+use crate::codemp::game::bg_saberLoad::{
+    WP_SaberBladeDoTransitionDamage, WP_SaberBladeUseSecondBladeStyle,
+};
 use crate::codemp::game::bg_saga::bgSiegeClasses;
 use crate::codemp::game::bg_saga_h::CFL_MORESABERDMG;
 use crate::codemp::game::w_saber_h::{
@@ -7007,7 +7009,6 @@ static mut saberHitFraction: f32 = 1.0; // w_saber.c:3579
 /// entity; trace/entity-state dependent, so no oracle test.
 // `allow(dead_code)`: the callers (G_SPSaberDamageTraceLerped / WP_SaberDamageTrace) are not yet ported.
 #[allow(dead_code)]
-// TODO: Remove-Xbox
 unsafe fn CheckSaberDamage(
     self_: *mut gentity_t,
     rSaberNum: c_int,
@@ -7326,10 +7327,15 @@ unsafe fn CheckSaberDamage(
         || ((*addr_of!(d_saberSPStyleDamage)).integer != 0
             && (*(*self_).client).ps.saberInFlight != QFALSE
             && rSaberNum == 0)
+        || (WP_SaberBladeDoTransitionDamage(
+            addr_of_mut!((*(*self_).client).saber[rSaberNum as usize]),
+            rBladeNum,
+        ) != QFALSE
+            && BG_SaberInTransitionAny((*(*self_).client).ps.saberMove) != QFALSE)
         || ((*(*self_).client).ps.m_iVehicleNum != 0
             && (*(*self_).client).ps.saberMove > LS_READY))
         && (*(*self_).client).ps.saberAttackWound < (*addr_of!(level)).time
-    // NB: the four `||` terms are grouped by the leading paren; `&& saberAttackWound<...` applies to the whole OR-group (C precedence)
+    // NB: the five `||` terms are grouped by the leading paren; `&& saberAttackWound<...` applies to the whole OR-group (C precedence)
     {
         //this animation is that of the last attack movement, and so it should do full damage
         let saberInSpecial: qboolean = BG_SaberInSpecial((*(*self_).client).ps.saberMove);
