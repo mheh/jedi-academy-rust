@@ -1012,7 +1012,6 @@ pub fn Rand_Init(seed: c_int) {
 
 /// `float flrand(float min, float max)` — returns min <= x < max (exclusive; will get
 /// max - 0.00001; but never max). The C's `assert((max-min) < 32768)` is a `debug_assert!`.
-// TODO: Remove-Xbox
 pub fn flrand(min: f32, max: f32) -> f32 {
     debug_assert!((max - min) < 32768.0);
 
