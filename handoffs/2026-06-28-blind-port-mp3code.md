@@ -10,9 +10,9 @@ Last pairing command:
 
 Latest post-batch summary:
 
-- Oracle files without a paired Rust file: 1125
+- Oracle files without a paired Rust file: 1124
 - oracle/code: 646
-- oracle/codemp: 479
+- oracle/codemp: 478
 
 ## Delegated
 
@@ -39,6 +39,7 @@ Latest post-batch summary:
 - `oracle/codemp/mp3code/hwin.c` -> `src/codemp/mp3code/hwin.rs`
 - `oracle/codemp/mp3code/upsf.c` -> `src/codemp/mp3code/upsf.rs`
 - `oracle/codemp/mp3code/uph.c` -> `src/codemp/mp3code/uph.rs`
+- `oracle/codemp/mp3code/cupl3.c` -> `src/codemp/mp3code/cupl3.rs`
 
 ## Committed
 
@@ -64,6 +65,7 @@ Latest post-batch summary:
 - `76f0d61 port oracle/codemp/mp3code/hwin.c`
 - `4f5fbee port oracle/codemp/mp3code/upsf.c`
 - `27fa9ed port oracle/codemp/mp3code/uph.c`
+- `53f2baa port oracle/codemp/mp3code/cupl3.c`
 
 ## Unresolved Dependencies
 
@@ -78,7 +80,8 @@ Latest post-batch summary:
 - `hwin.rs` now defines hybrid window storage/accessors and hybrid/filter helpers.
 - `upsf.rs` now defines MPEG1/MPEG2 scale-factor unpacking and leaves `bitget` explicit.
 - `uph.rs` now defines Huffman decode helpers and leaves `bitdat` explicit.
-- Remaining unresolved decoder/body dependencies include `sbt_*`, `sbtB_*`, `sbt_init`, `L3audio_decode_init`, `L3audio_decode`, and remaining Layer III support/transform bodies.
+- `cupl3.rs` now defines the Layer III decode orchestration, bit reader, side-info unpacking, main decode path, transform dispatch, and `L3audio_decode*` functions.
+- Remaining unresolved decoder/body dependencies include `sbt_*`, `sbtB_*`, `sbt_init`, and remaining transform/window bodies.
 - `wavep.rs` preserves the original `#if 0` body as disabled Rust and keeps missing `wcvt.c` conversion boundaries explicit.
 
 ## Next Recommended Batch
@@ -86,10 +89,6 @@ Latest post-batch summary:
 Stay in `oracle/codemp/mp3code/` and continue decoder bodies in dependency-shaped batches.
 
 Good next batch:
-
-- `oracle/codemp/mp3code/cupl3.c` as a dedicated large-file port now that more Layer III helpers are present.
-
-Then transform/window files:
 
 - `oracle/codemp/mp3code/csbt.c`
 - `oracle/codemp/mp3code/csbtb.c`
@@ -105,6 +104,6 @@ Standalone candidates remain:
 ## State
 
 - Branch: `full-port`
-- HEAD before this handoff update: `27fa9ed`
+- HEAD before this handoff update: `53f2baa`
 - No agent failures.
 - No builds, tests, `cargo check`, or formatting were run.
