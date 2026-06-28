@@ -19,6 +19,8 @@ pub mod icarus;
 pub mod jpeg_6;
 
 pub mod mp3code;
+pub mod namespace_begin_h;
+pub mod namespace_end_h;
 pub mod null;
 pub mod png;
 pub mod qcommon;
