@@ -12,6 +12,7 @@ pub mod jdw_h;
 pub mod l3dq;
 pub mod l3init;
 pub mod l3_h;
+pub mod mdct;
 pub mod mhead;
 pub mod mhead_h;
 pub mod msis;
