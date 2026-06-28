@@ -85,7 +85,6 @@ pub static mut killPlayerTimer: c_int = 0;
 NPC_CheckAttacker
 -------------------------
 */
-// TODO: Port-Bug - Missing return after player interaction block (should return after line 177)
 unsafe fn NPC_CheckAttacker(other: *mut gentity_t, mod_: c_int) {
     //FIXME: I don't see anything in here that would stop teammates from taking a teammate
     //			as an enemy.  Ideally, there would be code before this to prevent that from
@@ -174,6 +173,8 @@ unsafe fn NPC_CheckAttacker(other: *mut gentity_t, mod_: c_int) {
             G_ClearEnemy(other);
             (*other).enemy = NPC;
         }
+
+        return;
     }
 }
 
