@@ -1060,7 +1060,6 @@ pub unsafe extern "C" fn FighterNoseMalfunctionCheck(
     }
 }
 
-// TODO: Port-Bug
 pub unsafe extern "C" fn FighterDamageRoutine(
     pVeh: *mut Vehicle_t,
     _parent: *mut bgEntity_t,
@@ -1080,7 +1079,7 @@ pub unsafe extern "C" fn FighterDamageRoutine(
             }
             else
             */
-            if (*(*pVeh).m_pParentEntity).s.number % 3 != 0 {
+            if (*(*pVeh).m_pParentEntity).s.number % 3 == 0 {
                 //NOT everyone should do this
                 *(*pVeh).m_vOrientation.add(PITCH) += (*pVeh).m_fTimeModifier;
                 if BG_UnrestrainedPitchRoll(riderPS, pVeh) == QFALSE {
@@ -1088,7 +1087,7 @@ pub unsafe extern "C" fn FighterDamageRoutine(
                         *(*pVeh).m_vOrientation.add(PITCH) = 60.0;
                     }
                 }
-            } else if (*(*pVeh).m_pParentEntity).s.number % 2 != 0 {
+            } else if (*(*pVeh).m_pParentEntity).s.number % 2 == 0 {
                 *(*pVeh).m_vOrientation.add(PITCH) -= (*pVeh).m_fTimeModifier;
                 if BG_UnrestrainedPitchRoll(riderPS, pVeh) == QFALSE {
                     if *(*pVeh).m_vOrientation.add(PITCH) > -60.0 {
