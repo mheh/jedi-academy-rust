@@ -71,6 +71,7 @@ pub mod g_spawn;
 pub mod g_svcmds;
 pub mod g_target;
 pub mod g_team;
+pub mod g_team_h;
 pub mod g_timer;
 pub mod g_trigger;
 pub mod g_turret;
