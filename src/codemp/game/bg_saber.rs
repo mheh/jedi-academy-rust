@@ -1353,11 +1353,33 @@ pub unsafe fn PM_SaberFlipOverAttackMove() -> saberMoveName_t {
 ///
 /// # Safety
 /// `pm` must point to a valid `pmove_t`.
-// TODO: Remove-Xbox
 pub unsafe fn PM_SaberBackflipAttackMove() -> c_int {
     let pmv = *addr_of!(pm);
+    let ps = (*pmv).ps;
+
+    let saber1: *mut saberInfo_t = BG_MySaber((*ps).clientNum, 0);
+    let saber2: *mut saberInfo_t = BG_MySaber((*ps).clientNum, 1);
+    //see if we have an overridden (or cancelled) lunge move
+    if !saber1.is_null() && (*saber1).jumpAtkBackMove != LS_INVALID {
+        if (*saber1).jumpAtkBackMove != LS_NONE {
+            return (*saber1).jumpAtkBackMove as saberMoveName_t;
+        }
+    }
+    if !saber2.is_null() && (*saber2).jumpAtkBackMove != LS_INVALID {
+        if (*saber2).jumpAtkBackMove != LS_NONE {
+            return (*saber2).jumpAtkBackMove as saberMoveName_t;
+        }
+    }
+    //no overrides, cancelled?
+    if !saber1.is_null() && (*saber1).jumpAtkBackMove == LS_NONE {
+        return LS_A_T2B; //LS_NONE;
+    }
+    if !saber2.is_null() && (*saber2).jumpAtkBackMove == LS_NONE {
+        return LS_A_T2B; //LS_NONE;
+    }
+    //just do it
     (*pmv).cmd.upmove = 127;
-    (*(*pmv).ps).velocity[2] = 500.0;
+    (*ps).velocity[2] = 500.0;
     LS_A_BACKFLIP_ATK
 }
 
