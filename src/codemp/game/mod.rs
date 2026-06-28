@@ -112,6 +112,7 @@ pub mod npc_utils;
 pub mod q_math;
 pub mod q_shared;
 pub mod q_shared_h;
+pub mod say_h;
 pub mod speedernpc;
 pub mod surfaceflags_h;
 pub mod syn_h;
