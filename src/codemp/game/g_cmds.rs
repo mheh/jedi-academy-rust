@@ -90,7 +90,9 @@ use crate::codemp::game::bg_public::{
     TEAM_BLUE, TEAM_FREE, TEAM_NUM_TEAMS, TEAM_RED, TEAM_SPECTATOR,
     HI_NUM_HOLDABLE,
 };
-use crate::codemp::game::bg_saberLoad::WP_SetSaber;
+use crate::codemp::game::bg_saberLoad::{
+    WP_SaberStyleValidForSaber, WP_SetSaber, WP_UseFirstValidSaberStyle,
+};
 use crate::codemp::game::bg_saga::{bgSiegeClasses, BG_SiegeCheckClassLegality, BG_SiegeFindThemeForTeam};
 use crate::codemp::game::bg_saga_h::{
     siegeClass_t, siegeTeam_t, MAX_SIEGE_CLASSES, SIEGETEAM_TEAM1, SIEGETEAM_TEAM2,
@@ -2726,7 +2728,6 @@ pub unsafe fn G_TeamForSiegeClass(cl_name: *const c_char) -> c_int {
 /// # Safety
 /// `ent` must point to a valid `gentity_t` with a non-null `client`; `saber_name` must
 /// be a valid NUL-terminated C string.
-// TODO: Remove-Xbox
 pub unsafe fn G_SetSaber(
     ent: *mut gentity_t,
     saber_num: c_int,
@@ -2793,6 +2794,25 @@ pub unsafe fn G_SetSaber(
             (*(*ent).client).sess.saber2Type.as_mut_ptr(),
             (*(*ent).client).saber[1].name.as_ptr(),
         );
+    }
+
+    if WP_SaberStyleValidForSaber(
+        addr_of_mut!((*(*ent).client).saber[0]),
+        addr_of_mut!((*(*ent).client).saber[1]),
+        (*(*ent).client).ps.saberHolstered,
+        (*(*ent).client).ps.fd.saberAnimLevel,
+    ) == QFALSE
+    {
+        WP_UseFirstValidSaberStyle(
+            addr_of_mut!((*(*ent).client).saber[0]),
+            addr_of_mut!((*(*ent).client).saber[1]),
+            (*(*ent).client).ps.saberHolstered,
+            addr_of_mut!((*(*ent).client).ps.fd.saberAnimLevel),
+        );
+        // C: saberAnimLevelBase = saberCycleQueue = saberAnimLevel
+        let lvl = (*(*ent).client).ps.fd.saberAnimLevel;
+        (*(*ent).client).ps.fd.saberAnimLevelBase = lvl;
+        (*(*ent).client).saberCycleQueue = lvl;
     }
 
     QTRUE
