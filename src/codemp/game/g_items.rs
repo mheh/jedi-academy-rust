@@ -3623,7 +3623,6 @@ Touch_Item
 /// No oracle: heavily side-effecting over the `gentity_t`→`client`→`ps` graph, the temp-entity
 /// system, and `level.time`.
 ///
-// TODO: Port-Bug
 pub unsafe extern "C" fn Touch_Item(ent: *mut gentity_t, other: *mut gentity_t, _trace: *mut trace_t) {
     let respawn: c_int;
     let mut predict: qboolean;
@@ -3715,7 +3714,7 @@ pub unsafe extern "C" fn Touch_Item(ent: *mut gentity_t, other: *mut gentity_t, 
         }
     } else if (*ent).spawnflags & ITMSF_ALLOWNPC == 0 {
         // NPCs cannot pick it up
-        if (*ent).s.eType == ET_NPC {
+        if (*other).s.eType == ET_NPC {
             // Not the player?
             let mut dontGo: qboolean = QFALSE;
             if (*(*ent).item).giType == IT_AMMO
