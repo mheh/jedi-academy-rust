@@ -832,45 +832,104 @@ spawn_shim!(sp_info_siege_decomplete => crate::codemp::game::g_saga::SP_info_sie
 spawn_shim!(sp_info_siege_radaricon => crate::codemp::game::g_saga::SP_info_siege_radaricon);
 spawn_shim!(sp_misc_siege_item => crate::codemp::game::g_saga::SP_misc_siege_item);
 
-// --- not-yet-ported-subsystem handlers: no-op stubs (mirror C entries) -----------
-macro_rules! spawn_stub {
-    ($($name:ident),+ $(,)?) => {
-        $( unsafe extern "C" fn $name(_ent: *mut gentity_t) {} )+
-    };
-}
-// REVISIT: stub — un-stub when the NPC subsystem lands.
-spawn_stub!(
-    SP_NPC_spawner, SP_NPC_Vehicle, SP_NPC_Kyle, SP_NPC_Lando, SP_NPC_Jan, SP_NPC_Luke,
-    SP_NPC_MonMothma, SP_NPC_Tavion, SP_NPC_Tavion_New, SP_NPC_Alora, SP_NPC_Reelo, SP_NPC_Galak,
-    SP_NPC_Desann, SP_NPC_Bartender, SP_NPC_MorganKatarn, SP_NPC_Jedi, SP_NPC_Prisoner, SP_NPC_Rebel,
-    SP_NPC_Stormtrooper, SP_NPC_StormtrooperOfficer, SP_NPC_Snowtrooper, SP_NPC_Tie_Pilot,
-    SP_NPC_Ugnaught, SP_NPC_Jawa, SP_NPC_Gran, SP_NPC_Rodian, SP_NPC_Weequay, SP_NPC_Trandoshan,
-    SP_NPC_Tusken, SP_NPC_Noghri, SP_NPC_SwampTrooper, SP_NPC_Imperial, SP_NPC_ImpWorker,
-    SP_NPC_BespinCop, SP_NPC_Reborn, SP_NPC_ShadowTrooper, SP_NPC_Monster_Murjj,
-    SP_NPC_Monster_Swamp, SP_NPC_Monster_Howler, SP_NPC_MineMonster, SP_NPC_Monster_Claw,
-    SP_NPC_Monster_Glider, SP_NPC_Monster_Flier2, SP_NPC_Monster_Lizard, SP_NPC_Monster_Fish,
-    SP_NPC_Monster_Wampa, SP_NPC_Monster_Rancor, SP_NPC_Droid_Interrogator, SP_NPC_Droid_Probe,
-    SP_NPC_Droid_Mark1, SP_NPC_Droid_Mark2, SP_NPC_Droid_ATST, SP_NPC_Droid_Seeker,
-    SP_NPC_Droid_Remote, SP_NPC_Droid_Sentry, SP_NPC_Droid_Gonk, SP_NPC_Droid_Mouse,
-    SP_NPC_Droid_R2D2, SP_NPC_Droid_R5D2, SP_NPC_Droid_Protocol, SP_NPC_Reborn_New, SP_NPC_Cultist,
-    SP_NPC_Cultist_Saber, SP_NPC_Cultist_Saber_Powers, SP_NPC_Cultist_Destroyer,
-    SP_NPC_Cultist_Commando,
-);
-// REVISIT: stub — un-stub when the NAV/waypoint subsystem lands.
-spawn_stub!(
-    SP_waypoint, SP_waypoint_small, SP_waypoint_navgoal, SP_waypoint_navgoal_8,
-    SP_waypoint_navgoal_4, SP_waypoint_navgoal_2, SP_waypoint_navgoal_1, SP_point_combat,
-);
-// REVISIT: stub — un-stub when the Siege subsystem lands.
-spawn_stub!(SP_info_siege_objective, SP_target_siege_end);
-// REVISIT: stub — un-stub `SP_misc_turret` when the non-G2 turret lands.
-// `SP_misc_turretG2` is the real port (g_turret_g2.rs), imported below.
-spawn_stub!(SP_misc_turret);
+// --- spawn-function shims: the real bodies live in their home modules; each
+// `spawn_shim!` emits an `extern "C"` forwarder of the same name so the `spawns[]`
+// table (which references the bare name) reaches the real implementation. Mirrors
+// the existing `spawn_shim!` block above. (Previously these were no-op stubs that
+// silently dropped the spawn — notably waypoints/point_combat never freed their
+// entity, exhausting the gentity pool on entity-heavy SP maps.)
+
+// NPC spawns (NPC_spawn.c → npc_spawn.rs).
+spawn_shim!(SP_NPC_spawner => crate::codemp::game::npc_spawn::SP_NPC_spawner);
+spawn_shim!(SP_NPC_Vehicle => crate::codemp::game::npc_spawn::SP_NPC_Vehicle);
+spawn_shim!(SP_NPC_Kyle => crate::codemp::game::npc_spawn::SP_NPC_Kyle);
+spawn_shim!(SP_NPC_Lando => crate::codemp::game::npc_spawn::SP_NPC_Lando);
+spawn_shim!(SP_NPC_Jan => crate::codemp::game::npc_spawn::SP_NPC_Jan);
+spawn_shim!(SP_NPC_Luke => crate::codemp::game::npc_spawn::SP_NPC_Luke);
+spawn_shim!(SP_NPC_MonMothma => crate::codemp::game::npc_spawn::SP_NPC_MonMothma);
+spawn_shim!(SP_NPC_Tavion => crate::codemp::game::npc_spawn::SP_NPC_Tavion);
+spawn_shim!(SP_NPC_Tavion_New => crate::codemp::game::npc_spawn::SP_NPC_Tavion_New);
+spawn_shim!(SP_NPC_Alora => crate::codemp::game::npc_spawn::SP_NPC_Alora);
+spawn_shim!(SP_NPC_Reelo => crate::codemp::game::npc_spawn::SP_NPC_Reelo);
+spawn_shim!(SP_NPC_Galak => crate::codemp::game::npc_spawn::SP_NPC_Galak);
+spawn_shim!(SP_NPC_Desann => crate::codemp::game::npc_spawn::SP_NPC_Desann);
+spawn_shim!(SP_NPC_Bartender => crate::codemp::game::npc_spawn::SP_NPC_Bartender);
+spawn_shim!(SP_NPC_MorganKatarn => crate::codemp::game::npc_spawn::SP_NPC_MorganKatarn);
+spawn_shim!(SP_NPC_Jedi => crate::codemp::game::npc_spawn::SP_NPC_Jedi);
+spawn_shim!(SP_NPC_Prisoner => crate::codemp::game::npc_spawn::SP_NPC_Prisoner);
+spawn_shim!(SP_NPC_Rebel => crate::codemp::game::npc_spawn::SP_NPC_Rebel);
+spawn_shim!(SP_NPC_Stormtrooper => crate::codemp::game::npc_spawn::SP_NPC_Stormtrooper);
+spawn_shim!(SP_NPC_StormtrooperOfficer => crate::codemp::game::npc_spawn::SP_NPC_StormtrooperOfficer);
+spawn_shim!(SP_NPC_Snowtrooper => crate::codemp::game::npc_spawn::SP_NPC_Snowtrooper);
+spawn_shim!(SP_NPC_Tie_Pilot => crate::codemp::game::npc_spawn::SP_NPC_Tie_Pilot);
+spawn_shim!(SP_NPC_Ugnaught => crate::codemp::game::npc_spawn::SP_NPC_Ugnaught);
+spawn_shim!(SP_NPC_Jawa => crate::codemp::game::npc_spawn::SP_NPC_Jawa);
+spawn_shim!(SP_NPC_Gran => crate::codemp::game::npc_spawn::SP_NPC_Gran);
+spawn_shim!(SP_NPC_Rodian => crate::codemp::game::npc_spawn::SP_NPC_Rodian);
+spawn_shim!(SP_NPC_Weequay => crate::codemp::game::npc_spawn::SP_NPC_Weequay);
+spawn_shim!(SP_NPC_Trandoshan => crate::codemp::game::npc_spawn::SP_NPC_Trandoshan);
+spawn_shim!(SP_NPC_Tusken => crate::codemp::game::npc_spawn::SP_NPC_Tusken);
+spawn_shim!(SP_NPC_Noghri => crate::codemp::game::npc_spawn::SP_NPC_Noghri);
+spawn_shim!(SP_NPC_SwampTrooper => crate::codemp::game::npc_spawn::SP_NPC_SwampTrooper);
+spawn_shim!(SP_NPC_Imperial => crate::codemp::game::npc_spawn::SP_NPC_Imperial);
+spawn_shim!(SP_NPC_ImpWorker => crate::codemp::game::npc_spawn::SP_NPC_ImpWorker);
+spawn_shim!(SP_NPC_BespinCop => crate::codemp::game::npc_spawn::SP_NPC_BespinCop);
+spawn_shim!(SP_NPC_Reborn => crate::codemp::game::npc_spawn::SP_NPC_Reborn);
+spawn_shim!(SP_NPC_ShadowTrooper => crate::codemp::game::npc_spawn::SP_NPC_ShadowTrooper);
+spawn_shim!(SP_NPC_Monster_Murjj => crate::codemp::game::npc_spawn::SP_NPC_Monster_Murjj);
+spawn_shim!(SP_NPC_Monster_Swamp => crate::codemp::game::npc_spawn::SP_NPC_Monster_Swamp);
+spawn_shim!(SP_NPC_Monster_Howler => crate::codemp::game::npc_spawn::SP_NPC_Monster_Howler);
+spawn_shim!(SP_NPC_MineMonster => crate::codemp::game::npc_spawn::SP_NPC_MineMonster);
+spawn_shim!(SP_NPC_Monster_Claw => crate::codemp::game::npc_spawn::SP_NPC_Monster_Claw);
+spawn_shim!(SP_NPC_Monster_Glider => crate::codemp::game::npc_spawn::SP_NPC_Monster_Glider);
+spawn_shim!(SP_NPC_Monster_Flier2 => crate::codemp::game::npc_spawn::SP_NPC_Monster_Flier2);
+spawn_shim!(SP_NPC_Monster_Lizard => crate::codemp::game::npc_spawn::SP_NPC_Monster_Lizard);
+spawn_shim!(SP_NPC_Monster_Fish => crate::codemp::game::npc_spawn::SP_NPC_Monster_Fish);
+spawn_shim!(SP_NPC_Monster_Wampa => crate::codemp::game::npc_spawn::SP_NPC_Monster_Wampa);
+spawn_shim!(SP_NPC_Monster_Rancor => crate::codemp::game::npc_spawn::SP_NPC_Monster_Rancor);
+spawn_shim!(SP_NPC_Droid_Interrogator => crate::codemp::game::npc_spawn::SP_NPC_Droid_Interrogator);
+spawn_shim!(SP_NPC_Droid_Probe => crate::codemp::game::npc_spawn::SP_NPC_Droid_Probe);
+spawn_shim!(SP_NPC_Droid_Mark1 => crate::codemp::game::npc_spawn::SP_NPC_Droid_Mark1);
+spawn_shim!(SP_NPC_Droid_Mark2 => crate::codemp::game::npc_spawn::SP_NPC_Droid_Mark2);
+spawn_shim!(SP_NPC_Droid_ATST => crate::codemp::game::npc_spawn::SP_NPC_Droid_ATST);
+spawn_shim!(SP_NPC_Droid_Seeker => crate::codemp::game::npc_spawn::SP_NPC_Droid_Seeker);
+spawn_shim!(SP_NPC_Droid_Remote => crate::codemp::game::npc_spawn::SP_NPC_Droid_Remote);
+spawn_shim!(SP_NPC_Droid_Sentry => crate::codemp::game::npc_spawn::SP_NPC_Droid_Sentry);
+spawn_shim!(SP_NPC_Droid_Gonk => crate::codemp::game::npc_spawn::SP_NPC_Droid_Gonk);
+spawn_shim!(SP_NPC_Droid_Mouse => crate::codemp::game::npc_spawn::SP_NPC_Droid_Mouse);
+spawn_shim!(SP_NPC_Droid_R2D2 => crate::codemp::game::npc_spawn::SP_NPC_Droid_R2D2);
+spawn_shim!(SP_NPC_Droid_R5D2 => crate::codemp::game::npc_spawn::SP_NPC_Droid_R5D2);
+spawn_shim!(SP_NPC_Droid_Protocol => crate::codemp::game::npc_spawn::SP_NPC_Droid_Protocol);
+spawn_shim!(SP_NPC_Reborn_New => crate::codemp::game::npc_spawn::SP_NPC_Reborn_New);
+spawn_shim!(SP_NPC_Cultist => crate::codemp::game::npc_spawn::SP_NPC_Cultist);
+spawn_shim!(SP_NPC_Cultist_Saber => crate::codemp::game::npc_spawn::SP_NPC_Cultist_Saber);
+spawn_shim!(SP_NPC_Cultist_Saber_Powers => crate::codemp::game::npc_spawn::SP_NPC_Cultist_Saber_Powers);
+spawn_shim!(SP_NPC_Cultist_Destroyer => crate::codemp::game::npc_spawn::SP_NPC_Cultist_Destroyer);
+spawn_shim!(SP_NPC_Cultist_Commando => crate::codemp::game::npc_spawn::SP_NPC_Cultist_Commando);
+
+// NAV waypoints + combat/interest points (g_nav.c / NPC_combat.c / NPC_senses.c).
+// These register nav data then G_FreeEntity — the no-op stubs leaked the slots.
+spawn_shim!(SP_waypoint => crate::codemp::game::g_nav::SP_waypoint);
+spawn_shim!(SP_waypoint_small => crate::codemp::game::g_nav::SP_waypoint_small);
+spawn_shim!(SP_waypoint_navgoal => crate::codemp::game::g_nav::SP_waypoint_navgoal);
+spawn_shim!(SP_waypoint_navgoal_8 => crate::codemp::game::g_nav::SP_waypoint_navgoal_8);
+spawn_shim!(SP_waypoint_navgoal_4 => crate::codemp::game::g_nav::SP_waypoint_navgoal_4);
+spawn_shim!(SP_waypoint_navgoal_2 => crate::codemp::game::g_nav::SP_waypoint_navgoal_2);
+spawn_shim!(SP_waypoint_navgoal_1 => crate::codemp::game::g_nav::SP_waypoint_navgoal_1);
+spawn_shim!(SP_point_combat => crate::codemp::game::npc_combat::SP_point_combat);
+spawn_shim!(SP_target_interest => crate::codemp::game::npc_senses::SP_target_interest);
+
+// Siege objectives (g_saga.c → g_saga.rs).
+spawn_shim!(SP_info_siege_objective => crate::codemp::game::g_saga::SP_info_siege_objective);
+spawn_shim!(SP_target_siege_end => crate::codemp::game::g_saga::SP_target_siege_end);
+
+// Turrets: non-G2 (g_turret.c) + G2 (g_turret_g2.rs, already extern "C").
+spawn_shim!(SP_misc_turret => crate::codemp::game::g_turret::SP_misc_turret);
 use crate::codemp::game::g_turret_g2::SP_misc_turretG2;
-// REVISIT: stub — un-stub when the relevant subsystem lands.
-//   SP_info_jedimaster_start (g_main.c) / SP_terrain (RMG, blocked) /
-//   SP_target_interest (NPC AI).
-spawn_stub!(SP_info_jedimaster_start, SP_terrain, SP_target_interest);
+
+// Jedi-Master saber start (g_client.c) + RMG terrain (g_misc.c).
+spawn_shim!(SP_info_jedimaster_start => crate::codemp::game::g_client::SP_info_jedimaster_start);
+spawn_shim!(SP_terrain => crate::codemp::game::g_misc::SP_terrain);
 /// `void SP_misc_bsp( gentity_t *ent )` (g_misc.c:387) — spawns a `misc_bsp` sub-BSP
 /// instance: a separate `.bsp` brush model stamped into the level at runtime. Sets the
 /// per-instance origin/rotation/target adjustments on `level`, brush-models the entity,

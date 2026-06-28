@@ -30,6 +30,7 @@ use crate::codemp::game::bg_public::{
     ET_BEAM, ET_GENERAL, ET_INVISIBLE, ET_ITEM, ET_MISSILE, ET_MOVER, ET_NPC, ET_PLAYER, ET_PORTAL,
     ET_PUSH_TRIGGER, ET_SPEAKER, ET_TELEPORT_TRIGGER,
 };
+use crate::codemp::game::g_bot::{Svcmd_AddBot_f, Svcmd_BotList_f};
 use crate::codemp::game::g_cmds::ConcatArgs;
 use crate::codemp::game::g_local::{gclient_t, gentity_t, CON_DISCONNECTED};
 use crate::codemp::game::g_main::{
@@ -616,17 +617,9 @@ pub fn Svcmd_ForceTeam_f() {
 // still returns `qtrue` exactly as the C does. Replace each with the real port when
 // the owning subsystem lands.
 
-/// TODO: un-stub when `Svcmd_GameMem_f` lands (the `game_memory` diagnostic that
-/// dumps the zone/hunk allocator stats; depends on the game-memory subsystem).
-fn Svcmd_GameMem_f() {}
-
-/// TODO: un-stub when the bot subsystem lands (`Svcmd_AddBot_f` — the `addbot`
-/// console handler that spawns an AI bot client).
-fn Svcmd_AddBot_f() {}
-
-/// TODO: un-stub when the bot subsystem lands (`Svcmd_BotList_f` — the `botlist`
-/// console handler that prints the registered bot definitions).
-fn Svcmd_BotList_f() {}
+// `Svcmd_GameMem_f` (the `game_memory` diagnostic) is ported in g_mem.rs — imported
+// here so the console command reports real pool usage instead of doing nothing.
+use crate::codemp::game::g_mem::Svcmd_GameMem_f;
 
 /*
 =================

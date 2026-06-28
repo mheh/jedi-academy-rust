@@ -1095,12 +1095,11 @@ pub unsafe fn NPC_InitGame() {
 // ===========================================================================
 
 // --- Generic bState leaves (NPC_AI_Default.c / NPC_behavior.c). ---
-// NPC_BSFollowLeader + NPC_BSSearch now dispatch to the real bodies in
-// npc_behavior.rs (imported above, c100). NPC_BSDefault (NPC_AI_Default.c) and
-// NPC_BSJump/NPC_BSNoClip remain stubs until their bodies/callees land.
-unsafe fn NPC_BSJump() {}
-unsafe fn NPC_BSNoClip() {}
-unsafe fn NPC_BSDefault() {}
+// NPC_BSFollowLeader + NPC_BSSearch dispatch to the real bodies in npc_behavior.rs
+// (imported above, c100); NPC_BSJump/NPC_BSNoClip likewise, and NPC_BSDefault from
+// npc_ai_default.rs — all now wired to their real implementations.
+use crate::codemp::game::npc_ai_default::NPC_BSDefault;
+use crate::codemp::game::npc_behavior::{NPC_BSJump, NPC_BSNoClip};
 
 // All per-type bState `_Default` leaves (Droid/Rancor/Sentry/ImperialProbe/Remote/
 // Grenadier/MineMonster/Howler/ST + Seeker/Sniper/Jedi/Wampa) are ported and imported above.
