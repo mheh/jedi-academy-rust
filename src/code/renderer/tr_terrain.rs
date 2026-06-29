@@ -1,7 +1,26 @@
-#![allow(non_snake_case)]
+#![allow(
+    non_snake_case,
+    non_upper_case_globals,
+    non_camel_case_types,
+    unused_mut,
+    unused_variables,
+    unused_assignments,
+    unused_imports,
+    dead_code,
+    clippy::all
+)]
 
-use core::ffi::{c_char, c_int, c_void};
-use core::ptr;
+// #include "../server/exe_headers.h"
+use crate::code::server::exe_headers_h::*;
+
+// this include must remain at the top of every CPP file
+// #include "tr_local.h"
+use crate::code::renderer::tr_local_h::*;
+
+// #if !defined(GENERICPARSER2_H_INC)
+// #include "../game/genericparser2.h"
+// #endif
+use crate::code::game::genericparser2_h::*;
 
 // To do:
 // Alter variance dependent on global distance from player (colour code this for cg_terrainCollisionDebug)
@@ -9,291 +28,130 @@ use core::ptr;
 // Link to neightbouring terrains or architecture (edge conditions)
 // Post process generated light data to make sure there are no bands within a patch
 
-// Type aliases and stubs
-pub type vec3_t = [f32; 3];
-pub type vec3pair_t = [vec3_t; 2];
-pub type ivec3_t = [i32; 3];
-pub type ivec5_t = [i32; 5];
-pub type color4ub_t = [u8; 4];
-pub type byte = u8;
-pub type qhandle_t = i32;
-pub type thandle_t = i32;
+// #include "../qcommon/cm_landscape.h"
+use crate::code::qcommon::cm_landscape_h::*;
+// #include "tr_landscape.h"
+use crate::code::renderer::tr_landscape_h::*;
 
-#[repr(C)]
-pub struct cplane_t {
-    _opaque: [u8; 0],
-}
+use core::ffi::{c_char, c_int, c_ulong, c_void};
+use core::ptr::{addr_of, addr_of_mut};
 
-#[repr(C)]
-pub struct shader_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CCMLandScape {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CCMPatch {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CGenericParser2 {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CGPGroup {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CTerrainVert {
-    _opaque: [u8; 0],
-}
-
-// Macro-like functions
+// #define VectorSet5(v,x,y,z,a,b)  ((v)[0]=(x), (v)[1]=(y), (v)[2]=(z), (v)[3]=(a), (v)[4]=(b))
 #[inline]
-fn VectorSet5(v: &mut ivec5_t, x: i32, y: i32, z: i32, a: i32, b: i32) {
-    v[0] = x;
-    v[1] = y;
-    v[2] = z;
-    v[3] = a;
-    v[4] = b;
+unsafe fn VectorSet5(v: *mut ivec5_t, x: i32, y: i32, z: i32, a: i32, b: i32) {
+    (*v)[0] = x; (*v)[1] = y; (*v)[2] = z; (*v)[3] = a; (*v)[4] = b;
 }
 
+// #define VectorScaleVectorAdd(c,a,b,o) ((o)[0]=(c)[0]+((a)[0]*(b)[0]),(o)[1]=(c)[1]+((a)[1]*(b)[1]),(o)[2]=(c)[2]+((a)[2]*(b)[2]))
 #[inline]
-fn VectorScaleVectorAdd(c: &vec3_t, a: &ivec3_t, b: &vec3_t, o: &mut vec3_t) {
-    o[0] = c[0] + ((a[0] as f32) * b[0]);
-    o[1] = c[1] + ((a[1] as f32) * b[1]);
-    o[2] = c[2] + ((a[2] as f32) * b[2]);
+unsafe fn VectorScaleVectorAdd(c: vec3_t, a: ivec3_t, b: vec3_t, o: *mut vec3_t) {
+    (*o)[0] = c[0] + (a[0] as f32 * b[0]);
+    (*o)[1] = c[1] + (a[1] as f32 * b[1]);
+    (*o)[2] = c[2] + (a[2] as f32 * b[2]);
 }
 
-#[inline]
-fn VectorCopy(src: &[f32; 3], dst: &mut [f32; 3]) {
-    dst[0] = src[0];
-    dst[1] = src[1];
-    dst[2] = src[2];
+pub static mut r_drawTerrain: *mut cvar_t = core::ptr::null_mut();
+pub static mut r_terrainTessellate: *mut cvar_t = core::ptr::null_mut();
+pub static mut r_terrainWaterOffset: *mut cvar_t = core::ptr::null_mut();
+
+pub static mut r_count: *mut cvar_t = core::ptr::null_mut();
+
+static mut TerrainFog: c_int = 0;
+static mut TerrainDistanceCull: f32 = 0.0;
+
+// Forward-declared in this translation unit; defined elsewhere.
+unsafe extern "C" {
+    fn CM_CullWorldBox(frustum: *const cplane_t, bounds: vec3pair_t) -> bool;
 }
 
-#[inline]
-fn VectorSet(v: &mut ivec3_t, x: i32, y: i32, z: i32) {
-    v[0] = x;
-    v[1] = y;
-    v[2] = z;
-}
-
-#[inline]
-fn VectorSubtract(a: &vec3_t, b: &vec3_t, c: &mut vec3_t) {
-    c[0] = a[0] - b[0];
-    c[1] = a[1] - b[1];
-    c[2] = a[2] - b[2];
-}
-
-#[inline]
-fn CrossProduct(v1: &vec3_t, v2: &vec3_t, cross: &mut vec3_t) {
-    cross[0] = v1[1] * v2[2] - v1[2] * v2[1];
-    cross[1] = v1[2] * v2[0] - v1[0] * v2[2];
-    cross[2] = v1[0] * v2[1] - v1[1] * v2[0];
-}
-
-#[inline]
-fn VectorNormalize(v: &mut vec3_t) {
-    let len = (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).sqrt();
-    if len > 0.0 {
-        let inv_len = 1.0 / len;
-        v[0] *= inv_len;
-        v[1] *= inv_len;
-        v[2] *= inv_len;
-    }
-}
-
-#[inline]
-fn VectorAdd(a: &vec3_t, b: &vec3_t, c: &mut vec3_t) {
-    c[0] = a[0] + b[0];
-    c[1] = a[1] + b[1];
-    c[2] = a[2] + b[2];
-}
-
-#[inline]
-fn VectorScale(v: &vec3_t, scale: f32, o: &mut vec3_t) {
-    o[0] = v[0] * scale;
-    o[1] = v[1] * scale;
-    o[2] = v[2] * scale;
-}
-
-#[inline]
-fn VectorMA(v: &vec3_t, scale: f32, dir: &vec3_t, o: &mut vec3_t) {
-    o[0] = v[0] + scale * dir[0];
-    o[1] = v[1] + scale * dir[1];
-    o[2] = v[2] + scale * dir[2];
-}
-
-#[inline]
-fn DotProduct(a: &vec3_t, b: &vec3_t) -> f32 {
-    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
-}
-
-#[inline]
-fn VectorLengthSquared(v: &vec3_t) -> f32 {
-    v[0] * v[0] + v[1] * v[1] + v[2] * v[2]
-}
-
-#[inline]
-fn DistanceSquared(a: &vec3_t, b: &vec3_t) -> f32 {
-    let dx = a[0] - b[0];
-    let dy = a[1] - b[1];
-    let dz = a[2] - b[2];
-    dx * dx + dy * dy + dz * dz
-}
-
-// External functions and globals
-extern "C" {
-    pub static mut r_drawTerrain: *mut cvar_t;
-    pub static mut r_terrainTessellate: *mut cvar_t;
-    pub static mut r_terrainWaterOffset: *mut cvar_t;
-    pub static mut r_count: *mut cvar_t;
-
-    pub static mut tr: trGlobals_t;
-    pub static mut backEnd: backEndData_t;
-    pub static mut tess: tess_t;
-
-    pub fn RB_CheckOverflow(verts: i32, indexes: i32);
-    pub fn RB_EndSurface();
-    pub fn RB_BeginSurface(shader: *mut shader_t, fogNum: i32);
-    pub fn R_GetShaderByHandle(handle: qhandle_t) -> *mut shader_t;
-    pub fn R_LightForPoint(
+unsafe extern "C" {
+    fn R_LightForPoint(
         point: *const vec3_t,
         ambientLight: *mut vec3_t,
         directedLight: *mut vec3_t,
         lightDir: *mut vec3_t,
-    ) -> i32;
-    pub fn CM_CullWorldBox(frustum: *const cplane_t, bounds: *const vec3pair_t) -> bool;
-    pub fn R_RegisterShader(name: *const c_char) -> qhandle_t;
-    pub fn R_CreateBlendedShader(a: qhandle_t, b: qhandle_t, c: qhandle_t, surfaceSprites: bool) -> qhandle_t;
-    pub fn R_GetShaderByNum(shaderNum: i32, worldData: *mut c_void) -> qhandle_t;
-    pub fn R_AddDrawSurf(surf: *const c_void, shader: *mut shader_t, fogNum: i32, dlightMap: bool);
-    pub fn Com_Printf(fmt: *const c_char, ...);
-    pub fn Com_sprintf(buffer: *mut c_char, bufsize: usize, fmt: *const c_char, ...);
-    pub fn Com_Clamp(min: f32, max: f32, value: f32) -> f32;
-    pub fn Cvar_Get(var_name: *const c_char, var_value: *const c_char, flags: i32) -> *mut cvar_t;
-    pub fn Info_ValueForKey(s: *const c_char, key: *const c_char) -> *const c_char;
-    pub fn floorf(x: f32) -> f32;
-    pub fn ceilf(x: f32) -> f32;
-    pub fn powf(x: f32, y: f32) -> f32;
-    pub fn atof(s: *const c_char) -> f64;
-    pub fn atol(s: *const c_char) -> i64;
-    pub fn stricmp(s1: *const c_char, s2: *const c_char) -> i32;
-    pub fn Z_Malloc(size: usize, tag: i32, clear: bool) -> *mut c_void;
-    pub fn Z_Free(ptr: *mut c_void);
-    pub fn Com_ParseTextFile(fileName: *const c_char, parser: *mut CGenericParser2) -> bool;
-    pub fn Com_ParseTextFileDestroy(parser: CGenericParser2);
-    pub fn CM_RegisterTerrain(config: *const c_char, server: bool) -> *mut CCMLandScape;
-    pub fn CM_TerrainPatchIterate(landscape: *const CCMLandScape, func: unsafe extern "C" fn(*mut CCMPatch, *mut c_void), data: *mut c_void);
-    pub fn CM_ShutdownTerrain(terrainId: thandle_t);
-    pub fn Q_log2(x: i32) -> i32;
-    pub fn qsort(base: *mut c_void, nmemb: usize, size: usize, compar: unsafe extern "C" fn(*const c_void, *const c_void) -> i32);
-
-    pub fn common_GetMins() -> *const vec3_t;
-    pub fn common_GetBaseWaterHeight() -> f32;
-    pub fn common_GetFlattenMap() -> *mut byte;
-    pub fn common_GetTerxels() -> i32;
+    ) -> c_int;
 }
 
-// Type stubs
-#[repr(C)]
-pub struct cvar_t {
-    _opaque: [u8; 0],
+unsafe extern "C" {
+    fn R_CreateBlendedShader(
+        a: qhandle_t,
+        b: qhandle_t,
+        c: qhandle_t,
+        surfaceSprites: bool,
+    ) -> qhandle_t;
 }
 
-#[repr(C)]
-pub struct trGlobals_t {
-    _opaque: [u8; 0],
+unsafe extern "C" {
+    fn CM_RegisterTerrain(config: *const c_char, server: bool) -> *const CCMLandScape;
+    fn R_GetShaderByNum(shaderNum: c_int, worldData: *mut world_t) -> qhandle_t;
+    fn CM_ShutdownTerrain(terrainId: thandle_t);
 }
 
-#[repr(C)]
-pub struct backEndData_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct tess_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct refdef_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct srfTerrain_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct world_t {
-    _opaque: [u8; 0],
-}
-
-// Global statics
-static mut TerrainFog: i32 = 0;
-static mut TerrainDistanceCull: f32 = 0.0;
-
-// Constants
-const MAX_QPATH: usize = 64;
-const MAX_TERRAINS: usize = 1;
-const TAG_R_TERRAIN: i32 = 14;
-const HEIGHT_RESOLUTION: usize = 256;
-const SF_TERRAIN: i32 = 10;
-const CVAR_CHEAT: i32 = 1;
-const RDF_NOWORLDMODEL: i32 = 1;
-const PI_TOP: i32 = 1;
-const PI_BOTTOM: i32 = 2;
-const TEXTURE_ALPHA_TL: i32 = 0x000000ff;
-const TEXTURE_ALPHA_TR: i32 = 0x0000ff00;
-const TEXTURE_ALPHA_BL: i32 = 0x00ff0000;
-const TEXTURE_ALPHA_BR: i32 = 0x000000ff;
-const INDEX_TL: i32 = 0;
-const INDEX_TR: i32 = 1;
-const INDEX_BL: i32 = 2;
-const INDEX_BR: i32 = 3;
-
+//
 // Render the tree.
 //
-unsafe fn RenderCorner(corner: &mut ivec5_t) {
-    if corner[3] < 0 {
-        // Access to tess and other globals would happen here
-        // This is a stub implementation
+// CTRPatch::RenderCorner — translated as a free unsafe fn.
+// Note: in C++, ivec5_t corner is an array parameter, which decays to a pointer;
+// modifications to corner[3] and corner[4] inside are visible to the caller.
+unsafe fn CTRPatch_RenderCorner(this_: *mut CTRPatch, corner: *mut ivec5_t) {
+    if ((*corner)[3] < 0) || (tess.registration != (*corner)[4]) {
+        let vert: *mut CTerVert;
+
+        vert = (*this_).mRenderMap.add(
+            ((*corner)[1] as usize) * ((*(*this_).owner).GetRealWidth() as usize)
+                + (*corner)[0] as usize,
+        );
+
+        VectorCopy(&(*vert).coords, &mut tess.xyz[tess.numVertexes as usize]);
+        VectorCopy(&(*vert).normal, &mut tess.normal[tess.numVertexes as usize]);
+
+        // *(ulong *)tess.vertexColors[tess.numVertexes] = *(ulong *)vert->tint;
+        *(tess.vertexColors[tess.numVertexes as usize].as_mut_ptr() as *mut c_ulong) =
+            *((*vert).tint.as_ptr() as *const c_ulong);
+        // *(ulong *)tess.vertexAlphas[tess.numVertexes] = corner[2];
+        *(tess.vertexAlphas[tess.numVertexes as usize].as_mut_ptr() as *mut c_ulong) =
+            (*corner)[2] as c_ulong;
+
+        tess.texCoords[tess.numVertexes as usize][0][0] = (*vert).tex[0];
+        tess.texCoords[tess.numVertexes as usize][0][1] = (*vert).tex[1];
+
+        tess.indexes[tess.numIndexes as usize] = tess.numVertexes;
+        tess.numIndexes += 1;
+        (*corner)[3] = tess.numVertexes;
+        tess.numVertexes += 1;
+        (*corner)[4] = tess.registration;
+    } else {
+        tess.indexes[tess.numIndexes as usize] = (*corner)[3];
+        tess.numIndexes += 1;
     }
 }
 
-// Render the tree.
-pub unsafe fn CTRPatch_RenderCorner(corner: &mut ivec5_t) {
-    if corner[3] < 0 {
-        // Placeholder for actual implementation
-    }
-}
-
-// Render the mesh.
-//
-// The order of triangles is critical to the subdivision working
-
-pub unsafe fn CTRPatch_RecurseRender(depth: i32, left: &mut ivec5_t, right: &mut ivec5_t, apex: &mut ivec5_t) {
+// CTRPatch::RecurseRender — translated as a free unsafe fn.
+// Note: ivec5_t parameters in C++ are array types that decay to pointers;
+// all four pointer parameters may be mutated and callers observe the changes.
+unsafe fn CTRPatch_RecurseRender(
+    this_: *mut CTRPatch,
+    depth: c_int,
+    left: *mut ivec5_t,
+    right: *mut ivec5_t,
+    apex: *mut ivec5_t,
+) {
     // All non-leaf nodes have both children, so just check for one
     if depth >= 0 {
         let mut center: ivec5_t = [0; 5];
+        let centerAlphas: *mut byte;
+        let leftAlphas: *const byte;
+        let rightAlphas: *const byte;
 
         // Work out the centre of the hypoteneuse
-        center[0] = (left[0] + right[0]) >> 1;
-        center[1] = (left[1] + right[1]) >> 1;
+        center[0] = ((*left)[0] + (*right)[0]) >> 1;
+        center[1] = ((*left)[1] + (*right)[1]) >> 1;
 
         // Work out the relevant texture coefficients at that point
-        let leftAlphas = &left[2..6] as *const i32 as *const byte;
-        let rightAlphas = &right[2..6] as *const i32 as *const byte;
-        let centerAlphas = &mut center[2..6] as *mut i32 as *mut byte;
+        leftAlphas = (&(*left)[2]) as *const i32 as *const byte;
+        rightAlphas = (&(*right)[2]) as *const i32 as *const byte;
+        centerAlphas = (&mut center[2]) as *mut i32 as *mut byte;
 
         *centerAlphas.offset(0) = (*leftAlphas.offset(0) + *rightAlphas.offset(0)) >> 1;
         *centerAlphas.offset(1) = (*leftAlphas.offset(1) + *rightAlphas.offset(1)) >> 1;
@@ -304,18 +162,20 @@ pub unsafe fn CTRPatch_RecurseRender(depth: i32, left: &mut ivec5_t, right: &mut
         center[3] = -1;
         center[4] = 0;
 
-        if apex[0] == left[0] && apex[0] == center[0] {
-            let depth_mut = depth;
-            // Would set depth = 0, but depth is not mutable in the signature
+        // Porting note: in C++ `depth` is a local parameter that can be re-assigned.
+        // Shadow it with a mutable binding so the recursive calls see the updated value.
+        let mut depth = depth;
+        if (*apex)[0] == (*left)[0] && (*apex)[0] == center[0] {
+            depth = 0;
         }
 
-        CTRPatch_RecurseRender(depth - 1, apex, left, &mut center);
-        CTRPatch_RecurseRender(depth - 1, right, apex, &mut center);
+        CTRPatch_RecurseRender(this_, depth - 1, apex, left, &mut center);
+        CTRPatch_RecurseRender(this_, depth - 1, right, apex, &mut center);
     } else {
-        if left[0] == right[0] && left[0] == apex[0] {
+        if (*left)[0] == (*right)[0] && (*left)[0] == (*apex)[0] {
             return;
         }
-        if left[1] == right[1] && left[1] == apex[1] {
+        if (*left)[1] == (*right)[1] && (*left)[1] == (*apex)[1] {
             return;
         }
         // A leaf node!  Output a triangle to be rendered.
@@ -324,17 +184,24 @@ pub unsafe fn CTRPatch_RecurseRender(depth: i32, left: &mut ivec5_t, right: &mut
         // assert(left[0] != right[0] || left[1] != right[1]);
         // assert(left[0] != apex[0] || left[1] != apex[1]);
 
-        CTRPatch_RenderCorner(left);
-        CTRPatch_RenderCorner(right);
-        CTRPatch_RenderCorner(apex);
+        CTRPatch_RenderCorner(this_, left);
+        CTRPatch_RenderCorner(this_, right);
+        CTRPatch_RenderCorner(this_, apex);
     }
 }
 
-pub unsafe fn CTRPatch_Render(Part: i32, patchTerxels: i32) {
+//
+// Render the mesh.
+//
+// The order of triangles is critical to the subdivision working
+
+// CTRPatch::Render
+pub unsafe fn CTRPatch_Render(this_: *mut CTRPatch, Part: c_int) {
     let mut lTL: ivec5_t = [0; 5];
     let mut lTR: ivec5_t = [0; 5];
     let mut lBL: ivec5_t = [0; 5];
     let mut lBR: ivec5_t = [0; 5];
+    let patchTerxels: c_int = (*(*this_).owner).GetTerxels();
 
     // VectorSet5(TL, 0, 0, TEXTURE_ALPHA_TL, -1, 0);
     lTL[0] = 0;
@@ -361,411 +228,591 @@ pub unsafe fn CTRPatch_Render(Part: i32, patchTerxels: i32) {
     lBR[3] = -1;
     lBR[4] = 0;
 
-    if (Part & PI_TOP) != 0 {
-        // if (mTLShader) {
-        // float		d;
-        // d = DotProduct (backEnd.refdef.vieworg, mNormal[0]) - mDistance[0];
-        // if (d <= 0.0)
+    if (Part & PI_TOP) != 0 && !(*this_).mTLShader.is_null() {
+        /*  float       d;
+
+            d = DotProduct (backEnd.refdef.vieworg, mNormal[0]) - mDistance[0];
+
+            if (d <= 0.0) */
         {
-            // CTRPatch_RecurseRender(r_terrainTessellate->integer, lBL, lTR, lTL);
+            CTRPatch_RecurseRender(this_, (*r_terrainTessellate).integer, &mut lBL, &mut lTR, &mut lTL);
         }
-        // }
     }
 
-    if (Part & PI_BOTTOM) != 0 {
-        // if (mBRShader) {
-        // float		d;
-        // d = DotProduct (backEnd.refdef.vieworg, mNormal[1]) - mDistance[1];
-        // if (d >= 0.0)
+    if (Part & PI_BOTTOM) != 0 && !(*this_).mBRShader.is_null() {
+        /*  float       d;
+
+            d = DotProduct (backEnd.refdef.vieworg, mNormal[1]) - mDistance[1];
+
+            if (d >= 0.0) */
         {
-            // CTRPatch_RecurseRender(r_terrainTessellate->integer, lTR, lBL, lBR);
+            CTRPatch_RecurseRender(this_, (*r_terrainTessellate).integer, &mut lTR, &mut lBL, &mut lBR);
         }
-        // }
     }
 }
 
+//
 // At this point the patch is visible and at least part of it is below water level
 //
-pub unsafe fn CTRPatch_RenderWaterVert(x: i32, y: i32) -> i32 {
-    // CTerVert	*vert;
-    // vert = mRenderMap + x + (y * owner->GetRealWidth());
-    // if(vert->tessRegistration == tess.registration) {
-    //     return(vert->tessIndex);
-    // }
-    // tess.xyz[tess.numVertexes][0] = vert->coords[0];
-    // tess.xyz[tess.numVertexes][1] = vert->coords[1];
-    // tess.xyz[tess.numVertexes][2] = owner->GetWaterHeight();
+// CTRPatch::RenderWaterVert
+pub unsafe fn CTRPatch_RenderWaterVert(this_: *mut CTRPatch, x: c_int, y: c_int) -> c_int {
+    let vert: *mut CTerVert;
+
+    vert = (*this_).mRenderMap.add(
+        x as usize + (y as usize * (*(*this_).owner).GetRealWidth() as usize),
+    );
+
+    if (*vert).tessRegistration == tess.registration {
+        return (*vert).tessIndex;
+    }
+    tess.xyz[tess.numVertexes as usize][0] = (*vert).coords[0];
+    tess.xyz[tess.numVertexes as usize][1] = (*vert).coords[1];
+    tess.xyz[tess.numVertexes as usize][2] = (*(*this_).owner).GetWaterHeight();
+
     // *(ulong *)tess.vertexColors[tess.numVertexes] = 0xffffffff;
-    // tess.texCoords[tess.numVertexes][0][0] = vert->tex[0];
-    // tess.texCoords[tess.numVertexes][0][1] = vert->tex[1];
-    // vert->tessIndex = tess.numVertexes;
-    // vert->tessRegistration = tess.registration;
-    // tess.numVertexes++;
-    // return(vert->tessIndex);
-    0 // Stub
+    *(tess.vertexColors[tess.numVertexes as usize].as_mut_ptr() as *mut c_ulong) = 0xffffffff;
+
+    tess.texCoords[tess.numVertexes as usize][0][0] = (*vert).tex[0];
+    tess.texCoords[tess.numVertexes as usize][0][1] = (*vert).tex[1];
+
+    (*vert).tessIndex = tess.numVertexes;
+    (*vert).tessRegistration = tess.registration;
+
+    tess.numVertexes += 1;
+    return (*vert).tessIndex;
 }
 
-pub unsafe fn CTRPatch_RenderWater() {
+// CTRPatch::RenderWater
+pub unsafe fn CTRPatch_RenderWater(this_: *mut CTRPatch) {
     RB_CheckOverflow(4, 6);
 
     // Get the neighbouring patches
-    // let TL = RenderWaterVert(0, 0);
-    // let TR = RenderWaterVert(owner->GetTerxels(), 0);
-    // let BL = RenderWaterVert(0, owner->GetTerxels());
-    // let BR = RenderWaterVert(owner->GetTerxels(), owner->GetTerxels());
+    let TL: c_int = CTRPatch_RenderWaterVert(this_, 0, 0);
+    let TR: c_int = CTRPatch_RenderWaterVert(this_, (*(*this_).owner).GetTerxels(), 0);
+    let BL: c_int = CTRPatch_RenderWaterVert(this_, 0, (*(*this_).owner).GetTerxels());
+    let BR: c_int =
+        CTRPatch_RenderWaterVert(this_, (*(*this_).owner).GetTerxels(), (*(*this_).owner).GetTerxels());
 
     // TL
-    // tess.indexes[tess.numIndexes++] = BL;
-    // tess.indexes[tess.numIndexes++] = TR;
-    // tess.indexes[tess.numIndexes++] = TL;
+    tess.indexes[tess.numIndexes as usize] = BL;
+    tess.numIndexes += 1;
+    tess.indexes[tess.numIndexes as usize] = TR;
+    tess.numIndexes += 1;
+    tess.indexes[tess.numIndexes as usize] = TL;
+    tess.numIndexes += 1;
 
     // BR
-    // tess.indexes[tess.numIndexes++] = TR;
-    // tess.indexes[tess.numIndexes++] = BL;
-    // tess.indexes[tess.numIndexes++] = BR;
+    tess.indexes[tess.numIndexes as usize] = TR;
+    tess.numIndexes += 1;
+    tess.indexes[tess.numIndexes as usize] = BL;
+    tess.numIndexes += 1;
+    tess.indexes[tess.numIndexes as usize] = BR;
+    tess.numIndexes += 1;
 }
 
-pub unsafe fn CTRPatch_HasWater() -> bool {
-    // owner->SetRealWaterHeight( owner->GetBaseWaterHeight() + r_terrainWaterOffset->integer );
-    // return(common->GetMins()[2] < owner->GetWaterHeight());
-    false // Stub
+// CTRPatch::HasWater (const)
+pub unsafe fn CTRPatch_HasWater(this_: *const CTRPatch) -> bool {
+    (*(*this_).owner).SetRealWaterHeight(
+        (*(*this_).owner).GetBaseWaterHeight() + (*r_terrainWaterOffset).integer,
+    );
+    return (*(*this_).common).GetMins()[2] < (*(*this_).owner).GetWaterHeight();
 }
 
-pub unsafe fn CTRPatch_SetVisibility(visCheck: bool) {
-    // if(visCheck) {
-    //     if(DistanceSquared(mCenter, backEnd.refdef.vieworg) > TerrainDistanceCull) {
-    //         misVisible = false;
-    //     } else {
-    //         // Set the visibility of the patch
-    //         misVisible = CM_CullWorldBox(backEnd.viewParms.frustum, GetBounds());
-    //     }
-    // } else {
-    //     misVisible = true;
-    // }
+// bool CM_CullWorldBox (const cplane_t *frustum, const vec3pair_t bounds); — declared above.
+
+// CTRPatch::SetVisibility
+pub unsafe fn CTRPatch_SetVisibility(this_: *mut CTRPatch, visCheck: bool) {
+    if visCheck {
+        if DistanceSquared((*this_).mCenter, backEnd.refdef.vieworg) > TerrainDistanceCull {
+            (*this_).misVisible = false;
+        } else {
+            // Set the visibility of the patch
+            (*this_).misVisible = CM_CullWorldBox(
+                backEnd.viewParms.frustum.as_ptr(),
+                (*this_).GetBounds(),
+            );
+        }
+    } else {
+        (*this_).misVisible = true;
+    }
 }
 
-// void CTRPatch::CalcNormal(void)
-// {
-//     CTerVert	*vert1, *vert2, *vert3;
-//     ivec5_t		TL, TR, BL, BR;
-//     vec3_t		v1, v2;
-//
-//     VectorSet5(TL, 0, 0, TEXTURE_ALPHA_TL, -1, 0);
-//     VectorSet5(TR, owner->GetTerxels(), 0, TEXTURE_ALPHA_TR, -1, 0);
-//     VectorSet5(BL, 0, owner->GetTerxels(), TEXTURE_ALPHA_BL, -1, 0);
-//     VectorSet5(BR, owner->GetTerxels(), owner->GetTerxels(), TEXTURE_ALPHA_BR, -1, 0);
-//
-//     vert1 = mRenderMap + (BL[1] * owner->GetRealWidth()) + BL[0];
-//     vert2 = mRenderMap + (TR[1] * owner->GetRealWidth()) + TR[0];
-//     vert3 = mRenderMap + (TL[1] * owner->GetRealWidth()) + TL[0];
-//     VectorSubtract(vert2->coords, vert1->coords, v1);
-//     VectorSubtract(vert3->coords, vert1->coords, v2);
-//     CrossProduct(v1, v2, mNormal[0]);
-//     VectorNormalize(mNormal[0]);
-//     mDistance[0] = DotProduct (vert1->coords, mNormal[0]);
-//
-//     vert1 = mRenderMap + (BL[1] * owner->GetRealWidth()) + BL[0];
-//     vert2 = mRenderMap + (TR[1] * owner->GetRealWidth()) + TR[0];
-//     vert3 = mRenderMap + (BR[1] * owner->GetRealWidth()) + BR[0];
-//     VectorSubtract(vert2->coords, vert1->coords, v1);
-//     VectorSubtract(vert3->coords, vert1->coords, v2);
-//     CrossProduct(v1, v2, mNormal[1]);
-//     VectorNormalize(mNormal[1]);
-//     mDistance[1] = DotProduct (vert1->coords, mNormal[1]);
-// }
+/*
+void CTRPatch::CalcNormal(void)
+{
+    CTerVert    *vert1, *vert2, *vert3;
+    ivec5_t     TL, TR, BL, BR;
+    vec3_t      v1, v2;
 
+    VectorSet5(TL, 0, 0, TEXTURE_ALPHA_TL, -1, 0);
+    VectorSet5(TR, owner->GetTerxels(), 0, TEXTURE_ALPHA_TR, -1, 0);
+    VectorSet5(BL, 0, owner->GetTerxels(), TEXTURE_ALPHA_BL, -1, 0);
+    VectorSet5(BR, owner->GetTerxels(), owner->GetTerxels(), TEXTURE_ALPHA_BR, -1, 0);
+
+    vert1 = mRenderMap + (BL[1] * owner->GetRealWidth()) + BL[0];
+    vert2 = mRenderMap + (TR[1] * owner->GetRealWidth()) + TR[0];
+    vert3 = mRenderMap + (TL[1] * owner->GetRealWidth()) + TL[0];
+    VectorSubtract(vert2->coords, vert1->coords, v1);
+    VectorSubtract(vert3->coords, vert1->coords, v2);
+    CrossProduct(v1, v2, mNormal[0]);
+    VectorNormalize(mNormal[0]);
+    mDistance[0] = DotProduct (vert1->coords, mNormal[0]);
+
+    vert1 = mRenderMap + (BL[1] * owner->GetRealWidth()) + BL[0];
+    vert2 = mRenderMap + (TR[1] * owner->GetRealWidth()) + TR[0];
+    vert3 = mRenderMap + (BR[1] * owner->GetRealWidth()) + BR[0];
+    VectorSubtract(vert2->coords, vert1->coords, v1);
+    VectorSubtract(vert3->coords, vert1->coords, v2);
+    CrossProduct(v1, v2, mNormal[1]);
+    VectorNormalize(mNormal[1]);
+    mDistance[1] = DotProduct (vert1->coords, mNormal[1]);
+}
+*/
+
+//
 // Reset all patches, recompute variance if needed
 //
-pub unsafe fn CTRLandScape_Reset(visCheck: bool) {
-    // int			x, y;
-    // CTRPatch	*patch;
-    //
-    // TerrainDistanceCull = tr.distanceCull + mPatchSize;
-    // TerrainDistanceCull *= TerrainDistanceCull;
-    //
-    // // Go through the patches performing resets, compute variances, and linking.
-    // for(y = mPatchMiny; y < mPatchMaxy; y++) {
-    //     for(x = mPatchMinx; x < mPatchMaxx; x++, patch++) {
-    //         patch = GetPatch(x, y);
-    //         patch->SetVisibility(visCheck);
-    //     }
-    // }
+// CTRLandScape::Reset
+pub unsafe fn CTRLandScape_Reset(this_: *mut CTRLandScape, visCheck: bool) {
+    let x: c_int;
+    let y: c_int;
+    let mut patch: *mut CTRPatch;
+
+    TerrainDistanceCull = tr.distanceCull + (*this_).mPatchSize;
+    TerrainDistanceCull *= TerrainDistanceCull;
+
+    // Go through the patches performing resets, compute variances, and linking.
+    let mut y = (*this_).mPatchMiny;
+    while y < (*this_).mPatchMaxy {
+        let mut x = (*this_).mPatchMinx;
+        while x < (*this_).mPatchMaxx {
+            patch = (*this_).GetPatch(x, y);
+            CTRPatch_SetVisibility(patch, visCheck);
+            x += 1;
+        }
+        y += 1;
+    }
 }
 
+
+//
 // Render each patch of the landscape & adjust the frame variance.
 //
-pub unsafe fn CTRLandScape_Render() {
-    // int			x, y;
-    // CTRPatch	*patch;
-    // TPatchInfo	*current;
-    // int			i;
-    //
-    // // Render all the visible patches
-    // current = mSortedPatches;
-    // for(i=0;i<mSortedCount;i++) {
-    //     if (current->mPatch->isVisible()) {
-    //         if (tess.shader != current->mShader) {
-    //             RB_EndSurface();
-    //             RB_BeginSurface(current->mShader, TerrainFog);
-    //         }
-    //         current->mPatch->Render(current->mPart);
-    //     }
-    //     current++;
-    // }
-    // RB_EndSurface();
-    //
-    // // Render all the water for visible patches
-    // // Done as a separate iteration to reduce the number of tesses created
-    // if(mWaterShader && (mWaterShader != tr.defaultShader)) {
-    //     RB_BeginSurface( mWaterShader, tr.world->globalFog );
-    //
-    //     for(y = mPatchMiny; y < mPatchMaxy; y++ ) {
-    //         for(x = mPatchMinx; x < mPatchMaxx; x++ ) {
-    //             patch = GetPatch(x, y);
-    //             if(patch->isVisible() && patch->HasWater()) {
-    //                 patch->RenderWater();
-    //             }
-    //         }
-    //     }
-    //     RB_EndSurface();
-    // }
+
+// CTRLandScape::Render
+pub unsafe fn CTRLandScape_Render(this_: *mut CTRLandScape) {
+    let mut x: c_int;
+    let mut y: c_int;
+    let mut patch: *mut CTRPatch;
+    let mut current: *mut TPatchInfo;
+    let mut i: c_int;
+
+    // Render all the visible patches
+    current = (*this_).mSortedPatches;
+    i = 0;
+    while i < (*this_).mSortedCount {
+        if (*(*current).mPatch).isVisible() {
+            if tess.shader != (*current).mShader {
+                RB_EndSurface();
+                RB_BeginSurface((*current).mShader, TerrainFog);
+            }
+            CTRPatch_Render((*current).mPatch, (*current).mPart);
+        }
+        current = current.add(1);
+        i += 1;
+    }
+    RB_EndSurface();
+
+    // Render all the water for visible patches
+    // Done as a separate iteration to reduce the number of tesses created
+    if !(*this_).mWaterShader.is_null() && ((*this_).mWaterShader != tr.defaultShader) {
+        RB_BeginSurface((*this_).mWaterShader, (*tr.world).globalFog);
+
+        y = (*this_).mPatchMiny;
+        while y < (*this_).mPatchMaxy {
+            x = (*this_).mPatchMinx;
+            while x < (*this_).mPatchMaxx {
+                patch = (*this_).GetPatch(x, y);
+                if (*patch).isVisible() && CTRPatch_HasWater(patch) {
+                    CTRPatch_RenderWater(patch);
+                }
+                x += 1;
+            }
+            y += 1;
+        }
+        RB_EndSurface();
+    }
 }
 
-pub unsafe fn CTRLandScape_CalculateRegion() {
-    // vec3_t	mins, maxs, size, offset;
-    //
-    // #if	_DEBUG
-    // mCycleCount++;
-    // #endif
-    // VectorCopy(GetPatchSize(), size);
-    // VectorCopy(GetMins(), offset);
-    //
-    // mins[0] = backEnd.refdef.vieworg[0] - tr.distanceCull - (size[0] * 2.0f) - offset[0];
-    // mins[1] = backEnd.refdef.vieworg[1] - tr.distanceCull - (size[1] * 2.0f) - offset[1];
-    //
-    // maxs[0] = backEnd.refdef.vieworg[0] + tr.distanceCull + (size[0] * 2.0f) - offset[0];
-    // maxs[1] = backEnd.refdef.vieworg[1] + tr.distanceCull + (size[1] * 2.0f) - offset[1];
-    //
-    // mPatchMinx = Com_Clamp(0, GetBlockWidth(), floorf(mins[0] / size[0]));
-    // mPatchMaxx = Com_Clamp(0, GetBlockWidth(), ceilf(maxs[0] / size[0]));
-    //
-    // mPatchMiny = Com_Clamp(0, GetBlockHeight(), floorf(mins[1] / size[1]));
-    // mPatchMaxy = Com_Clamp(0, GetBlockHeight(), ceilf(maxs[1] / size[1]));
+// CTRLandScape::CalculateRegion
+pub unsafe fn CTRLandScape_CalculateRegion(this_: *mut CTRLandScape) {
+    let mut mins: vec3_t = [0.0; 3];
+    let mut maxs: vec3_t = [0.0; 3];
+    let size: vec3_t;
+    let offset: vec3_t;
+
+    #[cfg(debug_assertions)]
+    {
+        (*this_).mCycleCount += 1;
+    }
+    size = (*this_).GetPatchSize();
+    offset = (*this_).GetMins();
+
+    mins[0] = backEnd.refdef.vieworg[0] - tr.distanceCull - (size[0] * 2.0_f32) - offset[0];
+    mins[1] = backEnd.refdef.vieworg[1] - tr.distanceCull - (size[1] * 2.0_f32) - offset[1];
+
+    maxs[0] = backEnd.refdef.vieworg[0] + tr.distanceCull + (size[0] * 2.0_f32) - offset[0];
+    maxs[1] = backEnd.refdef.vieworg[1] + tr.distanceCull + (size[1] * 2.0_f32) - offset[1];
+
+    (*this_).mPatchMinx =
+        Com_Clamp(0.0_f32, (*this_).GetBlockWidth() as f32, floorf(mins[0] / size[0])) as c_int;
+    (*this_).mPatchMaxx =
+        Com_Clamp(0.0_f32, (*this_).GetBlockWidth() as f32, ceilf(maxs[0] / size[0])) as c_int;
+
+    (*this_).mPatchMiny =
+        Com_Clamp(0.0_f32, (*this_).GetBlockHeight() as f32, floorf(mins[1] / size[1])) as c_int;
+    (*this_).mPatchMaxy =
+        Com_Clamp(0.0_f32, (*this_).GetBlockHeight() as f32, ceilf(maxs[1] / size[1])) as c_int;
 }
 
-pub unsafe fn CTRLandScape_CalculateRealCoords() {
-    // int			x, y;
-    //
-    // // Work out the real world coordinates of each heightmap entry
-    // for(y = 0; y < GetRealHeight(); y++) {
-    //     for(x = 0; x < GetRealWidth(); x++) {
-    //         ivec3_t		icoords;
-    //         int			offset;
-    //
-    //         offset = (y * GetRealWidth()) + x;
-    //
-    //         VectorSet(icoords, x, y, mRenderMap[offset].height);
-    //         VectorScaleVectorAdd(GetMins(), icoords, GetTerxelSize(), mRenderMap[offset].coords);
-    //     }
-    // }
+// CTRLandScape::CalculateRealCoords
+pub unsafe fn CTRLandScape_CalculateRealCoords(this_: *mut CTRLandScape) {
+    let mut x: c_int;
+    let mut y: c_int;
+
+    // Work out the real world coordinates of each heightmap entry
+    y = 0;
+    while y < (*this_).GetRealHeight() {
+        x = 0;
+        while x < (*this_).GetRealWidth() {
+            let mut icoords: ivec3_t = [0; 3];
+            let offset: usize;
+
+            offset = (y as usize * (*this_).GetRealWidth() as usize) + x as usize;
+
+            VectorSet(&mut icoords, x, y, (*(*this_).mRenderMap.add(offset)).height as c_int);
+            VectorScaleVectorAdd(
+                (*this_).GetMins(),
+                icoords,
+                (*this_).GetTerxelSize(),
+                &mut (*(*this_).mRenderMap.add(offset)).coords,
+            );
+            x += 1;
+        }
+        y += 1;
+    }
 }
 
-pub unsafe fn CTRLandScape_CalculateNormals() {
-    // int		x, y, offset = 0;
-    //
-    // // Work out the normals for every face
-    // for(y = 0; y < GetHeight(); y++) {
-    //     for(x = 0; x < GetWidth(); x++) {
-    //         vec3_t		vcenter, vleft;
-    //
-    //         offset = (y * GetRealWidth()) + x;
-    //
-    //         VectorSubtract(mRenderMap[offset].coords, mRenderMap[offset + 1].coords, vcenter);
-    //         VectorSubtract(mRenderMap[offset].coords, mRenderMap[offset + GetRealWidth()].coords, vleft);
-    //
-    //         CrossProduct(vcenter, vleft, mRenderMap[offset].normal);
-    //         VectorNormalize(mRenderMap[offset].normal);
-    //     }
-    //     // Duplicate right edge condition
-    //     VectorCopy(mRenderMap[offset].normal, mRenderMap[offset + 1].normal);
-    // }
-    // // Duplicate bottom line
-    // offset = GetHeight() * GetRealWidth();
-    // for(x = 0; x < GetRealWidth(); x++) {
-    //     VectorCopy(mRenderMap[offset - GetRealWidth() + x].normal, mRenderMap[offset + x].normal);
-    // }
+// CTRLandScape::CalculateNormals
+pub unsafe fn CTRLandScape_CalculateNormals(this_: *mut CTRLandScape) {
+    let mut x: c_int;
+    let mut y: c_int;
+    let mut offset: usize = 0;
+
+    // Work out the normals for every face
+    y = 0;
+    while y < (*this_).GetHeight() {
+        x = 0;
+        while x < (*this_).GetWidth() {
+            let mut vcenter: vec3_t = [0.0; 3];
+            let mut vleft: vec3_t = [0.0; 3];
+
+            offset = (y as usize * (*this_).GetRealWidth() as usize) + x as usize;
+
+            VectorSubtract(
+                &(*(*this_).mRenderMap.add(offset)).coords,
+                &(*(*this_).mRenderMap.add(offset + 1)).coords,
+                &mut vcenter,
+            );
+            VectorSubtract(
+                &(*(*this_).mRenderMap.add(offset)).coords,
+                &(*(*this_).mRenderMap.add(offset + (*this_).GetRealWidth() as usize)).coords,
+                &mut vleft,
+            );
+
+            CrossProduct(&vcenter, &vleft, &mut (*(*this_).mRenderMap.add(offset)).normal);
+            VectorNormalize(&mut (*(*this_).mRenderMap.add(offset)).normal);
+            x += 1;
+        }
+        // Duplicate right edge condition
+        VectorCopy(
+            &(*(*this_).mRenderMap.add(offset)).normal,
+            &mut (*(*this_).mRenderMap.add(offset + 1)).normal,
+        );
+        y += 1;
+    }
+    // Duplicate bottom line
+    offset = (*this_).GetHeight() as usize * (*this_).GetRealWidth() as usize;
+    x = 0;
+    while x < (*this_).GetRealWidth() {
+        VectorCopy(
+            &(*(*this_).mRenderMap.add(offset - (*this_).GetRealWidth() as usize + x as usize)).normal,
+            &mut (*(*this_).mRenderMap.add(offset + x as usize)).normal,
+        );
+        x += 1;
+    }
 }
 
-pub unsafe fn CTRLandScape_CalculateLighting() {
-    // int		x, y, offset = 0;
-    //
-    // // Work out the vertex normal (average of every attached face normal) and apply to the direction of the light
-    // for(y = 0; y < GetHeight(); y++) {
-    //     for(x = 0; x < GetWidth(); x++) {
-    //         vec3_t		ambient;
-    //         vec3_t		directed, direction;
-    //         vec3_t		total, tint;
-    //         vec_t		dp;
-    //
-    //         offset = (y * GetRealWidth()) + x;
-    //
-    //         // Work out average normal
-    //         VectorCopy(GetRenderMap(x, y)->normal, total);
-    //         VectorAdd(total, GetRenderMap(x + 1, y)->normal, total);
-    //         VectorAdd(total, GetRenderMap(x + 1, y + 1)->normal, total);
-    //         VectorAdd(total, GetRenderMap(x, y + 1)->normal, total);
-    //         VectorNormalize(total);
-    //
-    //         if (!R_LightForPoint(mRenderMap[offset].coords, ambient, directed, direction)) {
-    //             mRenderMap[offset].tint[0] =
-    //                 mRenderMap[offset].tint[1] =
-    //                 mRenderMap[offset].tint[2] = 255 >> tr.overbrightBits;
-    //             mRenderMap[offset].tint[3] = 255;
-    //             continue;
-    //         }
-    //
-    //         if(mRenderMap[offset].coords[2] < common->GetBaseWaterHeight()) {
-    //             VectorScale(ambient, 0.75f, ambient);
-    //         }
-    //
-    //         // Both normalised, so -1.0 < dp < 1.0
-    //         dp = Com_Clamp(0.0f, 1.0f, DotProduct(direction, total));
-    //         dp = powf(dp, 3);
-    //         VectorScale(ambient, (1.0 - dp) * 0.5, ambient);
-    //         VectorMA(ambient, dp, directed, tint);
-    //
-    //         // rjr - in R_SetupEntityLighting, ambient light is automatically increased by 32, so do it here to match
-    //         // rjr - decided to disable both the lighting boost automatically in there as well as here.
-    //         mRenderMap[offset].tint[0] = (byte)Com_Clamp(0.0f, 255.0f, tint[0] ) >> tr.overbrightBits;
-    //         mRenderMap[offset].tint[1] = (byte)Com_Clamp(0.0f, 255.0f, tint[1] ) >> tr.overbrightBits;
-    //         mRenderMap[offset].tint[2] = (byte)Com_Clamp(0.0f, 255.0f, tint[2] ) >> tr.overbrightBits;
-    //         mRenderMap[offset].tint[3] = 0xff;
-    //     }
-    //     mRenderMap[offset + 1].tint[0] = mRenderMap[offset].tint[0];
-    //     mRenderMap[offset + 1].tint[1] = mRenderMap[offset].tint[1];
-    //     mRenderMap[offset + 1].tint[2] = mRenderMap[offset].tint[2];
-    //     mRenderMap[offset + 1].tint[3] = 0xff;
-    // }
-    // // Duplicate bottom line
-    // offset = GetHeight() * GetRealWidth();
-    // for(x = 0; x < GetRealWidth(); x++) {
-    //     mRenderMap[offset + x].tint[0] = mRenderMap[offset - GetRealWidth() + x].tint[0];
-    //     mRenderMap[offset + x].tint[1] = mRenderMap[offset - GetRealWidth() + x].tint[1];
-    //     mRenderMap[offset + x].tint[2] = mRenderMap[offset - GetRealWidth() + x].tint[2];
-    //     mRenderMap[offset + x].tint[3] = 0xff;
-    // }
+// int R_LightForPoint( vec3_t point, vec3_t ambientLight, vec3_t directedLight, vec3_t lightDir ); — declared above.
+
+// CTRLandScape::CalculateLighting
+pub unsafe fn CTRLandScape_CalculateLighting(this_: *mut CTRLandScape) {
+    let mut x: c_int;
+    let mut y: c_int;
+    let mut offset: usize = 0;
+    let common: *const CCMLandScape = (*this_).common;
+
+    // Work out the vertex normal (average of every attached face normal) and apply to the direction of the light
+    y = 0;
+    while y < (*this_).GetHeight() {
+        x = 0;
+        while x < (*this_).GetWidth() {
+            let mut ambient: vec3_t = [0.0; 3];
+            let mut directed: vec3_t = [0.0; 3];
+            let mut direction: vec3_t = [0.0; 3];
+            let mut total: vec3_t = [0.0; 3];
+            let mut tint: vec3_t = [0.0; 3];
+            let dp: vec_t;
+
+            offset = (y as usize * (*this_).GetRealWidth() as usize) + x as usize;
+
+            // Work out average normal
+            VectorCopy(
+                &(*(*this_).GetRenderMap(x, y)).normal,
+                &mut total,
+            );
+            VectorAdd(&total, &(*(*this_).GetRenderMap(x + 1, y)).normal, &mut total);
+            VectorAdd(&total, &(*(*this_).GetRenderMap(x + 1, y + 1)).normal, &mut total);
+            VectorAdd(&total, &(*(*this_).GetRenderMap(x, y + 1)).normal, &mut total);
+            VectorNormalize(&mut total);
+
+            if R_LightForPoint(
+                &(*(*this_).mRenderMap.add(offset)).coords,
+                &mut ambient,
+                &mut directed,
+                &mut direction,
+            ) == 0
+            {
+                let t = (255 >> tr.overbrightBits) as byte;
+                (*(*this_).mRenderMap.add(offset)).tint[0] = t;
+                (*(*this_).mRenderMap.add(offset)).tint[1] = t;
+                (*(*this_).mRenderMap.add(offset)).tint[2] = t;
+                (*(*this_).mRenderMap.add(offset)).tint[3] = 255;
+                x += 1;
+                continue;
+            }
+
+            if (*(*this_).mRenderMap.add(offset)).coords[2] < (*common).GetBaseWaterHeight() {
+                VectorScale(&ambient, 0.75_f32, &mut ambient);
+            }
+
+            // Both normalised, so -1.0 < dp < 1.0
+            let dp = Com_Clamp(0.0_f32, 1.0_f32, DotProduct(&direction, &total));
+            let dp = powf(dp, 3.0_f32);
+            VectorScale(&ambient, (1.0_f64 - dp as f64) as f32 * 0.5_f32, &mut ambient);
+            VectorMA(&ambient, dp, &directed, &mut tint);
+
+            // rjr - in R_SetupEntityLighting, ambient light is automatically increased by 32, so do it here to match
+            // rjr - decided to disable both the lighting boost automatically in there as well as here.
+            (*(*this_).mRenderMap.add(offset)).tint[0] =
+                ((Com_Clamp(0.0_f32, 255.0_f32, tint[0]) as u8 as c_int) >> tr.overbrightBits) as u8;
+            (*(*this_).mRenderMap.add(offset)).tint[1] =
+                ((Com_Clamp(0.0_f32, 255.0_f32, tint[1]) as u8 as c_int) >> tr.overbrightBits) as u8;
+            (*(*this_).mRenderMap.add(offset)).tint[2] =
+                ((Com_Clamp(0.0_f32, 255.0_f32, tint[2]) as u8 as c_int) >> tr.overbrightBits) as u8;
+            (*(*this_).mRenderMap.add(offset)).tint[3] = 0xff;
+            x += 1;
+        }
+        (*(*this_).mRenderMap.add(offset + 1)).tint[0] = (*(*this_).mRenderMap.add(offset)).tint[0];
+        (*(*this_).mRenderMap.add(offset + 1)).tint[1] = (*(*this_).mRenderMap.add(offset)).tint[1];
+        (*(*this_).mRenderMap.add(offset + 1)).tint[2] = (*(*this_).mRenderMap.add(offset)).tint[2];
+        (*(*this_).mRenderMap.add(offset + 1)).tint[3] = 0xff;
+        y += 1;
+    }
+    // Duplicate bottom line
+    offset = (*this_).GetHeight() as usize * (*this_).GetRealWidth() as usize;
+    x = 0;
+    while x < (*this_).GetRealWidth() {
+        (*(*this_).mRenderMap.add(offset + x as usize)).tint[0] =
+            (*(*this_).mRenderMap.add(offset - (*this_).GetRealWidth() as usize + x as usize)).tint[0];
+        (*(*this_).mRenderMap.add(offset + x as usize)).tint[1] =
+            (*(*this_).mRenderMap.add(offset - (*this_).GetRealWidth() as usize + x as usize)).tint[1];
+        (*(*this_).mRenderMap.add(offset + x as usize)).tint[2] =
+            (*(*this_).mRenderMap.add(offset - (*this_).GetRealWidth() as usize + x as usize)).tint[2];
+        (*(*this_).mRenderMap.add(offset + x as usize)).tint[3] = 0xff;
+        x += 1;
+    }
 }
 
-pub unsafe fn CTRLandScape_CalculateTextureCoords() {
-    // int		x, y;
-    //
-    // for(y = 0; y < GetRealHeight(); y++) {
-    //     for(x = 0; x < GetRealWidth(); x++) {
-    //         int offset = (y * GetRealWidth()) + x;
-    //
-    //         mRenderMap[offset].tex[0] = x * mTextureScale * GetTerxelSize()[0];
-    //         mRenderMap[offset].tex[1] = y * mTextureScale * GetTerxelSize()[1];
-    //     }
-    // }
+// CTRLandScape::CalculateTextureCoords
+pub unsafe fn CTRLandScape_CalculateTextureCoords(this_: *mut CTRLandScape) {
+    let mut x: c_int;
+    let mut y: c_int;
+
+    y = 0;
+    while y < (*this_).GetRealHeight() {
+        x = 0;
+        while x < (*this_).GetRealWidth() {
+            let offset: usize = (y as usize * (*this_).GetRealWidth() as usize) + x as usize;
+
+            (*(*this_).mRenderMap.add(offset)).tex[0] =
+                x as f32 * (*this_).mTextureScale * (*this_).GetTerxelSize()[0];
+            (*(*this_).mRenderMap.add(offset)).tex[1] =
+                y as f32 * (*this_).mTextureScale * (*this_).GetTerxelSize()[1];
+            x += 1;
+        }
+        y += 1;
+    }
 }
 
-pub unsafe fn CTRLandScape_SetShaders(height: i32, shader: qhandle_t) {
-    // int		i;
-    //
-    // for(i = height; shader && (i < HEIGHT_RESOLUTION); i++) {
-    //     if(!mHeightDetails[i].GetShader()) {
-    //         mHeightDetails[i].SetShader(shader);
-    //     }
-    // }
+// CTRLandScape::SetShaders
+pub unsafe fn CTRLandScape_SetShaders(this_: *mut CTRLandScape, height: c_int, shader: qhandle_t) {
+    let mut i: c_int;
+
+    i = height;
+    while shader != 0 && i < HEIGHT_RESOLUTION as c_int {
+        if (*this_).mHeightDetails[i as usize].GetShader() == 0 {
+            (*this_).mHeightDetails[i as usize].SetShader(shader);
+        }
+        i += 1;
+    }
 }
 
-pub unsafe fn CTRLandScape_LoadTerrainDef(td: *const c_char) {
-    // #ifndef PRE_RELEASE_DEMO
-    // char			terrainDef[MAX_QPATH];
-    // CGenericParser2	parse;
-    // CGPGroup		*basegroup, *classes, *items;
-    //
-    // Com_sprintf(terrainDef, MAX_QPATH, "ext_data/RMG/%s.terrain", td);
-    // Com_Printf("R_Terrain: Loading and parsing terrainDef %s.....\n", td);
-    //
-    // mWaterShader = NULL;
-    // mFlatShader  = NULL;
-    //
-    // if(!Com_ParseTextFile(terrainDef, parse)) {
-    //     Com_sprintf(terrainDef, MAX_QPATH, "ext_data/arioche/%s.terrain", td);
-    //     if(!Com_ParseTextFile(terrainDef, parse)) {
-    //         Com_Printf("Could not open %s\n", terrainDef);
-    //         return;
-    //     }
-    // }
-    // // The whole file....
-    // basegroup = parse.GetBaseParseGroup();
-    //
-    // // The root { } struct
-    // classes = basegroup->GetSubGroups();
-    // while(classes) {
-    //     items = classes->GetSubGroups();
-    //     while(items) {
-    //         const char* type = items->GetName ( );
-    //
-    //         if(!stricmp( type, "altitudetexture")) {
-    //             int			height;
-    //             const char	*shaderName;
-    //             qhandle_t	shader;
-    //
-    //             // Height must exist - the rest are optional
-    //             height = atol(items->FindPairValue("height", "0"));
-    //
-    //             // Shader for this height
-    //             shaderName = items->FindPairValue("shader", "");
-    //             if(shaderName[0]) {
-    //                 shader = RE_RegisterShader(shaderName);
-    //                 if(shader) {
-    //                     SetShaders(height, shader);
-    //                 }
-    //             }
-    //         } else if(!stricmp(type, "water")) {
-    //             mWaterShader = R_GetShaderByHandle(RE_RegisterShader(items->FindPairValue("shader", "")));
-    //         } else if(!stricmp(type, "flattexture")) {
-    //             mFlatShader = RE_RegisterShader ( items->FindPairValue("shader", "") );
-    //         }
-    //
-    //         items = (CGPGroup *)items->GetNext();
-    //     }
-    //     classes = (CGPGroup *)classes->GetNext();
-    // }
-    //
-    // Com_ParseTextFileDestroy(parse);
+// CTRLandScape::LoadTerrainDef
+pub unsafe fn CTRLandScape_LoadTerrainDef(this_: *mut CTRLandScape, td: *const c_char) {
+    #[cfg(not(feature = "pre_release_demo"))]
+    {
+        let mut terrainDef: [c_char; MAX_QPATH] = [0; MAX_QPATH];
+        let mut parse: CGenericParser2 = core::mem::zeroed();
+        let basegroup: *mut CGPGroup;
+        let mut classes: *mut CGPGroup;
+        let mut items: *mut CGPGroup;
+
+        Com_sprintf(
+            terrainDef.as_mut_ptr(),
+            MAX_QPATH,
+            b"ext_data/RMG/%s.terrain\0".as_ptr() as *const c_char,
+            td,
+        );
+        Com_Printf(
+            b"R_Terrain: Loading and parsing terrainDef %s.....\n\0".as_ptr() as *const c_char,
+            td,
+        );
+
+        (*this_).mWaterShader = core::ptr::null_mut();
+        (*this_).mFlatShader = 0;
+
+        if Com_ParseTextFile(terrainDef.as_ptr(), &mut parse) == qfalse {
+            Com_sprintf(
+                terrainDef.as_mut_ptr(),
+                MAX_QPATH,
+                b"ext_data/arioche/%s.terrain\0".as_ptr() as *const c_char,
+                td,
+            );
+            if Com_ParseTextFile(terrainDef.as_ptr(), &mut parse) == qfalse {
+                Com_Printf(
+                    b"Could not open %s\n\0".as_ptr() as *const c_char,
+                    terrainDef.as_ptr(),
+                );
+                return;
+            }
+        }
+        // The whole file....
+        basegroup = parse.GetBaseParseGroup();
+
+        // The root { } struct
+        classes = (*basegroup).GetSubGroups();
+        while !classes.is_null() {
+            items = (*classes).GetSubGroups();
+            while !items.is_null() {
+                let type_: *const c_char = (*items).GetName();
+
+                if stricmp(type_, b"altitudetexture\0".as_ptr() as *const c_char) == 0 {
+                    let height: c_int;
+                    let shaderName: *const c_char;
+                    let shader: qhandle_t;
+
+                    // Height must exist - the rest are optional
+                    height = atol((*items).FindPairValue(
+                        b"height\0".as_ptr() as *const c_char,
+                        b"0\0".as_ptr() as *const c_char,
+                    )) as c_int;
+
+                    // Shader for this height
+                    shaderName = (*items).FindPairValue(
+                        b"shader\0".as_ptr() as *const c_char,
+                        b"\0".as_ptr() as *const c_char,
+                    );
+                    if *shaderName != 0 {
+                        shader = RE_RegisterShader(shaderName);
+                        if shader != 0 {
+                            CTRLandScape_SetShaders(this_, height, shader);
+                        }
+                    }
+                } else if stricmp(type_, b"water\0".as_ptr() as *const c_char) == 0 {
+                    (*this_).mWaterShader = R_GetShaderByHandle(RE_RegisterShader(
+                        (*items).FindPairValue(
+                            b"shader\0".as_ptr() as *const c_char,
+                            b"\0".as_ptr() as *const c_char,
+                        ),
+                    ));
+                } else if stricmp(type_, b"flattexture\0".as_ptr() as *const c_char) == 0 {
+                    (*this_).mFlatShader = RE_RegisterShader((*items).FindPairValue(
+                        b"shader\0".as_ptr() as *const c_char,
+                        b"\0".as_ptr() as *const c_char,
+                    ));
+                }
+
+                items = (*items).GetNext() as *mut CGPGroup;
+            }
+            classes = (*classes).GetNext() as *mut CGPGroup;
+        }
+
+        Com_ParseTextFileDestroy(parse);
+    }
     // #endif // PRE_RELEASE_DEMO
 }
 
-pub unsafe fn CTRLandScape_GetBlendedShader(a: qhandle_t, b: qhandle_t, c: qhandle_t, surfaceSprites: bool) -> qhandle_t {
+// qhandle_t R_CreateBlendedShader(qhandle_t a, qhandle_t b, qhandle_t c, bool surfaceSprites ); — declared above.
+
+// CTRLandScape::GetBlendedShader
+pub unsafe fn CTRLandScape_GetBlendedShader(
+    this_: *mut CTRLandScape,
+    a: qhandle_t,
+    b: qhandle_t,
+    c: qhandle_t,
+    surfaceSprites: bool,
+) -> qhandle_t {
+    let blended: qhandle_t;
+
     // Special case single pass shader
-    if a == b && a == c {
+    if (a == b) && (a == c) {
         return a;
     }
 
-    let blended = R_CreateBlendedShader(a, b, c, surfaceSprites);
-    blended
+    blended = R_CreateBlendedShader(a, b, c, surfaceSprites);
+    return blended;
 }
 
-unsafe extern "C" fn ComparePatchInfo(arg1: *const TPatchInfo, arg2: *const TPatchInfo) -> i32 {
-    let arg1 = &*arg1;
-    let arg2 = &*arg2;
-
+unsafe extern "C" fn ComparePatchInfo(
+    arg1: *const c_void,
+    arg2: *const c_void,
+) -> c_int {
+    let arg1 = arg1 as *const TPatchInfo;
+    let arg2 = arg2 as *const TPatchInfo;
     let s1: *mut shader_t;
     let s2: *mut shader_t;
 
-    if (arg1.mPart & PI_TOP) != 0 {
-        s1 = arg1.mShader;
+    if ((*arg1).mPart & PI_TOP) != 0 {
+        s1 = (*(*arg1).mPatch).GetTLShader();
     } else {
-        s1 = arg1.mShader;
+        s1 = (*(*arg1).mPatch).GetBRShader();
     }
 
-    if (arg2.mPart & PI_TOP) != 0 {
-        s2 = arg2.mShader;
+    if ((*arg2).mPart & PI_TOP) != 0 {
+        s2 = (*(*arg2).mPatch).GetTLShader();
     } else {
-        s2 = arg2.mShader;
+        s2 = (*(*arg2).mPatch).GetBRShader();
     }
 
     if (s1 as usize) < (s2 as usize) {
@@ -774,348 +821,440 @@ unsafe extern "C" fn ComparePatchInfo(arg1: *const TPatchInfo, arg2: *const TPat
         return 1;
     }
 
-    0
+    return 0;
 }
 
-#[repr(C)]
-pub struct TPatchInfo {
-    pub mPatch: *mut CTRPatch,
-    pub mShader: *mut shader_t,
-    pub mPart: i32,
-}
+// CTRLandScape::CalculateShaders
+pub unsafe fn CTRLandScape_CalculateShaders(this_: *mut CTRLandScape) {
+    #[cfg(not(feature = "pre_release_demo"))]
+    {
+        let mut x: c_int;
+        let mut y: c_int;
+        let width: c_int;
+        let height: c_int;
+        let mut offset: usize;
+        // int offsets[4];
+        let mut handles: [qhandle_t; 4] = [0; 4];
+        let mut patch: *mut CTRPatch;
+        let common: *const CCMLandScape = (*this_).common;
+        let shaders: *mut qhandle_t;
+        let mut current: *mut TPatchInfo = (*this_).mSortedPatches;
 
-#[repr(C)]
-pub struct CTRPatch {
-    _opaque: [u8; 0],
-}
+        width = (*this_).GetWidth() / (*common).GetTerxels();
+        height = (*this_).GetHeight() / (*common).GetTerxels();
 
-#[repr(C)]
-pub struct CTerVert {
-    _opaque: [u8; 0],
-}
+        // Porting note: C++ `new qhandle_t[(width+1)*(height+1)]` — using Vec for heap allocation;
+        // `delete[] shaders` at end becomes drop via the Vec going out of scope.
+        let mut shaders_vec: Vec<qhandle_t> =
+            vec![0; ((width + 1) * (height + 1)) as usize];
+        let shaders: *mut qhandle_t = shaders_vec.as_mut_ptr();
 
-pub unsafe fn CTRLandScape_CalculateShaders() {
-    // #ifndef PRE_RELEASE_DEMO
-    // int						x, y;
-    // int						width, height;
-    // int						offset;
-    // // int						offsets[4];
-    // qhandle_t				handles[4];
-    // CTRPatch				*patch;
-    // qhandle_t				*shaders;
-    // TPatchInfo				*current = mSortedPatches;
-    //
-    // width  = GetWidth ( ) / common->GetTerxels ( );
-    // height = GetHeight ( ) / common->GetTerxels ( );
-    //
-    // shaders = new qhandle_t [ (width+1) * (height+1) ];
-    //
-    // // On the first pass determine all of the shaders for the entire
-    // // terrain assuming no flat ground
-    // offset = 0;
-    // for ( y = 0; y < height + 1; y ++ ) {
-    //     if ( y <= height ) {
-    //         offset = common->GetTerxels ( ) * y * GetRealWidth ( );
-    //     } else {
-    //         offset = common->GetTerxels ( ) * (y-1) * GetRealWidth ( );
-    //         offset += GetRealWidth ( );
-    //     }
-    //
-    //     for ( x = 0; x < width + 1; x ++, offset += common->GetTerxels ( ) ) {
-    //         // Save the shader
-    //         shaders[y * width + x] = GetHeightDetail(mRenderMap[offset].height)->GetShader ( );
-    //     }
-    // }
-    //
-    // // On the second pass determine flat ground and replace the shader
-    // // at that point with the flat ground shader
-    // byte*	flattenMap = common->GetFlattenMap ( );
-    // if ( mFlatShader && flattenMap ) {
-    //     for ( y = 1; y < height; y ++ ) {
-    //         for ( x = 1; x < width; x ++ ) {
-    //             int		offset;
-    //             int		xx;
-    //             int		yy;
-    //             bool	flat	   = false;
-    //
-    //             offset  = (x) * common->GetTerxels ( );
-    //             offset += (y) * common->GetTerxels ( ) * GetRealWidth();
-    //
-    //             offset -= GetRealWidth();
-    //             offset -= 1;
-    //
-    //             for ( yy = 0; yy < 3 && !flat; yy++ ) {
-    //                 for ( xx = 0; xx < 3 && !flat; xx++ ) {
-    //                     if ( flattenMap [ offset + xx] & 0x80) {
-    //                         flat = true;
-    //                         break;
-    //                     }
-    //                 }
-    //
-    //                 offset += GetRealWidth();
-    //             }
-    //             // This shader is now a flat shader
-    //             if ( flat ) {
-    //                 shaders[y * width + x] = mFlatShader;
-    //             }
-    //
-    // #ifdef _DEBUG
-    //             OutputDebugString ( va("Flat Area:  %f %f\n",
-    //                 GetMins()[0] + (GetMaxs()[0]-GetMins()[0])/width * x,
-    //                 GetMins()[1] + (GetMaxs()[1]-GetMins()[1])/height * y) );
-    // #endif
-    //         }
-    //     }
-    // }
-    //
-    // // Now that the shaders have been determined, set them for each patch
-    // patch = mTRPatches;
-    // mSortedCount = 0;
-    // for ( y = 0; y < height; y ++ ) {
-    //     for ( x = 0; x < width; x ++, patch++ ) {
-    //         bool surfaceSprites = true;
-    //
-    //         handles[INDEX_TL] = shaders[ x + y * width ];
-    //         handles[INDEX_TR] = shaders[ x + 1 + y * width ];
-    //         handles[INDEX_BL] = shaders[ x + (y + 1) * width ];
-    //         handles[INDEX_BR] = shaders[ x + 1 + (y + 1) * width ];
-    //
-    //         if ( handles[INDEX_TL] == mFlatShader ||
-    //              handles[INDEX_TR] == mFlatShader ||
-    //              handles[INDEX_BL] == mFlatShader ||
-    //              handles[INDEX_BR] == mFlatShader    ) {
-    //             surfaceSprites = false;
-    //         }
-    //
-    //         patch->SetTLShader(GetBlendedShader(handles[INDEX_TR], handles[INDEX_BL], handles[INDEX_TL], surfaceSprites));
-    //         current->mPatch = patch;
-    //         current->mShader = patch->GetTLShader();
-    //         current->mPart = PI_TOP;
-    //
-    //         patch->SetBRShader(GetBlendedShader(handles[INDEX_TR], handles[INDEX_BL], handles[INDEX_BR], surfaceSprites));
-    //         if (patch->GetBRShader() == current->mShader) {
-    //             current->mPart |= PI_BOTTOM;
-    //         } else {
-    //             mSortedCount++;
-    //             current++;
-    //
-    //             current->mPatch = patch;
-    //             current->mShader = patch->GetBRShader();
-    //             current->mPart = PI_BOTTOM;
-    //         }
-    //         mSortedCount++;
-    //         current++;
-    //     }
-    // }
-    //
-    // // Cleanup our temporary array
-    // delete[] shaders;
-    //
-    // qsort(mSortedPatches, mSortedCount, sizeof(*mSortedPatches), (int (__cdecl *)(const void *,const void *))ComparePatchInfo);
-    //
+        // On the first pass determine all of the shaders for the entire
+        // terrain assuming no flat ground
+        offset = 0;
+        y = 0;
+        while y < height + 1 {
+            if y <= height {
+                offset = ((*common).GetTerxels() * y * (*this_).GetRealWidth()) as usize;
+            } else {
+                offset = ((*common).GetTerxels() * (y - 1) * (*this_).GetRealWidth()) as usize;
+                offset += (*this_).GetRealWidth() as usize;
+            }
+
+            x = 0;
+            while x < width + 1 {
+                // Save the shader
+                *shaders.add((y * width + x) as usize) =
+                    (*this_).GetHeightDetail((*(*this_).mRenderMap.add(offset)).height).GetShader();
+                x += 1;
+                offset += (*common).GetTerxels() as usize;
+            }
+            y += 1;
+        }
+
+        // On the second pass determine flat ground and replace the shader
+        // at that point with the flat ground shader
+        let flattenMap: *mut byte = (*common).GetFlattenMap();
+        if (*this_).mFlatShader != 0 && !flattenMap.is_null() {
+            y = 1;
+            while y < height {
+                x = 1;
+                while x < width {
+                    let mut off: usize;
+                    let mut xx: c_int;
+                    let mut yy: c_int;
+                    let mut flat: bool = false;
+
+                    off = (x * (*common).GetTerxels()) as usize;
+                    off += (y * (*common).GetTerxels() * (*this_).GetRealWidth()) as usize;
+
+                    off -= (*this_).GetRealWidth() as usize;
+                    off -= 1;
+
+                    yy = 0;
+                    while yy < 3 && !flat {
+                        xx = 0;
+                        while xx < 3 && !flat {
+                            if *flattenMap.add(off + xx as usize) & 0x80 != 0 {
+                                flat = true;
+                                break;
+                            }
+                            xx += 1;
+                        }
+
+                        off += (*this_).GetRealWidth() as usize;
+                        yy += 1;
+                    }
+                    // This shader is now a flat shader
+                    if flat {
+                        *shaders.add((y * width + x) as usize) = (*this_).mFlatShader;
+                    }
+
+                    #[cfg(debug_assertions)]
+                    {
+                        OutputDebugString(va(
+                            b"Flat Area:  %f %f\n\0".as_ptr() as *const c_char,
+                            (*this_).GetMins()[0]
+                                + ((*this_).GetMaxs()[0] - (*this_).GetMins()[0]) / width as f32
+                                    * x as f32,
+                            (*this_).GetMins()[1]
+                                + ((*this_).GetMaxs()[1] - (*this_).GetMins()[1]) / height as f32
+                                    * y as f32,
+                        ));
+                    }
+                    x += 1;
+                }
+                y += 1;
+            }
+        }
+
+        // Now that the shaders have been determined, set them for each patch
+        patch = (*this_).mTRPatches;
+        (*this_).mSortedCount = 0;
+        y = 0;
+        while y < height {
+            x = 0;
+            while x < width {
+                let mut surfaceSprites: bool = true;
+
+                /*
+                handles[INDEX_TL] = shaders[ (x + y) * width ];
+                handles[INDEX_TR] = shaders[ ((x + 1) + y) * width ];
+                handles[INDEX_BL] = shaders[ (x + (y + 1)) * width ];
+                handles[INDEX_BR] = shaders[ ((x + 1) + (y + 1)) * width ];
+                */
+                handles[INDEX_TL as usize] = *shaders.add((x + y * width) as usize);
+                handles[INDEX_TR as usize] = *shaders.add((x + 1 + y * width) as usize);
+                handles[INDEX_BL as usize] = *shaders.add((x + (y + 1) * width) as usize);
+                handles[INDEX_BR as usize] = *shaders.add((x + 1 + (y + 1) * width) as usize);
+
+                if handles[INDEX_TL as usize] == (*this_).mFlatShader
+                    || handles[INDEX_TR as usize] == (*this_).mFlatShader
+                    || handles[INDEX_BL as usize] == (*this_).mFlatShader
+                    || handles[INDEX_BR as usize] == (*this_).mFlatShader
+                {
+                    surfaceSprites = false;
+                }
+
+                (*patch).SetTLShader(CTRLandScape_GetBlendedShader(
+                    this_,
+                    handles[INDEX_TR as usize],
+                    handles[INDEX_BL as usize],
+                    handles[INDEX_TL as usize],
+                    surfaceSprites,
+                ));
+                (*current).mPatch = patch;
+                (*current).mShader = (*patch).GetTLShader();
+                (*current).mPart = PI_TOP;
+
+                (*patch).SetBRShader(CTRLandScape_GetBlendedShader(
+                    this_,
+                    handles[INDEX_TR as usize],
+                    handles[INDEX_BL as usize],
+                    handles[INDEX_BR as usize],
+                    surfaceSprites,
+                ));
+                if (*patch).GetBRShader() == (*current).mShader {
+                    (*current).mPart |= PI_BOTTOM;
+                } else {
+                    (*this_).mSortedCount += 1;
+                    current = current.add(1);
+
+                    (*current).mPatch = patch;
+                    (*current).mShader = (*patch).GetBRShader();
+                    (*current).mPart = PI_BOTTOM;
+                }
+                (*this_).mSortedCount += 1;
+                current = current.add(1);
+
+                patch = patch.add(1);
+                x += 1;
+            }
+            y += 1;
+        }
+
+        // Cleanup our temporary array
+        // delete[] shaders; — handled by shaders_vec drop at end of block
+
+        qsort(
+            (*this_).mSortedPatches as *mut c_void,
+            (*this_).mSortedCount as usize,
+            core::mem::size_of::<TPatchInfo>(),
+            ComparePatchInfo,
+        );
+    }
     // #endif // PRE_RELEASE_DEMO
 }
 
-pub unsafe fn CTRPatch_SetRenderMap(x: i32, y: i32) {
-    // mRenderMap = localowner->GetRenderMap(x, y);
+// CTRPatch::SetRenderMap
+pub unsafe fn CTRPatch_SetRenderMap(this_: *mut CTRPatch, x: c_int, y: c_int) {
+    (*this_).mRenderMap = (*(*this_).localowner).GetRenderMap(x, y);
 }
 
+// InitRendererPatches
 pub unsafe extern "C" fn InitRendererPatches(patch: *mut CCMPatch, userdata: *mut c_void) {
-    // int			  	tx, ty, bx, by;
-    // CTRPatch	  	*localpatch;
-    // CCMLandScape	*owner;
-    // CTRLandScape	*localowner;
-    //
-    // // Set owning landscape
-    // localowner = (CTRLandScape *)userdata;
-    // owner = (CCMLandScape *)localowner->GetCommon();
-    //
-    // // Get TRPatch pointer
-    // tx = patch->GetHeightMapX();
-    // ty = patch->GetHeightMapY();
-    // bx = tx / owner->GetTerxels();
-    // by = ty / owner->GetTerxels();
-    //
-    // localpatch = localowner->GetPatch(bx, by);
-    // localpatch->Clear();
-    //
-    // localpatch->SetCommon(patch);
-    // localpatch->SetOwner(owner);
-    // localpatch->SetLocalOwner(localowner);
-    // localpatch->SetRenderMap(tx, ty);
-    // localpatch->SetCenter();
-    // // localpatch->CalcNormal();
+    let tx: c_int;
+    let ty: c_int;
+    let bx: c_int;
+    let by: c_int;
+    let localpatch: *mut CTRPatch;
+    let owner: *mut CCMLandScape;
+    let localowner: *mut CTRLandScape;
+
+    // Set owning landscape
+    localowner = userdata as *mut CTRLandScape;
+    owner = (*localowner).GetCommon() as *mut CCMLandScape;
+
+    // Get TRPatch pointer
+    tx = (*patch).GetHeightMapX();
+    ty = (*patch).GetHeightMapY();
+    bx = tx / (*owner).GetTerxels();
+    by = ty / (*owner).GetTerxels();
+
+    localpatch = (*localowner).GetPatch(bx, by);
+    (*localpatch).Clear();
+
+    (*localpatch).SetCommon(patch);
+    (*localpatch).SetOwner(owner);
+    (*localpatch).SetLocalOwner(localowner);
+    CTRPatch_SetRenderMap(localpatch, tx, ty);
+    (*localpatch).SetCenter();
+    // localpatch->CalcNormal();
 }
 
-pub unsafe fn CTRLandScape_CopyHeightMap() {
-    // const CCMLandScape	*common = GetCommon();
-    // const byte			*heightMap = common->GetHeightMap();
-    // CTerVert			*renderMap = mRenderMap;
-    // int					i;
-    //
-    // for(i = 0; i < common->GetRealArea(); i++) {
-    //     renderMap->height = *heightMap;
-    //     renderMap++;
-    //     heightMap++;
-    // }
+// CTRLandScape::CopyHeightMap
+pub unsafe fn CTRLandScape_CopyHeightMap(this_: *mut CTRLandScape) {
+    let common: *const CCMLandScape = (*this_).GetCommon();
+    let heightMap: *const byte = (*common).GetHeightMap();
+    let renderMap: *mut CTerVert = (*this_).mRenderMap;
+    let mut i: c_int;
+
+    i = 0;
+    while i < (*common).GetRealArea() {
+        (*renderMap.add(i as usize)).height = *heightMap.add(i as usize);
+        i += 1;
+    }
 }
 
-pub unsafe fn CTRLandScape_Destructor() {
-    // if(mTRPatches) {
-    //     Z_Free(mTRPatches);
-    //     mTRPatches = NULL;
-    // }
-    // if (mSortedPatches) {
-    //     Z_Free(mSortedPatches);
-    //     mSortedPatches = 0;
-    // }
-    // if(mRenderMap) {
-    //     Z_Free(mRenderMap);
-    //     mRenderMap = NULL;
-    // }
+// CTRLandScape::~CTRLandScape
+pub unsafe fn CTRLandScape_dtor(this_: *mut CTRLandScape) {
+    if !(*this_).mTRPatches.is_null() {
+        Z_Free((*this_).mTRPatches as *mut c_void);
+        (*this_).mTRPatches = core::ptr::null_mut();
+    }
+    if !(*this_).mSortedPatches.is_null() {
+        Z_Free((*this_).mSortedPatches as *mut c_void);
+        (*this_).mSortedPatches = core::ptr::null_mut();
+    }
+    if !(*this_).mRenderMap.is_null() {
+        Z_Free((*this_).mRenderMap as *mut c_void);
+        (*this_).mRenderMap = core::ptr::null_mut();
+    }
 }
 
-pub unsafe fn CTRLandScape_Constructor(configstring: *const c_char) {
-    // #ifndef PRE_RELEASE_DEMO
-    // int					shaderNum;
-    // const CCMLandScape	*common;
-    //
-    // memset(this, 0, sizeof(*this));
-    //
-    // // Sets up the common aspects of the terrain
-    // common = CM_RegisterTerrain(configstring, false);
-    // SetCommon(common);
-    //
-    // tr.landScape.landscape = this;
-    //
-    // mTextureScale = (float)atof(Info_ValueForKey(configstring, "texturescale")) / common->GetTerxels();
-    // LoadTerrainDef(Info_ValueForKey(configstring, "terrainDef"));
-    //
-    // // To normalise the variance value to a reasonable number
-    // mScalarSize = VectorLengthSquared(common->GetSize());
-    //
-    // // Calculate and set variance depth
-    // mMaxNode = (Q_log2(common->GetTerxels()) << 1) - 1;
-    //
-    // // Allocate space for the renderer specific data
-    // mRenderMap = (CTerVert *)Z_Malloc(sizeof(CTerVert) * common->GetRealArea(), TAG_R_TERRAIN, qfalse);
-    //
-    // // Copy byte heightmap to rendermap to speed up calcs
-    // CopyHeightMap();
-    //
-    // // Calculate the real world location for each heightmap entry
-    // CalculateRealCoords();
-    //
-    // // Calculate the normal of each terxel
-    // CalculateNormals();
-    //
-    // // Calculate modulation values for the heightmap
-    // CalculateLighting();
-    //
-    // // Calculate texture coords (not projected - real)
-    // CalculateTextureCoords();
-    //
-    // Com_Printf ("R_Terrain: Creating renderer patches.....\n");
-    // // Initialise all terrain patches
-    // mTRPatches = (CTRPatch *)Z_Malloc(sizeof(CTRPatch) * common->GetBlockCount(), TAG_R_TERRAIN, qfalse);
-    //
-    // mSortedCount = 2 * common->GetBlockCount();
-    // mSortedPatches = (TPatchInfo *)Z_Malloc(sizeof(TPatchInfo) * mSortedCount, TAG_R_TERRAIN, qfalse);
-    //
-    // CM_TerrainPatchIterate(common, InitRendererPatches, this);
-    //
-    // // Calculate shaders dependent on the .terrain file
-    // CalculateShaders();
-    //
-    // // Get the contents shader
-    // shaderNum = atol(Info_ValueForKey(configstring, "shader"));
-    //
-    // mShader = R_GetShaderByHandle(R_GetShaderByNum(shaderNum, *tr.world));
-    //
-    // mPatchSize = VectorLength(common->GetPatchSize());
-    //
-    // #if	_DEBUG
-    // mCycleCount = 0;
-    // #endif
+// CCMLandScape *CM_RegisterTerrain(const char *config, bool server); — declared above.
+
+// qhandle_t R_GetShaderByNum(int shaderNum, world_t &worldData); — declared above.
+
+// CTRLandScape::CTRLandScape(const char *configstring)
+// Porting note: C++ constructor — translated as a free unsafe fn taking an already-allocated this_.
+// The caller is responsible for allocation (see RE_InitRendererTerrain).
+pub unsafe fn CTRLandScape_ctor(this_: *mut CTRLandScape, configstring: *const c_char) {
+    #[cfg(not(feature = "pre_release_demo"))]
+    {
+        let shaderNum: c_int;
+        let common: *const CCMLandScape;
+
+        core::ptr::write_bytes(this_ as *mut u8, 0u8, core::mem::size_of::<CTRLandScape>());
+
+        // Sets up the common aspects of the terrain
+        common = CM_RegisterTerrain(configstring, false);
+        (*this_).SetCommon(common);
+
+        tr.landScape.landscape = this_;
+
+        (*this_).mTextureScale = atof(Info_ValueForKey(
+            configstring,
+            b"texturescale\0".as_ptr() as *const c_char,
+        )) as f32
+            / (*common).GetTerxels() as f32;
+        CTRLandScape_LoadTerrainDef(
+            this_,
+            Info_ValueForKey(configstring, b"terrainDef\0".as_ptr() as *const c_char),
+        );
+
+        // To normalise the variance value to a reasonable number
+        (*this_).mScalarSize = VectorLengthSquared(&(*common).GetSize());
+
+        // Calculate and set variance depth
+        (*this_).mMaxNode = (Q_log2((*common).GetTerxels()) << 1) - 1;
+
+        // Allocate space for the renderer specific data
+        (*this_).mRenderMap = Z_Malloc(
+            core::mem::size_of::<CTerVert>() * (*common).GetRealArea() as usize,
+            TAG_R_TERRAIN,
+            qfalse,
+        ) as *mut CTerVert;
+
+        // Copy byte heightmap to rendermap to speed up calcs
+        CTRLandScape_CopyHeightMap(this_);
+
+        // Calculate the real world location for each heightmap entry
+        CTRLandScape_CalculateRealCoords(this_);
+
+        // Calculate the normal of each terxel
+        CTRLandScape_CalculateNormals(this_);
+
+        // Calculate modulation values for the heightmap
+        CTRLandScape_CalculateLighting(this_);
+
+        // Calculate texture coords (not projected - real)
+        CTRLandScape_CalculateTextureCoords(this_);
+
+        Com_Printf(b"R_Terrain: Creating renderer patches.....\n\0".as_ptr() as *const c_char);
+        // Initialise all terrain patches
+        (*this_).mTRPatches = Z_Malloc(
+            core::mem::size_of::<CTRPatch>() * (*common).GetBlockCount() as usize,
+            TAG_R_TERRAIN,
+            qfalse,
+        ) as *mut CTRPatch;
+
+        (*this_).mSortedCount = 2 * (*common).GetBlockCount();
+        (*this_).mSortedPatches = Z_Malloc(
+            core::mem::size_of::<TPatchInfo>() * (*this_).mSortedCount as usize,
+            TAG_R_TERRAIN,
+            qfalse,
+        ) as *mut TPatchInfo;
+
+        CM_TerrainPatchIterate(common, InitRendererPatches, this_ as *mut c_void);
+
+        // Calculate shaders dependent on the .terrain file
+        CTRLandScape_CalculateShaders(this_);
+
+        // Get the contents shader
+        shaderNum =
+            atol(Info_ValueForKey(configstring, b"shader\0".as_ptr() as *const c_char)) as c_int;
+
+        (*this_).mShader = R_GetShaderByHandle(R_GetShaderByNum(shaderNum, tr.world));
+
+        (*this_).mPatchSize = VectorLength(&(*common).GetPatchSize());
+
+        #[cfg(debug_assertions)]
+        {
+            (*this_).mCycleCount = 0;
+        }
+    }
     // #endif // PRE_RELEASE_DEMO
 }
 
-// RB_SurfaceTerrain - Render terrain surface
-pub unsafe fn RB_SurfaceTerrain(surf: *mut srfTerrain_t) {
-    let ls = surf as *mut srfTerrain_t;
-    // let landscape = (*ls).landscape;
-    //
-    // TerrainFog = tr.world->globalFog;
-    //
-    // landscape->CalculateRegion();
-    // landscape->Reset();
-    // // landscape->Tessellate();
-    // landscape->Render();
+// ---------------------------------------------------------------------
+
+pub unsafe fn RB_SurfaceTerrain(surf: *mut surfaceInfo_t) {
+    let ls: *mut srfTerrain_t = surf as *mut srfTerrain_t;
+    let landscape: *mut CTRLandScape = (*ls).landscape;
+
+    TerrainFog = (*tr.world).globalFog;
+
+    CTRLandScape_CalculateRegion(landscape);
+    CTRLandScape_Reset(landscape, true);
+    // landscape->Tessellate();
+    CTRLandScape_Render(landscape);
 }
 
-// R_CalcTerrainVisBounds - Calculate terrain visibility bounds
-pub unsafe fn R_CalcTerrainVisBounds(landscape: *mut c_void) {
-    // const CCMLandScape *common = landscape->GetCommon();
-    //
-    // // Set up the visbounds using terrain data
-    // if ( common->GetMins()[0] < tr.viewParms.visBounds[0][0] ) {
-    //     tr.viewParms.visBounds[0][0] = common->GetMins()[0];
-    // }
-    // if ( common->GetMins()[1] < tr.viewParms.visBounds[0][1] ) {
-    //     tr.viewParms.visBounds[0][1] = common->GetMins()[1];
-    // }
-    // if ( common->GetMins()[2] < tr.viewParms.visBounds[0][2] ) {
-    //     tr.viewParms.visBounds[0][2] = common->GetMins()[2];
-    // }
-    //
-    // if ( common->GetMaxs()[0] > tr.viewParms.visBounds[1][0] ) {
-    //     tr.viewParms.visBounds[1][0] = common->GetMaxs()[0];
-    // }
-    // if ( common->GetMaxs()[1] > tr.viewParms.visBounds[1][1] ) {
-    //     tr.viewParms.visBounds[1][1] = common->GetMaxs()[1];
-    // }
-    // if ( common->GetMaxs()[2] > tr.viewParms.visBounds[1][2] ) {
-    //     tr.viewParms.visBounds[1][2] = common->GetMaxs()[2];
-    // }
+pub unsafe fn R_CalcTerrainVisBounds(landscape: *mut CTRLandScape) {
+    let common: *const CCMLandScape = (*landscape).GetCommon();
+
+    // Set up the visbounds using terrain data
+    if (*common).GetMins()[0] < tr.viewParms.visBounds[0][0] {
+        tr.viewParms.visBounds[0][0] = (*common).GetMins()[0];
+    }
+    if (*common).GetMins()[1] < tr.viewParms.visBounds[0][1] {
+        tr.viewParms.visBounds[0][1] = (*common).GetMins()[1];
+    }
+    if (*common).GetMins()[2] < tr.viewParms.visBounds[0][2] {
+        tr.viewParms.visBounds[0][2] = (*common).GetMins()[2];
+    }
+
+    if (*common).GetMaxs()[0] > tr.viewParms.visBounds[1][0] {
+        tr.viewParms.visBounds[1][0] = (*common).GetMaxs()[0];
+    }
+    if (*common).GetMaxs()[1] > tr.viewParms.visBounds[1][1] {
+        tr.viewParms.visBounds[1][1] = (*common).GetMaxs()[1];
+    }
+    if (*common).GetMaxs()[2] > tr.viewParms.visBounds[1][2] {
+        tr.viewParms.visBounds[1][2] = (*common).GetMaxs()[2];
+    }
 }
 
-// R_AddTerrainSurfaces - Add terrain surfaces for rendering
 pub unsafe fn R_AddTerrainSurfaces() {
-    // let landscape: *mut CTRLandScape;
-    //
-    // if !r_drawTerrain->integer || (tr.refdef.rdflags & RDF_NOWORLDMODEL) {
-    //     return;
-    // }
-    //
-    // landscape = tr.landScape.landscape;
-    // if landscape {
-    //     R_AddDrawSurf( (surfaceType_t *)(&tr.landScape), landscape->GetShader(), 0, qfalse );
-    //     R_CalcTerrainVisBounds(landscape);
-    // }
+    let landscape: *mut CTRLandScape;
+
+    if (*r_drawTerrain).integer == 0 || (tr.refdef.rdflags & RDF_NOWORLDMODEL) != 0 {
+        return;
+    }
+
+    landscape = tr.landScape.landscape;
+    if !landscape.is_null() {
+        R_AddDrawSurf(
+            (&tr.landScape) as *const _ as *const surfaceType_t,
+            (*landscape).GetShader(),
+            0,
+            qfalse,
+        );
+        R_CalcTerrainVisBounds(landscape);
+    }
 }
 
-// RE_InitRendererTerrain - Initialize terrain renderer
 pub unsafe fn RE_InitRendererTerrain(info: *const c_char) {
-    // let ls: *mut CTRLandScape;
-    //
-    // if !info || !(*info) {
-    //     Com_Printf( "RE_RegisterTerrain: NULL name\n" );
-    //     return;
-    // }
-    //
-    // Com_Printf("R_Terrain: Creating RENDERER data.....\n");
-    //
-    // // Create and register a new landscape structure
-    // ls = new CTRLandScape(info);
+    let ls: *mut CTRLandScape;
+
+    if info.is_null() || *info == 0 {
+        Com_Printf(
+            b"RE_RegisterTerrain: NULL name\n\0".as_ptr() as *const c_char,
+        );
+        return;
+    }
+
+    Com_Printf(b"R_Terrain: Creating RENDERER data.....\n\0".as_ptr() as *const c_char);
+
+    // Create and register a new landscape structure
+    // Porting note: C++ `new CTRLandScape(info)` — allocate via Z_Malloc then run constructor.
+    ls = Z_Malloc(
+        core::mem::size_of::<CTRLandScape>(),
+        TAG_R_TERRAIN,
+        qfalse,
+    ) as *mut CTRLandScape;
+    CTRLandScape_ctor(ls, info);
 }
 
-// R_TerrainInit - Initialize terrain subsystem
 pub unsafe fn R_TerrainInit() {
-    let mut i: i32;
+    let mut i: c_int;
 
-    for i in 0..MAX_TERRAINS as i32 {
-        // tr.landScape.surfaceType = SF_TERRAIN;
-        // tr.landScape.landscape = NULL;
+    i = 0;
+    while i < MAX_TERRAINS as c_int {
+        tr.landScape.surfaceType = SF_TERRAIN;
+        tr.landScape.landscape = core::ptr::null_mut();
+        i += 1;
     }
     r_terrainTessellate = Cvar_Get(
         b"r_terrainTessellate\0".as_ptr() as *const c_char,
@@ -1139,17 +1278,20 @@ pub unsafe fn R_TerrainInit() {
     );
 }
 
-// R_TerrainShutdown - Shutdown terrain subsystem
+// void CM_ShutdownTerrain( thandle_t terrainId); — declared above.
+
 pub unsafe fn R_TerrainShutdown() {
-    // let ls: *mut CTRLandScape;
-    //
-    // // Com_Printf("R_Terrain: Shutting down RENDERER terrain.....\n");
-    // ls = tr.landScape.landscape;
-    // if ls {
-    //     CM_ShutdownTerrain(0);
-    //     delete ls;
-    //     tr.landScape.landscape = NULL;
-    // }
+    let ls: *mut CTRLandScape;
+
+    // Com_Printf("R_Terrain: Shutting down RENDERER terrain.....\n");
+    ls = tr.landScape.landscape;
+    if !ls.is_null() {
+        CM_ShutdownTerrain(0);
+        // delete ls — call destructor then free
+        CTRLandScape_dtor(ls);
+        Z_Free(ls as *mut c_void);
+        tr.landScape.landscape = core::ptr::null_mut();
+    }
 }
 
 // end
