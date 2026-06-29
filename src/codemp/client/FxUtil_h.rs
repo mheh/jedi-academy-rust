@@ -1,4 +1,4 @@
-//! Mechanical port of `codemp/client/FxUtil.h`.
+// Faithful port of oracle/codemp/client/FxUtil.h.
 
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
@@ -7,84 +7,10 @@
 
 use core::ffi::{c_float, c_int};
 
-use crate::codemp::game::q_shared_h::{qboolean, qhandle_t, vec2_t, vec3_t};
-
-// Unported dependency from `FxPrimitives.h`.
-pub type EMatImpactEffect = c_int;
-
-pub const MATIMPACTFX_NONE: EMatImpactEffect = 0;
-pub const MATIMPACTFX_SHELLSOUND: EMatImpactEffect = 1;
-
-// Opaque C/C++ dependencies from `FxPrimitives.h`/renderer headers. This header
-// only passes pointers to these types.
-#[repr(C)]
-pub struct refdef_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CParticle {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CLine {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CElectricity {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CTail {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CCylinder {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CEmitter {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CLight {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct COrientedParticle {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CPoly {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CFlash {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CBezier {
-    _unused: [u8; 0],
-}
-
-pub const FX_DEFAULT_matImpactFX: EMatImpactEffect = MATIMPACTFX_NONE;
-pub const FX_DEFAULT_fxParm: c_int = -1;
-pub const FX_DEFAULT_iGhoul2: c_int = 0;
-pub const FX_DEFAULT_entNum: c_int = -1;
-pub const FX_DEFAULT_modelNum: c_int = -1;
-pub const FX_DEFAULT_boltNum: c_int = -1;
-pub const FX_DEFAULT_flags: c_int = 0;
-pub const FX_DEFAULT_traceEnd: qboolean = 0;
+// #include "FxPrimitives.h" (guarded: #if !defined(FX_PRIMITIVES_H_INC))
+use crate::codemp::client::FxPrimitives_h::*;
+// NOTE (port): oracle FxUtil.h includes only FxPrimitives.h; refdef_t and other
+// external types arrive transitively through that chain (FxPrimitives.h -> FxSystem.h).
 
 unsafe extern "C" {
     pub fn FX_Free(templates: bool) -> bool; // ditches all active effects;
@@ -116,6 +42,8 @@ unsafe extern "C" {
         killTime: c_int,
         shader: qhandle_t,
         flags: c_int,
+        // C++ defaults: matImpactFX = MATIMPACTFX_NONE, fxParm = -1,
+        // iGhoul2=0, entNum=-1, modelNum=-1, boltNum=-1
         matImpactFX: EMatImpactEffect,
         fxParm: c_int,
         iGhoul2: c_int,
@@ -139,6 +67,8 @@ unsafe extern "C" {
         killTime: c_int,
         shader: qhandle_t,
         flags: c_int,
+        // C++ defaults: matImpactFX = MATIMPACTFX_NONE, fxParm = -1,
+        // iGhoul2=0, entNum=-1, modelNum=-1, boltNum=-1
         matImpactFX: EMatImpactEffect,
         fxParm: c_int,
         iGhoul2: c_int,
@@ -163,6 +93,8 @@ unsafe extern "C" {
         killTime: c_int,
         shader: qhandle_t,
         flags: c_int,
+        // C++ defaults: matImpactFX = MATIMPACTFX_NONE, fxParm = -1,
+        // iGhoul2=0, entNum=-1, modelNum=-1, boltNum=-1
         matImpactFX: EMatImpactEffect,
         fxParm: c_int,
         iGhoul2: c_int,
@@ -195,6 +127,8 @@ unsafe extern "C" {
         killTime: c_int,
         shader: qhandle_t,
         flags: c_int,
+        // C++ defaults: matImpactFX = MATIMPACTFX_NONE, fxParm = -1,
+        // iGhoul2=0, entNum=-1, modelNum=-1, boltNum=-1
         matImpactFX: EMatImpactEffect,
         fxParm: c_int,
         iGhoul2: c_int,
@@ -224,6 +158,8 @@ unsafe extern "C" {
         killTime: c_int,
         shader: qhandle_t,
         flags: c_int,
+        // C++ defaults: matImpactFX = MATIMPACTFX_NONE, fxParm = -1,
+        // iGhoul2=0, entNum=-1, modelNum=-1, boltNum=-1, traceEnd = qfalse
         matImpactFX: EMatImpactEffect,
         fxParm: c_int,
         iGhoul2: c_int,
@@ -259,6 +195,8 @@ unsafe extern "C" {
         killTime: c_int,
         model: qhandle_t,
         flags: c_int,
+        // C++ defaults: matImpactFX = MATIMPACTFX_NONE, fxParm = -1,
+        // iGhoul2=0, entNum=-1, modelNum=-1, boltNum=-1
         matImpactFX: EMatImpactEffect,
         fxParm: c_int,
         iGhoul2: c_int,
@@ -277,6 +215,8 @@ unsafe extern "C" {
         rgbParm: c_float,
         killTime: c_int,
         flags: c_int,
+        // C++ defaults: matImpactFX = MATIMPACTFX_NONE, fxParm = -1,
+        // iGhoul2=0, entNum=-1, modelNum=-1, boltNum=-1
         matImpactFX: EMatImpactEffect,
         fxParm: c_int,
         iGhoul2: c_int,
@@ -309,6 +249,8 @@ unsafe extern "C" {
         killTime: c_int,
         shader: qhandle_t,
         flags: c_int,
+        // C++ defaults: matImpactFX = MATIMPACTFX_NONE, fxParm = -1,
+        // iGhoul2=0, entNum=-1, modelNum=-1, boltNum=-1
         matImpactFX: EMatImpactEffect,
         fxParm: c_int,
         iGhoul2: c_int,
@@ -350,7 +292,9 @@ unsafe extern "C" {
         rgbParm: c_float,
         killTime: c_int,
         shader: qhandle_t,
+        // C++ default: flags = 0
         flags: c_int,
+        // C++ defaults: matImpactFX = MATIMPACTFX_NONE, fxParm = -1
         matImpactFX: EMatImpactEffect,
         fxParm: c_int,
     ) -> *mut CFlash;
@@ -373,6 +317,7 @@ unsafe extern "C" {
         rgbParm: c_float,
         killTime: c_int,
         shader: qhandle_t,
+        // C++ default: flags = 0
         flags: c_int,
     ) -> *mut CBezier;
 }
