@@ -1,458 +1,161 @@
 // leave this as first line for PCH reasons...
 //
 
-use core::ffi::{c_int, c_void};
+#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals,
+         unused_imports, dead_code, unused_mut, unused_variables,
+         unused_assignments, clippy::all)]
 
-// LOCAL STUBS FOR EXTERNAL TYPES
-// These are declared here as opaque types since their full definitions
-// are in other modules (tr_local.h, server headers, etc.)
-
-// External dependencies not fully defined in this file
-extern "C" {
-    fn VID_Printf(level: c_int, fmt: *const i8, ...);
-    fn Com_Error(level: c_int, fmt: *const i8, ...);
-    fn Q_irand(low: c_int, high: c_int) -> c_int;
-    fn Sys_Milliseconds() -> c_int;
-    fn Sys_PumpEvents();
-    fn GLimp_LogComment(comment: *const i8);
-    fn GLimp_EndFrame();
-    fn DotProduct(a: *const f32, b: *const f32) -> f32;
-    fn VectorCopy(src: *const f32, dst: *mut f32);
-    fn VectorSubtract(a: *const f32, b: *const f32, out: *mut f32);
-    fn Z_Malloc(size: usize, tag: c_int, clear: bool) -> *mut c_void;
-    fn Z_Free(ptr: *mut c_void);
-    fn R_DecomposeSort(sort: u32, entity_num: *mut c_int, shader: *mut *mut shader_t, fog_num: *mut c_int, dlighted: *mut c_int);
-    fn R_RotateForEntity(entity: *const trRefEntity_t, view_parms: *const viewParms_t, ori: *mut orientationr_t);
-    fn R_TransformDlights(num_dlights: c_int, dlights: *const dlight_t, ori: *const orientationr_t);
-    fn R_Images_StartIteration() -> c_int;
-    fn R_Images_GetNextIteration() -> *mut image_t;
-    fn RB_EndSurface();
-    fn RB_BeginSurface(shader: *mut shader_t, fog_num: c_int);
-    fn RB_ShadowFinish();
-
-    // GL functions
-    fn qglBindTexture(target: u32, texture: u32);
-    fn qglActiveTextureARB(texture: u32);
-    fn qglClientActiveTextureARB(texture: u32);
-    fn qglDisable(cap: u32);
-    fn qglEnable(cap: u32);
-    fn qglCullFace(mode: u32);
-    fn qglDepthFunc(func: u32);
-    fn qglDepthMask(flag: u8);
-    fn qglDepthRange(near: f64, far: f64);
-    fn qglFinish();
-    fn qglClear(mask: u32);
-    fn qglClearColor(red: f32, green: f32, blue: f32, alpha: f32);
-    fn qglLoadMatrixf(m: *const f32);
-    fn qglViewport(x: c_int, y: c_int, width: c_int, height: c_int);
-    fn qglScissor(x: c_int, y: c_int, width: c_int, height: c_int);
-    fn qglTexEnvf(target: u32, pname: u32, param: f32);
-    fn qglBlendFunc(sfactor: u32, dfactor: u32);
-    fn qglPolygonMode(face: u32, mode: u32);
-    fn qglAlphaFunc(func: u32, ref_val: f32);
-    fn qglMatrixMode(mode: u32);
-    fn qglLoadIdentity();
-    fn qglPushMatrix();
-    fn qglPopMatrix();
-    fn qglTranslatef(x: f32, y: f32, z: f32);
-    fn qglRotatef(angle: f32, x: f32, y: f32, z: f32);
-    fn qglOrtho(left: f64, right: f64, bottom: f64, top: f64, near_val: f64, far_val: f64);
-    fn qglClipPlane(plane: u32, equation: *const f64);
-    fn qglDrawBuffer(mode: u32);
-    fn qglBegin(mode: u32);
-    fn qglEnd();
-    fn qglVertex2f(x: f32, y: f32);
-    fn qglVertex3f(x: f32, y: f32, z: f32);
-    fn qglTexCoord2f(s: f32, t: f32);
-    fn qglColor4ubv(v: *const u8);
-    fn qglColor4f(red: f32, green: f32, blue: f32, alpha: f32);
-    fn qglReadPixels(x: c_int, y: c_int, width: c_int, height: c_int, format: u32, type_: u32, pixels: *mut c_void);
-    fn qglCopyTexImage2D(target: u32, level: c_int, internalformat: u32, x: c_int, y: c_int, width: c_int, height: c_int, border: c_int);
-    fn qglCopyBackBufferToTexEXT(width: c_int, height: c_int, x: c_int, y: c_int, x2: c_int, y2: c_int);
-    fn qglCopyTexSubImage2D(target: u32, level: c_int, xoffset: c_int, yoffset: c_int, x: c_int, y: c_int, width: c_int, height: c_int);
-    fn qglBeginEXT(mode: u32, count: c_int, a: c_int, b: c_int, c: c_int, d: c_int);
-    fn qglMultiTexCoord2fARB(target: u32, s: f32, t: f32);
-    fn qglCombinerParameterfvNV(pname: u32, params: *const f32);
-    fn qglCallList(list: u32);
-    fn qglGenProgramsARB(n: c_int, programs: *mut u32);
-    fn qglBindProgramARB(target: u32, program: u32);
-    fn qglProgramEnvParameter4fARB(target: u32, index: u32, x: f32, y: f32, z: f32, w: f32);
-
-    static mut tr: tr_t;
-    static mut glState: glState_t;
-    static mut glConfig: glConfig_t;
-    static mut backEndData: *mut backEndData_t;
-    static mut backEnd: backEndState_t;
-    static mut tess: tess_t;
-    static mut skyboxportal: bool;
-    static mut tr_distortionPrePost: bool;
-    static mut tr_distortionNegate: bool;
-    fn RB_CaptureScreenImage();
-    fn RB_DistortionFill();
-    fn RB_RenderWorldEffects();
-
-    #[cfg(feature = "VV_LIGHTING")]
-    static mut VVLightMan: VVLightManager;
-}
-
+use crate::code::server::exe_headers_h::*;
+use crate::code::renderer::tr_local_h::*;
 #[cfg(feature = "VV_LIGHTING")]
-extern "C" {
-    pub struct VVLightManager {
-        _unused: [u8; 0],
-    }
+use crate::code::renderer::tr_lightmanager_h::*;
+#[cfg(feature = "_XBOX")]
+use crate::code::win32::win_highdynamicrange_h::*;
 
-    impl VVLightManager {
-        fn R_TransformDlights(&mut self, ori: *const orientationr_t);
-    }
+use core::ffi::{c_char, c_double, c_int, c_long, c_uchar, c_uint, c_ulong, c_void};
+use core::ptr::{addr_of, addr_of_mut};
+
+unsafe extern "C" {
+    pub static mut tr_distortionPrePost: qboolean; //tr_shadows.cpp
+    pub static mut tr_distortionNegate: qboolean; //tr_shadows.cpp
+    pub fn RB_CaptureScreenImage(); //tr_shadows.cpp
+    pub fn RB_DistortionFill(); //tr_shadows.cpp
+    pub fn RB_RenderWorldEffects();
 }
 
-// Opaque external types
-#[repr(C)]
-pub struct backEndData_t {
-    _unused: [u8; 0],
+#[cfg(not(feature = "_XBOX"))]
+unsafe extern "C" {
+    static mut g_bTextureRectangleHack: bool;
 }
 
-#[repr(C)]
-pub struct backEndState_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct tr_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct glState_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct glConfig_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct tess_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct image_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct shader_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct drawSurf_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct trRefEntity_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct viewParms_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct orientationr_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct dlight_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct fog_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct setColorCommand_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct stretchPicCommand_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct rotatePicCommand_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct scissorCommand_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct drawSurfsCommand_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct drawBufferCommand_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct swapBuffersCommand_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct setModeCommand_t {
-    _unused: [u8; 0],
-}
-
-static mut tr_stencilled: bool = false;
+pub static mut backEndData: *mut backEndData_t = core::ptr::null_mut();
+pub static mut backEnd: backEndState_t = unsafe { core::mem::zeroed() };
+pub static mut tr_stencilled: bool = false;
 
 // Whether we are currently rendering only glowing objects or not.
-static mut g_bRenderGlowingObjects: bool = false;
+pub static mut g_bRenderGlowingObjects: bool = false;
 
 // Whether the current hardware supports dynamic glows/flares.
-static mut g_bDynamicGlowSupported: bool = false;
+pub static mut g_bDynamicGlowSupported: bool = false;
 
-static s_flipMatrix: [f32; 16] = {
+#[cfg(not(feature = "_XBOX"))]
+static s_flipMatrix: [f32; 16] = [
     // convert from our coordinate system (looking down X)
     // to OpenGL's coordinate system (looking down -Z)
-    #[cfg(target_arch = "x86")]
-    {
-        0.0, 0.0, 1.0, 0.0,
-        -1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 0.0, 1.0
-    }
-    #[cfg(not(target_arch = "x86"))]
-    {
-        0.0, 0.0, -1.0, 0.0,
-        -1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 0.0, 1.0
-    }
-};
+    0.0, 0.0, -1.0, 0.0,
+    -1.0, 0.0, 0.0, 0.0,
+    0.0, 1.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 1.0,
+];
 
-// Constants and macros
-const PRINT_WARNING: c_int = 1;
-const PRINT_ALL: c_int = -1;
-const ERR_DROP: c_int = 1;
-const GL_TEXTURE_2D: u32 = 0x0DE1;
-const GL_BIND: u32 = 0x2014;
-const GL_TEXTURE0_ARB: u32 = 0x84C0;
-const GL_TEXTURE1_ARB: u32 = 0x84C1;
-const GL_TEXTURE2_ARB: u32 = 0x84C2;
-const GL_TEXTURE3_ARB: u32 = 0x84C3;
-const GLS_DEPTHFUNC_EQUAL: u32 = 0x00000004;
-const GLS_SRCBLEND_BITS: u32 = 0x0000FF00;
-const GLS_DSTBLEND_BITS: u32 = 0x000000FF;
-const GLS_SRCBLEND_ZERO: u32 = 0x00000100;
-const GLS_SRCBLEND_ONE: u32 = 0x00000200;
-const GLS_SRCBLEND_DST_COLOR: u32 = 0x00000300;
-const GLS_SRCBLEND_ONE_MINUS_DST_COLOR: u32 = 0x00000400;
-const GLS_SRCBLEND_SRC_ALPHA: u32 = 0x00000500;
-const GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA: u32 = 0x00000600;
-const GLS_SRCBLEND_DST_ALPHA: u32 = 0x00000700;
-const GLS_SRCBLEND_ONE_MINUS_DST_ALPHA: u32 = 0x00000800;
-const GLS_SRCBLEND_ALPHA_SATURATE: u32 = 0x00000900;
-const GLS_DSTBLEND_ZERO: u32 = 0x00000001;
-const GLS_DSTBLEND_ONE: u32 = 0x00000002;
-const GLS_DSTBLEND_SRC_COLOR: u32 = 0x00000003;
-const GLS_DSTBLEND_ONE_MINUS_SRC_COLOR: u32 = 0x00000004;
-const GLS_DSTBLEND_SRC_ALPHA: u32 = 0x00000005;
-const GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA: u32 = 0x00000006;
-const GLS_DSTBLEND_DST_ALPHA: u32 = 0x00000007;
-const GLS_DSTBLEND_ONE_MINUS_DST_ALPHA: u32 = 0x00000008;
-const GLS_DEPTHMASK_TRUE: u32 = 0x00010000;
-const GLS_POLYMODE_LINE: u32 = 0x00001000;
-const GLS_DEPTHTEST_DISABLE: u32 = 0x00000010;
-const GLS_ATEST_BITS: u32 = 0x0000C000;
-const GLS_ATEST_GT_0: u32 = 0x00004000;
-const GLS_ATEST_LT_80: u32 = 0x00008000;
-const GLS_ATEST_GE_80: u32 = 0x0000C000;
-const GLS_ATEST_GE_C0: u32 = 0x0000C000;
-const GLS_DEFAULT: u32 = 0;
-const GL_EQUAL: u32 = 0x0202;
-const GL_LEQUAL: u32 = 0x0203;
-const GL_ZERO: u32 = 0;
-const GL_ONE: u32 = 1;
-const GL_DST_COLOR: u32 = 0x0306;
-const GL_ONE_MINUS_DST_COLOR: u32 = 0x0307;
-const GL_SRC_ALPHA: u32 = 0x0302;
-const GL_ONE_MINUS_SRC_ALPHA: u32 = 0x0303;
-const GL_DST_ALPHA: u32 = 0x0304;
-const GL_ONE_MINUS_DST_ALPHA: u32 = 0x0305;
-const GL_SRC_ALPHA_SATURATE: u32 = 0x0308;
-const GL_SRC_COLOR: u32 = 0x0300;
-const GL_ONE_MINUS_SRC_COLOR: u32 = 0x0301;
-const GL_BLEND: u32 = 0x0BE2;
-const GL_CULL_FACE: u32 = 0x0B44;
-const GL_DEPTH_TEST: u32 = 0x0B71;
-const GL_ALPHA_TEST: u32 = 0x0BC0;
-const GL_GREATER: u32 = 0x0204;
-const GL_LESS: u32 = 0x0201;
-const GL_GEQUAL: u32 = 0x0206;
-const GL_BACK: u32 = 0x0405;
-const GL_FRONT: u32 = 0x0404;
-const GL_FRONT_AND_BACK: u32 = 0x0408;
-const GL_FILL: u32 = 0x1B02;
-const GL_LINE: u32 = 0x1B01;
-const GL_MODULATE: u32 = 0x2100;
-const GL_REPLACE: u32 = 0x1E01;
-const GL_DECAL: u32 = 0x2101;
-const GL_ADD: u32 = 0x0104;
-const GL_TEXTURE_ENV: u32 = 0x2300;
-const GL_TEXTURE_ENV_MODE: u32 = 0x2200;
-const GL_NONE: u32 = 0;
-const GL_COLOR_BUFFER_BIT: u32 = 0x00004000;
-const GL_DEPTH_BUFFER_BIT: u32 = 0x00000100;
-const GL_STENCIL_BUFFER_BIT: u32 = 0x00000400;
-const GL_CLIP_PLANE0: u32 = 0x3000;
-const GL_PROJECTION: u32 = 0x1701;
-const GL_MODELVIEW: u32 = 0x1700;
-const GL_TEXTURE_RECTANGLE_EXT: u32 = 0x84F5;
-const GL_REGISTER_COMBINERS_NV: u32 = 0x8522;
-const GL_FRAGMENT_PROGRAM_ARB: u32 = 0x8804;
-const GL_VERTEX_PROGRAM_ARB: u32 = 0x8620;
-const GL_CONSTANT_COLOR0_NV: u32 = 0x852A;
-const GL_QUADS: u32 = 0x0007;
-const GL_RGBA16: u32 = 0x805B;
-const GL_STENCIL_INDEX: u32 = 0x1901;
-const GL_UNSIGNED_BYTE: u32 = 0x1401;
-const GL_FALSE: u8 = 0;
-const GL_TRUE: u8 = 1;
-const CT_TWO_SIDED: i32 = 0;
-const CT_BACK_SIDED: i32 = 1;
-const TR_WORLDENT: i32 = -1;
-const RDF_SKYBOXPORTAL: u32 = 0x0001;
-const RDF_NOWORLDMODEL: u32 = 0x0002;
-const RDF_HYPERSPACE: u32 = 0x0010;
-const RDF_doLAGoggles: u32 = 0x0200;
-const RF_NODEPTH: u32 = 0x80;
-const RF_DEPTHHACK: u32 = 0x0001;
-const RF_DISTORTION: u32 = 0x0040;
-const TAG_TEMP_WORKSPACE: c_int = 16;
+#[cfg(feature = "_XBOX")]
+static s_flipMatrix: [f32; 16] = [
+    // convert from our coordinate system (looking down X)
+    // to OpenGL's coordinate system (looking down -Z)
+    0.0, 0.0, 1.0, 0.0,
+    -1.0, 0.0, 0.0, 0.0,
+    0.0, 1.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 1.0,
+];
+
+// static void RB_DrawGlowOverlay();  -- forward decls not needed in Rust
+// static void RB_BlurGlowTexture();
+
 const MAC_EVENT_PUMP_MSEC: c_int = 5;
+
+//number of possible surfs we can postrender.
+//note that postrenders lack much of the optimization that the standard sort-render crap does,
+//so it's slower.
 const MAX_POST_RENDERS: usize = 128;
-const RC_SET_COLOR: u32 = 0;
-const RC_STRETCH_PIC: u32 = 1;
-const RC_ROTATE_PIC: u32 = 2;
-const RC_ROTATE_PIC2: u32 = 3;
-const RC_SCISSOR: u32 = 4;
-const RC_DRAW_SURFS: u32 = 5;
-const RC_DRAW_BUFFER: u32 = 6;
-const RC_SWAP_BUFFERS: u32 = 7;
-const RC_WORLD_EFFECTS: u32 = 8;
-const RC_END_OF_LIST: u32 = 9;
 
 #[repr(C)]
-pub struct postRender_t {
-    pub fogNum: c_int,
-    pub entNum: c_int,
-    pub dlighted: c_int,
-    pub depthRange: c_int,
-    pub drawSurf: *mut drawSurf_t,
-    pub shader: *mut shader_t,
+struct postRender_t {
+    fogNum: c_int,
+    entNum: c_int,
+    dlighted: c_int,
+    depthRange: c_int,
+    drawSurf: *mut drawSurf_t,
+    shader: *mut shader_t,
 }
 
-static mut g_postRenders: [postRender_t; MAX_POST_RENDERS] = unsafe {
-    core::mem::zeroed()
-};
+static mut g_postRenders: [postRender_t; MAX_POST_RENDERS] =
+    unsafe { core::mem::zeroed() };
 static mut g_numPostRenders: c_int = 0;
 
-static mut g_uiCurrentPixelShaderType: u32 = 0x0;
-static mut g_bTextureRectangleHack: bool = false;
 
 /*
 ** GL_Bind
 */
-#[allow(non_snake_case)]
 pub unsafe fn GL_Bind(image: *mut image_t) {
     let mut texnum: c_int;
 
     if image.is_null() {
-        VID_Printf(PRINT_WARNING, b"GL_Bind: NULL image\n" as *const u8 as *const i8);
+        VID_Printf(PRINT_WARNING, b"GL_Bind: NULL image\n\0".as_ptr() as *const c_char);
         texnum = (*tr.defaultImage).texnum;
     } else {
         texnum = (*image).texnum;
     }
 
-    #[cfg(not(target_os = "windows"))]
-    {
-        if (*r_nobind).integer != 0 && !(*tr.dlightImage).is_null() {
-            // performance evaluation option
-            texnum = (*(*tr).dlightImage).texnum;
-        }
+    #[cfg(not(feature = "_XBOX"))]
+    if (*r_nobind).integer != 0 && !tr.dlightImage.is_null() { // performance evaluation option
+        texnum = (*tr.dlightImage).texnum;
     }
 
-    if (*glState).currenttextures[(*glState).currenttmu] != texnum {
-        #[cfg(not(target_os = "windows"))]
+    if glState.currenttextures[glState.currenttmu as usize] != texnum {
+        #[cfg(not(feature = "_XBOX"))]
         {
-            (*image).frameUsed = (*tr).frameCount;
+            (*image).frameUsed = tr.frameCount;
         }
-        (*glState).currenttextures[(*glState).currenttmu] = texnum;
-        qglBindTexture(GL_TEXTURE_2D, texnum as u32);
+        glState.currenttextures[glState.currenttmu as usize] = texnum;
+        qglBindTexture(GL_TEXTURE_2D, texnum);
     }
 }
 
 /*
 ** GL_SelectTexture
 */
-#[allow(non_snake_case)]
 pub unsafe fn GL_SelectTexture(unit: c_int) {
-    if (*glState).currenttmu == unit {
+    if glState.currenttmu == unit {
         return;
     }
 
     if unit == 0 {
         qglActiveTextureARB(GL_TEXTURE0_ARB);
-        GLimp_LogComment(b"glActiveTextureARB( GL_TEXTURE0_ARB )\n" as *const u8 as *const i8);
+        GLimp_LogComment(b"glActiveTextureARB( GL_TEXTURE0_ARB )\n\0".as_ptr() as *const c_char);
         qglClientActiveTextureARB(GL_TEXTURE0_ARB);
-        GLimp_LogComment(b"glClientActiveTextureARB( GL_TEXTURE0_ARB )\n" as *const u8 as *const i8);
+        GLimp_LogComment(b"glClientActiveTextureARB( GL_TEXTURE0_ARB )\n\0".as_ptr() as *const c_char);
     } else if unit == 1 {
         qglActiveTextureARB(GL_TEXTURE1_ARB);
-        GLimp_LogComment(b"glActiveTextureARB( GL_TEXTURE1_ARB )\n" as *const u8 as *const i8);
+        GLimp_LogComment(b"glActiveTextureARB( GL_TEXTURE1_ARB )\n\0".as_ptr() as *const c_char);
         qglClientActiveTextureARB(GL_TEXTURE1_ARB);
-        GLimp_LogComment(b"glClientActiveTextureARB( GL_TEXTURE1_ARB )\n" as *const u8 as *const i8);
+        GLimp_LogComment(b"glClientActiveTextureARB( GL_TEXTURE1_ARB )\n\0".as_ptr() as *const c_char);
     } else if unit == 2 {
         qglActiveTextureARB(GL_TEXTURE2_ARB);
-        GLimp_LogComment(b"glActiveTextureARB( GL_TEXTURE2_ARB )\n" as *const u8 as *const i8);
+        GLimp_LogComment(b"glActiveTextureARB( GL_TEXTURE2_ARB )\n\0".as_ptr() as *const c_char);
         qglClientActiveTextureARB(GL_TEXTURE2_ARB);
-        GLimp_LogComment(b"glClientActiveTextureARB( GL_TEXTURE2_ARB )\n" as *const u8 as *const i8);
+        GLimp_LogComment(b"glClientActiveTextureARB( GL_TEXTURE2_ARB )\n\0".as_ptr() as *const c_char);
     } else if unit == 3 {
         qglActiveTextureARB(GL_TEXTURE3_ARB);
-        GLimp_LogComment(b"glActiveTextureARB( GL_TEXTURE3_ARB )\n" as *const u8 as *const i8);
+        GLimp_LogComment(b"glActiveTextureARB( GL_TEXTURE3_ARB )\n\0".as_ptr() as *const c_char);
         qglClientActiveTextureARB(GL_TEXTURE3_ARB);
-        GLimp_LogComment(b"glClientActiveTextureARB( GL_TEXTURE3_ARB )\n" as *const u8 as *const i8);
+        GLimp_LogComment(b"glClientActiveTextureARB( GL_TEXTURE3_ARB )\n\0".as_ptr() as *const c_char);
     } else {
-        Com_Error(ERR_DROP, b"GL_SelectTexture: unit = %i\0" as *const u8 as *const i8, unit);
+        Com_Error(ERR_DROP, b"GL_SelectTexture: unit = %i\0".as_ptr() as *const c_char, unit);
     }
 
-    (*glState).currenttmu = unit;
+    glState.currenttmu = unit;
 }
+
 
 /*
 ** GL_Cull
 */
-#[allow(non_snake_case)]
 pub unsafe fn GL_Cull(cullType: c_int) {
-    if (*glState).faceCulling == cullType {
+    if glState.faceCulling == cullType {
         return;
     }
-    (*glState).faceCulling = cullType;
-    if (*backEnd).projection2D {
-        // don't care, we're in 2d when it's always disabled
+    glState.faceCulling = cullType;
+    if backEnd.projection2D != 0 { //don't care, we're in 2d when it's always disabled
         return;
     }
 
@@ -462,13 +165,13 @@ pub unsafe fn GL_Cull(cullType: c_int) {
         qglEnable(GL_CULL_FACE);
 
         if cullType == CT_BACK_SIDED {
-            if (*(*backEnd).viewParms).isMirror {
+            if backEnd.viewParms.isMirror != 0 {
                 qglCullFace(GL_FRONT);
             } else {
                 qglCullFace(GL_BACK);
             }
         } else {
-            if (*(*backEnd).viewParms).isMirror {
+            if backEnd.viewParms.isMirror != 0 {
                 qglCullFace(GL_BACK);
             } else {
                 qglCullFace(GL_FRONT);
@@ -480,33 +183,43 @@ pub unsafe fn GL_Cull(cullType: c_int) {
 /*
 ** GL_TexEnv
 */
-#[allow(non_snake_case)]
 pub unsafe fn GL_TexEnv(env: c_int) {
-    if env == (*glState).texEnv[(*glState).currenttmu] {
+    if env == glState.texEnv[glState.currenttmu as usize] {
         return;
     }
 
-    (*glState).texEnv[(*glState).currenttmu] = env;
+    glState.texEnv[glState.currenttmu as usize] = env;
 
-    match env {
-        GL_MODULATE as c_int => {
+    // Note (porting): #[cfg] cannot gate else-if arms; the _XBOX GL_NONE arm is
+    // handled by duplicating the chain under cfg, per porting guidelines.
+    #[cfg(not(feature = "_XBOX"))]
+    {
+        if env == GL_MODULATE as c_int {
             qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE as f32);
-        }
-        GL_REPLACE as c_int => {
+        } else if env == GL_REPLACE as c_int {
             qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE as f32);
-        }
-        GL_DECAL as c_int => {
+        } else if env == GL_DECAL as c_int {
             qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL as f32);
-        }
-        GL_ADD as c_int => {
+        } else if env == GL_ADD as c_int {
             qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_ADD as f32);
+        } else {
+            Com_Error(ERR_DROP, b"GL_TexEnv: invalid env '%d' passed\n\0".as_ptr() as *const c_char, env);
         }
-        #[cfg(target_os = "windows")]
-        GL_NONE as c_int => {
+    }
+    #[cfg(feature = "_XBOX")]
+    {
+        if env == GL_MODULATE as c_int {
+            qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE as f32);
+        } else if env == GL_REPLACE as c_int {
+            qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE as f32);
+        } else if env == GL_DECAL as c_int {
+            qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL as f32);
+        } else if env == GL_ADD as c_int {
+            qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_ADD as f32);
+        } else if env == GL_NONE as c_int {
             qglTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_NONE as f32);
-        }
-        _ => {
-            Com_Error(ERR_DROP, b"GL_TexEnv: invalid env '%d' passed\n\0" as *const u8 as *const i8, env);
+        } else {
+            Com_Error(ERR_DROP, b"GL_TexEnv: invalid env '%d' passed\n\0".as_ptr() as *const c_char, env);
         }
     }
 }
@@ -517,9 +230,8 @@ pub unsafe fn GL_TexEnv(env: c_int) {
 ** This routine is responsible for setting the most commonly changed state
 ** in Q3.
 */
-#[allow(non_snake_case)]
-pub unsafe fn GL_State(stateBits: u32) {
-    let diff: u32 = stateBits ^ (*glState).glStateBits;
+pub unsafe fn GL_State(stateBits: c_ulong) {
+    let diff: c_ulong = stateBits ^ glState.glStateBits;
 
     if diff == 0 {
         return;
@@ -528,8 +240,8 @@ pub unsafe fn GL_State(stateBits: u32) {
     //
     // check depthFunc bits
     //
-    if (diff & GLS_DEPTHFUNC_EQUAL) != 0 {
-        if (stateBits & GLS_DEPTHFUNC_EQUAL) != 0 {
+    if diff & GLS_DEPTHFUNC_EQUAL as c_ulong != 0 {
+        if stateBits & GLS_DEPTHFUNC_EQUAL as c_ulong != 0 {
             qglDepthFunc(GL_EQUAL);
         } else {
             qglDepthFunc(GL_LEQUAL);
@@ -539,43 +251,56 @@ pub unsafe fn GL_State(stateBits: u32) {
     //
     // check blend bits
     //
-    if (diff & (GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS)) != 0 {
-        let srcFactor: u32;
-        let dstFactor: u32;
+    if diff & (GLS_SRCBLEND_BITS as c_ulong | GLS_DSTBLEND_BITS as c_ulong) != 0 {
+        let mut srcFactor: GLenum;
+        let mut dstFactor: GLenum;
 
-        if (stateBits & (GLS_SRCBLEND_BITS | GLS_DSTBLEND_BITS)) != 0 {
-            srcFactor = match stateBits & GLS_SRCBLEND_BITS {
-                GLS_SRCBLEND_ZERO => GL_ZERO,
-                GLS_SRCBLEND_ONE => GL_ONE,
-                GLS_SRCBLEND_DST_COLOR => GL_DST_COLOR,
-                GLS_SRCBLEND_ONE_MINUS_DST_COLOR => GL_ONE_MINUS_DST_COLOR,
-                GLS_SRCBLEND_SRC_ALPHA => GL_SRC_ALPHA,
-                GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA => GL_ONE_MINUS_SRC_ALPHA,
-                GLS_SRCBLEND_DST_ALPHA => GL_DST_ALPHA,
-                GLS_SRCBLEND_ONE_MINUS_DST_ALPHA => GL_ONE_MINUS_DST_ALPHA,
-                GLS_SRCBLEND_ALPHA_SATURATE => GL_SRC_ALPHA_SATURATE,
-                _ => {
-                    let srcFactor: u32 = GL_ONE; // to get warning to shut up
-                    Com_Error(ERR_DROP, b"GL_State: invalid src blend state bits\n\0" as *const u8 as *const i8);
-                    srcFactor
-                }
-            };
+        if stateBits & (GLS_SRCBLEND_BITS as c_ulong | GLS_DSTBLEND_BITS as c_ulong) != 0 {
+            let src_bits = stateBits & GLS_SRCBLEND_BITS as c_ulong;
+            if src_bits == GLS_SRCBLEND_ZERO as c_ulong {
+                srcFactor = GL_ZERO;
+            } else if src_bits == GLS_SRCBLEND_ONE as c_ulong {
+                srcFactor = GL_ONE;
+            } else if src_bits == GLS_SRCBLEND_DST_COLOR as c_ulong {
+                srcFactor = GL_DST_COLOR;
+            } else if src_bits == GLS_SRCBLEND_ONE_MINUS_DST_COLOR as c_ulong {
+                srcFactor = GL_ONE_MINUS_DST_COLOR;
+            } else if src_bits == GLS_SRCBLEND_SRC_ALPHA as c_ulong {
+                srcFactor = GL_SRC_ALPHA;
+            } else if src_bits == GLS_SRCBLEND_ONE_MINUS_SRC_ALPHA as c_ulong {
+                srcFactor = GL_ONE_MINUS_SRC_ALPHA;
+            } else if src_bits == GLS_SRCBLEND_DST_ALPHA as c_ulong {
+                srcFactor = GL_DST_ALPHA;
+            } else if src_bits == GLS_SRCBLEND_ONE_MINUS_DST_ALPHA as c_ulong {
+                srcFactor = GL_ONE_MINUS_DST_ALPHA;
+            } else if src_bits == GLS_SRCBLEND_ALPHA_SATURATE as c_ulong {
+                srcFactor = GL_SRC_ALPHA_SATURATE;
+            } else {
+                srcFactor = GL_ONE; // to get warning to shut up
+                Com_Error(ERR_DROP, b"GL_State: invalid src blend state bits\n\0".as_ptr() as *const c_char);
+            }
 
-            dstFactor = match stateBits & GLS_DSTBLEND_BITS {
-                GLS_DSTBLEND_ZERO => GL_ZERO,
-                GLS_DSTBLEND_ONE => GL_ONE,
-                GLS_DSTBLEND_SRC_COLOR => GL_SRC_COLOR,
-                GLS_DSTBLEND_ONE_MINUS_SRC_COLOR => GL_ONE_MINUS_SRC_COLOR,
-                GLS_DSTBLEND_SRC_ALPHA => GL_SRC_ALPHA,
-                GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA => GL_ONE_MINUS_SRC_ALPHA,
-                GLS_DSTBLEND_DST_ALPHA => GL_DST_ALPHA,
-                GLS_DSTBLEND_ONE_MINUS_DST_ALPHA => GL_ONE_MINUS_DST_ALPHA,
-                _ => {
-                    let dstFactor: u32 = GL_ONE; // to get warning to shut up
-                    Com_Error(ERR_DROP, b"GL_State: invalid dst blend state bits\n\0" as *const u8 as *const i8);
-                    dstFactor
-                }
-            };
+            let dst_bits = stateBits & GLS_DSTBLEND_BITS as c_ulong;
+            if dst_bits == GLS_DSTBLEND_ZERO as c_ulong {
+                dstFactor = GL_ZERO;
+            } else if dst_bits == GLS_DSTBLEND_ONE as c_ulong {
+                dstFactor = GL_ONE;
+            } else if dst_bits == GLS_DSTBLEND_SRC_COLOR as c_ulong {
+                dstFactor = GL_SRC_COLOR;
+            } else if dst_bits == GLS_DSTBLEND_ONE_MINUS_SRC_COLOR as c_ulong {
+                dstFactor = GL_ONE_MINUS_SRC_COLOR;
+            } else if dst_bits == GLS_DSTBLEND_SRC_ALPHA as c_ulong {
+                dstFactor = GL_SRC_ALPHA;
+            } else if dst_bits == GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA as c_ulong {
+                dstFactor = GL_ONE_MINUS_SRC_ALPHA;
+            } else if dst_bits == GLS_DSTBLEND_DST_ALPHA as c_ulong {
+                dstFactor = GL_DST_ALPHA;
+            } else if dst_bits == GLS_DSTBLEND_ONE_MINUS_DST_ALPHA as c_ulong {
+                dstFactor = GL_ONE_MINUS_DST_ALPHA;
+            } else {
+                dstFactor = GL_ONE; // to get warning to shut up
+                Com_Error(ERR_DROP, b"GL_State: invalid dst blend state bits\n\0".as_ptr() as *const c_char);
+            }
 
             qglEnable(GL_BLEND);
             qglBlendFunc(srcFactor, dstFactor);
@@ -587,8 +312,8 @@ pub unsafe fn GL_State(stateBits: u32) {
     //
     // check depthmask
     //
-    if (diff & GLS_DEPTHMASK_TRUE) != 0 {
-        if (stateBits & GLS_DEPTHMASK_TRUE) != 0 {
+    if diff & GLS_DEPTHMASK_TRUE as c_ulong != 0 {
+        if stateBits & GLS_DEPTHMASK_TRUE as c_ulong != 0 {
             qglDepthMask(GL_TRUE);
         } else {
             qglDepthMask(GL_FALSE);
@@ -598,8 +323,8 @@ pub unsafe fn GL_State(stateBits: u32) {
     //
     // fill/line mode
     //
-    if (diff & GLS_POLYMODE_LINE) != 0 {
-        if (stateBits & GLS_POLYMODE_LINE) != 0 {
+    if diff & GLS_POLYMODE_LINE as c_ulong != 0 {
+        if stateBits & GLS_POLYMODE_LINE as c_ulong != 0 {
             qglPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         } else {
             qglPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -609,8 +334,8 @@ pub unsafe fn GL_State(stateBits: u32) {
     //
     // depthtest
     //
-    if (diff & GLS_DEPTHTEST_DISABLE) != 0 {
-        if (stateBits & GLS_DEPTHTEST_DISABLE) != 0 {
+    if diff & GLS_DEPTHTEST_DISABLE as c_ulong != 0 {
+        if stateBits & GLS_DEPTHTEST_DISABLE as c_ulong != 0 {
             qglDisable(GL_DEPTH_TEST);
         } else {
             qglEnable(GL_DEPTH_TEST);
@@ -620,35 +345,30 @@ pub unsafe fn GL_State(stateBits: u32) {
     //
     // alpha test
     //
-    if (diff & GLS_ATEST_BITS) != 0 {
-        match stateBits & GLS_ATEST_BITS {
-            0 => {
-                qglDisable(GL_ALPHA_TEST);
-            }
-            GLS_ATEST_GT_0 => {
-                qglEnable(GL_ALPHA_TEST);
-                qglAlphaFunc(GL_GREATER, 0.0f32);
-            }
-            GLS_ATEST_LT_80 => {
-                qglEnable(GL_ALPHA_TEST);
-                qglAlphaFunc(GL_LESS, 0.5f32);
-            }
-            GLS_ATEST_GE_80 => {
-                qglEnable(GL_ALPHA_TEST);
-                qglAlphaFunc(GL_GEQUAL, 0.5f32);
-            }
-            GLS_ATEST_GE_C0 => {
-                qglEnable(GL_ALPHA_TEST);
-                qglAlphaFunc(GL_GEQUAL, 0.75f32);
-            }
-            _ => {
-                debug_assert!(false);
-            }
+    if diff & GLS_ATEST_BITS as c_ulong != 0 {
+        let atest_bits = stateBits & GLS_ATEST_BITS as c_ulong;
+        if atest_bits == 0 {
+            qglDisable(GL_ALPHA_TEST);
+        } else if atest_bits == GLS_ATEST_GT_0 as c_ulong {
+            qglEnable(GL_ALPHA_TEST);
+            qglAlphaFunc(GL_GREATER, 0.0f32);
+        } else if atest_bits == GLS_ATEST_LT_80 as c_ulong {
+            qglEnable(GL_ALPHA_TEST);
+            qglAlphaFunc(GL_LESS, 0.5f32);
+        } else if atest_bits == GLS_ATEST_GE_80 as c_ulong {
+            qglEnable(GL_ALPHA_TEST);
+            qglAlphaFunc(GL_GEQUAL, 0.5f32);
+        } else if atest_bits == GLS_ATEST_GE_C0 as c_ulong {
+            qglEnable(GL_ALPHA_TEST);
+            qglAlphaFunc(GL_GEQUAL, 0.75f32);
+        } else {
+            assert!(false);
         }
     }
 
-    (*glState).glStateBits = stateBits;
+    glState.glStateBits = stateBits;
 }
+
 
 /*
 ================
@@ -660,36 +380,28 @@ A player has predicted a teleport, but hasn't arrived yet
 unsafe fn RB_Hyperspace() {
     let c: f32;
 
-    if !(*backEnd).isHyperspace {
+    if backEnd.isHyperspace == 0 {
         // do initialization shit
     }
 
-    c = ((((*backEnd).refdef).time & 255) as f32) / 255.0f32;
+    c = (backEnd.refdef.time & 255) as f32 / 255.0f32;
     qglClearColor(c, c, c, 1.0f32);
     qglClear(GL_COLOR_BUFFER_BIT);
 
-    (*backEnd).isHyperspace = true;
+    backEnd.isHyperspace = qtrue;
 }
 
-#[allow(non_snake_case)]
-unsafe fn SetViewportAndScissor() {
+
+pub unsafe fn SetViewportAndScissor() {
     qglMatrixMode(GL_PROJECTION);
-    qglLoadMatrixf((*(*backEnd).viewParms).projectionMatrix as *const f32);
+    qglLoadMatrixf(backEnd.viewParms.projectionMatrix.as_ptr());
     qglMatrixMode(GL_MODELVIEW);
 
     // set the window clipping
-    qglViewport(
-        (*(*backEnd).viewParms).viewportX,
-        (*(*backEnd).viewParms).viewportY,
-        (*(*backEnd).viewParms).viewportWidth,
-        (*(*backEnd).viewParms).viewportHeight,
-    );
-    qglScissor(
-        (*(*backEnd).viewParms).viewportX,
-        (*(*backEnd).viewParms).viewportY,
-        (*(*backEnd).viewParms).viewportWidth,
-        (*(*backEnd).viewParms).viewportHeight,
-    );
+    qglViewport(backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
+        backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight);
+    qglScissor(backEnd.viewParms.viewportX, backEnd.viewParms.viewportY,
+        backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight);
 }
 
 /*
@@ -701,20 +413,20 @@ to actually render the visible surfaces for this view
 =================
 */
 unsafe fn RB_BeginDrawingView() {
-    let mut clearBits: u32 = GL_DEPTH_BUFFER_BIT;
+    let mut clearBits: c_int = GL_DEPTH_BUFFER_BIT as c_int;
 
     // sync with gl if needed
-    if (*r_finish).integer == 1 && !(*glState).finishCalled {
+    if (*r_finish).integer == 1 && glState.finishCalled == 0 {
         qglFinish();
-        (*glState).finishCalled = true;
+        glState.finishCalled = qtrue;
     }
     if (*r_finish).integer == 0 {
-        (*glState).finishCalled = true;
+        glState.finishCalled = qtrue;
     }
 
     // we will need to change the projection matrix before drawing
     // 2D images again
-    (*backEnd).projection2D = false;
+    backEnd.projection2D = qfalse;
 
     //
     // set the modelview matrix for the viewer
@@ -722,104 +434,86 @@ unsafe fn RB_BeginDrawingView() {
     SetViewportAndScissor();
 
     // ensures that depth writes are enabled for the depth clear
-    GL_State(GLS_DEFAULT);
+    GL_State(GLS_DEFAULT as c_ulong);
 
     // clear relevant buffers
     if (*r_measureOverdraw).integer != 0 || (*r_shadows).integer == 2 || tr_stencilled {
-        clearBits |= GL_STENCIL_BUFFER_BIT;
+        clearBits |= GL_STENCIL_BUFFER_BIT as c_int;
         tr_stencilled = false;
     }
 
-    if skyboxportal {
-        if ((*(*backEnd).refdef).rdflags & RDF_SKYBOXPORTAL) != 0 {
+    if skyboxportal != 0 {
+        if backEnd.refdef.rdflags & RDF_SKYBOXPORTAL != 0 {
             // portal scene, clear whatever is necessary
-            if (*r_fastsky).integer != 0 || ((*(*backEnd).refdef).rdflags & RDF_NOWORLDMODEL) != 0 {
+            if (*r_fastsky).integer != 0 || (backEnd.refdef.rdflags & RDF_NOWORLDMODEL != 0) {
                 // fastsky: clear color
                 // try clearing first with the portal sky fog color, then the world fog color, then finally a default
-                clearBits |= GL_COLOR_BUFFER_BIT;
-                if !(*tr).world.is_null() && (*(*tr).world).globalFog != -1 {
-                    let fog: *const fog_t = &(*(*(*tr).world).fogs.as_ptr().add((*(*tr).world).globalFog as usize));
-                    qglClearColor(
-                        (*fog).parms.color[0],
-                        (*fog).parms.color[1],
-                        (*fog).parms.color[2],
-                        1.0f32,
-                    );
+                clearBits |= GL_COLOR_BUFFER_BIT as c_int;
+                if !tr.world.is_null() && (*tr.world).globalFog != -1 {
+                    let fog: *const fog_t = &(*tr.world).fogs[(*tr.world).globalFog as usize];
+                    qglClearColor((*fog).parms.color[0], (*fog).parms.color[1], (*fog).parms.color[2], 1.0f32);
                 } else {
                     qglClearColor(0.3f32, 0.3f32, 0.3f32, 1.0f32);
                 }
             }
         }
     } else {
-        if (*r_fastsky).integer != 0 && ((*(*backEnd).refdef).rdflags & RDF_NOWORLDMODEL) == 0 && !g_bRenderGlowingObjects {
-            if !(*tr).world.is_null() && (*(*tr).world).globalFog != -1 {
-                let fog: *const fog_t = &(*(*(*tr).world).fogs.as_ptr().add((*(*tr).world).globalFog as usize));
-                qglClearColor(
-                    (*fog).parms.color[0],
-                    (*fog).parms.color[1],
-                    (*fog).parms.color[2],
-                    1.0f32,
-                );
+        if (*r_fastsky).integer != 0 && (backEnd.refdef.rdflags & RDF_NOWORLDMODEL == 0) && !g_bRenderGlowingObjects {
+            if !tr.world.is_null() && (*tr.world).globalFog != -1 {
+                let fog: *const fog_t = &(*tr.world).fogs[(*tr.world).globalFog as usize];
+                qglClearColor((*fog).parms.color[0], (*fog).parms.color[1], (*fog).parms.color[2], 1.0f32);
             } else {
                 qglClearColor(0.3f32, 0.3f32, 0.3f32, 1.0f32); // FIXME: get color of sky
             }
-            clearBits |= GL_COLOR_BUFFER_BIT; // FIXME: only if sky shaders have been used
+            clearBits |= GL_COLOR_BUFFER_BIT as c_int; // FIXME: only if sky shaders have been used
         }
     }
 
-    if ((*(*backEnd).refdef).rdflags & RDF_NOWORLDMODEL) == 0
-        && (*r_DynamicGlow).integer != 0
-        && !g_bRenderGlowingObjects
-    {
-        if !(*tr).world.is_null() && (*(*tr).world).globalFog != -1 {
-            // this is because of a bug in multiple scenes I think, it needs to clear for the second scene but it doesn't normally.
-            let fog: *const fog_t = &(*(*(*tr).world).fogs.as_ptr().add((*(*tr).world).globalFog as usize));
+    if (backEnd.refdef.rdflags & RDF_NOWORLDMODEL == 0) && ((*r_DynamicGlow).integer != 0 && !g_bRenderGlowingObjects) {
+        if !tr.world.is_null() && (*tr.world).globalFog != -1 {
+            //this is because of a bug in multiple scenes I think, it needs to clear for the second scene but it doesn't normally.
+            let fog: *const fog_t = &(*tr.world).fogs[(*tr.world).globalFog as usize];
 
-            qglClearColor(
-                (*fog).parms.color[0],
-                (*fog).parms.color[1],
-                (*fog).parms.color[2],
-                1.0f32,
-            );
-            clearBits |= GL_COLOR_BUFFER_BIT;
+            qglClearColor((*fog).parms.color[0], (*fog).parms.color[1], (*fog).parms.color[2], 1.0f32);
+            clearBits |= GL_COLOR_BUFFER_BIT as c_int;
         }
     }
     // If this pass is to just render the glowing objects, don't clear the depth buffer since
     // we're sharing it with the main scene (since the main scene has already been rendered). -AReis
     if g_bRenderGlowingObjects {
-        clearBits &= !GL_DEPTH_BUFFER_BIT;
+        clearBits &= !(GL_DEPTH_BUFFER_BIT as c_int);
     }
 
     if clearBits != 0 {
         qglClear(clearBits);
     }
 
-    if ((*(*backEnd).refdef).rdflags & RDF_HYPERSPACE) != 0 {
+    if backEnd.refdef.rdflags & RDF_HYPERSPACE != 0 {
         RB_Hyperspace();
         return;
     } else {
-        (*backEnd).isHyperspace = false;
+        backEnd.isHyperspace = qfalse;
     }
 
-    (*glState).faceCulling = -1; // force face culling to set next time
+    glState.faceCulling = -1; // force face culling to set next time
 
     // we will only draw a sun if there was sky rendered in this view
-    (*backEnd).skyRenderedThisView = false;
+    backEnd.skyRenderedThisView = qfalse;
 
     // clip to the plane of the portal
-    if (*(*backEnd).viewParms).isPortal {
-        let mut plane: [f32; 4] = [0.0; 4];
-        let mut plane2: [f64; 4] = [0.0; 4];
+    if backEnd.viewParms.isPortal != 0 {
+        let mut plane: [f32; 4] = [0.0f32; 4];
+        let mut plane2: [f64; 4] = [0.0f64; 4];
 
-        plane[0] = (*(*(*backEnd).viewParms).portalPlane).normal[0];
-        plane[1] = (*(*(*backEnd).viewParms).portalPlane).normal[1];
-        plane[2] = (*(*(*backEnd).viewParms).portalPlane).normal[2];
-        plane[3] = (*(*(*backEnd).viewParms).portalPlane).dist;
+        plane[0] = backEnd.viewParms.portalPlane.normal[0];
+        plane[1] = backEnd.viewParms.portalPlane.normal[1];
+        plane[2] = backEnd.viewParms.portalPlane.normal[2];
+        plane[3] = backEnd.viewParms.portalPlane.dist;
 
-        plane2[0] = DotProduct((*(*(*backEnd).viewParms).or_).axis[0] as *const f32, plane.as_ptr());
-        plane2[1] = DotProduct((*(*(*backEnd).viewParms).or_).axis[1] as *const f32, plane.as_ptr());
-        plane2[2] = DotProduct((*(*(*backEnd).viewParms).or_).axis[2] as *const f32, plane.as_ptr());
-        plane2[3] = (DotProduct(plane.as_ptr(), (*(*(*backEnd).viewParms).or_).origin as *const f32) as f64) - (plane[3] as f64);
+        plane2[0] = DotProduct(backEnd.viewParms.or.axis[0].as_ptr(), plane.as_ptr()) as f64;
+        plane2[1] = DotProduct(backEnd.viewParms.or.axis[1].as_ptr(), plane.as_ptr()) as f64;
+        plane2[2] = DotProduct(backEnd.viewParms.or.axis[2].as_ptr(), plane.as_ptr()) as f64;
+        plane2[3] = DotProduct(plane.as_ptr(), backEnd.viewParms.or.origin.as_ptr()) as f64 - plane[3] as f64;
 
         qglLoadMatrixf(s_flipMatrix.as_ptr());
         qglClipPlane(GL_CLIP_PLANE0, plane2.as_ptr());
@@ -829,52 +523,54 @@ unsafe fn RB_BeginDrawingView() {
     }
 }
 
+// #define MAC_EVENT_PUMP_MSEC  5  (already defined as const above)
+
 //used by RF_DISTORTION
 #[inline]
-unsafe fn R_WorldCoordToScreenCoordFloat(worldCoord: *const f32, x: *mut f32, y: *mut f32) -> bool {
+unsafe fn R_WorldCoordToScreenCoordFloat(worldCoord: *mut f32, x: *mut f32, y: *mut f32) -> bool {
     let xcenter: c_int;
     let ycenter: c_int;
-    let mut local: [f32; 3] = [0.0; 3];
-    let mut transformed: [f32; 3] = [0.0; 3];
-    let mut vfwd: [f32; 3] = [0.0; 3];
-    let mut vright: [f32; 3] = [0.0; 3];
-    let mut vup: [f32; 3] = [0.0; 3];
+    let mut local: [f32; 3] = [0.0f32; 3];
+    let mut transformed: [f32; 3] = [0.0f32; 3];
+    let mut vfwd: [f32; 3] = [0.0f32; 3];
+    let mut vright: [f32; 3] = [0.0f32; 3];
+    let mut vup: [f32; 3] = [0.0f32; 3];
     let xzi: f32;
     let yzi: f32;
 
-    xcenter = (*glConfig).vidWidth / 2;
-    ycenter = (*glConfig).vidHeight / 2;
+    xcenter = glConfig.vidWidth / 2;
+    ycenter = glConfig.vidHeight / 2;
 
     //AngleVectors (tr.refdef.viewangles, vfwd, vright, vup);
-    VectorCopy((*(*tr).refdef).viewaxis[0] as *const f32, vfwd.as_mut_ptr());
-    VectorCopy((*(*tr).refdef).viewaxis[1] as *const f32, vright.as_mut_ptr());
-    VectorCopy((*(*tr).refdef).viewaxis[2] as *const f32, vup.as_mut_ptr());
+    VectorCopy(tr.refdef.viewaxis[0].as_ptr(), vfwd.as_mut_ptr());
+    VectorCopy(tr.refdef.viewaxis[1].as_ptr(), vright.as_mut_ptr());
+    VectorCopy(tr.refdef.viewaxis[2].as_ptr(), vup.as_mut_ptr());
 
-    VectorSubtract(worldCoord, (*(*tr).refdef).vieworg as *const f32, local.as_mut_ptr());
+    VectorSubtract(worldCoord, tr.refdef.vieworg.as_ptr(), local.as_mut_ptr());
 
     transformed[0] = DotProduct(local.as_ptr(), vright.as_ptr());
     transformed[1] = DotProduct(local.as_ptr(), vup.as_ptr());
     transformed[2] = DotProduct(local.as_ptr(), vfwd.as_ptr());
 
     // Make sure Z is not negative.
-    if transformed[2] < 0.01 {
+    if transformed[2] < 0.01f32 {
         return false;
     }
 
-    xzi = (xcenter as f32) / transformed[2] * (90.0 / (*(*tr).refdef).fov_x);
-    yzi = (ycenter as f32) / transformed[2] * (90.0 / (*(*tr).refdef).fov_y);
+    xzi = xcenter as f32 / transformed[2] * (90.0f32 / tr.refdef.fov_x);
+    yzi = ycenter as f32 / transformed[2] * (90.0f32 / tr.refdef.fov_y);
 
-    *x = (xcenter as f32) + xzi * transformed[0];
-    *y = (ycenter as f32) - yzi * transformed[1];
+    *x = xcenter as f32 + xzi * transformed[0];
+    *y = ycenter as f32 - yzi * transformed[1];
 
     true
 }
 
 //used by RF_DISTORTION
 #[inline]
-unsafe fn R_WorldCoordToScreenCoord(worldCoord: *const f32, x: *mut c_int, y: *mut c_int) -> bool {
-    let mut xF: f32 = 0.0;
-    let mut yF: f32 = 0.0;
+unsafe fn R_WorldCoordToScreenCoord(worldCoord: *mut f32, x: *mut c_int, y: *mut c_int) -> bool {
+    let mut xF: f32 = 0.0f32;
+    let mut yF: f32 = 0.0f32;
     let retVal: bool = R_WorldCoordToScreenCoordFloat(worldCoord, &mut xF, &mut yF);
     *x = xF as c_int;
     *y = yF as c_int;
@@ -886,33 +582,28 @@ unsafe fn R_WorldCoordToScreenCoord(worldCoord: *const f32, x: *mut c_int, y: *m
 RB_RenderDrawSurfList
 ==================
 */
-//number of possible surfs we can postrender.
-//note that postrenders lack much of the optimization that the standard sort-render crap does,
-//so it's slower.
-
-#[allow(non_snake_case)]
 pub unsafe fn RB_RenderDrawSurfList(drawSurfs: *mut drawSurf_t, numDrawSurfs: c_int) {
-    let shader: *mut shader_t;
-    let oldShader: *mut shader_t;
-    let fogNum: c_int;
-    let oldFogNum: c_int;
-    let entityNum: c_int;
-    let oldEntityNum: c_int;
-    let dlighted: c_int;
-    let oldDlighted: c_int;
+    let mut shader: *mut shader_t;
+    let mut oldShader: *mut shader_t;
+    let mut fogNum: c_int;
+    let mut oldFogNum: c_int;
+    let mut entityNum: c_int;
+    let mut oldEntityNum: c_int;
+    let mut dlighted: c_int;
+    let mut oldDlighted: c_int;
     let mut depthRange: c_int;
-    let oldDepthRange: c_int;
+    let mut oldDepthRange: c_int;
     let mut i: c_int;
     let mut drawSurf: *mut drawSurf_t;
-    let mut oldSort: u32;
-    let originalTime: f32;
+    let mut oldSort: c_uint;
+    let mut originalTime: f32;
     let mut curEnt: *mut trRefEntity_t;
     let mut pRender: *mut postRender_t;
     let mut didShadowPass: bool = false;
-    #[cfg(target_os = "macos")]
+    #[cfg(feature = "__MACOS__")]
     let mut macEventTime: c_int;
 
-    #[cfg(target_os = "macos")]
+    #[cfg(feature = "__MACOS__")]
     {
         Sys_PumpEvents(); // crutch up the mac's limited buffer queue size
 
@@ -927,53 +618,45 @@ pub unsafe fn RB_RenderDrawSurfList(drawSurfs: *mut drawSurf_t, numDrawSurfs: c_
     }
 
     // save original time for entity shader offsets
-    originalTime = (*(*backEnd).refdef).floatTime;
+    originalTime = backEnd.refdef.floatTime;
 
     // clear the z buffer, set the modelview, etc
     RB_BeginDrawingView();
 
     // draw everything
     oldEntityNum = -1;
-    (*backEnd).currentEntity = &mut (*tr).worldEntity;
-    oldShader = 0 as *mut shader_t;
+    backEnd.currentEntity = &mut tr.worldEntity;
+    oldShader = core::ptr::null_mut();
     oldFogNum = -1;
-    oldDepthRange = 0;
-    oldDlighted = 0;
-    oldSort = ((!0u32)) as u32;
-    depthRange = 0;
+    oldDepthRange = qfalse;
+    oldDlighted = qfalse;
+    oldSort = c_uint::MAX;
+    depthRange = qfalse;
 
-    (*(*backEnd).pc).c_surfaces += numDrawSurfs;
+    backEnd.pc.c_surfaces += numDrawSurfs;
 
     i = 0;
     drawSurf = drawSurfs;
     while i < numDrawSurfs {
         if (*drawSurf).sort == oldSort {
             // fast path, same as previous sort
-            ((*rb_surfaceTable[*(*drawSurf).surface as usize])((*drawSurf).surface));
+            (rb_surfaceTable[*(*drawSurf).surface as usize])((*drawSurf).surface as *mut c_void);
             i += 1;
             drawSurf = drawSurf.add(1);
             continue;
         }
-        R_DecomposeSort(
-            (*drawSurf).sort,
-            &mut (entityNum as *mut c_int) as *mut c_int,
-            &mut shader,
-            &mut (fogNum as *mut c_int) as *mut c_int,
-            &mut (dlighted as *mut c_int) as *mut c_int,
-        );
+        R_DecomposeSort((*drawSurf).sort, addr_of_mut!(entityNum), addr_of_mut!(shader), addr_of_mut!(fogNum), addr_of_mut!(dlighted));
 
-        #[cfg(not(target_os = "windows"))]
-        {
-            // If we're rendering glowing objects, but this shader has no stages with glow, skip it!
-            if g_bRenderGlowingObjects && !(*shader).hasGlow {
-                shader = oldShader;
-                entityNum = oldEntityNum;
-                fogNum = oldFogNum;
-                dlighted = oldDlighted;
-                i += 1;
-                drawSurf = drawSurf.add(1);
-                continue;
-            }
+        #[cfg(not(feature = "_XBOX"))] // GLOWXXX
+        // If we're rendering glowing objects, but this shader has no stages with glow, skip it!
+        if g_bRenderGlowingObjects && (*shader).hasGlow == 0 {
+            shader = oldShader;
+            entityNum = oldEntityNum;
+            fogNum = oldFogNum;
+            dlighted = oldDlighted;
+            i += 1;
+            drawSurf = drawSurf.add(1);
+            continue;
         }
         oldSort = (*drawSurf).sort;
 
@@ -981,20 +664,22 @@ pub unsafe fn RB_RenderDrawSurfList(drawSurfs: *mut drawSurf_t, numDrawSurfs: c_
         // change the tess parameters if needed
         // a "entityMergable" shader is a shader that can have surfaces from seperate
         // entities merged into a single batch, like smoke and blood puff sprites
-        if entityNum != TR_WORLDENT && (g_numPostRenders as usize) < MAX_POST_RENDERS {
-            if ((*(*(*backEnd).refdef).entities.add(entityNum as usize)).e).renderfx & RF_DISTORTION != 0
+        if entityNum != TR_WORLDENT && g_numPostRenders < MAX_POST_RENDERS as c_int {
+            if ((*backEnd.refdef.entities.add(entityNum as usize)).e.renderfx & RF_DISTORTION != 0)
+                /* || ((*backEnd.refdef.entities.add(entityNum as usize)).e.renderfx & RF_FORCE_ENT_ALPHA != 0) */
+                //not sure if we need this alpha fix for sp or not, leaving it out for now -rww
             {
                 //must render last
-                curEnt = &mut (*(*backEnd).refdef).entities.add(entityNum as usize);
-                pRender = &mut g_postRenders[g_numPostRenders as usize];
+                curEnt = backEnd.refdef.entities.add(entityNum as usize) as *mut trRefEntity_t;
+                pRender = addr_of_mut!(g_postRenders[g_numPostRenders as usize]);
 
                 g_numPostRenders += 1;
 
                 depthRange = 0;
                 //figure this stuff out now and store it
-                if ((*curEnt).e).renderfx & RF_NODEPTH != 0 {
+                if (*curEnt).e.renderfx & RF_NODEPTH != 0 {
                     depthRange = 2;
-                } else if ((*curEnt).e).renderfx & RF_DEPTHHACK != 0 {
+                } else if (*curEnt).e.renderfx & RF_DEPTHHACK != 0 {
                     depthRange = 1;
                 }
                 (*pRender).depthRange = depthRange;
@@ -1018,7 +703,7 @@ pub unsafe fn RB_RenderDrawSurfList(drawSurfs: *mut drawSurf_t, numDrawSurfs: c_
                 fogNum = oldFogNum;
                 dlighted = oldDlighted;
 
-                oldSort = ((!0u32)) as u32; //invalidate this thing, cause we may want to postrender more surfs of the same sort
+                oldSort = c_uint::MAX; //invalidate this thing, cause we may want to postrender more surfs of the same sort
 
                 //continue without bothering to begin a draw surf
                 i += 1;
@@ -1027,17 +712,13 @@ pub unsafe fn RB_RenderDrawSurfList(drawSurfs: *mut drawSurf_t, numDrawSurfs: c_
             }
         }
 
-        if shader != oldShader
-            || fogNum != oldFogNum
-            || dlighted != oldDlighted
-            || (entityNum != oldEntityNum && !(*shader).entityMergable)
+        if shader != oldShader || fogNum != oldFogNum || dlighted != oldDlighted
+            || (entityNum != oldEntityNum && (*shader).entityMergable == 0)
         {
-            if oldShader != (0 as *mut shader_t) {
-                #[cfg(target_os = "macos")]
+            if !oldShader.is_null() {
+                #[cfg(feature = "__MACOS__")] // crutch up the mac's limited buffer queue size
                 {
-                    let mut t: c_int;
-
-                    t = Sys_Milliseconds();
+                    let t: c_int = Sys_Milliseconds();
                     if t > macEventTime {
                         macEventTime = t + MAC_EVENT_PUMP_MSEC;
                         Sys_PumpEvents();
@@ -1045,7 +726,7 @@ pub unsafe fn RB_RenderDrawSurfList(drawSurfs: *mut drawSurf_t, numDrawSurfs: c_
                 }
                 RB_EndSurface();
 
-                if !didShadowPass && shader != (0 as *mut shader_t) && (*shader).sort > SS_BANNER {
+                if !didShadowPass && !shader.is_null() && (*shader).sort > SS_BANNER as f32 {
                     RB_ShadowFinish();
                     didShadowPass = true;
                 }
@@ -1060,76 +741,54 @@ pub unsafe fn RB_RenderDrawSurfList(drawSurfs: *mut drawSurf_t, numDrawSurfs: c_
         // change the modelview matrix if needed
         //
         if entityNum != oldEntityNum {
-            depthRange = 0;
+            depthRange = qfalse;
 
             if entityNum != TR_WORLDENT {
-                (*backEnd).currentEntity = &mut (*(*backEnd).refdef).entities.add(entityNum as usize);
-                (*(*backEnd).refdef).floatTime = originalTime - ((*(*backEnd).currentEntity).e).shaderTime;
+                backEnd.currentEntity = backEnd.refdef.entities.add(entityNum as usize) as *mut trRefEntity_t;
+                backEnd.refdef.floatTime = originalTime - (*backEnd.currentEntity).e.shaderTime;
 
                 // set up the transformation matrix
-                R_RotateForEntity(
-                    (*backEnd).currentEntity,
-                    &mut (*(*backEnd).viewParms) as *mut viewParms_t,
-                    &mut (*backEnd).ori,
-                );
+                R_RotateForEntity(backEnd.currentEntity, &mut backEnd.viewParms, &mut backEnd.ori);
 
                 // set up the dynamic lighting if needed
-                if (*(*backEnd).currentEntity).needDlights {
+                if (*backEnd.currentEntity).needDlights != 0 {
                     #[cfg(feature = "VV_LIGHTING")]
-                    {
-                        VVLightMan.R_TransformDlights(&mut (*backEnd).ori);
-                    }
+                    VVLightMan.R_TransformDlights(addr_of_mut!(backEnd.ori));
                     #[cfg(not(feature = "VV_LIGHTING"))]
-                    {
-                        R_TransformDlights(
-                            (*(*backEnd).refdef).num_dlights,
-                            (*(*backEnd).refdef).dlights as *const dlight_t,
-                            &(*backEnd).ori,
-                        );
-                    }
+                    R_TransformDlights(backEnd.refdef.num_dlights, backEnd.refdef.dlights, addr_of_mut!(backEnd.ori));
                 }
 
-                if ((*(*backEnd).currentEntity).e).renderfx & RF_NODEPTH != 0 {
+                if (*backEnd.currentEntity).e.renderfx & RF_NODEPTH != 0 {
                     // No depth at all, very rare but some things for seeing through walls
                     depthRange = 2;
-                } else if ((*(*backEnd).currentEntity).e).renderfx & RF_DEPTHHACK != 0 {
+                } else if (*backEnd.currentEntity).e.renderfx & RF_DEPTHHACK != 0 {
                     // hack the depth range to prevent view model from poking into walls
-                    depthRange = 1;
+                    depthRange = qtrue;
                 }
             } else {
-                (*backEnd).currentEntity = &mut (*tr).worldEntity;
-                (*(*backEnd).refdef).floatTime = originalTime;
-                (*backEnd).ori = (*(*backEnd).viewParms).world;
+                backEnd.currentEntity = &mut tr.worldEntity;
+                backEnd.refdef.floatTime = originalTime;
+                backEnd.ori = backEnd.viewParms.world;
                 #[cfg(feature = "VV_LIGHTING")]
-                {
-                    VVLightMan.R_TransformDlights(&mut (*backEnd).ori);
-                }
+                VVLightMan.R_TransformDlights(addr_of_mut!(backEnd.ori));
                 #[cfg(not(feature = "VV_LIGHTING"))]
-                {
-                    R_TransformDlights(
-                        (*(*backEnd).refdef).num_dlights,
-                        (*(*backEnd).refdef).dlights as *const dlight_t,
-                        &(*backEnd).ori,
-                    );
-                }
+                R_TransformDlights(backEnd.refdef.num_dlights, backEnd.refdef.dlights, addr_of_mut!(backEnd.ori));
             }
 
-            qglLoadMatrixf((*(*backEnd).ori).modelMatrix as *const f32);
+            qglLoadMatrixf(backEnd.ori.modelMatrix.as_ptr());
 
             //
             // change depthrange if needed
             //
             if oldDepthRange != depthRange {
-                match depthRange {
-                    1 => {
-                        qglDepthRange(0.0, 0.3);
-                    }
-                    2 => {
-                        qglDepthRange(0.0, 0.0);
-                    }
-                    _ => {
-                        qglDepthRange(0.0, 1.0);
-                    }
+                if depthRange == 0 {
+                    qglDepthRange(0.0f64, 1.0f64);
+                } else if depthRange == 1 {
+                    qglDepthRange(0.0f64, 0.3f64);
+                } else if depthRange == 2 {
+                    qglDepthRange(0.0f64, 0.0f64);
+                } else {
+                    qglDepthRange(0.0f64, 1.0f64);
                 }
 
                 oldDepthRange = depthRange;
@@ -1139,18 +798,17 @@ pub unsafe fn RB_RenderDrawSurfList(drawSurfs: *mut drawSurf_t, numDrawSurfs: c_
         }
 
         // add the triangles for this surface
-        ((*rb_surfaceTable[*(*drawSurf).surface as usize])((*drawSurf).surface));
-
+        (rb_surfaceTable[*(*drawSurf).surface as usize])((*drawSurf).surface as *mut c_void);
         i += 1;
         drawSurf = drawSurf.add(1);
     }
 
     // draw the contents of the last shader batch
-    if oldShader != (0 as *mut shader_t) {
+    if !oldShader.is_null() {
         RB_EndSurface();
     }
 
-    if tr_stencilled && tr_distortionPrePost {
+    if tr_stencilled && tr_distortionPrePost != 0 {
         //ok, cap it now
         RB_CaptureScreenImage();
         RB_DistortionFill();
@@ -1162,109 +820,90 @@ pub unsafe fn RB_RenderDrawSurfList(drawSurfs: *mut drawSurf_t, numDrawSurfs: c_
 
         while g_numPostRenders > 0 {
             g_numPostRenders -= 1;
-            pRender = &mut g_postRenders[g_numPostRenders as usize];
+            pRender = addr_of_mut!(g_postRenders[g_numPostRenders as usize]);
 
             RB_BeginSurface((*pRender).shader, (*pRender).fogNum);
 
-            (*backEnd).currentEntity = &mut (*(*backEnd).refdef).entities.add((*pRender).entNum as usize);
+            backEnd.currentEntity = backEnd.refdef.entities.add((*pRender).entNum as usize) as *mut trRefEntity_t;
 
-            (*(*backEnd).refdef).floatTime = originalTime - ((*(*backEnd).currentEntity).e).shaderTime;
+            backEnd.refdef.floatTime = originalTime - (*backEnd.currentEntity).e.shaderTime;
 
             // set up the transformation matrix
-            R_RotateForEntity(
-                (*backEnd).currentEntity,
-                &mut (*(*backEnd).viewParms) as *mut viewParms_t,
-                &mut (*backEnd).ori,
-            );
+            R_RotateForEntity(backEnd.currentEntity, &mut backEnd.viewParms, &mut backEnd.ori);
 
             // set up the dynamic lighting if needed
-            if (*(*backEnd).currentEntity).needDlights {
+            if (*backEnd.currentEntity).needDlights != 0 {
                 #[cfg(feature = "VV_LIGHTING")]
-                {
-                    VVLightMan.R_TransformDlights(&mut (*backEnd).ori);
-                }
+                VVLightMan.R_TransformDlights(addr_of_mut!(backEnd.ori));
                 #[cfg(not(feature = "VV_LIGHTING"))]
-                {
-                    R_TransformDlights(
-                        (*(*backEnd).refdef).num_dlights,
-                        (*(*backEnd).refdef).dlights as *const dlight_t,
-                        &(*backEnd).ori,
-                    );
-                }
+                R_TransformDlights(backEnd.refdef.num_dlights, backEnd.refdef.dlights, addr_of_mut!(backEnd.ori));
             }
 
-            qglLoadMatrixf((*(*backEnd).ori).modelMatrix as *const f32);
+            qglLoadMatrixf(backEnd.ori.modelMatrix.as_ptr());
 
             depthRange = (*pRender).depthRange;
-            match depthRange {
-                1 => {
-                    qglDepthRange(0.0, 0.3);
-                }
-                2 => {
-                    qglDepthRange(0.0, 0.0);
-                }
-                _ => {
-                    qglDepthRange(0.0, 1.0);
-                }
+            if depthRange == 1 {
+                qglDepthRange(0.0f64, 0.3f64);
+            } else if depthRange == 2 {
+                qglDepthRange(0.0f64, 0.0f64);
+            } else {
+                qglDepthRange(0.0f64, 1.0f64);
             }
 
-            if ((*(*backEnd).currentEntity).e).renderfx & RF_DISTORTION != 0 && lastPostEnt != (*pRender).entNum {
+            if ((*backEnd.currentEntity).e.renderfx & RF_DISTORTION != 0) && lastPostEnt != (*pRender).entNum {
                 //do the capture now, we only need to do it once per ent
-                let mut x: c_int;
-                let mut y: c_int;
-                let rad: c_int = ((*(*backEnd).currentEntity).e).radius;
+                let mut x: c_int = 0;
+                let mut y: c_int = 0;
+                let rad: c_int = (*backEnd.currentEntity).e.radius as c_int;
                 //We are going to just bind this, and then the CopyTexImage is going to
                 //stomp over this texture num in texture memory.
-                GL_Bind((*tr).screenImage as *mut image_t);
+                GL_Bind(tr.screenImage);
 
-                if R_WorldCoordToScreenCoord(((*(*backEnd).currentEntity).e).origin as *const f32, &mut x, &mut y) {
-                    let mut cX: c_int;
-                    let mut cY: c_int;
-                    cX = (*glConfig).vidWidth - x - (rad / 2);
-                    cY = (*glConfig).vidHeight - y - (rad / 2);
+                if R_WorldCoordToScreenCoord((*backEnd.currentEntity).e.origin.as_mut_ptr(), &mut x, &mut y) {
+                    let mut cX: c_int = glConfig.vidWidth - x - (rad / 2);
+                    let mut cY: c_int = glConfig.vidHeight - y - (rad / 2);
 
-                    if cX + rad > (*glConfig).vidWidth {
+                    if cX + rad > glConfig.vidWidth {
                         //would it go off screen?
-                        cX = (*glConfig).vidWidth - rad;
+                        cX = glConfig.vidWidth - rad;
                     } else if cX < 0 {
                         //cap it off at 0
                         cX = 0;
                     }
 
-                    if cY + rad > (*glConfig).vidHeight {
+                    if cY + rad > glConfig.vidHeight {
                         //would it go off screen?
-                        cY = (*glConfig).vidHeight - rad;
+                        cY = glConfig.vidHeight - rad;
                     } else if cY < 0 {
                         //cap it off at 0
                         cY = 0;
                     }
 
                     //now copy a portion of the screen to this texture
-                    #[cfg(target_os = "windows")]
-                    {
-                        qglCopyBackBufferToTexEXT(rad, rad, cX, 480 - cY, cX + rad, 480 - (cY + rad));
-                    }
-                    #[cfg(not(target_os = "windows"))]
-                    {
-                        qglCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16, cX, cY, rad, rad, 0);
-                    }
+                    #[cfg(feature = "_XBOX")]
+                    qglCopyBackBufferToTexEXT(rad, rad, cX, (480 - cY), (cX + rad), (480 - (cY + rad)));
+                    #[cfg(not(feature = "_XBOX"))]
+                    qglCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16, cX, cY, rad, rad, 0);
 
                     lastPostEnt = (*pRender).entNum;
                 }
             }
 
-            ((*rb_surfaceTable[*(*(*pRender).drawSurf).surface as usize])((*(*pRender).drawSurf).surface));
+            (rb_surfaceTable[*(*(*pRender).drawSurf).surface as usize])((*(*pRender).drawSurf).surface as *mut c_void);
             RB_EndSurface();
         }
     }
 
     // go back to the world modelview matrix
-    qglLoadMatrixf((*(*(*backEnd).viewParms).world).modelMatrix as *const f32);
+    qglLoadMatrixf(backEnd.viewParms.world.modelMatrix.as_ptr());
     if depthRange != 0 {
-        qglDepthRange(0.0, 1.0);
+        qglDepthRange(0.0f64, 1.0f64);
     }
 
-    if tr_stencilled && !tr_distortionPrePost {
+    // #if 0
+    // RB_DrawSun();
+    // #endif
+    if tr_stencilled && tr_distortionPrePost == 0 {
         //draw in the stencil buffer's cutout
         RB_DistortionFill();
     }
@@ -1274,21 +913,18 @@ pub unsafe fn RB_RenderDrawSurfList(drawSurfs: *mut drawSurf_t, numDrawSurfs: c_
         didShadowPass = true;
     }
 
-    #[cfg(target_os = "windows")]
-    {
-        if (*r_hdreffect).integer != 0 {
-            HDREffect.Render();
-        }
+    #[cfg(feature = "_XBOX")]
+    if (*r_hdreffect).integer != 0 {
+        HDREffect.Render();
     }
 
     // add light flares on lights that aren't obscured
-    //	RB_RenderFlares();
+//	RB_RenderFlares();
 
-    #[cfg(target_os = "macos")]
-    {
-        Sys_PumpEvents(); // crutch up the mac's limited buffer queue size
-    }
+    #[cfg(feature = "__MACOS__")]
+    Sys_PumpEvents(); // crutch up the mac's limited buffer queue size
 }
+
 
 /*
 ============================================================================
@@ -1304,37 +940,33 @@ RB_SetGL2D
 
 ================
 */
-#[allow(non_snake_case)]
 pub unsafe fn RB_SetGL2D() {
-    (*backEnd).projection2D = true;
+    backEnd.projection2D = qtrue;
 
     // set 2D virtual screen size
-    qglViewport(0, 0, (*glConfig).vidWidth, (*glConfig).vidHeight);
-    qglScissor(0, 0, (*glConfig).vidWidth, (*glConfig).vidHeight);
+    qglViewport(0, 0, glConfig.vidWidth, glConfig.vidHeight);
+    qglScissor(0, 0, glConfig.vidWidth, glConfig.vidHeight);
     qglMatrixMode(GL_PROJECTION);
     qglLoadIdentity();
-    #[cfg(target_os = "windows")]
-    {
-        qglOrtho(0.0, 640.0, 0.0, 480.0, 0.0, 1.0);
-    }
-    #[cfg(not(target_os = "windows"))]
-    {
-        qglOrtho(0.0, 640.0, 480.0, 0.0, 0.0, 1.0);
-    }
+    #[cfg(feature = "_XBOX")]
+    qglOrtho(0.0f64, 640.0f64, 0.0f64, 480.0f64, 0.0f64, 1.0f64);
+    #[cfg(not(feature = "_XBOX"))]
+    qglOrtho(0.0f64, 640.0f64, 480.0f64, 0.0f64, 0.0f64, 1.0f64);
     qglMatrixMode(GL_MODELVIEW);
     qglLoadIdentity();
 
-    GL_State(
-        GLS_DEPTHTEST_DISABLE | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA,
-    );
+    GL_State(GLS_DEPTHTEST_DISABLE as c_ulong
+           | GLS_SRCBLEND_SRC_ALPHA as c_ulong
+           | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA as c_ulong);
 
     qglDisable(GL_CULL_FACE);
     qglDisable(GL_CLIP_PLANE0);
 
     // set time for 2D shaders
-    (*(*backEnd).refdef).time = Sys_Milliseconds();
-    (*(*backEnd).refdef).floatTime = ((*(*backEnd).refdef).time as f32) * 0.001;
+    backEnd.refdef.time = Sys_Milliseconds();
+    backEnd.refdef.floatTime = backEnd.refdef.time as f32 * 0.001f32;
 }
+
 
 /*
 =============
@@ -1342,18 +974,15 @@ RB_SetColor
 
 =============
 */
-#[allow(non_snake_case)]
 pub unsafe fn RB_SetColor(data: *const c_void) -> *const c_void {
-    let cmd: *const setColorCommand_t;
+    let cmd: *const setColorCommand_t = data as *const setColorCommand_t;
 
-    cmd = data as *const setColorCommand_t;
+    backEnd.color2D[0] = ((*cmd).color[0] * 255.0f32) as c_uchar;
+    backEnd.color2D[1] = ((*cmd).color[1] * 255.0f32) as c_uchar;
+    backEnd.color2D[2] = ((*cmd).color[2] * 255.0f32) as c_uchar;
+    backEnd.color2D[3] = ((*cmd).color[3] * 255.0f32) as c_uchar;
 
-    (*(*backEnd).color2D)[0] = ((*cmd).color[0] * 255.0) as c_int;
-    (*(*backEnd).color2D)[1] = ((*cmd).color[1] * 255.0) as c_int;
-    (*(*backEnd).color2D)[2] = ((*cmd).color[2] * 255.0) as c_int;
-    (*(*backEnd).color2D)[3] = ((*cmd).color[3] * 255.0) as c_int;
-
-    (cmd.add(1)) as *const c_void
+    cmd.add(1) as *const c_void
 }
 
 /*
@@ -1361,121 +990,116 @@ pub unsafe fn RB_SetColor(data: *const c_void) -> *const c_void {
 RB_StretchPic
 =============
 */
-#[allow(non_snake_case)]
 pub unsafe fn RB_StretchPic(data: *const c_void) -> *const c_void {
-    let cmd: *const stretchPicCommand_t;
+    let cmd: *const stretchPicCommand_t = data as *const stretchPicCommand_t;
     let shader: *mut shader_t;
     let mut numVerts: c_int;
     let mut numIndexes: c_int;
 
-    cmd = data as *const stretchPicCommand_t;
-
     shader = (*cmd).shader;
-    if shader != (*tess).shader {
-        if (*tess).numIndexes != 0 {
+    if shader != tess.shader {
+        if tess.numIndexes != 0 {
             RB_EndSurface(); //this might change culling and other states
         }
-        (*backEnd).currentEntity = &mut (*backEnd).entity2D;
+        backEnd.currentEntity = &mut backEnd.entity2D;
         RB_BeginSurface(shader, 0);
     }
 
-    if !(*backEnd).projection2D {
+    if backEnd.projection2D == 0 {
         RB_SetGL2D(); //set culling and other states
     }
 
     RB_CHECKOVERFLOW(4, 6);
-    numVerts = (*tess).numVertexes;
-    numIndexes = (*tess).numIndexes;
+    numVerts = tess.numVertexes;
+    numIndexes = tess.numIndexes;
 
-    (*tess).numVertexes += 4;
-    (*tess).numIndexes += 6;
+    tess.numVertexes += 4;
+    tess.numIndexes += 6;
 
-    (*tess).indexes[numIndexes as usize] = (numVerts + 3) as u32;
-    (*tess).indexes[(numIndexes + 1) as usize] = (numVerts + 0) as u32;
-    (*tess).indexes[(numIndexes + 2) as usize] = (numVerts + 2) as u32;
-    (*tess).indexes[(numIndexes + 3) as usize] = (numVerts + 2) as u32;
-    (*tess).indexes[(numIndexes + 4) as usize] = (numVerts + 0) as u32;
-    (*tess).indexes[(numIndexes + 5) as usize] = (numVerts + 1) as u32;
+    tess.indexes[numIndexes as usize] = (numVerts + 3) as glIndex_t;
+    tess.indexes[(numIndexes + 1) as usize] = (numVerts + 0) as glIndex_t;
+    tess.indexes[(numIndexes + 2) as usize] = (numVerts + 2) as glIndex_t;
+    tess.indexes[(numIndexes + 3) as usize] = (numVerts + 2) as glIndex_t;
+    tess.indexes[(numIndexes + 4) as usize] = (numVerts + 0) as glIndex_t;
+    tess.indexes[(numIndexes + 5) as usize] = (numVerts + 1) as glIndex_t;
 
-    *((*tess).vertexColors[numVerts as usize] as *mut i32) =
-        *((*tess).vertexColors[(numVerts + 1) as usize] as *mut i32) =
-            *((*tess).vertexColors[(numVerts + 2) as usize] as *mut i32) =
-                *((*tess).vertexColors[(numVerts + 3) as usize] as *mut i32) =
-                    *((*backEnd).color2D as *mut i32);
+    // *(int *)tess.vertexColors[ numVerts ] =
+    //     *(int *)tess.vertexColors[ numVerts + 1 ] =
+    //     *(int *)tess.vertexColors[ numVerts + 2 ] =
+    //     *(int *)tess.vertexColors[ numVerts + 3 ] = *(int *)backEnd.color2D;
+    let color_int: c_int = *(backEnd.color2D.as_ptr() as *const c_int);
+    *(tess.vertexColors[numVerts as usize].as_mut_ptr() as *mut c_int) = color_int;
+    *(tess.vertexColors[(numVerts + 1) as usize].as_mut_ptr() as *mut c_int) = color_int;
+    *(tess.vertexColors[(numVerts + 2) as usize].as_mut_ptr() as *mut c_int) = color_int;
+    *(tess.vertexColors[(numVerts + 3) as usize].as_mut_ptr() as *mut c_int) = color_int;
 
-    (*tess).xyz[numVerts as usize][0] = (*cmd).x;
-    (*tess).xyz[numVerts as usize][1] = (*cmd).y;
-    (*tess).xyz[numVerts as usize][2] = 0.0;
+    tess.xyz[numVerts as usize][0] = (*cmd).x;
+    tess.xyz[numVerts as usize][1] = (*cmd).y;
+    tess.xyz[numVerts as usize][2] = 0.0f32;
 
-    (*tess).texCoords[numVerts as usize][0][0] = (*cmd).s1;
-    (*tess).texCoords[numVerts as usize][0][1] = (*cmd).t1;
+    tess.texCoords[numVerts as usize][0][0] = (*cmd).s1;
+    tess.texCoords[numVerts as usize][0][1] = (*cmd).t1;
 
-    (*tess).xyz[(numVerts + 1) as usize][0] = (*cmd).x + (*cmd).w;
-    (*tess).xyz[(numVerts + 1) as usize][1] = (*cmd).y;
-    (*tess).xyz[(numVerts + 1) as usize][2] = 0.0;
+    tess.xyz[(numVerts + 1) as usize][0] = (*cmd).x + (*cmd).w;
+    tess.xyz[(numVerts + 1) as usize][1] = (*cmd).y;
+    tess.xyz[(numVerts + 1) as usize][2] = 0.0f32;
 
-    (*tess).texCoords[(numVerts + 1) as usize][0][0] = (*cmd).s2;
-    (*tess).texCoords[(numVerts + 1) as usize][0][1] = (*cmd).t1;
+    tess.texCoords[(numVerts + 1) as usize][0][0] = (*cmd).s2;
+    tess.texCoords[(numVerts + 1) as usize][0][1] = (*cmd).t1;
 
-    (*tess).xyz[(numVerts + 2) as usize][0] = (*cmd).x + (*cmd).w;
-    (*tess).xyz[(numVerts + 2) as usize][1] = (*cmd).y + (*cmd).h;
-    (*tess).xyz[(numVerts + 2) as usize][2] = 0.0;
+    tess.xyz[(numVerts + 2) as usize][0] = (*cmd).x + (*cmd).w;
+    tess.xyz[(numVerts + 2) as usize][1] = (*cmd).y + (*cmd).h;
+    tess.xyz[(numVerts + 2) as usize][2] = 0.0f32;
 
-    (*tess).texCoords[(numVerts + 2) as usize][0][0] = (*cmd).s2;
-    (*tess).texCoords[(numVerts + 2) as usize][0][1] = (*cmd).t2;
+    tess.texCoords[(numVerts + 2) as usize][0][0] = (*cmd).s2;
+    tess.texCoords[(numVerts + 2) as usize][0][1] = (*cmd).t2;
 
-    (*tess).xyz[(numVerts + 3) as usize][0] = (*cmd).x;
-    (*tess).xyz[(numVerts + 3) as usize][1] = (*cmd).y + (*cmd).h;
-    (*tess).xyz[(numVerts + 3) as usize][2] = 0.0;
+    tess.xyz[(numVerts + 3) as usize][0] = (*cmd).x;
+    tess.xyz[(numVerts + 3) as usize][1] = (*cmd).y + (*cmd).h;
+    tess.xyz[(numVerts + 3) as usize][2] = 0.0f32;
 
-    (*tess).texCoords[(numVerts + 3) as usize][0][0] = (*cmd).s1;
-    (*tess).texCoords[(numVerts + 3) as usize][0][1] = (*cmd).t2;
+    tess.texCoords[(numVerts + 3) as usize][0][0] = (*cmd).s1;
+    tess.texCoords[(numVerts + 3) as usize][0][1] = (*cmd).t2;
 
-    (cmd.add(1)) as *const c_void
+    cmd.add(1) as *const c_void
 }
+
 
 /*
 =============
 RB_DrawRotatePic
 =============
 */
-#[allow(non_snake_case)]
 pub unsafe fn RB_RotatePic(data: *const c_void) -> *const c_void {
-    let cmd: *const rotatePicCommand_t;
+    let cmd: *const rotatePicCommand_t = data as *const rotatePicCommand_t;
     let image: *mut image_t;
     let shader: *mut shader_t;
 
-    cmd = data as *const rotatePicCommand_t;
-
     shader = (*cmd).shader;
-    image = &mut (*(*(*(*shader).stages.as_mut_ptr()).bundle.as_mut_ptr()).image.as_mut_ptr());
+    image = &mut (*(*shader).stages[0]).bundle[0].image[0];
 
     if !image.is_null() {
-        if !(*backEnd).projection2D {
+        if backEnd.projection2D == 0 {
             RB_SetGL2D();
         }
 
-        qglColor4ubv((*backEnd).color2D as *const u8);
+        qglColor4ubv(backEnd.color2D.as_ptr());
         qglPushMatrix();
 
-        qglTranslatef((*cmd).x + (*cmd).w, (*cmd).y, 0.0);
-        qglRotatef((*cmd).a, 0.0, 0.0, 1.0);
+        qglTranslatef((*cmd).x + (*cmd).w, (*cmd).y, 0.0f32);
+        qglRotatef((*cmd).a, 0.0f32, 0.0f32, 1.0f32);
 
         GL_Bind(image);
-        #[cfg(target_os = "windows")]
-        {
-            qglBeginEXT(GL_QUADS, 4, 0, 0, 4, 0);
-        }
-        #[cfg(not(target_os = "windows"))]
-        {
-            qglBegin(GL_QUADS);
-        }
+        #[cfg(feature = "_XBOX")]
+        qglBeginEXT(GL_QUADS, 4, 0, 0, 4, 0);
+        #[cfg(not(feature = "_XBOX"))]
+        qglBegin(GL_QUADS);
         qglTexCoord2f((*cmd).s1, (*cmd).t1);
-        qglVertex2f(-(*cmd).w, 0.0);
+        qglVertex2f(-(*cmd).w, 0.0f32);
         qglTexCoord2f((*cmd).s2, (*cmd).t1);
-        qglVertex2f(0.0, 0.0);
+        qglVertex2f(0.0f32, 0.0f32);
         qglTexCoord2f((*cmd).s2, (*cmd).t2);
-        qglVertex2f(0.0, (*cmd).h);
+        qglVertex2f(0.0f32, (*cmd).h);
         qglTexCoord2f((*cmd).s1, (*cmd).t2);
         qglVertex2f(-(*cmd).w, (*cmd).h);
         qglEnd();
@@ -1483,7 +1107,7 @@ pub unsafe fn RB_RotatePic(data: *const c_void) -> *const c_void {
         qglPopMatrix();
     }
 
-    (cmd.add(1)) as *const c_void
+    cmd.add(1) as *const c_void
 }
 
 /*
@@ -1491,66 +1115,59 @@ pub unsafe fn RB_RotatePic(data: *const c_void) -> *const c_void {
 RB_DrawRotatePic2
 =============
 */
-#[allow(non_snake_case)]
 pub unsafe fn RB_RotatePic2(data: *const c_void) -> *const c_void {
-    let cmd: *const rotatePicCommand_t;
+    let cmd: *const rotatePicCommand_t = data as *const rotatePicCommand_t;
     let image: *mut image_t;
     let shader: *mut shader_t;
-
-    cmd = data as *const rotatePicCommand_t;
 
     shader = (*cmd).shader;
 
     if (*shader).numUnfoggedPasses != 0 {
-        image = &mut (*(*(*(*shader).stages.as_mut_ptr()).bundle.as_mut_ptr()).image.as_mut_ptr());
+        image = &mut (*(*shader).stages[0]).bundle[0].image[0];
 
         if !image.is_null() {
-            if !(*backEnd).projection2D {
+            if backEnd.projection2D == 0 {
                 RB_SetGL2D();
             }
 
             // Get our current blend mode, etc.
-            GL_State((*(*(*shader).stages.as_ptr()).stateBits));
+            GL_State((*(*shader).stages[0]).stateBits as c_ulong);
 
-            qglColor4ubv((*backEnd).color2D as *const u8);
+            qglColor4ubv(backEnd.color2D.as_ptr());
             qglPushMatrix();
 
             // rotation point is going to be around the center of the passed in coordinates
-            qglTranslatef((*cmd).x, (*cmd).y, 0.0);
-            qglRotatef((*cmd).a, 0.0, 0.0, 1.0);
+            qglTranslatef((*cmd).x, (*cmd).y, 0.0f32);
+            qglRotatef((*cmd).a, 0.0f32, 0.0f32, 1.0f32);
 
             GL_Bind(image);
-            #[cfg(target_os = "windows")]
-            {
-                qglBeginEXT(GL_QUADS, 4, 0, 0, 4, 0);
-            }
-            #[cfg(not(target_os = "windows"))]
-            {
-                qglBegin(GL_QUADS);
-            }
-            qglTexCoord2f((*cmd).s1, (*cmd).t1);
-            qglVertex2f(-(*cmd).w * 0.5, -(*cmd).h * 0.5);
+            #[cfg(feature = "_XBOX")]
+            qglBeginEXT(GL_QUADS, 4, 0, 0, 4, 0);
+            #[cfg(not(feature = "_XBOX"))]
+            qglBegin(GL_QUADS);
+                qglTexCoord2f((*cmd).s1, (*cmd).t1);
+                qglVertex2f(-(*cmd).w * 0.5f32, -(*cmd).h * 0.5f32);
 
-            qglTexCoord2f((*cmd).s2, (*cmd).t1);
-            qglVertex2f((*cmd).w * 0.5, -(*cmd).h * 0.5);
+                qglTexCoord2f((*cmd).s2, (*cmd).t1);
+                qglVertex2f((*cmd).w * 0.5f32, -(*cmd).h * 0.5f32);
 
-            qglTexCoord2f((*cmd).s2, (*cmd).t2);
-            qglVertex2f((*cmd).w * 0.5, (*cmd).h * 0.5);
+                qglTexCoord2f((*cmd).s2, (*cmd).t2);
+                qglVertex2f((*cmd).w * 0.5f32, (*cmd).h * 0.5f32);
 
-            qglTexCoord2f((*cmd).s1, (*cmd).t2);
-            qglVertex2f(-(*cmd).w * 0.5, (*cmd).h * 0.5);
+                qglTexCoord2f((*cmd).s1, (*cmd).t2);
+                qglVertex2f(-(*cmd).w * 0.5f32, (*cmd).h * 0.5f32);
             qglEnd();
 
             qglPopMatrix();
 
             // Hmmm, this is not too cool
-            GL_State(
-                GLS_DEPTHTEST_DISABLE | GLS_SRCBLEND_SRC_ALPHA | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA,
-            );
+            GL_State(GLS_DEPTHTEST_DISABLE as c_ulong
+                   | GLS_SRCBLEND_SRC_ALPHA as c_ulong
+                   | GLS_DSTBLEND_ONE_MINUS_SRC_ALPHA as c_ulong);
         }
     }
 
-    (cmd.add(1)) as *const c_void
+    cmd.add(1) as *const c_void
 }
 
 /*
@@ -1558,7 +1175,6 @@ pub unsafe fn RB_RotatePic2(data: *const c_void) -> *const c_void {
 RB_LAGoggles
 =============
 */
-#[allow(non_snake_case)]
 pub unsafe fn RB_LAGoggles(data: *const c_void) -> *const c_void {
     data
 }
@@ -1568,28 +1184,20 @@ pub unsafe fn RB_LAGoggles(data: *const c_void) -> *const c_void {
 RB_ScissorPic
 =============
 */
-#[allow(non_snake_case)]
 pub unsafe fn RB_Scissor(data: *const c_void) -> *const c_void {
-    let cmd: *const scissorCommand_t;
+    let cmd: *const scissorCommand_t = data as *const scissorCommand_t;
 
-    cmd = data as *const scissorCommand_t;
-
-    if !(*backEnd).projection2D {
+    if backEnd.projection2D == 0 {
         RB_SetGL2D();
     }
 
     if (*cmd).x >= 0 {
-        qglScissor(
-            (*cmd).x,
-            (*glConfig).vidHeight - (*cmd).y - (*cmd).h,
-            (*cmd).w,
-            (*cmd).h,
-        );
+        qglScissor((*cmd).x, (glConfig.vidHeight - (*cmd).y - (*cmd).h), (*cmd).w, (*cmd).h);
     } else {
-        qglScissor(0, 0, (*glConfig).vidWidth, (*glConfig).vidHeight);
+        qglScissor(0, 0, glConfig.vidWidth, glConfig.vidHeight);
     }
 
-    (cmd.add(1)) as *const c_void
+    cmd.add(1) as *const c_void
 }
 
 /*
@@ -1598,19 +1206,18 @@ RB_DrawSurfs
 
 =============
 */
-#[allow(non_snake_case)]
 pub unsafe fn RB_DrawSurfs(data: *const c_void) -> *const c_void {
     let cmd: *const drawSurfsCommand_t;
 
     // finish any 2D drawing if needed
-    if (*tess).numIndexes != 0 {
+    if tess.numIndexes != 0 {
         RB_EndSurface();
     }
 
     cmd = data as *const drawSurfsCommand_t;
 
-    (*backEnd).refdef = (*cmd).refdef;
-    (*backEnd).viewParms = (*cmd).viewParms;
+    backEnd.refdef = (*cmd).refdef;
+    backEnd.viewParms = (*cmd).viewParms;
 
     RB_RenderDrawSurfList((*cmd).drawSurfs, (*cmd).numDrawSurfs);
 
@@ -1624,96 +1231,66 @@ pub unsafe fn RB_DrawSurfs(data: *const c_void) -> *const c_void {
     */
 
     // Render dynamic glowing/flaring objects.
-    #[cfg(not(target_os = "windows"))]
-    {
-        if ((*(*backEnd).refdef).rdflags & RDF_NOWORLDMODEL) == 0
-            && g_bDynamicGlowSupported
-            && (*r_DynamicGlow).integer != 0
-        {
-            // Copy the normal scene to texture.
-            qglDisable(GL_TEXTURE_2D);
-            qglEnable(GL_TEXTURE_RECTANGLE_EXT);
-            qglBindTexture(GL_TEXTURE_RECTANGLE_EXT, (*tr).sceneImage);
-            qglCopyTexSubImage2D(
-                GL_TEXTURE_RECTANGLE_EXT,
-                0,
-                0,
-                0,
-                (*(*backEnd).viewParms).viewportX,
-                (*(*backEnd).viewParms).viewportY,
-                (*(*backEnd).viewParms).viewportWidth,
-                (*(*backEnd).viewParms).viewportHeight,
-            );
-            qglDisable(GL_TEXTURE_RECTANGLE_EXT);
-            qglEnable(GL_TEXTURE_2D);
+    #[cfg(not(feature = "_XBOX"))] // GLOWXXX
+    if (backEnd.refdef.rdflags & RDF_NOWORLDMODEL == 0) && g_bDynamicGlowSupported && (*r_DynamicGlow).integer != 0 {
+        // Copy the normal scene to texture.
+        qglDisable(GL_TEXTURE_2D);
+        qglEnable(GL_TEXTURE_RECTANGLE_EXT);
+        qglBindTexture(GL_TEXTURE_RECTANGLE_EXT, tr.sceneImage);
+        qglCopyTexSubImage2D(GL_TEXTURE_RECTANGLE_EXT, 0, 0, 0, backEnd.viewParms.viewportX, backEnd.viewParms.viewportY, backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight);
+        qglDisable(GL_TEXTURE_RECTANGLE_EXT);
+        qglEnable(GL_TEXTURE_2D);
 
-            // Just clear colors, but leave the depth buffer intact so we can 'share' it.
-            qglClearColor(0.0, 0.0, 0.0, 0.0);
-            qglClear(GL_COLOR_BUFFER_BIT);
+        // Just clear colors, but leave the depth buffer intact so we can 'share' it.
+        qglClearColor(0.0f32, 0.0f32, 0.0f32, 0.0f32);
+        qglClear(GL_COLOR_BUFFER_BIT);
 
-            // Render the glowing objects.
-            g_bRenderGlowingObjects = true;
-            RB_RenderDrawSurfList((*cmd).drawSurfs, (*cmd).numDrawSurfs);
-            g_bRenderGlowingObjects = false;
-            qglFinish();
+        // Render the glowing objects.
+        g_bRenderGlowingObjects = true;
+        RB_RenderDrawSurfList((*cmd).drawSurfs, (*cmd).numDrawSurfs);
+        g_bRenderGlowingObjects = false;
+        qglFinish();
 
-            // Copy the glow scene to texture.
-            qglDisable(GL_TEXTURE_2D);
-            qglEnable(GL_TEXTURE_RECTANGLE_EXT);
-            qglBindTexture(GL_TEXTURE_RECTANGLE_EXT, (*tr).screenGlow);
-            qglCopyTexSubImage2D(
-                GL_TEXTURE_RECTANGLE_EXT,
-                0,
-                0,
-                0,
-                (*(*backEnd).viewParms).viewportX,
-                (*(*backEnd).viewParms).viewportY,
-                (*(*backEnd).viewParms).viewportWidth,
-                (*(*backEnd).viewParms).viewportHeight,
-            );
-            qglDisable(GL_TEXTURE_RECTANGLE_EXT);
-            qglEnable(GL_TEXTURE_2D);
+        // Copy the glow scene to texture.
+        qglDisable(GL_TEXTURE_2D);
+        qglEnable(GL_TEXTURE_RECTANGLE_EXT);
+        qglBindTexture(GL_TEXTURE_RECTANGLE_EXT, tr.screenGlow);
+        qglCopyTexSubImage2D(GL_TEXTURE_RECTANGLE_EXT, 0, 0, 0, backEnd.viewParms.viewportX, backEnd.viewParms.viewportY, backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight);
+        qglDisable(GL_TEXTURE_RECTANGLE_EXT);
+        qglEnable(GL_TEXTURE_2D);
 
-            // Resize the viewport to the blur texture size.
-            let oldViewWidth: c_int = (*(*backEnd).viewParms).viewportWidth;
-            let oldViewHeight: c_int = (*(*backEnd).viewParms).viewportHeight;
-            (*(*backEnd).viewParms).viewportWidth = (*r_DynamicGlowWidth).integer;
-            (*(*backEnd).viewParms).viewportHeight = (*r_DynamicGlowHeight).integer;
-            SetViewportAndScissor();
+        // Resize the viewport to the blur texture size.
+        let oldViewWidth: c_int = backEnd.viewParms.viewportWidth;
+        let oldViewHeight: c_int = backEnd.viewParms.viewportHeight;
+        backEnd.viewParms.viewportWidth = (*r_DynamicGlowWidth).integer;
+        backEnd.viewParms.viewportHeight = (*r_DynamicGlowHeight).integer;
+        SetViewportAndScissor();
 
-            // Blur the scene.
-            RB_BlurGlowTexture();
+        // Blur the scene.
+        RB_BlurGlowTexture();
 
-            // Copy the finished glow scene back to texture.
-            qglDisable(GL_TEXTURE_2D);
-            qglEnable(GL_TEXTURE_RECTANGLE_EXT);
-            qglBindTexture(GL_TEXTURE_RECTANGLE_EXT, (*tr).blurImage);
-            qglCopyTexSubImage2D(
-                GL_TEXTURE_RECTANGLE_EXT,
-                0,
-                0,
-                0,
-                0,
-                0,
-                (*(*backEnd).viewParms).viewportWidth,
-                (*(*backEnd).viewParms).viewportHeight,
-            );
-            qglDisable(GL_TEXTURE_RECTANGLE_EXT);
-            qglEnable(GL_TEXTURE_2D);
+        // Copy the finished glow scene back to texture.
+        qglDisable(GL_TEXTURE_2D);
+        qglEnable(GL_TEXTURE_RECTANGLE_EXT);
+        qglBindTexture(GL_TEXTURE_RECTANGLE_EXT, tr.blurImage);
+        qglCopyTexSubImage2D(GL_TEXTURE_RECTANGLE_EXT, 0, 0, 0, 0, 0, backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight);
+        qglDisable(GL_TEXTURE_RECTANGLE_EXT);
+        qglEnable(GL_TEXTURE_2D);
 
-            // Set the viewport back to normal.
-            (*(*backEnd).viewParms).viewportWidth = oldViewWidth;
-            (*(*backEnd).viewParms).viewportHeight = oldViewHeight;
-            SetViewportAndScissor();
-            qglClear(GL_COLOR_BUFFER_BIT);
+        // Set the viewport back to normal.
+        backEnd.viewParms.viewportWidth = oldViewWidth;
+        backEnd.viewParms.viewportHeight = oldViewHeight;
+        SetViewportAndScissor();
+        qglClear(GL_COLOR_BUFFER_BIT);
 
-            // Draw the glow additively over the screen.
-            RB_DrawGlowOverlay();
-        }
+        // Draw the glow additively over the screen.
+        RB_DrawGlowOverlay();
     }
+    // #endif // _XBOX
 
-    (cmd.add(1)) as *const c_void
+    cmd.add(1) as *const c_void
 }
+
 
 /*
 =============
@@ -1721,42 +1298,22 @@ RB_DrawBuffer
 
 =============
 */
-#[allow(non_snake_case)]
 pub unsafe fn RB_DrawBuffer(data: *const c_void) -> *const c_void {
-    let cmd: *const drawBufferCommand_t;
-
-    cmd = data as *const drawBufferCommand_t;
+    let cmd: *const drawBufferCommand_t = data as *const drawBufferCommand_t;
 
     qglDrawBuffer((*cmd).buffer);
 
-    // clear screen for debugging
-    if ((*(*backEnd).refdef).rdflags & RDF_NOWORLDMODEL) == 0
-        && !(*tr).world.is_null()
-        && ((*tr).refdef.rdflags & RDF_doLAGoggles) != 0
-    {
-        let fog: *const fog_t = &(*(*(*tr).world).fogs.as_ptr().add((*(*tr).world).numfogs as usize));
+        // clear screen for debugging
+    if (backEnd.refdef.rdflags & RDF_NOWORLDMODEL == 0) && !tr.world.is_null() && tr.refdef.rdflags & RDF_doLAGoggles != 0 {
+        let fog: *const fog_t = &(*tr.world).fogs[(*tr.world).numfogs as usize];
 
-        qglClearColor(
-            (*fog).parms.color[0],
-            (*fog).parms.color[1],
-            (*fog).parms.color[2],
-            1.0,
-        );
+        qglClearColor((*fog).parms.color[0], (*fog).parms.color[1], (*fog).parms.color[2], 1.0f32);
         qglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    } else if ((*(*backEnd).refdef).rdflags & RDF_NOWORLDMODEL) == 0
-        && !(*tr).world.is_null()
-        && (*(*tr).world).globalFog != -1
-        && (*tr).sceneCount != 0
-    {
-        // don't clear during menus, wait for real scene
-        let fog: *const fog_t = &(*(*(*tr).world).fogs.as_ptr().add((*(*tr).world).globalFog as usize));
+    } else if (backEnd.refdef.rdflags & RDF_NOWORLDMODEL == 0) && !tr.world.is_null() && (*tr.world).globalFog != -1 && tr.sceneCount != 0 {
+        //don't clear during menus, wait for real scene
+        let fog: *const fog_t = &(*tr.world).fogs[(*tr.world).globalFog as usize];
 
-        qglClearColor(
-            (*fog).parms.color[0],
-            (*fog).parms.color[1],
-            (*fog).parms.color[2],
-            1.0,
-        );
+        qglClearColor((*fog).parms.color[0], (*fog).parms.color[1], (*fog).parms.color[2], 1.0f32);
         qglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     } else if (*r_clear).integer != 0 {
         // clear screen for debugging
@@ -1764,39 +1321,29 @@ pub unsafe fn RB_DrawBuffer(data: *const c_void) -> *const c_void {
         if i == 42 {
             i = Q_irand(0, 8);
         }
-        match i {
-            1 => {
-                qglClearColor(1.0, 0.0, 0.0, 1.0); //red
-            }
-            2 => {
-                qglClearColor(0.0, 1.0, 0.0, 1.0); //green
-            }
-            3 => {
-                qglClearColor(1.0, 1.0, 0.0, 1.0); //yellow
-            }
-            4 => {
-                qglClearColor(0.0, 0.0, 1.0, 1.0); //blue
-            }
-            5 => {
-                qglClearColor(0.0, 1.0, 1.0, 1.0); //cyan
-            }
-            6 => {
-                qglClearColor(1.0, 0.0, 1.0, 1.0); //magenta
-            }
-            7 => {
-                qglClearColor(1.0, 1.0, 1.0, 1.0); //white
-            }
-            8 => {
-                qglClearColor(0.0, 0.0, 0.0, 1.0); //black
-            }
-            _ => {
-                qglClearColor(1.0, 0.0, 0.5, 1.0);
-            }
+        if i == 1 {
+            qglClearColor(1.0f32, 0.0f32, 0.0f32, 1.0f32); //red
+        } else if i == 2 {
+            qglClearColor(0.0f32, 1.0f32, 0.0f32, 1.0f32); //green
+        } else if i == 3 {
+            qglClearColor(1.0f32, 1.0f32, 0.0f32, 1.0f32); //yellow
+        } else if i == 4 {
+            qglClearColor(0.0f32, 0.0f32, 1.0f32, 1.0f32); //blue
+        } else if i == 5 {
+            qglClearColor(0.0f32, 1.0f32, 1.0f32, 1.0f32); //cyan
+        } else if i == 6 {
+            qglClearColor(1.0f32, 0.0f32, 1.0f32, 1.0f32); //magenta
+        } else if i == 7 {
+            qglClearColor(1.0f32, 1.0f32, 1.0f32, 1.0f32); //white
+        } else if i == 8 {
+            qglClearColor(0.0f32, 0.0f32, 0.0f32, 1.0f32); //black
+        } else {
+            qglClearColor(1.0f32, 0.0f32, 0.5f32, 1.0f32);
         }
         qglClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
-    (cmd.add(1)) as *const c_void
+    cmd.add(1) as *const c_void
 }
 
 /*
@@ -1809,17 +1356,16 @@ was there.  This is used to test for texture thrashing.
 Also called by RE_EndRegistration
 ===============
 */
-#[allow(non_snake_case)]
 pub unsafe fn RB_ShowImages() {
-    let image: *mut image_t;
+    let mut image: *mut image_t;
     let mut x: f32;
     let mut y: f32;
     let mut w: f32;
     let mut h: f32;
-    let start: c_int;
-    let end: c_int;
+    let mut start: c_int;
+    let mut end: c_int;
 
-    if !(*backEnd).projection2D {
+    if backEnd.projection2D == 0 {
         RB_SetGL2D();
     }
 
@@ -1828,36 +1374,37 @@ pub unsafe fn RB_ShowImages() {
     start = Sys_Milliseconds();
 
     let mut i: c_int = 0;
-    //	int iNumImages =
-    R_Images_StartIteration();
-    while !((image = R_Images_GetNextIteration()).is_null()) {
-        w = ((*glConfig).vidWidth as f32) / 20.0;
-        h = ((*glConfig).vidHeight as f32) / 15.0;
-        x = ((i % 20) as f32) * w;
-        y = ((i / 20) as f32) * h;
+//	int iNumImages =
+                     R_Images_StartIteration();
+    loop {
+        image = R_Images_GetNextIteration();
+        if image.is_null() {
+            break;
+        }
+
+        w = glConfig.vidWidth as f32 / 20.0f32;
+        h = glConfig.vidHeight as f32 / 15.0f32;
+        x = (i % 20) as f32 * w;
+        y = (i / 20) as f32 * h;
 
         // show in proportional size in mode 2
         if (*r_showImages).integer == 2 {
-            w *= ((*image).width as f32) / 512.0;
-            h *= ((*image).height as f32) / 512.0;
+            w *= (*image).width as f32 / 512.0f32;
+            h *= (*image).height as f32 / 512.0f32;
         }
 
         GL_Bind(image);
-        #[cfg(target_os = "windows")]
-        {
-            qglBeginEXT(GL_QUADS, 4, 0, 0, 4, 0);
-        }
-        #[cfg(not(target_os = "windows"))]
-        {
-            qglBegin(GL_QUADS);
-        }
-        qglTexCoord2f(0.0, 0.0);
+        #[cfg(feature = "_XBOX")]
+        qglBeginEXT(GL_QUADS, 4, 0, 0, 4, 0);
+        #[cfg(not(feature = "_XBOX"))]
+        qglBegin(GL_QUADS);
+        qglTexCoord2f(0.0f32, 0.0f32);
         qglVertex2f(x, y);
-        qglTexCoord2f(1.0, 0.0);
+        qglTexCoord2f(1.0f32, 0.0f32);
         qglVertex2f(x + w, y);
-        qglTexCoord2f(1.0, 1.0);
+        qglTexCoord2f(1.0f32, 1.0f32);
         qglVertex2f(x + w, y + h);
-        qglTexCoord2f(0.0, 1.0);
+        qglTexCoord2f(0.0f32, 1.0f32);
         qglVertex2f(x, y + h);
         qglEnd();
         i += 1;
@@ -1869,22 +1416,18 @@ pub unsafe fn RB_ShowImages() {
     //VID_Printf( PRINT_ALL, "%i msec to draw all images\n", end - start );
 }
 
+
 /*
 =============
 RB_SwapBuffers
 
 =============
 */
-extern "C" {
-    fn RB_RenderWorldEffects();
-}
-
-#[allow(non_snake_case)]
 pub unsafe fn RB_SwapBuffers(data: *const c_void) -> *const c_void {
     let cmd: *const swapBuffersCommand_t;
 
     // finish any 2D drawing if needed
-    if (*tess).numIndexes != 0 {
+    if tess.numIndexes != 0 {
         RB_EndSurface();
     }
 
@@ -1897,69 +1440,53 @@ pub unsafe fn RB_SwapBuffers(data: *const c_void) -> *const c_void {
 
     // we measure overdraw by reading back the stencil buffer and
     // counting up the number of increments that have happened
-    #[cfg(not(target_os = "windows"))]
-    {
-        if (*r_measureOverdraw).integer != 0 {
-            let mut i: c_int;
-            let mut sum: i64 = 0;
-            let stencilReadback: *mut u8;
+    #[cfg(not(feature = "_XBOX"))]
+    if (*r_measureOverdraw).integer != 0 {
+        let mut i: c_int;
+        let mut sum: c_long = 0;
+        let stencilReadback: *mut c_uchar;
 
-            stencilReadback = Z_Malloc(
-                ((*glConfig).vidWidth * (*glConfig).vidHeight) as usize,
-                TAG_TEMP_WORKSPACE,
-                false,
-            ) as *mut u8;
-            qglReadPixels(
-                0,
-                0,
-                (*glConfig).vidWidth,
-                (*glConfig).vidHeight,
-                GL_STENCIL_INDEX,
-                GL_UNSIGNED_BYTE,
-                stencilReadback as *mut c_void,
-            );
+        stencilReadback = Z_Malloc(glConfig.vidWidth * glConfig.vidHeight, TAG_TEMP_WORKSPACE, qfalse) as *mut c_uchar;
+        qglReadPixels(0, 0, glConfig.vidWidth, glConfig.vidHeight, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, stencilReadback as *mut c_void);
 
-            i = 0;
-            while i < (*glConfig).vidWidth * (*glConfig).vidHeight {
-                sum += *stencilReadback.add(i as usize) as i64;
-                i += 1;
-            }
-
-            (*(*backEnd).pc).c_overDraw += sum;
-            Z_Free(stencilReadback as *mut c_void);
+        i = 0;
+        while i < glConfig.vidWidth * glConfig.vidHeight {
+            sum += *stencilReadback.add(i as usize) as c_long;
+            i += 1;
         }
+
+        backEnd.pc.c_overDraw += sum;
+        Z_Free(stencilReadback as *mut c_void);
     }
 
-    if !(*glState).finishCalled {
+    if glState.finishCalled == 0 {
         qglFinish();
     }
 
-    GLimp_LogComment(b"***************** RB_SwapBuffers *****************\n\n\n" as *const u8 as *const i8);
+    GLimp_LogComment(b"***************** RB_SwapBuffers *****************\n\n\n\0".as_ptr() as *const c_char);
 
     GLimp_EndFrame();
 
-    (*backEnd).projection2D = false;
+    backEnd.projection2D = qfalse;
 
-    (cmd.add(1)) as *const c_void
+    cmd.add(1) as *const c_void
 }
 
-#[allow(non_snake_case)]
 pub unsafe fn RB_WorldEffects(data: *const c_void) -> *const c_void {
-    let cmd: *const setModeCommand_t;
-
-    cmd = data as *const setModeCommand_t;
+    let cmd: *const setModeCommand_t = data as *const setModeCommand_t;
 
     // Always flush the tess buffer
-    if !(*tess).shader.is_null() && (*tess).numIndexes != 0 {
+    if !tess.shader.is_null() && tess.numIndexes != 0 {
         RB_EndSurface();
     }
+
     RB_RenderWorldEffects();
 
-    if !(*tess).shader.is_null() {
-        RB_BeginSurface((*tess).shader, (*tess).fogNum);
+    if !tess.shader.is_null() {
+        RB_BeginSurface(tess.shader, tess.fogNum);
     }
 
-    (cmd.add(1)) as *const c_void
+    cmd.add(1) as *const c_void
 }
 
 /*
@@ -1970,89 +1497,85 @@ This function will be called syncronously if running without
 smp extensions, or asyncronously by another thread.
 ====================
 */
-#[allow(non_snake_case)]
-pub unsafe fn RB_ExecuteRenderCommands(mut data: *const c_void) {
-    let t1: c_int;
-    let t2: c_int;
+pub unsafe fn RB_ExecuteRenderCommands(data: *const c_void) {
+    let mut t1: c_int;
+    let mut t2: c_int;
+    let mut data: *const c_void = data;
 
     t1 = Sys_Milliseconds();
 
     loop {
-        match *(data as *const u32) {
-            RC_SET_COLOR => {
-                data = RB_SetColor(data);
-            }
-            RC_STRETCH_PIC => {
-                data = RB_StretchPic(data);
-            }
-            RC_ROTATE_PIC => {
-                data = RB_RotatePic(data);
-            }
-            RC_ROTATE_PIC2 => {
-                data = RB_RotatePic2(data);
-            }
-            RC_SCISSOR => {
-                data = RB_Scissor(data);
-            }
-            RC_DRAW_SURFS => {
-                data = RB_DrawSurfs(data);
-            }
-            RC_DRAW_BUFFER => {
-                data = RB_DrawBuffer(data);
-            }
-            RC_SWAP_BUFFERS => {
-                data = RB_SwapBuffers(data);
-            }
-            RC_WORLD_EFFECTS => {
-                data = RB_WorldEffects(data);
-            }
-            RC_END_OF_LIST | _ => {
-                // stop rendering on this thread
-                t2 = Sys_Milliseconds();
-                (*(*backEnd).pc).msec = t2 - t1;
-                return;
-            }
+        let cmd_id: c_int = *(data as *const c_int);
+        if cmd_id == RC_SET_COLOR {
+            data = RB_SetColor(data);
+        } else if cmd_id == RC_STRETCH_PIC {
+            data = RB_StretchPic(data);
+        } else if cmd_id == RC_ROTATE_PIC {
+            data = RB_RotatePic(data);
+        } else if cmd_id == RC_ROTATE_PIC2 {
+            data = RB_RotatePic2(data);
+        } else if cmd_id == RC_SCISSOR {
+            data = RB_Scissor(data);
+        } else if cmd_id == RC_DRAW_SURFS {
+            data = RB_DrawSurfs(data);
+        } else if cmd_id == RC_DRAW_BUFFER {
+            data = RB_DrawBuffer(data);
+        } else if cmd_id == RC_SWAP_BUFFERS {
+            data = RB_SwapBuffers(data);
+        } else if cmd_id == RC_WORLD_EFFECTS {
+            data = RB_WorldEffects(data);
+        } else {
+            // RC_END_OF_LIST default:
+            // stop rendering on this thread
+            t2 = Sys_Milliseconds();
+            backEnd.pc.msec = t2 - t1;
+            return;
         }
     }
 }
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(not(feature = "_XBOX"))] // GLOWXXX
 // What Pixel Shader type is currently active (regcoms or fragment programs).
-unsafe fn BeginPixelShader(uiType: u32, uiID: u32) {
-    match uiType {
+pub static mut g_uiCurrentPixelShaderType: GLuint = 0x0;
+
+// Begin using a Pixel Shader.
+#[cfg(not(feature = "_XBOX"))]
+pub unsafe fn BeginPixelShader(uiType: GLuint, uiID: GLuint) {
+    if uiType == GL_REGISTER_COMBINERS_NV {
         // Using Register Combiners, so call the Display List that stores it.
-        GL_REGISTER_COMBINERS_NV => {
-            // Just in case...
-            if qglCombinerParameterfvNV.is_null() {
-                return;
-            }
 
-            // Call the list with the regcom in it.
-            qglEnable(GL_REGISTER_COMBINERS_NV);
-            qglCallList(uiID);
-
-            g_uiCurrentPixelShaderType = GL_REGISTER_COMBINERS_NV;
+        // Just in case...
+        if qglCombinerParameterfvNV.is_none() {
+            return;
         }
 
+        // Call the list with the regcom in it.
+        qglEnable(GL_REGISTER_COMBINERS_NV);
+        qglCallList(uiID);
+
+        g_uiCurrentPixelShaderType = GL_REGISTER_COMBINERS_NV;
+        return;
+    }
+
+    if uiType == GL_FRAGMENT_PROGRAM_ARB {
         // Using Fragment Programs, so call the program.
-        GL_FRAGMENT_PROGRAM_ARB => {
-            // Just in case...
-            if qglGenProgramsARB.is_null() {
-                return;
-            }
 
-            qglEnable(GL_FRAGMENT_PROGRAM_ARB);
-            qglBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, uiID);
-
-            g_uiCurrentPixelShaderType = GL_FRAGMENT_PROGRAM_ARB;
+        // Just in case...
+        if qglGenProgramsARB.is_none() {
+            return;
         }
-        _ => {}
+
+        qglEnable(GL_FRAGMENT_PROGRAM_ARB);
+        qglBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, uiID);
+
+        g_uiCurrentPixelShaderType = GL_FRAGMENT_PROGRAM_ARB;
+        return;
     }
 }
 
 // Stop using a Pixel Shader and return states to normal.
-#[cfg(not(target_os = "windows"))]
-unsafe fn EndPixelShader() {
+#[cfg(not(feature = "_XBOX"))]
+pub unsafe fn EndPixelShader() {
     if g_uiCurrentPixelShaderType == 0x0 {
         return;
     }
@@ -2062,8 +1585,9 @@ unsafe fn EndPixelShader() {
 
 // Hack variable for deciding which kind of texture rectangle thing to do (for some
 // reason it acts different on radeon! It's against the spec!).
+// extern bool g_bTextureRectangleHack;  -- declared in extern "C" block above
 
-#[cfg(not(target_os = "windows"))]
+#[cfg(not(feature = "_XBOX"))]
 #[inline]
 unsafe fn RB_BlurGlowTexture() {
     qglDisable(GL_CLIP_PLANE0);
@@ -2073,19 +1597,12 @@ unsafe fn RB_BlurGlowTexture() {
     qglMatrixMode(GL_PROJECTION);
     qglPushMatrix();
     qglLoadIdentity();
-    qglOrtho(
-        0.0,
-        (*(*backEnd).viewParms).viewportWidth as f64,
-        (*(*backEnd).viewParms).viewportHeight as f64,
-        0.0,
-        -1.0,
-        1.0,
-    );
+    qglOrtho(0.0f64, backEnd.viewParms.viewportWidth as f64, backEnd.viewParms.viewportHeight as f64, 0.0f64, -1.0f64, 1.0f64);
     qglMatrixMode(GL_MODELVIEW);
     qglPushMatrix();
     qglLoadIdentity();
 
-    GL_State(GLS_DEPTHTEST_DISABLE);
+    GL_State(GLS_DEPTHTEST_DISABLE as c_ulong);
 
     /////////////////////////////////////////////////////////
     // Setup vertex and pixel programs.
@@ -2093,31 +1610,24 @@ unsafe fn RB_BlurGlowTexture() {
 
     // NOTE: The 0.25 is because we're blending 4 textures (so = 1.0) and we want a relatively normalized pixel
     // intensity distribution, but this won't happen anyways if intensity is higher than 1.0.
-    let fBlurDistribution: f32 = (*r_DynamicGlowIntensity).value * 0.25;
-    let mut fBlurWeight: [f32; 4] = [fBlurDistribution, fBlurDistribution, fBlurDistribution, 1.0];
+    let fBlurDistribution: f32 = (*r_DynamicGlowIntensity).value * 0.25f32;
+    let fBlurWeight: [f32; 4] = [fBlurDistribution, fBlurDistribution, fBlurDistribution, 1.0f32];
 
     // Enable and set the Vertex Program.
     qglEnable(GL_VERTEX_PROGRAM_ARB);
-    qglBindProgramARB(GL_VERTEX_PROGRAM_ARB, (*tr).glowVShader);
+    qglBindProgramARB(GL_VERTEX_PROGRAM_ARB, tr.glowVShader);
 
     // Apply Pixel Shaders.
-    if !qglCombinerParameterfvNV.is_null() {
-        BeginPixelShader(GL_REGISTER_COMBINERS_NV, (*tr).glowPShader);
+    if qglCombinerParameterfvNV.is_some() {
+        BeginPixelShader(GL_REGISTER_COMBINERS_NV, tr.glowPShader);
 
         // Pass the blur weight to the regcom.
-        qglCombinerParameterfvNV(GL_CONSTANT_COLOR0_NV, fBlurWeight.as_mut_ptr());
-    } else if !qglProgramEnvParameter4fARB.is_null() {
-        BeginPixelShader(GL_FRAGMENT_PROGRAM_ARB, (*tr).glowPShader);
+        qglCombinerParameterfvNV(GL_CONSTANT_COLOR0_NV, fBlurWeight.as_ptr());
+    } else if qglProgramEnvParameter4fARB.is_some() {
+        BeginPixelShader(GL_FRAGMENT_PROGRAM_ARB, tr.glowPShader);
 
         // Pass the blur weight to the Fragment Program.
-        qglProgramEnvParameter4fARB(
-            GL_FRAGMENT_PROGRAM_ARB,
-            0,
-            fBlurWeight[0],
-            fBlurWeight[1],
-            fBlurWeight[2],
-            fBlurWeight[3],
-        );
+        qglProgramEnvParameter4fARB(GL_FRAGMENT_PROGRAM_ARB, 0, fBlurWeight[0], fBlurWeight[1], fBlurWeight[2], fBlurWeight[3]);
     }
 
     /////////////////////////////////////////////////////////
@@ -2125,10 +1635,10 @@ unsafe fn RB_BlurGlowTexture() {
     /////////////////////////////////////////////////////////
 
     // How much to offset each texel by.
-    let fTexelWidthOffset: f32 = 0.1;
-    let fTexelHeightOffset: f32 = 0.1;
+    let mut fTexelWidthOffset: f32 = 0.1f32;
+    let mut fTexelHeightOffset: f32 = 0.1f32;
 
-    let uiTex: u32 = (*tr).screenGlow;
+    let mut uiTex: GLuint = tr.screenGlow;
 
     qglActiveTextureARB(GL_TEXTURE3_ARB);
     qglEnable(GL_TEXTURE_RECTANGLE_EXT);
@@ -2152,29 +1662,25 @@ unsafe fn RB_BlurGlowTexture() {
     /////////////////////////////////////////////////////////
 
     //int iTexWidth = backEnd.viewParms.viewportWidth, iTexHeight = backEnd.viewParms.viewportHeight;
-    let mut iTexWidth: c_int = (*glConfig).vidWidth;
-    let mut iTexHeight: c_int = (*glConfig).vidHeight;
+    let mut iTexWidth: c_int = glConfig.vidWidth;
+    let mut iTexHeight: c_int = glConfig.vidHeight;
 
     let mut iNumBlurPasses: c_int = 0;
-    let mut fTexelWidthOffset: f32 = fTexelWidthOffset;
-    let mut fTexelHeightOffset: f32 = fTexelHeightOffset;
-
     while iNumBlurPasses < (*r_DynamicGlowPasses).integer {
         // Load the Texel Offsets into the Vertex Program.
-        qglProgramEnvParameter4fARB(GL_VERTEX_PROGRAM_ARB, 0, -fTexelWidthOffset, -fTexelWidthOffset, 0.0, 0.0);
-        qglProgramEnvParameter4fARB(GL_VERTEX_PROGRAM_ARB, 1, -fTexelWidthOffset, fTexelWidthOffset, 0.0, 0.0);
-        qglProgramEnvParameter4fARB(GL_VERTEX_PROGRAM_ARB, 2, fTexelWidthOffset, -fTexelWidthOffset, 0.0, 0.0);
-        qglProgramEnvParameter4fARB(GL_VERTEX_PROGRAM_ARB, 3, fTexelWidthOffset, fTexelWidthOffset, 0.0, 0.0);
+        qglProgramEnvParameter4fARB(GL_VERTEX_PROGRAM_ARB, 0, -fTexelWidthOffset, -fTexelWidthOffset, 0.0f32, 0.0f32);
+        qglProgramEnvParameter4fARB(GL_VERTEX_PROGRAM_ARB, 1, -fTexelWidthOffset, fTexelWidthOffset, 0.0f32, 0.0f32);
+        qglProgramEnvParameter4fARB(GL_VERTEX_PROGRAM_ARB, 2, fTexelWidthOffset, -fTexelWidthOffset, 0.0f32, 0.0f32);
+        qglProgramEnvParameter4fARB(GL_VERTEX_PROGRAM_ARB, 3, fTexelWidthOffset, fTexelWidthOffset, 0.0f32, 0.0f32);
 
         // After first pass put the tex coords to the viewport size.
-        let mut uiTex: u32 = uiTex;
         if iNumBlurPasses == 1 {
             if !g_bTextureRectangleHack {
-                iTexWidth = (*(*backEnd).viewParms).viewportWidth;
-                iTexHeight = (*(*backEnd).viewParms).viewportHeight;
+                iTexWidth = backEnd.viewParms.viewportWidth;
+                iTexHeight = backEnd.viewParms.viewportHeight;
             }
 
-            uiTex = (*tr).blurImage;
+            uiTex = tr.blurImage;
             qglActiveTextureARB(GL_TEXTURE3_ARB);
             qglDisable(GL_TEXTURE_2D);
             qglEnable(GL_TEXTURE_RECTANGLE_EXT);
@@ -2194,44 +1700,26 @@ unsafe fn RB_BlurGlowTexture() {
 
             // Copy the current image over.
             qglBindTexture(GL_TEXTURE_RECTANGLE_EXT, uiTex);
-            qglCopyTexSubImage2D(
-                GL_TEXTURE_RECTANGLE_EXT,
-                0,
-                0,
-                0,
-                0,
-                0,
-                (*(*backEnd).viewParms).viewportWidth,
-                (*(*backEnd).viewParms).viewportHeight,
-            );
+            qglCopyTexSubImage2D(GL_TEXTURE_RECTANGLE_EXT, 0, 0, 0, 0, 0, backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight);
         }
 
         // Draw the fullscreen quad.
         qglBegin(GL_QUADS);
-        qglMultiTexCoord2fARB(GL_TEXTURE0_ARB, 0.0, iTexHeight as f32);
-        qglVertex2f(0.0, 0.0);
+            qglMultiTexCoord2fARB(GL_TEXTURE0_ARB, 0.0f32, iTexHeight as f32);
+            qglVertex2f(0.0f32, 0.0f32);
 
-        qglMultiTexCoord2fARB(GL_TEXTURE0_ARB, 0.0, 0.0);
-        qglVertex2f(0.0, (*(*backEnd).viewParms).viewportHeight as f32);
+            qglMultiTexCoord2fARB(GL_TEXTURE0_ARB, 0.0f32, 0.0f32);
+            qglVertex2f(0.0f32, backEnd.viewParms.viewportHeight as f32);
 
-        qglMultiTexCoord2fARB(GL_TEXTURE0_ARB, iTexWidth as f32, 0.0);
-        qglVertex2f((*(*backEnd).viewParms).viewportWidth as f32, (*(*backEnd).viewParms).viewportHeight as f32);
+            qglMultiTexCoord2fARB(GL_TEXTURE0_ARB, iTexWidth as f32, 0.0f32);
+            qglVertex2f(backEnd.viewParms.viewportWidth as f32, backEnd.viewParms.viewportHeight as f32);
 
-        qglMultiTexCoord2fARB(GL_TEXTURE0_ARB, iTexWidth as f32, iTexHeight as f32);
-        qglVertex2f((*(*backEnd).viewParms).viewportWidth as f32, 0.0);
+            qglMultiTexCoord2fARB(GL_TEXTURE0_ARB, iTexWidth as f32, iTexHeight as f32);
+            qglVertex2f(backEnd.viewParms.viewportWidth as f32, 0.0f32);
         qglEnd();
 
-        qglBindTexture(GL_TEXTURE_RECTANGLE_EXT, (*tr).blurImage);
-        qglCopyTexSubImage2D(
-            GL_TEXTURE_RECTANGLE_EXT,
-            0,
-            0,
-            0,
-            0,
-            0,
-            (*(*backEnd).viewParms).viewportWidth,
-            (*(*backEnd).viewParms).viewportHeight,
-        );
+        qglBindTexture(GL_TEXTURE_RECTANGLE_EXT, tr.blurImage);
+        qglCopyTexSubImage2D(GL_TEXTURE_RECTANGLE_EXT, 0, 0, 0, 0, 0, backEnd.viewParms.viewportWidth, backEnd.viewParms.viewportHeight);
 
         // Increase the texel offsets.
         // NOTE: This is possibly the most important input to the effect. Even by using an exponential function I've been able to
@@ -2240,6 +1728,7 @@ unsafe fn RB_BlurGlowTexture() {
         // offsets, gaussian amplitude and radius...
         fTexelWidthOffset += (*r_DynamicGlowDelta).value;
         fTexelHeightOffset += (*r_DynamicGlowDelta).value;
+
         iNumBlurPasses += 1;
     }
 
@@ -2266,11 +1755,11 @@ unsafe fn RB_BlurGlowTexture() {
     qglPopMatrix();
 
     qglDisable(GL_BLEND);
-    (*glState).currenttmu = 0; //this matches the last one we activated
+    glState.currenttmu = 0; //this matches the last one we activated
 }
 
 // Draw the glow blur over the screen additively.
-#[cfg(not(target_os = "windows"))]
+#[cfg(not(feature = "_XBOX"))]
 #[inline]
 unsafe fn RB_DrawGlowOverlay() {
     qglDisable(GL_CLIP_PLANE0);
@@ -2280,12 +1769,12 @@ unsafe fn RB_DrawGlowOverlay() {
     qglMatrixMode(GL_PROJECTION);
     qglPushMatrix();
     qglLoadIdentity();
-    qglOrtho(0.0, (*glConfig).vidWidth as f64, (*glConfig).vidHeight as f64, 0.0, -1.0, 1.0);
+    qglOrtho(0.0f64, glConfig.vidWidth as f64, glConfig.vidHeight as f64, 0.0f64, -1.0f64, 1.0f64);
     qglMatrixMode(GL_MODELVIEW);
     qglPushMatrix();
     qglLoadIdentity();
 
-    GL_State(GLS_DEPTHTEST_DISABLE);
+    GL_State(GLS_DEPTHTEST_DISABLE as c_ulong);
 
     qglDisable(GL_TEXTURE_2D);
     qglEnable(GL_TEXTURE_RECTANGLE_EXT);
@@ -2293,20 +1782,20 @@ unsafe fn RB_DrawGlowOverlay() {
     // For debug purposes.
     if (*r_DynamicGlow).integer != 2 {
         // Render the normal scene texture.
-        qglBindTexture(GL_TEXTURE_RECTANGLE_EXT, (*tr).sceneImage);
+        qglBindTexture(GL_TEXTURE_RECTANGLE_EXT, tr.sceneImage);
         qglBegin(GL_QUADS);
-        qglColor4f(1.0, 1.0, 1.0, 1.0);
-        qglTexCoord2f(0.0, (*glConfig).vidHeight as f32);
-        qglVertex2f(0.0, 0.0);
+            qglColor4f(1.0f32, 1.0f32, 1.0f32, 1.0f32);
+            qglTexCoord2f(0.0f32, glConfig.vidHeight as f32);
+            qglVertex2f(0.0f32, 0.0f32);
 
-        qglTexCoord2f(0.0, 0.0);
-        qglVertex2f(0.0, (*glConfig).vidHeight as f32);
+            qglTexCoord2f(0.0f32, 0.0f32);
+            qglVertex2f(0.0f32, glConfig.vidHeight as f32);
 
-        qglTexCoord2f((*glConfig).vidWidth as f32, 0.0);
-        qglVertex2f((*glConfig).vidWidth as f32, (*glConfig).vidHeight as f32);
+            qglTexCoord2f(glConfig.vidWidth as f32, 0.0f32);
+            qglVertex2f(glConfig.vidWidth as f32, glConfig.vidHeight as f32);
 
-        qglTexCoord2f((*glConfig).vidWidth as f32, (*glConfig).vidHeight as f32);
-        qglVertex2f((*glConfig).vidWidth as f32, 0.0);
+            qglTexCoord2f(glConfig.vidWidth as f32, glConfig.vidHeight as f32);
+            qglVertex2f(glConfig.vidWidth as f32, 0.0f32);
         qglEnd();
     }
 
@@ -2320,20 +1809,20 @@ unsafe fn RB_DrawGlowOverlay() {
     qglEnable(GL_BLEND);
 
     // Now additively render the glow texture.
-    qglBindTexture(GL_TEXTURE_RECTANGLE_EXT, (*tr).blurImage);
+    qglBindTexture(GL_TEXTURE_RECTANGLE_EXT, tr.blurImage);
     qglBegin(GL_QUADS);
-    qglColor4f(1.0, 1.0, 1.0, 1.0);
-    qglTexCoord2f(0.0, (*r_DynamicGlowHeight).integer as f32);
-    qglVertex2f(0.0, 0.0);
+        qglColor4f(1.0f32, 1.0f32, 1.0f32, 1.0f32);
+        qglTexCoord2f(0.0f32, (*r_DynamicGlowHeight).integer as f32);
+        qglVertex2f(0.0f32, 0.0f32);
 
-    qglTexCoord2f(0.0, 0.0);
-    qglVertex2f(0.0, (*glConfig).vidHeight as f32);
+        qglTexCoord2f(0.0f32, 0.0f32);
+        qglVertex2f(0.0f32, glConfig.vidHeight as f32);
 
-    qglTexCoord2f((*r_DynamicGlowWidth).integer as f32, 0.0);
-    qglVertex2f((*glConfig).vidWidth as f32, (*glConfig).vidHeight as f32);
+        qglTexCoord2f((*r_DynamicGlowWidth).integer as f32, 0.0f32);
+        qglVertex2f(glConfig.vidWidth as f32, glConfig.vidHeight as f32);
 
-    qglTexCoord2f((*r_DynamicGlowWidth).integer as f32, (*r_DynamicGlowHeight).integer as f32);
-    qglVertex2f((*glConfig).vidWidth as f32, 0.0);
+        qglTexCoord2f((*r_DynamicGlowWidth).integer as f32, (*r_DynamicGlowHeight).integer as f32);
+        qglVertex2f(glConfig.vidWidth as f32, 0.0f32);
     qglEnd();
 
     qglDisable(GL_TEXTURE_RECTANGLE_EXT);
@@ -2346,34 +1835,4 @@ unsafe fn RB_DrawGlowOverlay() {
     qglMatrixMode(GL_MODELVIEW);
     qglPopMatrix();
 }
-
-// STUBS FOR MISSING TYPES AND FUNCTIONS THAT REQUIRE EXTERNAL CONTEXT
-extern "C" {
-    static mut rb_surfaceTable: [unsafe extern "C" fn(*mut c_void); 256];
-    static mut r_nobind: *mut cvar_t;
-    static mut r_finish: *mut cvar_t;
-    static mut r_fastsky: *mut cvar_t;
-    static mut r_clear: *mut cvar_t;
-    static mut r_measureOverdraw: *mut cvar_t;
-    static mut r_shadows: *mut cvar_t;
-    static mut r_DynamicGlow: *mut cvar_t;
-    static mut r_DynamicGlowWidth: *mut cvar_t;
-    static mut r_DynamicGlowHeight: *mut cvar_t;
-    static mut r_DynamicGlowIntensity: *mut cvar_t;
-    static mut r_DynamicGlowPasses: *mut cvar_t;
-    static mut r_DynamicGlowDelta: *mut cvar_t;
-    static mut r_DynamicGlowSoft: *mut cvar_t;
-    static mut r_showImages: *mut cvar_t;
-    static mut r_hdreffect: *mut cvar_t;
-
-    pub struct cvar_t {
-        _unused: [u8; 0],
-    }
-
-    static SS_BANNER: c_int;
-    static HDREffect: c_int; // stub for HDREffect object
-}
-
-fn RB_CHECKOVERFLOW(verts: c_int, indexes: c_int) {
-    // Stub for overflow check - implementation would depend on actual tessellation state
-}
+// #endif  (not(_XBOX))
