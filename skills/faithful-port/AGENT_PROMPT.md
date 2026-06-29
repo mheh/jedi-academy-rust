@@ -22,9 +22,9 @@ into a new Rust file
 SECTION 1 — read first:
 - Read PORTING_STYLE.md (repo root) — binding rules.
 - Read the whole source: {{ORACLE_PATH}}.
-- You MAY browse already-ported siblings (e.g. files under src/codemp/game/ or the same src/ directory)
-  to see how symbols are USED in a live environment — for calling conventions and usage patterns only,
-  NOT to copy or verify type definitions, and NOT as a style source for stubs.
+- Do NOT read from files other than src/codemp/game for examples of symbol use in a live environment - for
+  calling conventions and usage patterns only. NOT to copy or verify type definitions and NOT as a style
+  source for stubs.
 
 SECTION 2 — imports & unknown symbols (do NOT define or stub anything not in this source file):
 - Do NOT define or stub types, functions, globals, or macros that are not defined in this source file.
@@ -69,6 +69,8 @@ SECTION 4 — size / output-cap handling (large files):
 SECTION 5 — prohibitions / report:
 - Do NOT build, test, run cargo, cargo check, rustc, or cargo fmt.
 - Do NOT modify oracle/. Do NOT edit any file other than {{DEST_PATH}} (you may READ any file).
+- Do not attempt to register in the module. You are constricted only to your file. Do NOT touch any
+  mod.rs, lib.rs, main.rs, or any parent module file to declare/register {{DEST_PATH}} — write only your file.
 - FINAL REPORT: lines written; the list of `use` imports derived from the #include directives; any external
   symbols declared once due to duplicate C declarations; any notable faithful-translation decisions; and confirm
   the WHOLE file was translated end to end (no elided functions) and that the file contains no `[u8; 0]` stubs.
