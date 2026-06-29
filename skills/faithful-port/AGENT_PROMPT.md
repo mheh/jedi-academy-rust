@@ -65,6 +65,12 @@ SECTION 3 — faithfulness:
   `extern` items do not parse). Note such dedups in your report.
 - Produce syntactically VALID Rust: `let mut` for reassigned locals, correct char/string escapes, no partial
   initialization, omit size_of asserts that would be guesswork.
+- A `#[cfg(...)]` attribute CANNOT gate an `else`/`else if` arm of an if-expression, nor a bare branch in the
+  middle of a chain — `} #[cfg(..)] else if {` does not parse. When a C `#ifdef` wraps one arm of an if/else-if
+  chain (e.g. an `#ifdef _IMMERSION` `else if` between two other `else if`s), do NOT attribute the arm. Either
+  (a) duplicate the chain under `#[cfg(feature=..)]` / `#[cfg(not(feature=..))]` blocks, or (b) if the branch
+  conditions are mutually exclusive (so order is immaterial), drop the gated arm from the chain and add it as a
+  separate `#[cfg(..)] if cond { target = ...; }` override statement after the chain. Note the choice in a comment.
 
 SECTION 4 — size / output-cap handling (large files):
 - A response cannot exceed the output token cap (~32k), so a file over ~1000 lines cannot be written in one tool
