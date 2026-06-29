@@ -53,6 +53,10 @@ SECTION 3 — faithfulness:
 - Preserve ALL original source comments verbatim (Raven/id comments, trailing, block, TODO, warnings, table
   notes). Translate only comment syntax. NEVER let a preserved comment become a Rust doc comment: do not start a
   comment with //!, ///, /*! or /** ; if the text begins with '!' or '*', add a space after the // or /*.
+- Rust block comments NEST but C block comments do NOT. When you preserve a commented-out C block that itself
+  contains inner `/* ... */` pairs, every `/*` must be matched by a `*/` in Rust or the whole rest of the file
+  is swallowed. C closes the OUTER `/*` at the FIRST `*/`, leaving a trailing unbalanced `/*`; to keep the same
+  text commented out and parseable in Rust, balance the delimiters (add the closing `*/` the C compiler implied).
 - A C identifier named `self` becomes `self_` (NEVER r#self — `self` is an illegal raw identifier). Same for any
   other reserved word that cannot be a raw identifier.
 - A C file-local `static` FUNCTION becomes a plain `unsafe fn` (no `pub`, NO `static` keyword — `static fn` is
