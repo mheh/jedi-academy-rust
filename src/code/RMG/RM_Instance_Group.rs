@@ -1,214 +1,30 @@
-// Faithful Rust port of oracle/code/RMG/RM_Instance_Group.cpp
-// Preserves C symbol names, control flow, globals, raw pointers, casts, and dangerous behavior.
+/************************************************************************************************
+ *
+ * RM_Instance_Group.cpp
+ *
+ * Implements the CRMGroupInstance class.  This class is reponsible for parsing a
+ * group instance as well as spawning it into a landscape.
+ *
+ ************************************************************************************************/
 
 #![allow(non_snake_case)]
 
-use core::ffi::{c_char, c_int, c_void, c_double};
-use std::ptr;
+// #include "../server/exe_headers.h"
+use crate::code::server::exe_headers_h::*;
+// #include "rm_headers.h"
+use crate::code::RMG::RM_Headers_h::*;
+// #include "rm_instance_group.h"
+use crate::code::RMG::RM_Instance_Group_h::*;
 
-use crate::code::RMG::RM_Instance_Group_h::CRMGroupInstance;
-use crate::code::RMG::RM_Instance_h::CRMInstance;
-use crate::code::RMG::RM_Manager_h::TheRandomMissionManager;
-use crate::code::RMG::RM_Manager_h::CRMManager;
-use crate::code::RMG::RM_Mission_h::CRMMission;
+use core::ffi::{c_char, c_double, c_int};
 
-// LOCAL STUB: Forward declarations for types used in this file
-pub struct CGPGroup {
-    _opaque: [u8; 0],
-}
-
-pub struct CRMInstanceFile {
-    _opaque: [u8; 0],
-}
-
-pub struct CRandomTerrain {
-    _opaque: [u8; 0],
-}
-
-pub struct CRMAreaManager {
-    _opaque: [u8; 0],
-}
-
-pub struct CRMArea {
-    _opaque: [u8; 0],
-}
-
-pub struct CRMObjective {
-    _opaque: [u8; 0],
-}
-
-pub type qboolean = c_int;
-pub type vec3_t = [f32; 3];
-
+// C stdlib functions used in this file
 extern "C" {
-    /// atof - Convert C string to floating point number
-    /// double atof(const char *s);
     fn atof(s: *const c_char) -> c_double;
-
-    /// atoi - Convert C string to integer
-    /// int atoi(const char *s);
     fn atoi(s: *const c_char) -> c_int;
-
-    /// strcmpi - Case-insensitive string comparison
-    /// int strcmpi(const char *s1, const char *s2);
     fn strcmpi(s1: *const c_char, s2: *const c_char) -> c_int;
-
-    /// va - Format string like sprintf (returns static buffer)
-    /// const char* va(const char *format, ...);
+    fn stricmp(s1: *const c_char, s2: *const c_char) -> c_int;
     fn va(fmt: *const c_char, ...) -> *const c_char;
-
-    /// CGPGroup::GetSubGroups
-    fn CGPGroup_GetSubGroups(this: *mut CGPGroup) -> *mut CGPGroup;
-
-    /// CGPGroup::GetNext
-    fn CGPGroup_GetNext(this: *mut CGPGroup) -> *mut CGPGroup;
-
-    /// CGPGroup::GetName
-    fn CGPGroup_GetName(this: *mut CGPGroup) -> *const c_char;
-
-    /// CGPGroup::FindPairValue
-    fn CGPGroup_FindPairValue(
-        this: *mut CGPGroup,
-        key: *const c_char,
-        default: *const c_char,
-    ) -> *const c_char;
-
-    /// CRMInstanceFile::CreateInstance
-    fn CRMInstanceFile_CreateInstance(
-        this: *mut CRMInstanceFile,
-        name: *const c_char,
-    ) -> *mut CRMInstance;
-
-    /// CRMInstance::SetFilter
-    fn CRMInstance_SetFilter(this: *mut CRMInstance, filter: *const c_char);
-
-    /// CRMInstance::SetTeamFilter
-    fn CRMInstance_SetTeamFilter(this: *mut CRMInstance, teamFilter: *const c_char);
-
-    /// CRMInstance::SetMirror
-    fn CRMInstance_SetMirror(this: *mut CRMInstance, mirror: c_int);
-
-    /// CRMInstance::SetFlattenHeight
-    fn CRMInstance_SetFlattenHeight(this: *mut CRMInstance, height: c_int);
-
-    /// CRMInstance::PreSpawn
-    fn CRMInstance_PreSpawn(
-        this: *mut CRMInstance,
-        terrain: *mut CRandomTerrain,
-        IsServer: qboolean,
-    ) -> bool;
-
-    /// CRMInstance::Spawn
-    fn CRMInstance_Spawn(
-        this: *mut CRMInstance,
-        terrain: *mut CRandomTerrain,
-        IsServer: qboolean,
-    ) -> bool;
-
-    /// CRMInstance::SetArea
-    fn CRMInstance_SetArea(
-        this: *mut CRMInstance,
-        amanager: *mut CRMAreaManager,
-        area: *mut CRMArea,
-    );
-
-    /// CRMInstance::SetSide
-    fn CRMInstance_SetSide(this: *mut CRMInstance, side: c_int);
-
-    /// CRMInstance::GetSide
-    fn CRMInstance_GetSide(this: *mut CRMInstance) -> c_int;
-
-    /// CRMInstance::DrawAutomapSymbol
-    #[cfg(not(feature = "DEDICATED"))]
-    fn CRMInstance_DrawAutomapSymbol(this: *mut CRMInstance);
-
-    /// CRMInstance::Preview
-    fn CRMInstance_Preview(this: *mut CRMInstance, from: *const vec3_t);
-
-    /// CRMInstance parent class SetFilter
-    fn CRMInstance_SetFilter_parent(this: *mut CRMInstance, filter: *const c_char);
-
-    /// CRMInstance parent class SetTeamFilter
-    fn CRMInstance_SetTeamFilter_parent(this: *mut CRMInstance, teamFilter: *const c_char);
-
-    /// CRMInstance parent class SetMirror
-    fn CRMInstance_SetMirror_parent(this: *mut CRMInstance, mirror: c_int);
-
-    /// CRMInstance parent class SetArea
-    fn CRMInstance_SetArea_parent(
-        this: *mut CRMInstance,
-        amanager: *mut CRMAreaManager,
-        area: *mut CRMArea,
-    );
-
-    /// CRMInstance parent class Preview
-    fn CRMInstance_Preview_parent(this: *mut CRMInstance, from: *const vec3_t);
-
-    /// CRMInstance parent class SetMessage
-    fn CRMInstance_SetMessage(this: *mut CRMInstance, msg: *const c_char);
-
-    /// CRMInstance parent class SetDescription
-    fn CRMInstance_SetDescription(this: *mut CRMInstance, desc: *const c_char);
-
-    /// CRMInstance parent class SetInfo
-    fn CRMInstance_SetInfo(this: *mut CRMInstance, info: *const c_char);
-
-    /// CRMInstance parent class PreSpawn
-    fn CRMInstance_PreSpawn_parent(
-        this: *mut CRMInstance,
-        terrain: *mut CRandomTerrain,
-        IsServer: qboolean,
-    ) -> bool;
-
-    /// CRMInstance parent class Spawn
-    fn CRMInstance_Spawn_parent(
-        this: *mut CRMInstance,
-        terrain: *mut CRandomTerrain,
-        IsServer: qboolean,
-    ) -> bool;
-
-    /// CRMInstance constructor
-    fn CRMInstance_ctor(this: *mut CRMInstance, instGroup: *mut CGPGroup, instFile: *mut CRMInstanceFile);
-
-    /// CRMArea::EnableCollision
-    fn CRMArea_EnableCollision(this: *mut CRMArea, enable: bool);
-
-    /// CRMArea::IsCollisionEnabled
-    fn CRMArea_IsCollisionEnabled(this: *mut CRMArea) -> bool;
-
-    /// CRMAreaManager::CreateArea
-    fn CRMAreaManager_CreateArea(
-        this: *mut CRMAreaManager,
-        origin: *const vec3_t,
-        radius1: f32,
-        radius2: c_int,
-        padding: f32,
-        confine: f32,
-        origin2: *const vec3_t,
-        origin3: *const vec3_t,
-        flatten: bool,
-        collide: bool,
-        lockorigin: bool,
-        symmetric: bool,
-    ) -> *mut CRMArea;
-
-    /// CRandomTerrain::irand
-    fn CRandomTerrain_irand(this: *mut CRandomTerrain, min: c_int, max: c_int) -> c_int;
-
-    /// CRMInstance::GetOrigin
-    fn CRMInstance_GetOrigin(this: *mut CRMInstance) -> *mut f32;
-
-    /// CRMInstance::GetSpacingRadius
-    fn CRMInstance_GetSpacingRadius(this: *mut CRMInstance) -> f32;
-
-    /// CRMInstance::GetSpacingLine
-    fn CRMInstance_GetSpacingLine(this: *mut CRMInstance) -> c_int;
-
-    /// CRMInstance::GetFlattenRadius
-    fn CRMInstance_GetFlattenRadius(this: *mut CRMInstance) -> f32;
-
-    /// CRMInstance::GetLockOrigin
-    fn CRMInstance_GetLockOrigin(this: *mut CRMInstance) -> bool;
 }
 
 impl CRMGroupInstance {
@@ -223,125 +39,103 @@ impl CRMGroupInstance {
      *	none
      *
      ************************************************************************************************/
-    pub fn new(instGroup: *mut CGPGroup, instFile: *mut CRMInstanceFile) -> Self {
-        unsafe {
-            let mut group_instance: CRMGroupInstance = core::mem::zeroed();
+    // C++: CRMGroupInstance( CGPGroup *instGroup, CRMInstanceFile& instFile )
+    //        : CRMInstance ( instGroup, instFile )
+    // porting note: Rust lacks C++ inheritance; the base CRMInstance sub-object occupies the
+    //   start of CRMGroupInstance's memory in C++ single-inheritance layout.  Base class init
+    //   and protected field access are performed through *mut CRMInstance casts.  When the
+    //   CRMGroupInstance Rust struct is updated to embed CRMInstance as its first field, the
+    //   base init line below can be replaced with:
+    //     core::ptr::write(self_ as *mut CRMInstance,
+    //                      CRMInstance::new(instGroup, &mut *instFile));
+    // porting note: mAutomapSymbol is a private field of CRMInstance accessed here via cast
+    //   because C++ treats it as protected in the derived class.  The field must be pub (or
+    //   a SetAutomapSymbol setter must be added to CRMInstance) for this to compile.
+    pub unsafe fn ctor(
+        self_: *mut CRMGroupInstance,
+        instGroup: *mut CGPGroup,
+        instFile: *mut CRMInstanceFile,
+    ) {
+        // : CRMInstance ( instGroup, instFile )
+        // porting note: invoke base class constructor; see note above regarding layout
+        CRMInstance::new(instGroup, &mut *instFile);
 
-            // Call parent constructor on the embedded CRMInstance
-            // In C++: : CRMInstance ( instGroup, instFile )
-            CRMInstance_ctor(&mut group_instance as *mut CRMGroupInstance as *mut CRMInstance, instGroup, instFile);
+        let base: *mut CRMInstance = self_ as *mut CRMInstance;
 
-            // Grab the padding and confine radius
-            // mPaddingSize   = atof ( instGroup->FindPairValue ( "padding", va("%i", TheRandomMissionManager->GetMission()->GetDefaultPadding() ) ) );
-            let default_padding = (*(*TheRandomMissionManager).GetMission()).GetDefaultPadding();
-            let default_padding_str = va(b"%i\0".as_ptr() as *const c_char, default_padding);
-            let padding_str = CGPGroup_FindPairValue(instGroup, b"padding\0".as_ptr() as *const c_char, default_padding_str);
-            group_instance.mPaddingSize = atof(padding_str) as f32;
+        // Grab the padding and confine radius
+        (*self_).mPaddingSize   = atof ( (*instGroup).FindPairValue ( b"padding\0".as_ptr() as *const c_char, va(b"%i\0".as_ptr() as *const c_char, (*(*TheRandomMissionManager).GetMission()).GetDefaultPadding() ) ) ) as f32;
+        (*self_).mConfineRadius = atof ( (*instGroup).FindPairValue ( b"confine\0".as_ptr() as *const c_char, b"0\0".as_ptr() as *const c_char ) ) as f32;
 
-            // mConfineRadius = atof ( instGroup->FindPairValue ( "confine", "0" ) );
-            let confine_str = CGPGroup_FindPairValue(instGroup, b"confine\0".as_ptr() as *const c_char, b"0\0".as_ptr() as *const c_char);
-            group_instance.mConfineRadius = atof(confine_str) as f32;
+        let automapSymName: *const c_char = (*instGroup).FindPairValue ( b"automap_symbol\0".as_ptr() as *const c_char, b"none\0".as_ptr() as *const c_char );
+        if 0 == strcmpi(automapSymName, b"none\0".as_ptr() as *const c_char)	   	{ (*base).mAutomapSymbol = CRMAutomapSymbol::AUTOMAP_NONE   as c_int; }
+        else if 0 == strcmpi(automapSymName, b"building\0".as_ptr() as *const c_char)  	{ (*base).mAutomapSymbol = CRMAutomapSymbol::AUTOMAP_BLD    as c_int; }
+        else if 0 == strcmpi(automapSymName, b"objective\0".as_ptr() as *const c_char) 	{ (*base).mAutomapSymbol = CRMAutomapSymbol::AUTOMAP_OBJ    as c_int; }
+        else if 0 == strcmpi(automapSymName, b"start\0".as_ptr() as *const c_char)	   	{ (*base).mAutomapSymbol = CRMAutomapSymbol::AUTOMAP_START  as c_int; }
+        else if 0 == strcmpi(automapSymName, b"end\0".as_ptr() as *const c_char)	   	{ (*base).mAutomapSymbol = CRMAutomapSymbol::AUTOMAP_END    as c_int; }
+        else if 0 == strcmpi(automapSymName, b"enemy\0".as_ptr() as *const c_char)	   	{ (*base).mAutomapSymbol = CRMAutomapSymbol::AUTOMAP_ENEMY  as c_int; }
+        else if 0 == strcmpi(automapSymName, b"friend\0".as_ptr() as *const c_char)	   	{ (*base).mAutomapSymbol = CRMAutomapSymbol::AUTOMAP_FRIEND as c_int; }
+        else 	                                                                                { (*base).mAutomapSymbol = atoi( automapSymName ); }
 
-            // Parse automap symbol
-            let automapSymName = CGPGroup_FindPairValue(instGroup, b"automap_symbol\0".as_ptr() as *const c_char, b"none\0".as_ptr() as *const c_char);
-            if strcmpi(automapSymName, b"none\0".as_ptr() as *const c_char) == 0 {
-                // mAutomapSymbol = AUTOMAP_NONE ;
-                let instance = &mut group_instance as *mut CRMGroupInstance as *mut CRMInstance;
-                // Set mAutomapSymbol to 0 (AUTOMAP_NONE)
-            } else if strcmpi(automapSymName, b"building\0".as_ptr() as *const c_char) == 0 {
-                // mAutomapSymbol = AUTOMAP_BLD  ;
-            } else if strcmpi(automapSymName, b"objective\0".as_ptr() as *const c_char) == 0 {
-                // mAutomapSymbol = AUTOMAP_OBJ  ;
-            } else if strcmpi(automapSymName, b"start\0".as_ptr() as *const c_char) == 0 {
-                // mAutomapSymbol = AUTOMAP_START;
-            } else if strcmpi(automapSymName, b"end\0".as_ptr() as *const c_char) == 0 {
-                // mAutomapSymbol = AUTOMAP_END  ;
-            } else if strcmpi(automapSymName, b"enemy\0".as_ptr() as *const c_char) == 0 {
-                // mAutomapSymbol = AUTOMAP_ENEMY;
-            } else if strcmpi(automapSymName, b"friend\0".as_ptr() as *const c_char) == 0 {
-                // mAutomapSymbol = AUTOMAP_FRIEND;
-            } else {
-                // mAutomapSymbol = atoi( automapSymName );
+        // optional instance objective strings
+        (*base).SetMessage((*instGroup).FindPairValue(b"objective_message\0".as_ptr() as *const c_char, b"\0".as_ptr() as *const c_char));
+        (*base).SetDescription((*instGroup).FindPairValue(b"objective_description\0".as_ptr() as *const c_char, b"\0".as_ptr() as *const c_char));
+        (*base).SetInfo((*instGroup).FindPairValue(b"objective_info\0".as_ptr() as *const c_char, b"\0".as_ptr() as *const c_char));
+
+        // Iterate through the sub groups to determine the instances which make up the group
+        let mut instGroup: *mut CGPGroup = (*instGroup).GetSubGroups ( );
+
+        while !instGroup.is_null() {
+            let name: *const c_char;
+            let mincount: c_int;
+            let maxcount: c_int;
+            let mut count: c_int;
+            let _minrange: f32;
+            let _maxrange: f32;
+
+            // Make sure only instances are specified as sub groups
+            debug_assert!( 0 == stricmp ( (*instGroup).GetName ( ), b"instance\0".as_ptr() as *const c_char ) );
+
+            // Grab the name
+            name     = (*instGroup).FindPairValue ( b"name\0".as_ptr() as *const c_char, b"\0".as_ptr() as *const c_char );
+
+            // Grab the range information
+            _minrange = atof((*instGroup).FindPairValue ( b"minrange\0".as_ptr() as *const c_char, b"0\0".as_ptr() as *const c_char ) ) as f32;
+            _maxrange = atof((*instGroup).FindPairValue ( b"maxrange\0".as_ptr() as *const c_char, b"0\0".as_ptr() as *const c_char ) ) as f32;
+
+            // Grab the count information and randomly generate a count value
+            mincount = atoi((*instGroup).FindPairValue ( b"mincount\0".as_ptr() as *const c_char, b"1\0".as_ptr() as *const c_char ) );
+            maxcount = atoi((*instGroup).FindPairValue ( b"maxcount\0".as_ptr() as *const c_char, b"1\0".as_ptr() as *const c_char ) );
+            count	 = mincount;
+
+            if maxcount > mincount {
+                count += (*(*TheRandomMissionManager).GetLandScape()).irand(0, maxcount-mincount);
             }
 
-            // optional instance objective strings
-            // SetMessage(instGroup->FindPairValue("objective_message",""));
-            let message_str = CGPGroup_FindPairValue(instGroup, b"objective_message\0".as_ptr() as *const c_char, b"\0".as_ptr() as *const c_char);
-            CRMInstance_SetMessage(&mut group_instance as *mut CRMGroupInstance as *mut CRMInstance, message_str);
+            // For each count create and add the instance
+            // C++: for ( ; count ; count -- )
+            while count != 0 {
+                // Create the instance
+                let instance: *mut CRMInstance = (*instFile).CreateInstance ( name );
 
-            // SetDescription(instGroup->FindPairValue("objective_description",""));
-            let desc_str = CGPGroup_FindPairValue(instGroup, b"objective_description\0".as_ptr() as *const c_char, b"\0".as_ptr() as *const c_char);
-            CRMInstance_SetDescription(&mut group_instance as *mut CRMGroupInstance as *mut CRMInstance, desc_str);
+                // mirrors the C++ for's count-- post-decrement, which runs even when continuing
+                count -= 1;
 
-            // SetInfo(instGroup->FindPairValue("objective_info",""));
-            let info_str = CGPGroup_FindPairValue(instGroup, b"objective_info\0".as_ptr() as *const c_char, b"\0".as_ptr() as *const c_char);
-            CRMInstance_SetInfo(&mut group_instance as *mut CRMGroupInstance as *mut CRMInstance, info_str);
-
-            // Iterate through the sub groups to determine the instances which make up the group
-            // instGroup = instGroup->GetSubGroups ( );
-            let mut instGroup = CGPGroup_GetSubGroups(instGroup);
-
-            while !instGroup.is_null() {
-                // Make sure only instances are specified as sub groups
-                // assert ( 0 == stricmp ( instGroup->GetName ( ), "instance" ) );
-
-                // Grab the name
-                let name = CGPGroup_FindPairValue(instGroup, b"name\0".as_ptr() as *const c_char, b"\0".as_ptr() as *const c_char);
-
-                // Grab the range information
-                let minrange_str = CGPGroup_FindPairValue(instGroup, b"minrange\0".as_ptr() as *const c_char, b"0\0".as_ptr() as *const c_char);
-                let _minrange = atof(minrange_str) as f32;
-
-                let maxrange_str = CGPGroup_FindPairValue(instGroup, b"maxrange\0".as_ptr() as *const c_char, b"0\0".as_ptr() as *const c_char);
-                let _maxrange = atof(maxrange_str) as f32;
-
-                // Grab the count information and randomly generate a count value
-                let mincount_str = CGPGroup_FindPairValue(instGroup, b"mincount\0".as_ptr() as *const c_char, b"1\0".as_ptr() as *const c_char);
-                let mincount = atoi(mincount_str);
-
-                let maxcount_str = CGPGroup_FindPairValue(instGroup, b"maxcount\0".as_ptr() as *const c_char, b"1\0".as_ptr() as *const c_char);
-                let maxcount = atoi(maxcount_str);
-
-                let mut count = mincount;
-
-                if maxcount > mincount {
-                    // count += (TheRandomMissionManager->GetLandScape()->irand(0, maxcount-mincount));
-                    let landscape = (*TheRandomMissionManager).GetTerrain();
-                    if !landscape.is_null() {
-                        let rand_val = CRandomTerrain_irand(landscape, 0, maxcount - mincount);
-                        count += rand_val;
-                    }
+                // Skip this instance if it couldnt be created for some reason.  The CreateInstance
+                // method will report an error so no need to do so here.
+                if instance.is_null() {
+                    continue;
                 }
 
-                // For each count create and add the instance
-                while count > 0 {
-                    count -= 1;
+                // Set the min and max range for the instance
+                (*instance).SetFilter((*base).GetFilter());
+                (*instance).SetTeamFilter((*base).GetTeamFilter());
 
-                    // Create the instance
-                    let instance = CRMInstanceFile_CreateInstance(instFile, name);
-
-                    // Skip this instance if it couldnt be created for some reason.  The CreateInstance
-                    // method will report an error so no need to do so here.
-                    if !instance.is_null() {
-                        // Set the min and max range for the instance
-                        // instance->SetFilter(mFilter);
-                        // instance->SetTeamFilter(mTeamFilter);
-                        // Note: In this implementation, we would need to access mFilter and mTeamFilter
-                        // from the parent CRMInstance structure. This requires C++ wrappers.
-                        // For now, we skip this as it would require additional extern functions.
-
-                        // Add the instance to the list
-                        // mInstances.push_back ( instance );
-                        // Note: In Rust, we would need to manipulate mInstances (LinkedList<*mut CRMInstance>)
-                        // This requires C++ wrappers for LinkedList operations or direct manipulation.
-                    }
-                }
-
-                // Next sub group
-                instGroup = CGPGroup_GetNext(instGroup);
+                // Add the instance to the list
+                (*self_).mInstances.push_back ( instance );
             }
 
-            group_instance
+            // Next sub group
+            instGroup = (*instGroup).GetNext ( );
         }
     }
 
@@ -356,8 +150,10 @@ impl CRMGroupInstance {
      *	none
      *
      ************************************************************************************************/
-    pub fn drop(&mut self) {
-        self.RemoveInstances();
+    // C++: ~CRMGroupInstance(void)
+    pub unsafe fn dtor(self_: *mut CRMGroupInstance) {
+        // Cleanup
+        (*self_).RemoveInstances ( );
     }
 
     /************************************************************************************************
@@ -371,16 +167,14 @@ impl CRMGroupInstance {
      *	none
      *
      ************************************************************************************************/
-    pub fn SetFilter(&mut self, filter: *const c_char) {
-        unsafe {
-            // CRMInstance::SetFilter(filter);
-            CRMInstance_SetFilter_parent(self as *mut CRMGroupInstance as *mut CRMInstance, filter);
+    pub unsafe fn SetFilter(&mut self, filter: *const c_char) {
+        // rmInstanceIter_t it;
+        let base: *mut CRMInstance = self as *mut CRMGroupInstance as *mut CRMInstance;
 
-            // for(it = mInstances.begin(); it != mInstances.end(); it++)
-            // {
-            //     (*it)->SetFilter(filter);
-            // }
-            // Note: Iterating over mInstances requires C++ wrapper or direct LinkedList manipulation
+        CRMInstance::SetFilter(&mut *base, filter);
+        // for(it = mInstances.begin(); it != mInstances.end(); it++)
+        for &instance in self.mInstances.iter() {
+            (*instance).SetFilter(filter);
         }
     }
 
@@ -395,16 +189,14 @@ impl CRMGroupInstance {
      *	none
      *
      ************************************************************************************************/
-    pub fn SetTeamFilter(&mut self, teamFilter: *const c_char) {
-        unsafe {
-            // CRMInstance::SetTeamFilter(teamFilter);
-            CRMInstance_SetTeamFilter_parent(self as *mut CRMGroupInstance as *mut CRMInstance, teamFilter);
+    pub unsafe fn SetTeamFilter(&mut self, teamFilter: *const c_char) {
+        // rmInstanceIter_t it;
+        let base: *mut CRMInstance = self as *mut CRMGroupInstance as *mut CRMInstance;
 
-            // for(it = mInstances.begin(); it != mInstances.end(); it++)
-            // {
-            //     (*it)->SetTeamFilter(teamFilter);
-            // }
-            // Note: Iterating over mInstances requires C++ wrapper or direct LinkedList manipulation
+        CRMInstance::SetTeamFilter(&mut *base, teamFilter);
+        // for(it = mInstances.begin(); it != mInstances.end(); it++)
+        for &instance in self.mInstances.iter() {
+            (*instance).SetTeamFilter(teamFilter);
         }
     }
 
@@ -419,16 +211,14 @@ impl CRMGroupInstance {
      *	none
      *
      ************************************************************************************************/
-    pub fn SetMirror(&mut self, mirror: c_int) {
-        unsafe {
-            // CRMInstance::SetMirror(mirror);
-            CRMInstance_SetMirror_parent(self as *mut CRMGroupInstance as *mut CRMInstance, mirror);
+    pub unsafe fn SetMirror(&mut self, mirror: c_int) {
+        // rmInstanceIter_t it;
+        let base: *mut CRMInstance = self as *mut CRMGroupInstance as *mut CRMInstance;
 
-            // for(it = mInstances.begin(); it != mInstances.end(); it++)
-            // {
-            //     (*it)->SetMirror(mirror);
-            // }
-            // Note: Iterating over mInstances requires C++ wrapper or direct LinkedList manipulation
+        CRMInstance::SetMirror(&mut *base, mirror);
+        // for(it = mInstances.begin(); it != mInstances.end(); it++)
+        for &instance in self.mInstances.iter() {
+            (*instance).SetMirror(mirror);
         }
     }
 
@@ -443,16 +233,21 @@ impl CRMGroupInstance {
      *	none
      *
      ************************************************************************************************/
-    pub fn RemoveInstances(&mut self) {
+    pub unsafe fn RemoveInstances(&mut self) {
+        // rmInstanceIter_t it;
         // for(it = mInstances.begin(); it != mInstances.end(); it++)
         // {
         //     delete *it;
         // }
-        //
-        // mInstances.clear();
-        // Note: Deleting instances from mInstances (LinkedList<*mut CRMInstance>)
-        // requires proper C++ object destruction or C++ wrappers.
-        // This is a stub that would need proper implementation.
+        // Safety: instances were allocated via C++ operator new through CRMInstanceFile::CreateInstance.
+        // drop(Box::from_raw(instance)) approximates `delete *it`; a real C++/Rust interop would
+        // call the C++ destructor through a shim instead.
+        for &instance in self.mInstances.iter() {
+            // delete *it;
+            drop(Box::from_raw(instance));
+        }
+
+        self.mInstances.clear();
     }
 
     /************************************************************************************************
@@ -467,22 +262,19 @@ impl CRMGroupInstance {
      *	none
      *
      ************************************************************************************************/
-    pub fn PreSpawn(&mut self, terrain: *mut CRandomTerrain, IsServer: qboolean) -> bool {
-        unsafe {
-            // for(it = mInstances.begin(); it != mInstances.end(); it++ )
-            // {
-            //     CRMInstance* instance = *it;
-            //
-            //     instance->SetFlattenHeight ( mFlattenHeight );
-            //
-            //     // Add the instance to the landscape now
-            //     instance->PreSpawn ( terrain, IsServer );
-            // }
-            // Note: Iterating over mInstances requires C++ wrapper or direct LinkedList manipulation
+    pub unsafe fn PreSpawn(&mut self, terrain: *mut CRandomTerrain, IsServer: qboolean) -> bool {
+        // rmInstanceIter_t it;
+        let base: *mut CRMInstance = self as *mut CRMGroupInstance as *mut CRMInstance;
 
-            // return CRMInstance::PreSpawn ( terrain, IsServer );
-            CRMInstance_PreSpawn_parent(self as *mut CRMGroupInstance as *mut CRMInstance, terrain, IsServer)
+        // for(it = mInstances.begin(); it != mInstances.end(); it++ )
+        for &instance in self.mInstances.iter() {
+            (*instance).SetFlattenHeight ( (*base).GetFlattenHeight() );
+
+            // Add the instance to the landscape now
+            (*instance).PreSpawn ( terrain, IsServer );
         }
+
+        CRMInstance::PreSpawn(&mut *base, terrain, IsServer)
     }
 
     /************************************************************************************************
@@ -498,27 +290,23 @@ impl CRMGroupInstance {
      *	none
      *
      ************************************************************************************************/
-    pub fn Spawn(&mut self, terrain: *mut CRandomTerrain, IsServer: qboolean) -> bool {
-        unsafe {
-            // Spawn all the instances associated with this group
-            // for(it = mInstances.begin(); it != mInstances.end(); it++)
-            // {
-            //     CRMInstance* instance = *it;
-            //     instance->SetSide(GetSide()); // which side owns it?
-            //
-            //     // Add the instance to the landscape now
-            //     instance->Spawn ( terrain, IsServer );
-            // }
-            // Note: Iterating over mInstances requires C++ wrapper or direct LinkedList manipulation
+    pub unsafe fn Spawn(&mut self, terrain: *mut CRandomTerrain, IsServer: qboolean) -> bool {
+        // rmInstanceIter_t it;
+        let base: *mut CRMInstance = self as *mut CRMGroupInstance as *mut CRMInstance;
 
-            #[cfg(not(feature = "DEDICATED"))]
-            {
-                // DrawAutomapSymbol();
-                CRMInstance_DrawAutomapSymbol(self as *mut CRMGroupInstance as *mut CRMInstance);
-            }
+        // Spawn all the instances associated with this group
+        // for(it = mInstances.begin(); it != mInstances.end(); it++)
+        for &instance in self.mInstances.iter() {
+            (*instance).SetSide((*base).GetSide()); // which side owns it?
 
-            true
+            // Add the instance to the landscape now
+            (*instance).Spawn ( terrain, IsServer );
         }
+        #[cfg(not(feature = "DEDICATED"))]
+        {
+            (*base).DrawAutomapSymbol();
+        }
+        true
     }
 
     /************************************************************************************************
@@ -532,19 +320,16 @@ impl CRMGroupInstance {
      *	none
      *
      ************************************************************************************************/
-    pub fn Preview(&self, from: *const vec3_t) {
-        unsafe {
-            // CRMInstance::Preview ( from );
-            CRMInstance_Preview_parent(self as *const CRMGroupInstance as *mut CRMGroupInstance as *mut CRMInstance, from);
+    pub unsafe fn Preview(&self, from: *const vec3_t) {
+        // rmInstanceIter_t it;
+        let base: *const CRMInstance = self as *const CRMGroupInstance as *const CRMInstance;
 
-            // Render all the instances
-            // for(it = mInstances.begin(); it != mInstances.end(); it++)
-            // {
-            //     CRMInstance* instance = *it;
-            //
-            //     instance->Preview ( from );
-            // }
-            // Note: Iterating over mInstances requires C++ wrapper or direct LinkedList manipulation
+        CRMInstance::Preview(&*base, from);
+
+        // Render all the instances
+        // for(it = mInstances.begin(); it != mInstances.end(); it++)
+        for &instance in self.mInstances.iter() {
+            (*instance).Preview ( from );
         }
     }
 
@@ -560,44 +345,42 @@ impl CRMGroupInstance {
      *	none
      *
      ************************************************************************************************/
-    pub fn SetArea(&mut self, amanager: *mut CRMAreaManager, area: *mut CRMArea) {
-        unsafe {
-            // bool collide = area->IsCollisionEnabled ( );
-            let collide = CRMArea_IsCollisionEnabled(area);
+    pub unsafe fn SetArea(&mut self, amanager: *mut CRMAreaManager, area: *mut CRMArea) {
+        // rmInstanceIter_t it;
+        let base: *mut CRMInstance = self as *mut CRMGroupInstance as *mut CRMInstance;
 
-            // Disable collision
-            // area->EnableCollision ( false );
-            CRMArea_EnableCollision(area, false);
+        let collide: bool = (*area).IsCollisionEnabled ( );
 
-            // Do what really needs to get done
-            // CRMInstance::SetArea ( amanager, area );
-            CRMInstance_SetArea_parent(self as *mut CRMGroupInstance as *mut CRMInstance, amanager, area);
+        // Disable collision
+        (*area).EnableCollision ( false );
 
-            // Prepare for spawn by calculating all the positions of the sub instances
-            // and flattening the ground below them.
-            // for(it = mInstances.begin(); it != mInstances.end(); it++ )
-            // {
-            //     CRMInstance  *instance = *it;
-            //     CRMArea		 *newarea;
-            //     vec3_t		 origin;
-            //
-            //     // Drop it in the center of the group for now
-            //     origin[0] = GetOrigin()[0];
-            //     origin[1] = GetOrigin()[1];
-            //     origin[2] = 2500;
-            //
-            //     // Set the area of position
-            //     newarea = amanager->CreateArea ( origin, instance->GetSpacingRadius(), instance->GetSpacingLine(), mPaddingSize, mConfineRadius, GetOrigin(), GetOrigin(), instance->GetFlattenRadius()?true:false, collide, instance->GetLockOrigin(), area->GetSymmetric ( ) );
-            //     instance->SetArea ( amanager, newarea );
-            // }
-            // Note: Iterating over mInstances requires C++ wrapper or direct LinkedList manipulation
-            // The above loop would need:
-            // - Accessing mInstances (LinkedList)
-            // - Calling GetOrigin() on self and instances
-            // - Calling GetSpacingRadius(), GetSpacingLine(), GetFlattenRadius(), GetLockOrigin() on instances
-            // - Calling CreateArea on amanager
-            // - Converting float to bool for GetFlattenRadius()?true:false
-            // All of which require C++ wrappers or additional extern functions.
+        // Do what really needs to get done
+        CRMInstance::SetArea(&mut *base, amanager, area);
+
+        // Prepare for spawn by calculating all the positions of the sub instances
+        // and flattening the ground below them.
+        // for(it = mInstances.begin(); it != mInstances.end(); it++ )
+        for &instance in self.mInstances.iter() {
+            let go: *mut vec_t = (*base).GetOrigin();
+
+            // Drop it in the center of the group for now
+            let origin: vec3_t = [*go, *go.add(1), 2500.0_f32];
+
+            // Set the area of position
+            let newarea: *mut CRMArea = (*amanager).CreateArea (
+                origin,
+                (*instance).GetSpacingRadius(),
+                (*instance).GetSpacingLine(),
+                self.mPaddingSize,
+                self.mConfineRadius,
+                *(go as *const vec3_t),    // GetOrigin()
+                *(go as *const vec3_t),    // GetOrigin()
+                (*instance).GetFlattenRadius() != 0.0_f32,
+                collide,
+                (*instance).GetLockOrigin(),
+                (*area).GetSymmetric ( ),
+            );
+            (*instance).SetArea ( amanager, newarea );
         }
     }
 }
