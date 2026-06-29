@@ -1,256 +1,50 @@
-//! Mechanical port of `codemp/RMG/RM_Manager.cpp`.
-//!
-//! Implements the CRMManager class. The CRMManager class manages the arioche system.
+// Anything above this #include will be ignored by the compiler
 
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 #![allow(non_upper_case_globals)]
 #![allow(dead_code)]
 
-use core::ffi::{c_char, c_int, c_void};
+use crate::codemp::qcommon::exe_headers_h::*;
 
-// ============================================================================
-// LOCAL STUBS for unported types
-// ============================================================================
-//
-// These types are declared here to allow this file to compile structurally.
-// Full definitions exist in the oracle but have not yet been ported.
-// Porting these types is out of scope for this file.
+/************************************************************************************************
+ *
+ * RM_Manager.cpp
+ *
+ * Implements the CRMManager class.  The CRMManager class manages the arioche system.
+ *
+ ************************************************************************************************/
 
-/// Stub for unported `class CGenericParser2` (GenericParser2.h).
-/// Parser for configuration files.
-pub struct CGenericParser2 {
-    _opaque: [u8; 0],
-}
+use crate::codemp::RMG::RM_Headers_h::*;
+use crate::codemp::server::server_h::*;
+use crate::codemp::qcommon::qcommon_h::*;
 
-impl CGenericParser2 {
-    /// Stub for `CGPGroup* CGenericParser2::GetBaseParseGroup()`.
-    /// Returns the root parsing group.
-    pub fn GetBaseParseGroup(&self) -> *mut CGPGroup {
-        core::ptr::null_mut()
-    }
-
-    /// Stub for `void CGenericParser2::Clean()`.
-    /// Cleans up the parser.
-    pub fn Clean(&mut self) {
-        // Porting stub: cleans up parser state.
-    }
-}
-
-/// Stub for unported `class CGPGroup` (GenericParser2.h).
-/// Holds configuration key-value pairs.
-pub struct CGPGroup {
-    _opaque: [u8; 0],
-}
-
-impl CGPGroup {
-    /// Stub for `const char* CGPGroup::GetName()`.
-    /// Returns the name of this group.
-    pub fn GetName(&self) -> *const c_char {
-        core::ptr::null()
-    }
-
-    /// Stub for `CGPGroup* CGPGroup::GetSubGroups()`.
-    /// Returns the first subgroup.
-    pub fn GetSubGroups(&self) -> *mut CGPGroup {
-        core::ptr::null_mut()
-    }
-
-    /// Stub for `const char* CGPGroup::FindPairValue(const char *name, const char *defaultVal)`.
-    /// Returns the value string associated with the given key, or default if not found.
-    pub fn FindPairValue(&self, _name: *const c_char, default_val: *const c_char) -> *const c_char {
-        // Porting stub: in reality, this looks up the key in internal storage
-        // and returns the value or the default. For now, return the default.
-        default_val
-    }
-}
-
-/// Stub for unported `class CRMMission` (RM_Mission.h).
-/// Holds state for a random mission.
-pub struct CRMMission {
-    _opaque: [u8; 0],
-}
-
-impl CRMMission {
-    /// Stub for `CRMObjective* CRMMission::GetCurrentObjective()`.
-    /// Returns the current mission objective.
-    pub fn GetCurrentObjective(&self) -> *mut CRMObjective {
-        core::ptr::null_mut()
-    }
-
-    /// Stub for `int CRMMission::GetTimeLimit()`.
-    /// Returns the time limit for the mission.
-    pub fn GetTimeLimit(&self) -> c_int {
-        0
-    }
-
-    /// Stub for `void CRMMission::CompleteObjective(CRMObjective*)`.
-    /// Marks the objective as complete.
-    pub fn CompleteObjective(&mut self, _obj: *mut CRMObjective) {
-        // Porting stub: marks the objective as completed.
-    }
-
-    /// Stub for `void CRMMission::CompleteMission()`.
-    /// Marks the entire mission as complete.
-    pub fn CompleteMission(&mut self) {
-        // Porting stub: handles mission completion.
-    }
-
-    /// Stub for `void CRMMission::FailedMission(bool)`.
-    /// Marks the mission as failed.
-    pub fn FailedMission(&mut self, _TimeExpired: bool) {
-        // Porting stub: handles mission failure.
-    }
-
-    /// Stub for `void CRMMission::Preview(const vec3_t)`.
-    /// Previews the mission.
-    pub fn Preview(&self, _from: *const vec3_t) {
-        // Porting stub: handles mission preview.
-    }
-
-    /// Stub for `bool CRMMission::Load(const char*, const char*, const char*)`.
-    /// Loads mission data from configuration.
-    pub fn Load(&mut self, _mission: *const c_char, _instances: *const c_char, _course: *const c_char) -> bool {
-        // Porting stub: loads mission configuration.
-        false
-    }
-
-    /// Stub for `void CRMMission::Spawn(CRandomTerrain*, qboolean)`.
-    /// Spawns the mission entities.
-    pub fn Spawn(&mut self, _terrain: *mut CRandomTerrain, _IsServer: c_int) {
-        // Porting stub: spawns mission entities.
-    }
-}
-
-/// Stub for unported `class CRMObjective` (RM_Objective.h).
-/// Represents a mission objective.
-pub struct CRMObjective {
-    _opaque: [u8; 0],
-}
-
-/// Stub for unported `class CCMLandScape` (cm_landscape.h).
-/// Represents the landscape/terrain mesh for the map.
-pub struct CCMLandScape {
-    _opaque: [u8; 0],
-}
-
-impl CCMLandScape {
-    /// Stub for `CRandomTerrain* CCMLandScape::GetRandomTerrain()`.
-    /// Returns the terrain generator associated with this landscape.
-    pub fn GetRandomTerrain(&self) -> *mut CRandomTerrain {
-        core::ptr::null_mut()
-    }
-}
-
-/// Stub for unported `class CRandomTerrain` (RM_Terrain.h).
-/// Manages terrain generation for random maps.
-pub struct CRandomTerrain {
-    _opaque: [u8; 0],
-}
-
-// ============================================================================
-// Constants and types from qcommon/client
-// ============================================================================
-
-/// Maximum path length (from q_shared.h).
-pub const MAX_QPATH: usize = 64;
-
-/// Maximum number of automap symbols that can be tracked.
-pub const MAX_AUTOMAP_SYMBOLS: usize = 512;
-
-/// Automap symbol type constants (from RM_Instance.h).
-pub const AUTOMAP_NONE: c_int = 0;
-pub const AUTOMAP_BLD: c_int = 1;
-pub const AUTOMAP_OBJ: c_int = 2;
-pub const AUTOMAP_START: c_int = 3;
-pub const AUTOMAP_END: c_int = 4;
-pub const AUTOMAP_ENEMY: c_int = 5;
-pub const AUTOMAP_FRIEND: c_int = 6;
-pub const AUTOMAP_WALL: c_int = 7;
-
-/// C type for Quake boolean (from q_shared.h).
-pub type qboolean = c_int;
-
-/// C fixed array type for 3D vector (from q_shared.h: `typedef float vec3_t[3]`).
-pub type vec3_t = [f32; 3];
-
-/// Automap symbol structure (from client.h).
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct rmAutomapSymbol_t {
-    pub mType: c_int,
-    pub mSide: c_int,
-    pub mOrigin: vec3_t,
-}
-
-// ============================================================================
-// extern "C" functions from qcommon and game
-// ============================================================================
+use core::ffi::{c_char, c_int};
 
 extern "C" {
-    /// Quake engine function to retrieve a console variable's string value.
-    /// Stores up to bufsize bytes of the variable's value into buffer.
     fn Cvar_VariableStringBuffer(var_name: *const c_char, buffer: *mut c_char, bufsize: c_int);
-
-    /// Quake engine function for case-insensitive string comparison.
-    /// Returns 0 if strings are equal (ignoring case).
     fn Q_stricmp(s1: *const c_char, s2: *const c_char) -> c_int;
-
-    /// Quake engine function to print formatted messages to console.
     fn Com_Printf(fmt: *const c_char, ...);
-
-    /// Quake engine function to parse a text file into a parser structure.
-    /// Returns true if successful.
-    fn Com_ParseTextFile(file: *const c_char, parser: *mut CGenericParser2) -> bool;
-
-    /// Quake engine function to format a string with variadic arguments.
-    /// Returns a pointer to a static buffer containing the formatted result.
-    pub fn va(format: *const c_char, ...) -> *mut c_char;
-
-    /// C standard library function for formatted string printing.
+    fn Com_ParseTextFile(filename: *const c_char, parser: *mut CGenericParser2) -> bool;
+    fn va(format: *const c_char, ...) -> *mut c_char;
     fn sprintf(s: *mut c_char, format: *const c_char, ...) -> c_int;
-
-    /// C standard library function for case-insensitive string comparison.
-    /// Returns 0 if strings are equal (ignoring case).
     fn stricmp(s1: *const c_char, s2: *const c_char) -> c_int;
-
-    /// Quake terrain/landscape function to free terrain map resources.
     fn CM_TM_Free();
-
-    /// Quake terrain/landscape functions to add symbols to the automap.
     fn CM_TM_AddBuilding(x: f32, y: f32, side: c_int);
     fn CM_TM_AddObjective(x: f32, y: f32, side: c_int);
     fn CM_TM_AddStart(x: f32, y: f32, side: c_int);
     fn CM_TM_AddEnd(x: f32, y: f32, side: c_int);
     fn CM_TM_AddWallRect(x: f32, y: f32, side: c_int);
-
-    /// C standard library function to copy memory.
-    /// Mirrors the Quake engine's VectorCopy macro behavior.
-    fn VectorCopy(src: *const f32, dst: *mut f32);
 }
 
-// ============================================================================
-// CRMManager static member
-// ============================================================================
-
-/// Static member of CRMManager: currently active objective (eek)
 pub static mut mCurObjective: *mut CRMObjective = core::ptr::null_mut();
 
-// ============================================================================
-// CRMManager class implementation
-// ============================================================================
-
-/// Random Mission Manager.
-/// Manages the state and lifecycle of random mission generation.
-pub struct CRMManager {
-    pub mMission: *mut CRMMission,
-    pub mLandScape: *mut CCMLandScape,
-    pub mTerrain: *mut CRandomTerrain,
-    pub mCurPriority: c_int,
-    pub mUseTimeLimit: bool,
-    pub mAutomapSymbolCount: c_int,
-    pub mAutomapSymbols: [rmAutomapSymbol_t; MAX_AUTOMAP_SYMBOLS],
-}
+/************************************************************************************************
+ * TheRandomMissionManager
+ *	Pointer to only active CRMManager class
+ *
+ ************************************************************************************************/
+pub static mut TheRandomMissionManager: *mut CRMManager = core::ptr::null_mut();
 
 impl CRMManager {
     /************************************************************************************************
@@ -263,14 +57,17 @@ impl CRMManager {
      *
      ************************************************************************************************/
     pub fn new() -> Self {
+        // Port note: mPreviewTimer is not set by the C++ constructor; zero-initialized here.
         CRMManager {
             mLandScape: core::ptr::null_mut(),
             mTerrain: core::ptr::null_mut(),
             mMission: core::ptr::null_mut(),
+            mPreviewTimer: 0,
             mCurPriority: 1,
             mUseTimeLimit: false,
             mAutomapSymbolCount: 0,
-            mAutomapSymbols: [rmAutomapSymbol_t::default(); MAX_AUTOMAP_SYMBOLS],
+            mAutomapSymbols: [rmAutomapSymbol_t { mType: 0, mSide: 0, mOrigin: [0.0, 0.0, 0.0] };
+                MAX_AUTOMAP_SYMBOLS],
         }
     }
 
@@ -285,11 +82,9 @@ impl CRMManager {
      *	none
      *
      ************************************************************************************************/
-    pub fn SetLandScape(&mut self, landscape: *mut CCMLandScape) {
+    pub unsafe fn SetLandScape(&mut self, landscape: *mut CCMLandScape) {
         self.mLandScape = landscape;
-        unsafe {
-            self.mTerrain = (*landscape).GetRandomTerrain();
-        }
+        self.mTerrain = (*landscape).GetRandomTerrain();
     }
 
     /************************************************************************************************
@@ -303,18 +98,20 @@ impl CRMManager {
      *	none
      *
      ************************************************************************************************/
-    pub fn LoadMission(&mut self, IsServer: qboolean) -> bool {
-        #[cfg(not(feature = "PRE_RELEASE_DEMO"))]
+    pub unsafe fn LoadMission(&mut self, IsServer: qboolean) -> bool {
+        #[cfg(not(feature = "pre_release_demo"))]
         {
-            let mut instances: [c_char; MAX_QPATH] = [0; MAX_QPATH];
-            let mut mission: [c_char; MAX_QPATH] = [0; MAX_QPATH];
-            let mut course: [c_char; MAX_QPATH] = [0; MAX_QPATH];
-            let mut map: [c_char; MAX_QPATH] = [0; MAX_QPATH];
-            let mut temp: [c_char; MAX_QPATH] = [0; MAX_QPATH];
+            let mut instances: [c_char; MAX_QPATH as usize] = [0; MAX_QPATH as usize];
+            let mut mission: [c_char; MAX_QPATH as usize] = [0; MAX_QPATH as usize];
+            let mut course: [c_char; MAX_QPATH as usize] = [0; MAX_QPATH as usize];
+            let mut map: [c_char; MAX_QPATH as usize] = [0; MAX_QPATH as usize];
+            let mut temp: [c_char; MAX_QPATH as usize] = [0; MAX_QPATH as usize];
 
-            #[cfg(not(feature = "FINAL_BUILD"))]
-            unsafe {
-                Com_Printf(b"--------- Random Mission Manager ---------\n\n\0".as_ptr() as *const c_char);
+            #[cfg(not(feature = "final_build"))]
+            {
+                Com_Printf(
+                    b"--------- Random Mission Manager ---------\n\n\0".as_ptr() as *const c_char,
+                );
                 Com_Printf(b"RMG version : 1.01\n\n\0".as_ptr() as *const c_char);
             }
 
@@ -323,117 +120,107 @@ impl CRMManager {
             }
 
             // Grab the arioche variables
-            unsafe {
-                Cvar_VariableStringBuffer(
-                    b"rmg_usetimelimit\0".as_ptr() as *const c_char,
-                    temp.as_mut_ptr(),
-                    MAX_QPATH as c_int,
-                );
-                if Q_stricmp(temp.as_ptr(), b"yes\0".as_ptr() as *const c_char) == 0 {
-                    self.mUseTimeLimit = true;
-                }
-                Cvar_VariableStringBuffer(
-                    b"rmg_instances\0".as_ptr() as *const c_char,
-                    instances.as_mut_ptr(),
-                    MAX_QPATH as c_int,
-                );
-                Cvar_VariableStringBuffer(
-                    b"RMG_mission\0".as_ptr() as *const c_char,
-                    temp.as_mut_ptr(),
-                    MAX_QPATH as c_int,
-                );
-                Cvar_VariableStringBuffer(
-                    b"rmg_map\0".as_ptr() as *const c_char,
-                    map.as_mut_ptr(),
-                    MAX_QPATH as c_int,
-                );
-                sprintf(
-                    mission.as_mut_ptr(),
-                    b"%s_%s\0".as_ptr() as *const c_char,
-                    temp.as_ptr(),
-                    map.as_ptr(),
-                );
-                Cvar_VariableStringBuffer(
-                    b"rmg_course\0".as_ptr() as *const c_char,
-                    course.as_mut_ptr(),
-                    MAX_QPATH as c_int,
-                );
+            Cvar_VariableStringBuffer(
+                b"rmg_usetimelimit\0".as_ptr() as *const c_char,
+                temp.as_mut_ptr(),
+                MAX_QPATH as c_int,
+            );
+            if Q_stricmp(temp.as_ptr(), b"yes\0".as_ptr() as *const c_char) == 0 {
+                self.mUseTimeLimit = true;
             }
+            Cvar_VariableStringBuffer(
+                b"rmg_instances\0".as_ptr() as *const c_char,
+                instances.as_mut_ptr(),
+                MAX_QPATH as c_int,
+            );
+            Cvar_VariableStringBuffer(
+                b"RMG_mission\0".as_ptr() as *const c_char,
+                temp.as_mut_ptr(),
+                MAX_QPATH as c_int,
+            );
+            Cvar_VariableStringBuffer(
+                b"rmg_map\0".as_ptr() as *const c_char,
+                map.as_mut_ptr(),
+                MAX_QPATH as c_int,
+            );
+            sprintf(
+                mission.as_mut_ptr(),
+                b"%s_%s\0".as_ptr() as *const c_char,
+                temp.as_ptr(),
+                map.as_ptr(),
+            );
+            Cvar_VariableStringBuffer(
+                b"rmg_course\0".as_ptr() as *const c_char,
+                course.as_mut_ptr(),
+                MAX_QPATH as c_int,
+            );
 
             // dump existing mission, if any
             if !self.mMission.is_null() {
-                unsafe {
-                    // In Rust, we would typically use Box::from_raw to properly deallocate,
-                    // but since this is a C-allocated object, we just null it out.
-                    // The C++ delete is handled by the C++ runtime.
-                    let _ = core::ptr::read(self.mMission);
-                }
+                drop(Box::from_raw(self.mMission));
                 self.mMission = core::ptr::null_mut();
             }
 
             // Create a new mission file
-            unsafe {
-                self.mMission = Box::into_raw(Box::new(CRMMission { _opaque: [0; 0] }));
-            }
+            self.mMission = Box::into_raw(Box::new(CRMMission::new(self.mTerrain)));
 
             if IsServer != 0 {
                 // Load the mission using the arioche variables
-                unsafe {
-                    if !(*self.mMission).Load(
-                        mission.as_ptr(),
-                        instances.as_ptr(),
-                        course.as_ptr(),
-                    ) {
-                        return false;
-                    }
+                if !(*self.mMission).Load(
+                    mission.as_ptr(),
+                    instances.as_ptr(),
+                    course.as_ptr(),
+                ) {
+                    return false;
                 }
 
                 // set the names of the teams
-                let mut parser: CGenericParser2 = CGenericParser2 { _opaque: [0; 0] };
-                let mut root: *mut CGPGroup;
+                let mut parser: CGenericParser2 = CGenericParser2::new();
 
-                unsafe {
-                    Cvar_VariableStringBuffer(
-                        b"RMG_terrain\0".as_ptr() as *const c_char,
-                        temp.as_mut_ptr(),
-                        MAX_QPATH as c_int,
-                    );
+                Cvar_VariableStringBuffer(
+                    b"RMG_terrain\0".as_ptr() as *const c_char,
+                    temp.as_mut_ptr(),
+                    MAX_QPATH as c_int,
+                );
 
-                    // Create the parser for the mission file
-                    let path = va(
+                // Create the parser for the mission file
+                if Com_ParseTextFile(
+                    va(
                         b"ext_data/rmg/%s.teams\0".as_ptr() as *const c_char,
                         temp.as_ptr(),
-                    );
-                    if Com_ParseTextFile(path, &mut parser as *mut CGenericParser2) {
-                        root = parser.GetBaseParseGroup().as_mut().unwrap().GetSubGroups();
-                        if !root.is_null() {
-                            if stricmp((*root).GetName(), b"teams\0".as_ptr() as *const c_char) == 0 {
-                                /*
-                                SV_SetConfigstring( CS_GAMETYPE_REDTEAM, root->FindPairValue ( "red", "marine" ));
-                                SV_SetConfigstring( CS_GAMETYPE_BLUETEAM, root->FindPairValue ( "blue", "thug" ));
-                                */
-                                //rwwFIXMEFIXME: Do we care about this?
-                            }
-                        }
-                        parser.Clean();
+                    ),
+                    &mut parser as *mut CGenericParser2,
+                ) {
+                    let root: *mut CGPGroup =
+                        (*parser.GetBaseParseGroup()).GetSubGroups();
+                    if 0 == stricmp(
+                        (*root).GetName(),
+                        b"teams\0".as_ptr() as *const c_char,
+                    ) {
+                        /*
+                        SV_SetConfigstring( CS_GAMETYPE_REDTEAM, root->FindPairValue ( "red", "marine" ));
+                        SV_SetConfigstring( CS_GAMETYPE_BLUETEAM, root->FindPairValue ( "blue", "thug" ));
+                        */
+                        //rwwFIXMEFIXME: Do we care about this?
                     }
+                    parser.Clean();
                 }
             }
 
             // Must have a valid landscape before we can spawn the mission
             assert!(!self.mLandScape.is_null());
 
-            #[cfg(not(feature = "FINAL_BUILD"))]
-            unsafe {
-                Com_Printf(b"------------------------------------------\n\0".as_ptr() as *const c_char);
+            #[cfg(not(feature = "final_build"))]
+            {
+                Com_Printf(
+                    b"------------------------------------------\n\0".as_ptr() as *const c_char,
+                );
             }
 
-            true
+            return true;
         }
-        #[cfg(feature = "PRE_RELEASE_DEMO")]
-        {
-            false
-        }
+        // #else
+        false
     }
 
     /************************************************************************************************
@@ -448,15 +235,11 @@ impl CRMManager {
      *  false: one or more of the objectives has not been met
      *
      ************************************************************************************************/
-    pub fn IsMissionComplete(&self) -> bool {
-        unsafe {
-            if self.mMission.is_null() {
-                return true;
-            }
-            if (*self.mMission).GetCurrentObjective().is_null() {
-                return true;
-            }
+    pub unsafe fn IsMissionComplete(&self) -> bool {
+        if core::ptr::null_mut::<CRMObjective>() == (*self.mMission).GetCurrentObjective() {
+            return true;
         }
+
         false
     }
 
@@ -569,14 +352,10 @@ impl CRMManager {
      * Output / Return                                                                              *
      *    <Variable>: <Description>                                                                 *
      ************************************************************************************************/
-    pub fn CompleteMission(&mut self) {
+    pub unsafe fn CompleteMission(&mut self) {
         self.UpdateStatisticCvars();
 
-        unsafe {
-            if !self.mMission.is_null() {
-                (*self.mMission).CompleteMission();
-            }
-        }
+        (*self.mMission).CompleteMission();
     }
 
     /************************************************************************************************
@@ -588,14 +367,10 @@ impl CRMManager {
      * Output / Return                                                                              *
      *    <Variable>: <Description>                                                                 *
      ************************************************************************************************/
-    pub fn FailedMission(&mut self, TimeExpired: bool) {
+    pub unsafe fn FailedMission(&mut self, TimeExpired: bool) {
         self.UpdateStatisticCvars();
 
-        unsafe {
-            if !self.mMission.is_null() {
-                (*self.mMission).FailedMission(TimeExpired);
-            }
-        }
+        (*self.mMission).FailedMission(TimeExpired);
     }
 
     /************************************************************************************************
@@ -609,14 +384,10 @@ impl CRMManager {
      *	none
      *
      ************************************************************************************************/
-    pub fn CompleteObjective(&mut self, obj: *mut CRMObjective) {
+    pub unsafe fn CompleteObjective(&mut self, obj: *mut CRMObjective) {
         assert!(!obj.is_null());
 
-        unsafe {
-            if !self.mMission.is_null() {
-                (*self.mMission).CompleteObjective(obj);
-            }
-        }
+        (*self.mMission).CompleteObjective(obj);
     }
 
     /************************************************************************************************
@@ -630,7 +401,7 @@ impl CRMManager {
      *	none
      *
      ************************************************************************************************/
-    pub fn Preview(&self, from: *const vec3_t) {
+    pub fn Preview(&self, _from: vec3_t) {
         // Dont bother if we havent reached our timer yet
         /*	if ( level.time < mPreviewTimer )
         {
@@ -642,7 +413,6 @@ impl CRMManager {
 
         // Another second
         mPreviewTimer = level.time + 1000;*/
-        let _ = from;
     }
 
     /************************************************************************************************
@@ -656,31 +426,23 @@ impl CRMManager {
      *	none
      *
      ************************************************************************************************/
-    pub fn SpawnMission(&mut self, IsServer: qboolean) -> bool {
+    pub unsafe fn SpawnMission(&mut self, IsServer: qboolean) -> bool {
         // Spawn the mission
-        unsafe {
-            if !self.mTerrain.is_null() && !self.mMission.is_null() {
-                (*self.mMission).Spawn(self.mTerrain, IsServer);
-            }
-        }
+        (*self.mMission).Spawn(self.mTerrain, IsServer);
 
         true
     }
 
-    pub fn AddAutomapSymbol(&mut self, typ: c_int, origin: vec3_t, side: c_int) {
-        if typ == 0 {
+    pub unsafe fn AddAutomapSymbol(&mut self, type_: c_int, origin: vec3_t, side: c_int) {
+        if type_ == 0 {
             return;
         }
 
-        if (self.mAutomapSymbolCount as usize) < MAX_AUTOMAP_SYMBOLS {
-            let idx = self.mAutomapSymbolCount as usize;
-            self.mAutomapSymbols[idx].mType = typ;
-            self.mAutomapSymbols[idx].mSide = side;
-            unsafe {
-                VectorCopy(origin.as_ptr(), self.mAutomapSymbols[idx].mOrigin.as_mut_ptr());
-            }
-            self.mAutomapSymbolCount += 1;
-        }
+        self.mAutomapSymbols[self.mAutomapSymbolCount as usize].mType = type_;
+        self.mAutomapSymbols[self.mAutomapSymbolCount as usize].mSide = side;
+        // VectorCopy ( origin, mAutomapSymbols[mAutomapSymbolCount].mOrigin )
+        self.mAutomapSymbols[self.mAutomapSymbolCount as usize].mOrigin = origin;
+        self.mAutomapSymbolCount += 1;
     }
 
     pub fn GetAutomapSymbolCount(&self) -> c_int {
@@ -688,11 +450,7 @@ impl CRMManager {
     }
 
     pub fn GetAutomapSymbol(&mut self, index: c_int) -> *mut rmAutomapSymbol_t {
-        if index >= 0 && (index as usize) < MAX_AUTOMAP_SYMBOLS {
-            unsafe { self.mAutomapSymbols.as_mut_ptr().add(index as usize) }
-        } else {
-            core::ptr::null_mut()
-        }
+        unsafe { self.mAutomapSymbols.as_mut_ptr().add(index as usize) }
     }
 
     /*
@@ -714,54 +472,52 @@ impl CRMManager {
     }
     */
 
-    pub fn ProcessAutomapSymbols(count: c_int, symbols: *mut rmAutomapSymbol_t) {
-        #[cfg(not(feature = "DEDICATED"))]
+    pub unsafe fn ProcessAutomapSymbols(count: c_int, symbols: *mut rmAutomapSymbol_t) {
+        #[cfg(not(feature = "dedicated"))]
         {
             let mut i: c_int = 0;
 
             while i < count {
-                unsafe {
-                    // draw proper symbol on map for instance
-                    match (*symbols.add(i as usize)).mType {
-                        AUTOMAP_BLD => {
-                            CM_TM_AddBuilding(
-                                (*symbols.add(i as usize)).mOrigin[0],
-                                (*symbols.add(i as usize)).mOrigin[1],
-                                (*symbols.add(i as usize)).mSide,
-                            );
-                        }
-                        AUTOMAP_OBJ => {
-                            CM_TM_AddObjective(
-                                (*symbols.add(i as usize)).mOrigin[0],
-                                (*symbols.add(i as usize)).mOrigin[1],
-                                (*symbols.add(i as usize)).mSide,
-                            );
-                        }
-                        AUTOMAP_START => {
-                            CM_TM_AddStart(
-                                (*symbols.add(i as usize)).mOrigin[0],
-                                (*symbols.add(i as usize)).mOrigin[1],
-                                (*symbols.add(i as usize)).mSide,
-                            );
-                        }
-                        AUTOMAP_END => {
-                            CM_TM_AddEnd(
-                                (*symbols.add(i as usize)).mOrigin[0],
-                                (*symbols.add(i as usize)).mOrigin[1],
-                                (*symbols.add(i as usize)).mSide,
-                            );
-                        }
-                        AUTOMAP_ENEMY => {}
-                        AUTOMAP_FRIEND => {}
-                        AUTOMAP_WALL => {
-                            CM_TM_AddWallRect(
-                                (*symbols.add(i as usize)).mOrigin[0],
-                                (*symbols.add(i as usize)).mOrigin[1],
-                                (*symbols.add(i as usize)).mSide,
-                            );
-                        }
-                        _ => {}
+                // draw proper symbol on map for instance
+                match (*symbols.add(i as usize)).mType {
+                    x if x == AUTOMAP_BLD => {
+                        CM_TM_AddBuilding(
+                            (*symbols.add(i as usize)).mOrigin[0],
+                            (*symbols.add(i as usize)).mOrigin[1],
+                            (*symbols.add(i as usize)).mSide,
+                        );
                     }
+                    x if x == AUTOMAP_OBJ => {
+                        CM_TM_AddObjective(
+                            (*symbols.add(i as usize)).mOrigin[0],
+                            (*symbols.add(i as usize)).mOrigin[1],
+                            (*symbols.add(i as usize)).mSide,
+                        );
+                    }
+                    x if x == AUTOMAP_START => {
+                        CM_TM_AddStart(
+                            (*symbols.add(i as usize)).mOrigin[0],
+                            (*symbols.add(i as usize)).mOrigin[1],
+                            (*symbols.add(i as usize)).mSide,
+                        );
+                    }
+                    x if x == AUTOMAP_END => {
+                        CM_TM_AddEnd(
+                            (*symbols.add(i as usize)).mOrigin[0],
+                            (*symbols.add(i as usize)).mOrigin[1],
+                            (*symbols.add(i as usize)).mSide,
+                        );
+                    }
+                    x if x == AUTOMAP_ENEMY => {}
+                    x if x == AUTOMAP_FRIEND => {}
+                    x if x == AUTOMAP_WALL => {
+                        CM_TM_AddWallRect(
+                            (*symbols.add(i as usize)).mOrigin[0],
+                            (*symbols.add(i as usize)).mOrigin[1],
+                            (*symbols.add(i as usize)).mSide,
+                        );
+                    }
+                    _ => {}
                 }
                 i += 1;
             }
@@ -780,20 +536,19 @@ impl Drop for CRMManager {
      *
      ************************************************************************************************/
     fn drop(&mut self) {
-        #[cfg(not(feature = "FINAL_BUILD"))]
+        #[cfg(not(feature = "final_build"))]
         unsafe {
-            Com_Printf(b"... Shutting down TheRandomMissionManager\n\0".as_ptr() as *const c_char);
+            Com_Printf(
+                b"... Shutting down TheRandomMissionManager\n\0".as_ptr() as *const c_char,
+            );
         }
-        #[cfg(not(feature = "DEDICATED"))]
+        #[cfg(not(feature = "dedicated"))]
         unsafe {
             CM_TM_Free();
         }
         if !self.mMission.is_null() {
             unsafe {
-                // In Rust, we would typically use Box::from_raw to properly deallocate,
-                // but since this is a C-allocated object, we just null it out.
-                // The C++ delete is handled by the C++ runtime.
-                let _ = core::ptr::read(self.mMission);
+                drop(Box::from_raw(self.mMission));
             }
             self.mMission = core::ptr::null_mut();
         }
@@ -805,14 +560,3 @@ impl Default for CRMManager {
         Self::new()
     }
 }
-
-// ============================================================================
-// Global instance of the random mission manager
-// ============================================================================
-
-/************************************************************************************************
- * TheRandomMissionManager
- *	Pointer to only active CRMManager class
- *
- ************************************************************************************************/
-pub static mut TheRandomMissionManager: *mut CRMManager = core::ptr::null_mut();
