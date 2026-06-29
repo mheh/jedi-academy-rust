@@ -14,7 +14,7 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 ## src/code/ (108 files)
 
 - [x] `src/code/renderer/tr_backend.rs` (24)
-- [ ] `src/code/qcommon/cm_load_xbox.rs` (21)
+- [x] `src/code/qcommon/cm_load_xbox.rs` (21)
 - [x] `src/code/renderer/tr_terrain.rs` (16)
 - [x] `src/code/game/g_items.rs` (13)
 - [x] `src/code/server/server_h.rs` (12)
