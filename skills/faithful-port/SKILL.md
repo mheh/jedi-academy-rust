@@ -11,9 +11,8 @@ Port unported `oracle/` files to Rust **faithfully** with **one capable agent pe
 **import-trust** model: the agent never defines or stubs external types — it `use`-imports them on faith
 from the `#include` paths and translates the source body exactly. No build, no test.
 
-This supersedes the stub-based guidance in `skills/blind-port-orchestrator/SKILL.md` and the
-"unresolved dependency stubs" line in `PORTING_STYLE.md`. Where they say "stub", this skill says
-"trust the import".
+This replaces the earlier stub-based blind-port skills (now removed). `PORTING_STYLE.md` has been
+reconciled to the import-trust rule: where older guidance said "stub", the rule is now "trust the import".
 
 ## Why this exists
 
