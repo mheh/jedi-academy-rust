@@ -3,179 +3,144 @@
 // #define RM_OBJECTIVE_H_INC
 
 // #ifdef DEBUG_LINKING
-//  #pragma message("...including RM_Objective.h")
+// 	#pragma message("...including RM_Objective.h")
 // #endif
 
-#![allow(non_snake_case)]
+#![allow(non_snake_case, non_camel_case_types)]
 
-use core::ffi::c_int;
+// Port note: oracle header has no explicit #include directive; CGPGroup originates from
+// genericparser2.h (oracle/code/game/genericparser2.h) per triage — glob-imported here.
+use crate::code::game::genericparser2_h::*;
+use core::ffi::{c_char, c_int};
+use std::collections::LinkedList;
+use std::ffi::{CStr, CString};
 
-// Forward declaration: C++ std::string (opaque - exact layout is implementation-dependent)
-// We represent it as a zero-sized type since we cannot directly use it across FFI
-pub struct string {
-    _opaque: [u8; 0],
-}
-
-// Forward declaration: CGPGroup (external type)
-pub struct CGPGroup {
-    _opaque: [u8; 0],
-}
-
-// C++ std::list<CRMObjective *>::iterator (opaque type)
-pub type rmObjectiveIter_t = core::ffi::c_void;
-
-// C++ std::list<CRMObjective *> (opaque type)
-pub type rmObjectiveList_t = core::ffi::c_void;
-
-// class CRMObjective
-#[repr(C)]
 pub struct CRMObjective {
     // protected:
-
-    // Is objective completed?
-    mCompleted: bool,
-    // set to false if the objective requires another objective to be met first
-    mActive: bool,
-    // sequence in which objectives need to be completed
-    mPriority: c_int,
-    // objective index in ui
-    mOrderIndex: c_int,
-    // sound for when objective is finished
-    mCompleteSoundID: c_int,
-    // message outputed when objective is completed
-    mMessage: string,
-    // description of objective
-    mDescription: string,
-    // more info for objective
-    mInfo: string,
-    // name of objective
-    mName: string,
-    // trigger associated with objective
-    mTrigger: string,
+    pub(crate) mCompleted: bool,        // Is objective completed?
+    pub(crate) mActive: bool,           // set to false if the objective requires another objective to be met first
+    pub(crate) mPriority: c_int,        // sequence in which objectives need to be completed
+    pub(crate) mOrderIndex: c_int,      // objective index in ui
+    pub(crate) mCompleteSoundID: c_int, // sound for when objective is finished
+    pub(crate) mMessage: CString,       // message outputed when objective is completed
+    pub(crate) mDescription: CString,   // description of objective
+    pub(crate) mInfo: CString,          // more info for objective
+    pub(crate) mName: CString,          // name of objective
+    pub(crate) mTrigger: CString,       // trigger associated with objective
 }
 
 impl CRMObjective {
     // public:
 
-    // Constructor: CRMObjective(CGPGroup *group);
-    // (Constructor implementation would be in C++ file)
+    // CRMObjective(CGPGroup *group);
+    // ~CRMObjective(void) {}
 
-    // Destructor: ~CRMObjective(void) {}
-    // (Implemented as no-op in original)
+    // bool			Link			(void);
+    // (declared here; defined in RM_Objective.cpp)
 
-    // bool Link(void);
-    pub fn Link(&mut self) -> bool {
-        unimplemented!("Link method declaration from RM_Objective.h")
-    }
-
-    // bool IsCompleted(void) const { return mCompleted; }
+    // bool			IsCompleted		(void) const { return mCompleted; }
     pub fn IsCompleted(&self) -> bool {
         self.mCompleted
     }
 
-    // bool IsActive(void) const { return mActive; }
+    // bool			IsActive		(void) const { return mActive; }
     pub fn IsActive(&self) -> bool {
         self.mActive
     }
 
-    // void Activate(void) { mActive = true; }
+    // void			Activate		(void)		 { mActive = true; }
     pub fn Activate(&mut self) {
         self.mActive = true;
     }
 
-    // void Complete(bool comp) { mCompleted = comp; }
+    // void			Complete		(bool comp)  { mCompleted = comp;}
     pub fn Complete(&mut self, comp: bool) {
         self.mCompleted = comp;
     }
 
     // Get methods
-
-    // int GetPriority(void){return mPriority;}
-    pub fn GetPriority(&self) -> c_int {
+    // int				GetPriority(void){return mPriority;}
+    pub fn GetPriority(&mut self) -> c_int {
         self.mPriority
     }
 
-    // int GetOrderIndex(void) { return mOrderIndex; }
-    pub fn GetOrderIndex(&self) -> c_int {
+    // int				GetOrderIndex(void) { return mOrderIndex; }
+    pub fn GetOrderIndex(&mut self) -> c_int {
         self.mOrderIndex
     }
 
-    // const char* GetMessage(void) { return mMessage.c_str(); }
-    pub fn GetMessage(&self) -> *const core::ffi::c_char {
-        // Cannot directly call c_str() on opaque string member
-        core::ptr::null()
+    // const char*		GetMessage(void) { return mMessage.c_str(); }
+    pub fn GetMessage(&mut self) -> *const c_char {
+        self.mMessage.as_ptr()
     }
 
-    // const char* GetDescription(void) { return mDescription.c_str(); }
-    pub fn GetDescription(&self) -> *const core::ffi::c_char {
-        // Cannot directly call c_str() on opaque string member
-        core::ptr::null()
+    // const char*		GetDescription(void) { return mDescription.c_str(); }
+    pub fn GetDescription(&mut self) -> *const c_char {
+        self.mDescription.as_ptr()
     }
 
-    // const char* GetInfo(void) { return mInfo.c_str(); }
-    pub fn GetInfo(&self) -> *const core::ffi::c_char {
-        // Cannot directly call c_str() on opaque string member
-        core::ptr::null()
+    // const char*		GetInfo(void) { return mInfo.c_str(); }
+    pub fn GetInfo(&mut self) -> *const c_char {
+        self.mInfo.as_ptr()
     }
 
-    // const char* GetName(void) { return mName.c_str(); }
-    pub fn GetName(&self) -> *const core::ffi::c_char {
-        // Cannot directly call c_str() on opaque string member
-        core::ptr::null()
+    // const char*		GetName(void) { return mName.c_str(); }
+    pub fn GetName(&mut self) -> *const c_char {
+        self.mName.as_ptr()
     }
 
-    // const char* GetTrigger(void) { return mTrigger.c_str(); }
-    pub fn GetTrigger(&self) -> *const core::ffi::c_char {
-        // Cannot directly call c_str() on opaque string member
-        core::ptr::null()
+    // const char*		GetTrigger(void) { return mTrigger.c_str(); }
+    pub fn GetTrigger(&mut self) -> *const c_char {
+        self.mTrigger.as_ptr()
     }
 
-    // int CompleteSoundID() { return mCompleteSoundID; };
-    pub fn CompleteSoundID(&self) -> c_int {
+    // int				CompleteSoundID() { return mCompleteSoundID; };
+    pub fn CompleteSoundID(&mut self) -> c_int {
         self.mCompleteSoundID
     }
 
     // Set methods
-
-    // void SetPriority(int priority){mPriority = priority;}
+    // void			SetPriority(int priority){mPriority = priority;}
     pub fn SetPriority(&mut self, priority: c_int) {
         self.mPriority = priority;
     }
 
-    // void SetOrderIndex(int order) { mOrderIndex = order; }
+    // void			SetOrderIndex(int order) { mOrderIndex = order; }
     pub fn SetOrderIndex(&mut self, order: c_int) {
         self.mOrderIndex = order;
     }
 
-    // void SetMessage(const char* msg) { mMessage = msg; }
-    pub fn SetMessage(&mut self, msg: *const core::ffi::c_char) {
-        // Cannot directly assign C string to opaque string member
+    // void			SetMessage(const char* msg) { mMessage = msg; }
+    pub unsafe fn SetMessage(&mut self, msg: *const c_char) {
+        self.mMessage = CStr::from_ptr(msg).to_owned();
     }
 
-    // void SetDescription(const char* desc) { mDescription = desc; }
-    pub fn SetDescription(&mut self, desc: *const core::ffi::c_char) {
-        // Cannot directly assign C string to opaque string member
+    // void			SetDescription(const char* desc) { mDescription = desc; }
+    pub unsafe fn SetDescription(&mut self, desc: *const c_char) {
+        self.mDescription = CStr::from_ptr(desc).to_owned();
     }
 
-    // void SetInfo(const char* info) { mInfo = info; }
-    pub fn SetInfo(&mut self, info: *const core::ffi::c_char) {
-        // Cannot directly assign C string to opaque string member
+    // void			SetInfo(const char* info) { mInfo = info; }
+    pub unsafe fn SetInfo(&mut self, info: *const c_char) {
+        self.mInfo = CStr::from_ptr(info).to_owned();
     }
 
-    // void SetName(const char* name) { mName = name; }
-    pub fn SetName(&mut self, name: *const core::ffi::c_char) {
-        // Cannot directly assign C string to opaque string member
+    // void			SetName(const char* name) { mName = name; }
+    pub unsafe fn SetName(&mut self, name: *const c_char) {
+        self.mName = CStr::from_ptr(name).to_owned();
     }
 
-    // void SetTrigger(const char* name) { mTrigger = name; }
-    pub fn SetTrigger(&mut self, name: *const core::ffi::c_char) {
-        // Cannot directly assign C string to opaque string member
+    // void			SetTrigger(const char* name) { mTrigger = name; }
+    pub unsafe fn SetTrigger(&mut self, name: *const c_char) {
+        self.mTrigger = CStr::from_ptr(name).to_owned();
     }
 
     // private:
 
-    // CTriggerAriocheObjective* FindRandomTrigger();
-    // (Commented out in original)
+    //	CTriggerAriocheObjective*		FindRandomTrigger		( );
 }
+
+pub type rmObjectiveIter_t = *mut CRMObjective;
+pub type rmObjectiveList_t = LinkedList<*mut CRMObjective>;
 
 // #endif
