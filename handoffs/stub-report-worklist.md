@@ -3,8 +3,10 @@
 Files that still contain blind-port `[u8; 0]` opaque stubs and need re-porting
 under the **faithful-port** import-trust skill (`skills/faithful-port/`).
 
-- **179 files**, **697 total stubs**, all introduced by single-file blind-port
+- Originally **179 files / 697 stubs**, all introduced by single-file blind-port
   commits dated 2026-06-28 (pre-skill, before `08c3607`).
+- As of 2026-06-29: **15 done**, **164 files / 503 stubs remaining** (worklist
+  verified in sync with `git grep -c '[u8; 0]'`, no drift).
 - Invariant when done (per `SKILL.md`): each file has **zero** `[u8; 0]`
   placeholders and **zero** fabricated `#[repr(C)]` external types.
 - Sorted worst-first (stub count in parentheses). Check off as each file is re-ported.
@@ -26,21 +28,21 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [x] `src/code/game/AI_Stormtrooper.rs` (10)
 - [ ] `src/code/game/bg_public_h.rs` (9)
 - [ ] `src/code/jpeg-6/jcapimin.rs` (8)
-- [ ] `src/code/RMG/RM_Terrain.rs` (7)
+- [x] `src/code/RMG/RM_Terrain.rs` (7)
 - [ ] `src/code/renderer/tr_scene.rs` (7)
 - [ ] `src/code/jpeg-6/jdapistd.rs` (7)
 - [ ] `src/code/ff/ff_ffset.rs` (7)
 - [ ] `src/code/cgame/cg_effects.rs` (7)
 - [ ] `src/code/win32/glw_win_dx8_h.rs` (6)
 - [ ] `src/code/ui/ui_local_h.rs` (6)
-- [ ] `src/code/RMG/RM_InstanceFile.rs` (6)
-- [ ] `src/code/RMG/RM_Instance_Group.rs` (6)
+- [x] `src/code/RMG/RM_InstanceFile.rs` (6)
+- [x] `src/code/RMG/RM_Instance_Group.rs` (6)
 - [ ] `src/code/game/b_local_h.rs` (6)
 - [ ] `src/code/game/AI_Seeker.rs` (6)
 - [ ] `src/code/win32/win_qal_xbox.rs` (5)
-- [ ] `src/code/RMG/RM_Path.rs` (5)
-- [ ] `src/code/RMG/RM_Manager.rs` (5)
-- [ ] `src/code/RMG/RM_Instance.rs` (5)
+- [x] `src/code/RMG/RM_Path.rs` (5)
+- [x] `src/code/RMG/RM_Manager.rs` (5)
+- [x] `src/code/RMG/RM_Instance.rs` (5)
 - [ ] `src/code/jpeg-6/jdmainct.rs` (5)
 - [ ] `src/code/game/AI_Sniper.rs` (5)
 - [ ] `src/code/game/AI_RocketTrooper.rs` (5)
@@ -67,8 +69,8 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [ ] `src/code/cgame/cg_media_h.rs` (3)
 - [ ] `src/code/cgame/cg_info.rs` (3)
 - [ ] `src/code/win32/win_stencilshadow.rs` (2)
-- [ ] `src/code/RMG/RM_Objective.rs` (2)
-- [ ] `src/code/RMG/RM_Objective_h.rs` (2)
+- [x] `src/code/RMG/RM_Objective.rs` (2)
+- [x] `src/code/RMG/RM_Objective_h.rs` (2)
 - [ ] `src/code/renderer/tr_public_h.rs` (2)
 - [ ] `src/code/qcommon/msg.rs` (2)
 - [ ] `src/code/qcommon/cm_trace.rs` (2)
