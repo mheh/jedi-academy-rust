@@ -55,6 +55,8 @@ SECTION 3 — faithfulness:
   comment with //!, ///, /*! or /** ; if the text begins with '!' or '*', add a space after the // or /*.
 - A C identifier named `self` becomes `self_` (NEVER r#self — `self` is an illegal raw identifier). Same for any
   other reserved word that cannot be a raw identifier.
+- A C file-local `static` FUNCTION becomes a plain `unsafe fn` (no `pub`, NO `static` keyword — `static fn` is
+  not valid Rust). Only `static` DATA (globals) becomes a Rust `static`.
 - If the same external symbol is declared more than once in the C source, declare it once in Rust (duplicate
   `extern` items do not parse). Note such dedups in your report.
 - Produce syntactically VALID Rust: `let mut` for reassigned locals, correct char/string escapes, no partial
