@@ -12,11 +12,12 @@
 - Access `static mut` through raw pointers with `addr_of!`/`addr_of_mut!`, not `&` or `&mut`.
 - Keep dangerous C behavior when it affects parity: raw pointers, null checks, aliasing patterns, wrapping arithmetic, and unchecked indexing.
 - Translate C pointers mechanically as raw pointers; only introduce references when aliasing and lifetime are genuinely Rust-safe.
+- Do not fabricate or stub types, functions, globals, or macros that are defined in other files. Trust them to exist and import them: translate each `#include "dir/foo.h"` into a glob `use crate::<mirrored-dir>::foo_h::*;`, mirroring the source tree under `src/` (`/` becomes `::`, `.h` becomes `_h`). Do not open or verify those modules; translate exactly what the source file contains. No opaque `[u8; 0]` placeholders. (See `skills/faithful-port`.)
 - Translate C macros into `const`, `type`, or small `#[inline]` functions while preserving C arithmetic and cast order.
 - Preserve C integer/float promotion behavior explicitly when it affects results.
 - Preserve original source comments by default, including Raven/id comments, trailing comments, block comments, TODOs, warnings, table notes, and odd historical remarks. Translate comment syntax only as needed for Rust; do not summarize, omit, or rewrite original comments unless they are purely preprocessor boilerplate with no source meaning.
 - Keep original comments visually near the translated symbol, field, branch, or constant they described. If Rust syntax forces a comment to move, keep the comment text intact and as close as practical.
-- Add new Rust comments only to document porting deviations, safety invariants, or unresolved dependency stubs; keep those porting comments separate from preserved original comments.
+- Add new Rust comments only to document porting deviations, safety invariants, or trusted-import assumptions; keep those porting comments separate from preserved original comments.
 - Mark `unsafe` at the operation boundary and use safety comments for non-obvious pointer/static assumptions.
 - Keep original conditional compilation intent, mapping C defines like `Q3_VM` to Cargo features such as `vm`.
 - Declare libc/engine functions with `extern "C"` when the original called outside the game module.
