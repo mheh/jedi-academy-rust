@@ -5,9 +5,13 @@ under the **faithful-port** import-trust skill (`skills/faithful-port/`).
 
 - Originally **179 files / 697 stubs**, all introduced by single-file blind-port
   commits dated 2026-06-28 (pre-skill, before `08c3607`).
-- As of 2026-06-30: **88 done**, **91 files / 202 stubs remaining** (worklist
+- As of 2026-06-30: **93 done**, **86 files / 177 stubs remaining** (worklist
   verified in sync with `git grep -c '[u8; 0]'`, no drift). jpeg-6 and qcommon
   subsystems fully cleared.
+- `src/code/win32/win_qal_xbox.rs` (5 stubs) is DEFERRED by owner decision
+  (2026-06-30): its remaining stubs are Xbox system types (`<dsound.h>`,
+  `<windows.h>`, `<d3d8.h>`) with no oracle/crate mirror. Skipped pending a
+  deliberate Windows-bindings strategy; left unchecked on the list below.
 - D3D8/D3DX8 `<d3d8.h>`/`<d3dx8.h>` system types (no oracle header, no crate
   mirror) are trust-imported from a future `crate::code::win32::d3d8_h` bindings
   module (owner decision 2026-06-30). Still-pending siblings using the same
@@ -50,9 +54,9 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [x] `src/code/RMG/RM_Manager.rs` (5)
 - [x] `src/code/RMG/RM_Instance.rs` (5)
 - [x] `src/code/jpeg-6/jdmainct.rs` (5)
-- [ ] `src/code/game/AI_Sniper.rs` (5)
-- [ ] `src/code/game/AI_RocketTrooper.rs` (5)
-- [ ] `src/code/game/AI_Droid.rs` (5)
+- [x] `src/code/game/AI_Sniper.rs` (5)
+- [x] `src/code/game/AI_RocketTrooper.rs` (5)
+- [x] `src/code/game/AI_Droid.rs` (5)
 - [ ] `src/code/renderer/tr_shadows.rs` (4)
 - [ ] `src/code/renderer/tr_mesh.rs` (4)
 - [x] `src/code/qcommon/cm_local_h.rs` (4)
@@ -154,8 +158,8 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [x] `src/codemp/jpeg-6/jdmarker.rs` (5)
 - [x] `src/codemp/jpeg-6/jdinput.rs` (5)
 - [x] `src/codemp/jpeg-6/jcsample.rs` (5)
-- [ ] `src/codemp/icarus/GameInterface_h.rs` (5)
-- [ ] `src/codemp/game/g_strap.rs` (5)
+- [x] `src/codemp/icarus/GameInterface_h.rs` (5)
+- [x] `src/codemp/game/g_strap.rs` (5)
 - [ ] `src/codemp/win32/glw_win_dx8_h.rs` (4)
 - [ ] `src/codemp/unix/unix_main.rs` (4)
 - [x] `src/codemp/RMG/RM_Manager_h.rs` (4)
