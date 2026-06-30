@@ -18,141 +18,14 @@
 
 // leave this as first line for PCH reasons...
 //
-// #include "../server/exe_headers.h"
+use crate::code::server::exe_headers_h::*;
+use crate::code::jpeg_6::jinclude_h::*;
+use crate::code::jpeg_6::jpeglib_h::*;
+// JPEG_INTERNALS was defined before jpeglib.h, causing jpegint.h to be pulled in;
+// import it explicitly here.
+use crate::code::jpeg_6::jpegint_h::*;
 
-#![allow(non_snake_case)]
-
-use core::ffi::{c_int, c_void};
-use core::ptr::{addr_of_mut, null_mut};
-
-// Local stubs for JPEG library types and constants.
-// Full definitions would come from jpeglib.h and jinclude.h.
-// These are declared to maintain structural coherence with the C code.
-
-#[repr(C)]
-pub struct jpeg_error_mgr {
-    pub reset_error_mgr: Option<unsafe extern "C" fn(*mut c_void)>,
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct jpeg_progress_mgr {
-    pub progress_monitor: Option<unsafe extern "C" fn(*mut c_void)>,
-    pub pass_counter: c_int,
-    pub pass_limit: c_int,
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct jpeg_memory_mgr {
-    pub alloc_small: Option<unsafe extern "C" fn(*mut c_void, c_int, usize) -> *mut c_void>,
-    pub free_pool: Option<unsafe extern "C" fn(*mut c_void, c_int)>,
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct jpeg_destination_mgr {
-    pub init_destination: Option<unsafe extern "C" fn(*mut jpeg_compress_struct)>,
-    pub term_destination: Option<unsafe extern "C" fn(*mut jpeg_compress_struct)>,
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct jpeg_marker_writer {
-    pub write_any_marker: Option<unsafe extern "C" fn(*mut jpeg_compress_struct, c_int, *const u8, u32)>,
-    pub write_file_trailer: Option<unsafe extern "C" fn(*mut jpeg_compress_struct)>,
-    pub write_tables_only: Option<unsafe extern "C" fn(*mut jpeg_compress_struct)>,
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct jpeg_c_master_controller {
-    pub finish_pass: Option<unsafe extern "C" fn(*mut jpeg_compress_struct)>,
-    pub prepare_for_pass: Option<unsafe extern "C" fn(*mut jpeg_compress_struct)>,
-    pub is_last_pass: c_int,
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct jpeg_c_coef_controller {
-    pub compress_data: Option<unsafe extern "C" fn(*mut jpeg_compress_struct, *mut u8) -> c_int>,
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct JQUANT_TBL {
-    pub quantval: [u16; 64],
-    pub sent_table: c_int,
-}
-
-#[repr(C)]
-pub struct JHUFF_TBL {
-    pub bits: [u8; 17],
-    pub huffval: [u8; 256],
-    pub sent_table: c_int,
-}
-
-#[repr(C)]
-pub struct jpeg_compress_struct {
-    pub err: *mut jpeg_error_mgr,
-    pub mem: *mut jpeg_memory_mgr,
-    pub progress: *mut jpeg_progress_mgr,
-    pub is_decompressor: c_int,
-    pub global_state: c_int,
-    pub next_scanline: u32,
-    pub image_height: u32,
-    pub total_iMCU_rows: u32,
-    pub dest: *mut jpeg_destination_mgr,
-    pub comp_info: *mut c_void,
-    pub quant_tbl_ptrs: [*mut JQUANT_TBL; 4],
-    pub dc_huff_tbl_ptrs: [*mut JHUFF_TBL; 4],
-    pub ac_huff_tbl_ptrs: [*mut JHUFF_TBL; 4],
-    pub input_gamma: f64,
-    pub marker: *mut jpeg_marker_writer,
-    pub master: *mut jpeg_c_master_controller,
-    pub coef: *mut jpeg_c_coef_controller,
-    _opaque: [u8; 0],
-}
-
-pub type j_compress_ptr = *mut jpeg_compress_struct;
-
-// Constants
-const NUM_QUANT_TBLS: usize = 4;
-const NUM_HUFF_TBLS: usize = 4;
-const FALSE: c_int = 0;
-const TRUE: c_int = 1;
-const CSTATE_START: c_int = 100;
-const CSTATE_SCANNING: c_int = 101;
-const CSTATE_RAW_OK: c_int = 102;
-const CSTATE_WRCOEFS: c_int = 103;
-
-// Error codes (stubs)
-const JERR_TOO_LITTLE_DATA: c_int = 51;
-const JERR_BAD_STATE: c_int = 203;
-const JERR_CANT_SUSPEND: c_int = 52;
-
-// Extern JPEG functions
-extern "C" {
-    fn jinit_memory_mgr(cinfo: *mut c_void);
-    fn jpeg_destroy(cinfo: *mut c_void);
-    fn jpeg_abort(cinfo: *mut c_void);
-    fn jinit_marker_writer(cinfo: *mut jpeg_compress_struct);
-
-    // Error handling stubs
-    fn ERREXIT(cinfo: *mut c_void, code: c_int);
-    fn ERREXIT1(cinfo: *mut c_void, code: c_int, param: c_int);
-}
-
-// Helper: MEMZERO - zero out memory (matching jinclude.h)
-unsafe fn MEMZERO(target: *mut c_void, size: usize) {
-    core::ptr::write_bytes(target as *mut u8, 0, size);
-}
-
-// Helper: SIZEOF for jpeg_compress_struct
-#[inline]
-fn SIZEOF_JPEG_COMPRESS_STRUCT() -> usize {
-    core::mem::size_of::<jpeg_compress_struct>()
-}
+use core::ffi::{c_int, c_uint, c_long};
 
 /*
  * Initialization of a JPEG compression object.
@@ -166,35 +39,35 @@ pub unsafe fn jpeg_create_compress(cinfo: j_compress_ptr) {
      * But error manager pointer is already there, so save and restore it.
      */
     {
-        let err = (*cinfo).err;
-        MEMZERO(cinfo as *mut c_void, SIZEOF_JPEG_COMPRESS_STRUCT());
+        let err: *mut jpeg_error_mgr = (*cinfo).err;
+        MEMZERO!(cinfo, SIZEOF!(jpeg_compress_struct));
         (*cinfo).err = err;
     }
     (*cinfo).is_decompressor = FALSE;
 
     /* Initialize a memory manager instance for this object */
-    jinit_memory_mgr(cinfo as *mut c_void);
+    jinit_memory_mgr(cinfo as j_common_ptr);
 
     /* Zero out pointers to permanent structures. */
-    (*cinfo).progress = null_mut();
-    (*cinfo).dest = null_mut();
+    (*cinfo).progress = core::ptr::null_mut();
+    (*cinfo).dest = core::ptr::null_mut();
 
-    (*cinfo).comp_info = null_mut();
+    (*cinfo).comp_info = core::ptr::null_mut();
 
     i = 0;
-    while i < NUM_QUANT_TBLS as c_int {
-        (*cinfo).quant_tbl_ptrs[i as usize] = null_mut();
+    while i < NUM_QUANT_TBLS {
+        (*cinfo).quant_tbl_ptrs[i as usize] = core::ptr::null_mut();
         i += 1;
     }
 
     i = 0;
-    while i < NUM_HUFF_TBLS as c_int {
-        (*cinfo).dc_huff_tbl_ptrs[i as usize] = null_mut();
-        (*cinfo).ac_huff_tbl_ptrs[i as usize] = null_mut();
+    while i < NUM_HUFF_TBLS {
+        (*cinfo).dc_huff_tbl_ptrs[i as usize] = core::ptr::null_mut();
+        (*cinfo).ac_huff_tbl_ptrs[i as usize] = core::ptr::null_mut();
         i += 1;
     }
 
-    (*cinfo).input_gamma = 1.0;	/* in case application forgets */
+    (*cinfo).input_gamma = 1.0f64; /* in case application forgets */
 
     /* OK, I'm ready */
     (*cinfo).global_state = CSTATE_START;
@@ -206,7 +79,7 @@ pub unsafe fn jpeg_create_compress(cinfo: j_compress_ptr) {
  */
 
 pub unsafe fn jpeg_destroy_compress(cinfo: j_compress_ptr) {
-    jpeg_destroy(cinfo as *mut c_void); /* use common routine */
+    jpeg_destroy(cinfo as j_common_ptr); /* use common routine */
 }
 
 
@@ -216,7 +89,7 @@ pub unsafe fn jpeg_destroy_compress(cinfo: j_compress_ptr) {
  */
 
 pub unsafe fn jpeg_abort_compress(cinfo: j_compress_ptr) {
-    jpeg_abort(cinfo as *mut c_void); /* use common routine */
+    jpeg_abort(cinfo as j_common_ptr); /* use common routine */
 }
 
 
@@ -232,13 +105,13 @@ pub unsafe fn jpeg_abort_compress(cinfo: j_compress_ptr) {
  * jcparam.o would be linked whether the application used it or not.
  */
 
-pub unsafe fn jpeg_suppress_tables(cinfo: j_compress_ptr, suppress: c_int) {
+pub unsafe fn jpeg_suppress_tables(cinfo: j_compress_ptr, suppress: boolean) {
     let mut i: c_int;
     let mut qtbl: *mut JQUANT_TBL;
     let mut htbl: *mut JHUFF_TBL;
 
     i = 0;
-    while i < NUM_QUANT_TBLS as c_int {
+    while i < NUM_QUANT_TBLS {
         qtbl = (*cinfo).quant_tbl_ptrs[i as usize];
         if !qtbl.is_null() {
             (*qtbl).sent_table = suppress;
@@ -247,7 +120,7 @@ pub unsafe fn jpeg_suppress_tables(cinfo: j_compress_ptr, suppress: c_int) {
     }
 
     i = 0;
-    while i < NUM_HUFF_TBLS as c_int {
+    while i < NUM_HUFF_TBLS {
         htbl = (*cinfo).dc_huff_tbl_ptrs[i as usize];
         if !htbl.is_null() {
             (*htbl).sent_table = suppress;
@@ -269,57 +142,43 @@ pub unsafe fn jpeg_suppress_tables(cinfo: j_compress_ptr, suppress: c_int) {
  */
 
 pub unsafe fn jpeg_finish_compress(cinfo: j_compress_ptr) {
-    let mut iMCU_row: u32;
+    let mut iMCU_row: JDIMENSION;
 
     if (*cinfo).global_state == CSTATE_SCANNING ||
-        (*cinfo).global_state == CSTATE_RAW_OK {
+       (*cinfo).global_state == CSTATE_RAW_OK {
         /* Terminate first pass */
         if (*cinfo).next_scanline < (*cinfo).image_height {
-            ERREXIT(cinfo as *mut c_void, JERR_TOO_LITTLE_DATA);
+            ERREXIT!(cinfo, JERR_TOO_LITTLE_DATA);
         }
-        if let Some(finish_pass) = (*(*cinfo).master).finish_pass {
-            finish_pass(cinfo);
-        }
+        (*(*cinfo).master).finish_pass.unwrap()(cinfo);
     } else if (*cinfo).global_state != CSTATE_WRCOEFS {
-        ERREXIT1(cinfo as *mut c_void, JERR_BAD_STATE, (*cinfo).global_state);
+        ERREXIT1!(cinfo, JERR_BAD_STATE, (*cinfo).global_state);
     }
     /* Perform any remaining passes */
-    while (*(*cinfo).master).is_last_pass == 0 {
-        if let Some(prepare_for_pass) = (*(*cinfo).master).prepare_for_pass {
-            prepare_for_pass(cinfo);
-        }
+    while (*(*cinfo).master).is_last_pass == FALSE {
+        (*(*cinfo).master).prepare_for_pass.unwrap()(cinfo);
         iMCU_row = 0;
         while iMCU_row < (*cinfo).total_iMCU_rows {
             if !(*cinfo).progress.is_null() {
-                (*(*cinfo).progress).pass_counter = iMCU_row as c_int;
-                (*(*cinfo).progress).pass_limit = (*cinfo).total_iMCU_rows as c_int;
-                if let Some(progress_monitor) = (*(*cinfo).progress).progress_monitor {
-                    progress_monitor(cinfo as *mut c_void);
-                }
+                (*(*cinfo).progress).pass_counter = iMCU_row as c_long;
+                (*(*cinfo).progress).pass_limit = (*cinfo).total_iMCU_rows as c_long;
+                (*(*cinfo).progress).progress_monitor.unwrap()(cinfo as j_common_ptr);
             }
             /* We bypass the main controller and invoke coef controller directly;
              * all work is being done from the coefficient buffer.
              */
-            if let Some(compress_data) = (*(*cinfo).coef).compress_data {
-                if compress_data(cinfo, null_mut()) == 0 {
-                    ERREXIT(cinfo as *mut c_void, JERR_CANT_SUSPEND);
-                }
+            if (*(*cinfo).coef).compress_data.unwrap()(cinfo, core::ptr::null_mut() as JSAMPIMAGE) == FALSE {
+                ERREXIT!(cinfo, JERR_CANT_SUSPEND);
             }
             iMCU_row += 1;
         }
-        if let Some(finish_pass) = (*(*cinfo).master).finish_pass {
-            finish_pass(cinfo);
-        }
+        (*(*cinfo).master).finish_pass.unwrap()(cinfo);
     }
     /* Write EOI, do final cleanup */
-    if let Some(write_file_trailer) = (*(*cinfo).marker).write_file_trailer {
-        write_file_trailer(cinfo);
-    }
-    if let Some(term_destination) = (*(*cinfo).dest).term_destination {
-        term_destination(cinfo);
-    }
+    (*(*cinfo).marker).write_file_trailer.unwrap()(cinfo);
+    (*(*cinfo).dest).term_destination.unwrap()(cinfo);
     /* We can use jpeg_abort to release memory and reset global_state */
-    jpeg_abort(cinfo as *mut c_void);
+    jpeg_abort(cinfo as j_common_ptr);
 }
 
 
@@ -331,17 +190,15 @@ pub unsafe fn jpeg_finish_compress(cinfo: j_compress_ptr) {
  */
 
 pub unsafe fn jpeg_write_marker(cinfo: j_compress_ptr, marker: c_int,
-                                dataptr: *const u8, datalen: u32) {
+                                dataptr: *const JOCTET, datalen: c_uint) {
     if (*cinfo).next_scanline != 0 ||
-        ((*cinfo).global_state != CSTATE_SCANNING &&
-         (*cinfo).global_state != CSTATE_RAW_OK &&
-         (*cinfo).global_state != CSTATE_WRCOEFS) {
-        ERREXIT1(cinfo as *mut c_void, JERR_BAD_STATE, (*cinfo).global_state);
+       ((*cinfo).global_state != CSTATE_SCANNING &&
+        (*cinfo).global_state != CSTATE_RAW_OK &&
+        (*cinfo).global_state != CSTATE_WRCOEFS) {
+        ERREXIT1!(cinfo, JERR_BAD_STATE, (*cinfo).global_state);
     }
 
-    if let Some(write_any_marker) = (*(*cinfo).marker).write_any_marker {
-        write_any_marker(cinfo, marker, dataptr, datalen);
-    }
+    (*(*cinfo).marker).write_any_marker.unwrap()(cinfo, marker, dataptr, datalen);
 }
 
 
@@ -368,26 +225,18 @@ pub unsafe fn jpeg_write_marker(cinfo: j_compress_ptr, marker: c_int,
 
 pub unsafe fn jpeg_write_tables(cinfo: j_compress_ptr) {
     if (*cinfo).global_state != CSTATE_START {
-        ERREXIT1(cinfo as *mut c_void, JERR_BAD_STATE, (*cinfo).global_state);
+        ERREXIT1!(cinfo, JERR_BAD_STATE, (*cinfo).global_state);
     }
 
     /* (Re)initialize error mgr and destination modules */
-    if let Some(reset_error_mgr) = (*(*cinfo).err).reset_error_mgr {
-        reset_error_mgr(cinfo as *mut c_void);
-    }
-    if let Some(init_destination) = (*(*cinfo).dest).init_destination {
-        init_destination(cinfo);
-    }
+    (*(*cinfo).err).reset_error_mgr.unwrap()(cinfo as j_common_ptr);
+    (*(*cinfo).dest).init_destination.unwrap()(cinfo);
     /* Initialize the marker writer ... bit of a crock to do it here. */
     jinit_marker_writer(cinfo);
     /* Write them tables! */
-    if let Some(write_tables_only) = (*(*cinfo).marker).write_tables_only {
-        write_tables_only(cinfo);
-    }
+    (*(*cinfo).marker).write_tables_only.unwrap()(cinfo);
     /* And clean up. */
-    if let Some(term_destination) = (*(*cinfo).dest).term_destination {
-        term_destination(cinfo);
-    }
+    (*(*cinfo).dest).term_destination.unwrap()(cinfo);
     /* We can use jpeg_abort to release memory. */
-    jpeg_abort(cinfo as *mut c_void);
+    jpeg_abort(cinfo as j_common_ptr);
 }
