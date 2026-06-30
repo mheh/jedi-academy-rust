@@ -7,6 +7,10 @@
 #![allow(dead_code)]
 
 use core::ffi::{c_int, c_char, c_void};
+use crate::codemp::cgame::cg_media_h::*;
+use crate::codemp::cgame::cg_local_h::*;
+use crate::codemp::game::q_shared_h::*;
+use crate::codemp::ui::ui_shared_h::*;
 
 // ============================================================================
 // Type definitions
@@ -54,73 +58,6 @@ const FONT_MEDIUM: c_int = 1;
 const ITEM_TEXTSTYLE_NORMAL: c_int = 0;
 const ITEM_TEXTSTYLE_SHADOWED: c_int = 1;
 const ITEM_TEXTSTYLE_BLINK: c_int = 2;
-
-// ============================================================================
-// Type stubs for structural coherence
-// ============================================================================
-
-#[repr(C)]
-pub struct cg_media_t {
-    pub whiteShader: qhandle_t,
-    pub charsetShader: qhandle_t,
-    pub backTileShader: qhandle_t,
-    pub numberShaders: [qhandle_t; 11],
-    pub smallnumberShaders: [qhandle_t; 11],
-    pub chunkyNumberShaders: [qhandle_t; 11],
-    // ... other fields
-    _rest: [u8; 0],
-}
-
-#[repr(C)]
-pub struct glconfig_t {
-    pub vidWidth: c_int,
-    pub vidHeight: c_int,
-    // ... other fields
-    _rest: [u8; 0],
-}
-
-#[repr(C)]
-pub struct refdef_t {
-    pub x: c_int,
-    pub y: c_int,
-    pub width: c_int,
-    pub height: c_int,
-    // ... other fields
-    _rest: [u8; 0],
-}
-
-#[repr(C)]
-pub struct playerState_t {
-    pub stats: [c_int; 16],
-    // ... other fields
-    _rest: [u8; 0],
-}
-
-#[repr(C)]
-pub struct snapshot_t {
-    pub ps: playerState_t,
-    // ... other fields
-    _rest: [u8; 0],
-}
-
-#[repr(C)]
-pub struct cgs_t {
-    pub screenXScale: f32,
-    pub screenYScale: f32,
-    pub media: cg_media_t,
-    pub glconfig: glconfig_t,
-    // ... other fields
-    _rest: [u8; 0],
-}
-
-#[repr(C)]
-pub struct cg_t {
-    pub time: c_int,
-    pub refdef: *mut refdef_t,
-    pub snap: *mut snapshot_t,
-    // ... other fields
-    _rest: [u8; 0],
-}
 
 // ============================================================================
 // External functions and globals
