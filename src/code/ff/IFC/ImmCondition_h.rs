@@ -34,88 +34,18 @@
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
 
-use core::ffi::{c_int, c_long, c_uint, c_char};
+use core::ffi::{c_int, c_char};
 
-// Type aliases for Windows/Immersion ABI compatibility
-pub type DWORD = c_uint;
-pub type LONG = c_long;
-pub type BOOL = c_int;
+use crate::code::ff::IFC::ImmBaseTypes_h::*;   // ImmBaseTypes.h
+use crate::code::ff::IFC::ImmEffect_h::*;       // ImmEffect.h  (DWORD, LONG, BOOL, POINT, GUID, CImmEffect, CImmDevice, LPDIEFFECT, IMM_EFFECT_* consts)
+use crate::code::ff::IFC::FeelitAPI_h::*;        // real leaf for FEELIT_CONDITION / GUID_Feelit_*
+
+// Windows stand-in (no crate mirror)
 pub type TCHAR = c_char;
-
-// Local stubs for unported types from ImmBaseTypes.h and ImmEffect.h
-#[repr(C)]
-pub struct GUID {
-    pub Data1: c_uint,
-    pub Data2: c_uint,
-    pub Data3: c_uint,
-    pub Data4: [c_char; 8],
-}
-
-#[repr(C)]
-pub struct POINT {
-    pub x: LONG,
-    pub y: LONG,
-}
-
-// Stub for IMM_CONDITION - defined in ImmBaseTypes.h
-#[repr(C)]
-pub struct IMM_CONDITION {
-    _data: [u8; 0], // Opaque struct from unported header
-}
-
-pub type LPCIMM_CONDITION = *const IMM_CONDITION;
-
-// Stub for CImmEffect base class
-#[repr(C)]
-pub struct CImmEffect {
-    _data: [u8; 0], // Opaque base class
-}
-
-// Stub for CImmDevice
-#[repr(C)]
-pub struct CImmDevice {
-    _data: [u8; 0], // Opaque device class
-}
-
-// Stub for LPDIEFFECT from dinput.h
-#[repr(C)]
-pub struct LPDIEFFECT {
-    _data: [u8; 0], // Opaque effect structure
-}
-
-// Stubbed constants from unported headers
-pub const IMM_EFFECTTYPE_CONDITION: DWORD = 1;
-pub const IMM_EFFECT_DONT_CHANGE: LONG = -1;
-pub const IMM_EFFECT_DONT_CHANGE_POINT: POINT = POINT { x: -1, y: -1 };
-pub const IMM_EFFECT_AXIS_BOTH: DWORD = 3;
-pub const IMM_EFFECT_DEFAULT_DIRECTION_X: LONG = 0;
-pub const IMM_EFFECT_DEFAULT_DIRECTION_Y: LONG = 0;
-pub const IMM_EFFECT_DEFAULT_ANGLE: LONG = 0;
-pub const IMM_EFFECT_MOUSE_POS_AT_START: POINT = POINT { x: 0, y: 0 };
+// Windows stand-in (no crate mirror)
 pub const INFINITE: DWORD = 0xFFFFFFFF;
 
-// Stubbed GUIDs from unported headers
-pub static GUID_Imm_Spring: GUID = GUID {
-    Data1: 0, Data2: 0, Data3: 0, Data4: [0; 8],
-};
-pub static GUID_Imm_DeviceSpring: GUID = GUID {
-    Data1: 0, Data2: 0, Data3: 0, Data4: [0; 8],
-};
-pub static GUID_Imm_Damper: GUID = GUID {
-    Data1: 0, Data2: 0, Data3: 0, Data4: [0; 8],
-};
-pub static GUID_Imm_Inertia: GUID = GUID {
-    Data1: 0, Data2: 0, Data3: 0, Data4: [0; 8],
-};
-pub static GUID_Imm_Friction: GUID = GUID {
-    Data1: 0, Data2: 0, Data3: 0, Data4: [0; 8],
-};
-pub static GUID_Imm_Texture: GUID = GUID {
-    Data1: 0, Data2: 0, Data3: 0, Data4: [0; 8],
-};
-pub static GUID_Imm_Grid: GUID = GUID {
-    Data1: 0, Data2: 0, Data3: 0, Data4: [0; 8],
-};
+pub type LPCIMM_CONDITION = *const IMM_CONDITION;
 
 //================================================================
 // Constants
