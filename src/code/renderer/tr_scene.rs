@@ -10,171 +10,9 @@ use core::ffi::{c_int, c_char};
 use core::mem;
 use core::ptr::{addr_of, addr_of_mut};
 
+use crate::code::server::exe_headers::*;
+use crate::code::renderer::tr_local_h::*;
 use super::tr_types_h::*;
-
-// Type aliases for types from tr_types_h
-pub type byte = u8;
-
-// Opaque type stubs for external structs
-#[repr(C)]
-pub struct trGlobals_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct shader_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct backEndData_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct backEndCommand_t {
-    pub used: c_int,
-}
-
-#[repr(C)]
-pub struct surfaceType_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct srfPoly_t {
-    pub surfaceType: c_int,
-    pub hShader: qhandle_t,
-    pub fogIndex: c_int,
-    pub numVerts: c_int,
-    pub verts: *mut polyVert_t,
-}
-
-#[repr(C)]
-pub struct drawSurf_t {
-    pub sort: c_int,
-    pub surface: *mut surfaceType_t,
-}
-
-#[repr(C)]
-pub struct dlight_t {
-    pub origin: vec3_t,
-    pub color: vec3_t,
-    pub radius: f32,
-    pub transformed: vec3_t,
-}
-
-#[repr(C)]
-pub struct trRefEntity_t {
-    pub e: refEntity_t,
-    pub axisLength: f32,
-    pub needDlights: qboolean,
-    pub lightingCalculated: qboolean,
-    pub lightDir: vec3_t,
-    pub ambientLight: vec3_t,
-    pub ambientLightInt: c_int,
-    pub directedLight: vec3_t,
-    pub dlightBits: c_int,
-}
-
-#[repr(C)]
-pub struct fog_t {
-    pub originalBrushNumber: c_int,
-    pub bounds: [vec3_t; 2],
-    pub colorInt: c_int,
-    pub tcScale: f32,
-    pub parms: fogParms_t,
-    pub hasSurface: qboolean,
-    pub surface: [f32; 4],
-}
-
-#[repr(C)]
-pub struct fogParms_t {
-    pub color: vec3_t,
-    pub depthForOpaque: f32,
-}
-
-#[repr(C)]
-pub struct world_t {
-    pub numfogs: c_int,
-    pub fogs: *mut fog_t,
-}
-
-#[repr(C)]
-pub struct viewParms_t {
-    pub or_origin: vec3_t,
-    pub or_axis: [vec3_t; 3],
-    pub viewOrigin: vec3_t,
-    pub modelMatrix: [f32; 16],
-    pub pvsOrigin: vec3_t,
-    pub isPortal: qboolean,
-    pub isMirror: qboolean,
-    pub frameSceneNum: c_int,
-    pub frameCount: c_int,
-    pub viewportX: c_int,
-    pub viewportY: c_int,
-    pub viewportWidth: c_int,
-    pub viewportHeight: c_int,
-    pub fovX: f32,
-    pub fovY: f32,
-    pub projectionMatrix: [f32; 16],
-    pub zFar: f32,
-}
-
-#[repr(C)]
-pub struct cvar_t {
-    pub integer: c_int,
-}
-
-#[repr(C)]
-pub struct image_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct model_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct skin_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct srfTerrain_t {
-    pub surfaceType: c_int,
-    pub landscape: *mut core::ffi::c_void,
-}
-
-#[repr(C)]
-pub struct trRefdef_t {
-    pub x: c_int,
-    pub y: c_int,
-    pub width: c_int,
-    pub height: c_int,
-    pub fov_x: f32,
-    pub fov_y: f32,
-    pub vieworg: vec3_t,
-    pub viewaxis: [vec3_t; 3],
-    pub time: c_int,
-    pub frametime: c_int,
-    pub rdflags: c_int,
-    pub areamask: [byte; 32],  // MAX_MAP_AREA_BYTES
-    pub areamaskModified: qboolean,
-    pub floatTime: f32,
-    pub num_entities: c_int,
-    pub entities: *mut trRefEntity_t,
-    #[cfg(not(feature = "VV_LIGHTING"))]
-    pub num_dlights: c_int,
-    #[cfg(not(feature = "VV_LIGHTING"))]
-    pub dlights: *mut dlight_t,
-    pub numPolys: c_int,
-    pub polys: *mut srfPoly_t,
-    pub numDrawSurfs: c_int,
-    pub drawSurfs: *mut drawSurf_t,
-    pub fogIndex: c_int,
-}
 
 extern "C" {
     pub static mut tr: core::ffi::c_void;  // Opaque tr global - we'll access it through offsets
@@ -198,14 +36,6 @@ extern "C" {
     pub static mut skyboxportal: c_int;
     pub static mut drawskyboxportal: c_int;
 
-    // Conditional compilation feature
-    #[cfg(feature = "VV_LIGHTING")]
-    pub static mut VVLightMan: VVLightManager;
-
-    #[cfg(feature = "VV_LIGHTING")]
-    pub struct VVLightManager {
-        pub num_dlights: c_int,
-    }
 }
 
 // Helper to access tr fields safely - tr is an opaque extern global
@@ -479,7 +309,7 @@ pub unsafe extern "C" fn RE_AddRefEntityToScene(ent: *const refEntity_t) {
         }
         return;
     }
-    if (*ent).reType as c_int < 0 || (*ent).reType as c_int >= 12 {
+    if ((*ent).reType as c_int) < 0 || (*ent).reType as c_int >= 12 {
         // RT_MAX_REF_ENTITY_TYPE = 12
         Com_Error(
             1,
