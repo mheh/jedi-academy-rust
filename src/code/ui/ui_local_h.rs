@@ -3,44 +3,11 @@
 
 use core::ffi::{c_int, c_char};
 
-// === Type definitions from included headers ===
-// Type stubs for structural coherence; full definitions in respective modules:
-pub type qboolean = c_int;
-pub type vec3_t = [f32; 3];
-pub type vec4_t = [f32; 4];
-pub type qhandle_t = c_int;
-pub type sfxHandle_t = c_int;
-pub type clipHandle_t = c_int;
-pub type ffHandle_t = c_int;
-
-// Opaque struct declarations for types from other modules
-#[repr(C)]
-pub struct glconfig_t {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-pub struct displayContextDef_t {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-pub struct itemDef_t {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-pub struct refEntity_t {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-pub struct refdef_t {
-    _unused: [u8; 0],
-}
-#[repr(C)]
-pub struct uiimport_t {
-    _unused: [u8; 0],
-}
-
-// Constants from included headers (should be imported from respective modules in full integration)
-pub const NUM_FORCE_POWERS: usize = 7;
+use crate::code::game::q_shared::*;
+use crate::code::renderer::tr_types_h::*;
+use crate::code::qcommon::qcommon_h::*;
+use crate::code::ui::ui_public_h::*;
+use crate::code::ui::ui_shared_h::*;
 
 // === ui_qmenu.c ===
 
