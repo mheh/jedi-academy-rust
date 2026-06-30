@@ -14,74 +14,36 @@
  * than 8 bits on your machine, you may need to do some tweaking.
  */
 
+#![allow(non_camel_case_types, dead_code, unused_variables, unused_imports)]
+
 // leave this as first line for PCH reasons...
 //
+use crate::code::server::exe_headers_h::*;
 
 /* this is not a core library module, so it doesn't define JPEG_INTERNALS */
+use crate::code::jpeg_6::jinclude_h::*;
+use crate::code::jpeg_6::jpeglib_h::*;
+use crate::code::jpeg_6::jerror_h::*;
 
-use core::ffi::{c_int, c_void};
-use core::ptr::{self, addr_of, addr_of_mut};
+use core::ffi::{c_long, c_uchar, c_void};
 
-// JPEG library external types - these are declared as opaque since the full
-// definitions are in the JPEG library headers (jinclude.h, jpeglib.h, jerror.h)
-#[repr(C)]
-pub struct j_decompress_struct {
-    _opaque: [u8; 0],
-}
-
-pub type j_decompress_ptr = *mut j_decompress_struct;
-pub type j_common_ptr = *mut j_decompress_struct;
-
-// JPEG type aliases
-pub type JOCTET = u8;
-pub type boolean = c_int;
-
-// JPEG library constants (from jpeglib.h)
-const JPOOL_PERMANENT: i32 = 0;
-
-// Macro replacement for SIZEOF - in C this was a compile-time macro
-#[inline]
-const fn SIZEOF<T>() -> usize {
-    core::mem::size_of::<T>()
-}
-
-// External JPEG library functions
 extern "C" {
-    pub fn jpeg_resync_to_restart(cinfo: j_decompress_ptr, desired: c_int) -> boolean;
-}
-
-// Stub for memcpy - use core::ptr::copy_nonoverlapping
-#[inline]
-unsafe fn memcpy(dst: *mut u8, src: *const u8, size: usize) {
-    core::ptr::copy_nonoverlapping(src, dst, size);
+    fn memcpy(dest: *mut c_void, src: *const c_void, n: usize) -> *mut c_void;
 }
 
 /* Expanded data source object for stdio input */
 
 #[repr(C)]
-pub struct my_source_mgr {
-    pub pub_: jpeg_source_mgr,	/* public fields */
-    pub infile: *mut u8,		/* source stream */
-    pub buffer: *mut JOCTET,		/* start of buffer */
-    pub start_of_file: boolean,	/* have we gotten any data yet? */
+struct my_source_mgr {
+    r#pub: jpeg_source_mgr, /* public fields */
+    infile: *mut c_uchar,   /* source stream */
+    buffer: *mut JOCTET,    /* start of buffer */
+    start_of_file: boolean, /* have we gotten any data yet? */
 }
 
-pub type my_src_ptr = *mut my_source_mgr;
+type my_src_ptr = *mut my_source_mgr;
 
-// We need to declare jpeg_source_mgr fields as they're used in the code
-#[repr(C)]
-pub struct jpeg_source_mgr {
-    pub init_source: Option<extern "C" fn(j_decompress_ptr) -> ()>,
-    pub fill_input_buffer: Option<extern "C" fn(j_decompress_ptr) -> boolean>,
-    pub skip_input_data: Option<extern "C" fn(j_decompress_ptr, c_int) -> ()>,
-    pub resync_to_restart: Option<extern "C" fn(j_decompress_ptr, c_int) -> boolean>,
-    pub term_source: Option<extern "C" fn(j_decompress_ptr) -> ()>,
-    pub bytes_in_buffer: usize,
-    pub next_input_byte: *const JOCTET,
-}
-
-#[allow(non_snake_case)]
-const INPUT_BUF_SIZE: usize = 4096;	/* choose an efficiently fread'able size */
+const INPUT_BUF_SIZE: usize = 4096; /* choose an efficiently fread'able size */
 
 
 /*
@@ -89,14 +51,18 @@ const INPUT_BUF_SIZE: usize = 4096;	/* choose an efficiently fread'able size */
  * before any data is actually read.
  */
 
+/* porting: METHODDEF expands to C `static`; these callbacks are defined as
+ * unsafe extern "C" fn (rather than plain unsafe fn) because they are assigned
+ * to C function pointer fields in jpeg_source_mgr and must carry C calling
+ * convention. */
 unsafe extern "C" fn init_source(cinfo: j_decompress_ptr) {
-    let src = (*cinfo).src as *mut my_source_mgr;
+    let src: my_src_ptr = (*cinfo).src as my_src_ptr;
 
     /* We reset the empty-input-file flag for each image,
      * but we don't clear the input buffer.
      * This is correct behavior for reading a series of images from one source.
      */
-    (*src).start_of_file = 1;	/* TRUE */
+    (*src).start_of_file = TRUE;
 }
 
 
@@ -134,17 +100,17 @@ unsafe extern "C" fn init_source(cinfo: j_decompress_ptr) {
  */
 
 unsafe extern "C" fn fill_input_buffer(cinfo: j_decompress_ptr) -> boolean {
-    let src = (*cinfo).src as *mut my_source_mgr;
+    let src: my_src_ptr = (*cinfo).src as my_src_ptr;
 
-    memcpy((*src).buffer, (*src).infile, INPUT_BUF_SIZE);
+    memcpy((*src).buffer as *mut c_void, (*src).infile as *const c_void, INPUT_BUF_SIZE);
 
     (*src).infile = (*src).infile.add(INPUT_BUF_SIZE);
 
-    (*(*cinfo).src).next_input_byte = (*src).buffer as *const JOCTET;
-    (*(*cinfo).src).bytes_in_buffer = INPUT_BUF_SIZE;
-    (*src).start_of_file = 0;	/* FALSE */
+    (*src).r#pub.next_input_byte = (*src).buffer;
+    (*src).r#pub.bytes_in_buffer = INPUT_BUF_SIZE;
+    (*src).start_of_file = FALSE;
 
-    1	/* TRUE */
+    TRUE
 }
 
 
@@ -160,24 +126,23 @@ unsafe extern "C" fn fill_input_buffer(cinfo: j_decompress_ptr) -> boolean {
  * buffer is the application writer's problem.
  */
 
-unsafe extern "C" fn skip_input_data(cinfo: j_decompress_ptr, mut num_bytes: c_int) {
-    let src = (*cinfo).src as *mut my_source_mgr;
+unsafe extern "C" fn skip_input_data(cinfo: j_decompress_ptr, mut num_bytes: c_long) {
+    let src: my_src_ptr = (*cinfo).src as my_src_ptr;
 
     /* Just a dumb implementation for now.  Could use fseek() except
      * it doesn't work on pipes.  Not clear that being smart is worth
      * any trouble anyway --- large skips are infrequent.
      */
     if num_bytes > 0 {
-        while num_bytes > (*(*cinfo).src).bytes_in_buffer as c_int {
-            num_bytes -= (*(*cinfo).src).bytes_in_buffer as c_int;
-            fill_input_buffer(cinfo);
+        while num_bytes > (*src).r#pub.bytes_in_buffer as c_long {
+            num_bytes -= (*src).r#pub.bytes_in_buffer as c_long;
+            let _ = fill_input_buffer(cinfo);
             /* note we assume that fill_input_buffer will never return FALSE,
              * so suspension need not be handled.
              */
         }
-        (*(*cinfo).src).next_input_byte = ((*(*cinfo).src).next_input_byte as *const u8)
-            .add(num_bytes as usize) as *const JOCTET;
-        (*(*cinfo).src).bytes_in_buffer -= num_bytes as usize;
+        (*src).r#pub.next_input_byte = (*src).r#pub.next_input_byte.add(num_bytes as usize);
+        (*src).r#pub.bytes_in_buffer -= num_bytes as usize;
     }
 }
 
@@ -211,8 +176,8 @@ unsafe extern "C" fn term_source(cinfo: j_decompress_ptr) {
  * for closing it after finishing decompression.
  */
 
-pub unsafe extern "C" fn jpeg_stdio_src(cinfo: j_decompress_ptr, infile: *mut u8) {
-    let mut src: my_src_ptr;
+pub unsafe fn jpeg_stdio_src(cinfo: j_decompress_ptr, infile: *mut c_uchar) {
+    let mut src: my_src_ptr = core::ptr::null_mut();
 
     /* The source object and input buffer are made permanent so that a series
      * of JPEG images can be read from the same file by calling jpeg_stdio_src
@@ -221,27 +186,27 @@ pub unsafe extern "C" fn jpeg_stdio_src(cinfo: j_decompress_ptr, infile: *mut u8
      * This makes it unsafe to use this manager and a different source
      * manager serially with the same JPEG object.  Caveat programmer.
      */
-    if (*cinfo).src.is_null() {	/* first time for this JPEG object? */
-        (*cinfo).src = (*(*cinfo).mem).alloc_small.unwrap()(
+    if (*cinfo).src.is_null() { /* first time for this JPEG object? */
+        (*cinfo).src = ((*(*cinfo).mem).alloc_small.unwrap())(
             cinfo as j_common_ptr,
             JPOOL_PERMANENT,
-            SIZEOF::<my_source_mgr>(),
+            core::mem::size_of::<my_source_mgr>(),
         ) as *mut jpeg_source_mgr;
-        src = (*cinfo).src as *mut my_source_mgr;
-        (*src).buffer = (*(*cinfo).mem).alloc_small.unwrap()(
+        src = (*cinfo).src as my_src_ptr;
+        (*src).buffer = ((*(*cinfo).mem).alloc_small.unwrap())(
             cinfo as j_common_ptr,
             JPOOL_PERMANENT,
-            INPUT_BUF_SIZE * SIZEOF::<JOCTET>(),
+            INPUT_BUF_SIZE * core::mem::size_of::<JOCTET>(),
         ) as *mut JOCTET;
     }
 
-    src = (*cinfo).src as *mut my_source_mgr;
-    (*(*cinfo).src).init_source = Some(init_source);
-    (*(*cinfo).src).fill_input_buffer = Some(fill_input_buffer);
-    (*(*cinfo).src).skip_input_data = Some(skip_input_data);
-    (*(*cinfo).src).resync_to_restart = Some(jpeg_resync_to_restart); /* use default method */
-    (*(*cinfo).src).term_source = Some(term_source);
+    src = (*cinfo).src as my_src_ptr;
+    (*src).r#pub.init_source = Some(init_source);
+    (*src).r#pub.fill_input_buffer = Some(fill_input_buffer);
+    (*src).r#pub.skip_input_data = Some(skip_input_data);
+    (*src).r#pub.resync_to_restart = Some(jpeg_resync_to_restart); /* use default method */
+    (*src).r#pub.term_source = Some(term_source);
     (*src).infile = infile;
-    (*(*cinfo).src).bytes_in_buffer = 0; /* forces fill_input_buffer on first read */
-    (*(*cinfo).src).next_input_byte = ptr::null(); /* until buffer loaded */
+    (*src).r#pub.bytes_in_buffer = 0; /* forces fill_input_buffer on first read */
+    (*src).r#pub.next_input_byte = core::ptr::null(); /* until buffer loaded */
 }
