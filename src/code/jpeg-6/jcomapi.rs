@@ -9,71 +9,16 @@
  * compression and decompression.
  */
 
-use core::ffi::{c_int, c_void};
+// leave this as first line for PCH reasons...
+//
+use crate::code::server::exe_headers_h::*;
 
-// Local stubs for JPEG library types and constants.
-// Full definitions would come from jpeglib.h and jinclude.h.
-// These are declared to maintain structural coherence with the C code.
+use crate::code::jpeg_6::jinclude_h::*;
+use crate::code::jpeg_6::jpeglib_h::*;
+use crate::code::jpeg_6::jpegint_h::*;
+use crate::code::jpeg_6::jmorecfg_h::*;
 
-pub type boolean = c_int;
-pub type UINT8 = u8;
-pub type UINT16 = u16;
-
-const DCTSIZE2: usize = 64;
-const JPOOL_NUMPOOLS: c_int = 2;
-const JPOOL_PERMANENT: c_int = 0;
-const CSTATE_START: c_int = 100;
-const DSTATE_START: c_int = 200;
-
-/// JQUANT_TBL - Quantization table
-#[repr(C)]
-pub struct JQUANT_TBL {
-	pub quantval: [UINT16; DCTSIZE2],
-	/* quantization step for each coefficient */
-	pub sent_table: boolean,
-	/* TRUE when table has been output */
-}
-
-/// JHUFF_TBL - Huffman coding table
-#[repr(C)]
-pub struct JHUFF_TBL {
-	pub bits: [UINT8; 17],
-	/* bits[k] = # of symbols with codes of length k bits; bits[0] is unused */
-	pub huffval: [UINT8; 256],
-	/* The symbols, in order of incr code length */
-	pub sent_table: boolean,
-	/* TRUE when table has been output */
-}
-
-/// Opaque structures for JPEG structs
-#[repr(C)]
-pub struct jpeg_memory_mgr {
-	pub alloc_small: Option<unsafe extern "C" fn(*mut c_void, c_int, usize) -> *mut c_void>,
-	pub free_pool: Option<unsafe extern "C" fn(*mut c_void, c_int)>,
-	pub self_destruct: Option<unsafe extern "C" fn(*mut c_void)>,
-	// Other function pointers omitted for brevity in this stub
-}
-
-#[repr(C)]
-pub struct jpeg_error_mgr {
-	_opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct jpeg_progress_mgr {
-	_opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct jpeg_common_struct {
-	pub err: *mut jpeg_error_mgr,
-	pub mem: *mut jpeg_memory_mgr,
-	pub progress: *mut jpeg_progress_mgr,
-	pub is_decompressor: boolean,
-	pub global_state: c_int,
-}
-
-pub type j_common_ptr = *mut jpeg_common_struct;
+use core::ffi::c_int;
 
 /*
  * Abort processing of a JPEG compression or decompression operation,
@@ -87,21 +32,19 @@ pub type j_common_ptr = *mut jpeg_common_struct;
  */
 
 pub unsafe fn jpeg_abort(cinfo: j_common_ptr) {
-	let mut pool: c_int;
+    let mut pool: c_int;
 
-	/* Releasing pools in reverse order might help avoid fragmentation
-	 * with some (brain-damaged) malloc libraries.
-	 */
-	pool = JPOOL_NUMPOOLS - 1;
-	while pool > JPOOL_PERMANENT {
-		if let Some(free_pool_fn) = (*(*cinfo).mem).free_pool {
-			free_pool_fn(cinfo as *mut c_void, pool);
-		}
-		pool -= 1;
-	}
+    /* Releasing pools in reverse order might help avoid fragmentation
+     * with some (brain-damaged) malloc libraries.
+     */
+    pool = JPOOL_NUMPOOLS - 1;
+    while pool > JPOOL_PERMANENT {
+        ((*(*cinfo).mem).free_pool)(cinfo, pool);
+        pool -= 1;
+    }
 
-	/* Reset overall state for possible reuse of object */
-	(*cinfo).global_state = if (*cinfo).is_decompressor != 0 { DSTATE_START } else { CSTATE_START };
+    /* Reset overall state for possible reuse of object */
+    (*cinfo).global_state = if (*cinfo).is_decompressor != 0 { DSTATE_START } else { CSTATE_START };
 }
 
 
@@ -117,15 +60,13 @@ pub unsafe fn jpeg_abort(cinfo: j_common_ptr) {
  */
 
 pub unsafe fn jpeg_destroy(cinfo: j_common_ptr) {
-	/* We need only tell the memory manager to release everything. */
-	/* NB: mem pointer is NULL if memory mgr failed to initialize. */
-	if !(*cinfo).mem.is_null() {
-		if let Some(self_destruct_fn) = (*(*cinfo).mem).self_destruct {
-			self_destruct_fn(cinfo as *mut c_void);
-		}
-	}
-	(*cinfo).mem = core::ptr::null_mut();	/* be safe if jpeg_destroy is called twice */
-	(*cinfo).global_state = 0;	/* mark it destroyed */
+    /* We need only tell the memory manager to release everything. */
+    /* NB: mem pointer is NULL if memory mgr failed to initialize. */
+    if !(*cinfo).mem.is_null() {
+        ((*(*cinfo).mem).self_destruct)(cinfo);
+    }
+    (*cinfo).mem = core::ptr::null_mut();	/* be safe if jpeg_destroy is called twice */
+    (*cinfo).global_state = 0;	/* mark it destroyed */
 }
 
 
@@ -135,32 +76,18 @@ pub unsafe fn jpeg_destroy(cinfo: j_common_ptr) {
  */
 
 pub unsafe fn jpeg_alloc_quant_table(cinfo: j_common_ptr) -> *mut JQUANT_TBL {
-	let tbl: *mut JQUANT_TBL;
+    let tbl: *mut JQUANT_TBL;
 
-	if let Some(alloc_small_fn) = (*(*cinfo).mem).alloc_small {
-		tbl = alloc_small_fn(
-			cinfo as *mut c_void,
-			JPOOL_PERMANENT,
-			core::mem::size_of::<JQUANT_TBL>()
-		) as *mut JQUANT_TBL;
-		(*tbl).sent_table = 0;	/* make sure this is false in any new table */
-		return tbl;
-	}
-	core::ptr::null_mut()
+    tbl = ((*(*cinfo).mem).alloc_small)(cinfo, JPOOL_PERMANENT, core::mem::size_of::<JQUANT_TBL>()) as *mut JQUANT_TBL;
+    (*tbl).sent_table = FALSE;	/* make sure this is false in any new table */
+    return tbl;
 }
 
 
 pub unsafe fn jpeg_alloc_huff_table(cinfo: j_common_ptr) -> *mut JHUFF_TBL {
-	let tbl: *mut JHUFF_TBL;
+    let tbl: *mut JHUFF_TBL;
 
-	if let Some(alloc_small_fn) = (*(*cinfo).mem).alloc_small {
-		tbl = alloc_small_fn(
-			cinfo as *mut c_void,
-			JPOOL_PERMANENT,
-			core::mem::size_of::<JHUFF_TBL>()
-		) as *mut JHUFF_TBL;
-		(*tbl).sent_table = 0;	/* make sure this is false in any new table */
-		return tbl;
-	}
-	core::ptr::null_mut()
+    tbl = ((*(*cinfo).mem).alloc_small)(cinfo, JPOOL_PERMANENT, core::mem::size_of::<JHUFF_TBL>()) as *mut JHUFF_TBL;
+    (*tbl).sent_table = FALSE;	/* make sure this is false in any new table */
+    return tbl;
 }
