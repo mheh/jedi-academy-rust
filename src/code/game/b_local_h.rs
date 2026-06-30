@@ -5,49 +5,12 @@
 
 use core::ffi::{c_int, c_char, c_void};
 
-// Includes from original:
 // #include "g_local.h"
+use crate::code::game::g_local_h::*;
 // #include "say.h"
+use crate::code::game::say_h::*;
 // #include "AI.h"
-
-// Forward declarations for types defined in included headers
-// These types are opaque to this translation but needed for function signatures
-#[repr(C)]
-pub struct gentity_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct gclient_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct gNPC_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct usercmd_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct cvar_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct trace_t {
-    _opaque: [u8; 0],
-}
-
-pub type vec3_t = [f32; 3];
-pub type visibility_t = c_int;
-pub type spot_t = c_int;
-pub type team_t = c_int;
-pub type bState_t = c_int;
-pub type qboolean = c_int;
+use crate::code::game::ai_h::*;
 
 const AI_TIMERS: c_int = 0; // turn on to see print-outs of AI/nav timing
 //
