@@ -9,6 +9,13 @@
 
 use core::ffi::{c_int, c_char, c_void};
 
+// Imports mirroring oracle #includes
+use crate::codemp::cgame::cg_local_h::*;   // cg_local.h -> cg_t, cgs_t, centity_t, clientInfo_t, animation_t, cvar_t, qboolean, sfxHandle_t (via chain)
+use crate::codemp::ui::menudef_h::*;        // ../../ui/menudef.h (trust-import; module not yet on disk)
+use crate::codemp::cgame::cg_lights_h::*;  // cg_lights.h
+use crate::codemp::ghoul2::g2_h::*;        // ..\ghoul2\g2.h
+use crate::codemp::ui::ui_public_h::*;     // ../ui/ui_public.h
+
 // ============================================================================
 // Extern declarations for stubs and cross-module references
 // ============================================================================
@@ -121,59 +128,6 @@ extern "C" {
     fn va(fmt: *const c_char, ...) -> *const c_char;
 }
 
-// Stub type declarations for types we don't fully define here
-#[repr(C)]
-pub struct cg_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct cgs_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct centity_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct clientInfo_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct animation_t {
-    _unused: [u8; 0],
-}
-
-#[repr(C)]
-pub struct cvar_t {
-    _unused: [u8; 0],
-}
-
-// Type aliases for common C types
-pub type qboolean = c_int;
-pub type sfxHandle_t = c_int;
-
-// Constants
-const MAX_CLIENTS: usize = 64;
-const MAX_CLIENT_SCORE_SEND: usize = 64;
-const MAX_QPATH: usize = 256;
-const MAX_SAY_TEXT: usize = 150;
-const MAX_CUSTOM_SOUNDS: usize = 256;
-const MAX_CUSTOM_COMBAT_SOUNDS: usize = 256;
-const MAX_CUSTOM_EXTRA_SOUNDS: usize = 256;
-const MAX_CUSTOM_JEDI_SOUNDS: usize = 256;
-const MAX_CUSTOM_SIEGE_SOUNDS: usize = 256;
-const MAX_CUSTOM_DUEL_SOUNDS: usize = 256;
-const MAX_STRING_CHARS: usize = 1024;
-const MAX_GENTITIES: usize = 2048;
-const MAX_SOUNDS: usize = 256;
-const MAX_MODELS: usize = 256;
-const MAX_FX: usize = 256;
-const MAX_LIGHT_STYLES: usize = 256;
-
 const GT_CTF: c_int = 4;
 const GT_CTY: c_int = 5;
 const GT_SIEGE: c_int = 8;
@@ -236,7 +190,7 @@ const MAX_STRINGED_SV_STRING: usize = 1024;
 // CG_ParseScores
 // =================
 // =================
-static unsafe fn CG_ParseScores() {
+unsafe fn CG_ParseScores() {
     let mut i: c_int = 0;
     let mut powerups: c_int = 0;
     let mut readScores: c_int = 0;
@@ -296,7 +250,7 @@ CG_ParseTeamInfo
 
 =================
 */
-static unsafe fn CG_ParseTeamInfo() {
+unsafe fn CG_ParseTeamInfo() {
     let mut i: c_int = 0;
     let mut client: c_int = 0;
 
@@ -415,7 +369,7 @@ pub unsafe fn CG_ParseServerinfo() {
 CG_ParseWarmup
 ==================
 */
-static unsafe fn CG_ParseWarmup() {
+unsafe fn CG_ParseWarmup() {
     let mut info: *const c_char = 0 as *const c_char;
     let mut warmup: c_int = 0;
 
@@ -526,7 +480,7 @@ pub unsafe fn CG_ShaderStateChanged() {
     }
 }
 
-static unsafe fn GetCustomSoundForType(setType: c_int, index: c_int) -> *const c_char
+unsafe fn GetCustomSoundForType(setType: c_int, index: c_int) -> *const c_char
 {
     match setType
     {
@@ -577,7 +531,7 @@ fn SetCustomSoundForType(ci: *mut clientInfo_t, setType: c_int, index: c_int, sf
     }
 }
 
-static unsafe fn CG_RegisterCustomSounds(ci: *mut clientInfo_t, setType: c_int, psDir: *const c_char)
+unsafe fn CG_RegisterCustomSounds(ci: *mut clientInfo_t, setType: c_int, psDir: *const c_char)
 {
     let mut iTableEntries: c_int = 0;
     let mut i: c_int = 0;
@@ -856,7 +810,7 @@ CG_ConfigStringModified
 
 ================
 */
-static unsafe fn CG_ConfigStringModified() {
+unsafe fn CG_ConfigStringModified() {
     let mut str: *const c_char = 0 as *const c_char;
     let mut num: c_int = 0;
 
@@ -1153,7 +1107,7 @@ A tournement restart will clear everything, but doesn't
 require a reload of all the media
 ===============
 */
-static unsafe fn CG_MapRestart() {
+unsafe fn CG_MapRestart() {
     if cg_showmiss.integer != 0 {
         CG_Printf(b"CG_MapRestart\n\0".as_ptr() as *const c_char);
     }
@@ -1204,7 +1158,7 @@ static unsafe fn CG_MapRestart() {
 CG_RemoveChatEscapeChar
 =================
 */
-static unsafe fn CG_RemoveChatEscapeChar_local(text: *mut c_char) {
+unsafe fn CG_RemoveChatEscapeChar_local(text: *mut c_char) {
     let mut i: c_int = 0;
     let mut l: c_int = 0;
 
@@ -1283,7 +1237,7 @@ unsafe fn CG_CheckSVStringEdRef(buf: *mut c_char, str: *const c_char)
     *buf.offset(b as isize) = 0;
 }
 
-static unsafe fn CG_BodyQueueCopy(cent: *mut centity_t, clientNum: c_int, knownWeapon: c_int)
+unsafe fn CG_BodyQueueCopy(cent: *mut centity_t, clientNum: c_int, knownWeapon: c_int)
 {
     let mut source: *mut centity_t = 0 as *mut centity_t;
     let mut anim: *const animation_t = 0 as *const animation_t;
@@ -1313,9 +1267,9 @@ static unsafe fn CG_BodyQueueCopy(cent: *mut centity_t, clientNum: c_int, knownW
     (*cent).isRagging = 0; // qfalse; //reset in case it's still set from another body that was in this cent slot.
     (*cent).ownerRagging = (*source).isRagging; //if the owner was in ragdoll state, then we want to go into it too right away.
 
-#if 0
+/* #if 0
     VectorCopy(source->lerpOriginOffset, cent->lerpOriginOffset);
-#endif
+#endif */
 
     (*cent).bodyFadeTime = 0;
     (*cent).bodyHeight = 0;
@@ -1401,7 +1355,7 @@ The string has been tokenized and can be retrieved with
 Cmd_Argc() / Cmd_Argv()
 =================
 */
-static unsafe fn CG_ServerCommand() {
+unsafe fn CG_ServerCommand() {
     let mut cmd: *const c_char = 0 as *const c_char;
     let mut text: [c_char; 150] = [0; 150];
     let mut IRCG: qboolean = 0; // qfalse
@@ -1413,7 +1367,7 @@ static unsafe fn CG_ServerCommand() {
         return;
     }
 
-#if 0
+/* #if 0
     // never seems to get used -Ste
     if ( !strcmp( cmd, "spd" ) )
     {
@@ -1438,7 +1392,7 @@ static unsafe fn CG_ServerCommand() {
         trap_SP_Print(holdInt, (byte *)string);
         return;
     }
-#endif
+#endif */
 
     if Q_stricmp(cmd, b"sxd\0".as_ptr() as *const c_char) == 0 {
         //siege extended data, contains extra info certain classes may want to know about other clients
