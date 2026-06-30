@@ -5,9 +5,18 @@ under the **faithful-port** import-trust skill (`skills/faithful-port/`).
 
 - Originally **179 files / 697 stubs**, all introduced by single-file blind-port
   commits dated 2026-06-28 (pre-skill, before `08c3607`).
-- As of 2026-06-30: **93 done**, **86 files / 177 stubs remaining** (worklist
+- As of 2026-06-30: **100 done**, **79 files / 149 stubs remaining** (worklist
   verified in sync with `git grep -c '[u8; 0]'`, no drift). jpeg-6 and qcommon
   subsystems fully cleared.
+- ENGINE-SPLIT STRATEGY (owner decision 2026-06-30): the two engines `code/`
+  (single-player) and `codemp/` (multiplayer) are independent and worked as
+  separate streams; clean game-logic (game/cgame/ff/client/server/icarus) is
+  cleared first, while the PLATFORM/SYSTEM-BINDING cluster is DEFERRED as one
+  bucket — renderer files needing the absent `tr_local_h.rs`, plus win32 (DX8/
+  DirectSound/Windows), mac (Carbon), unix (dlfcn/POSIX), zlib system types.
+  These need a deliberate per-platform bindings strategy (cf. the d3d8_h
+  decision) before re-port. `codemp/` is low-priority (its earlier build runs).
+  Deferred files are annotated "— DEFERRED (...)" inline below.
 - `src/code/win32/win_qal_xbox.rs` (5 stubs) is DEFERRED by owner decision
   (2026-06-30): its remaining stubs are Xbox system types (`<dsound.h>`,
   `<windows.h>`, `<d3d8.h>`) with no oracle/crate mirror. Skipped pending a
@@ -57,16 +66,16 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [x] `src/code/game/AI_Sniper.rs` (5)
 - [x] `src/code/game/AI_RocketTrooper.rs` (5)
 - [x] `src/code/game/AI_Droid.rs` (5)
-- [ ] `src/code/renderer/tr_shadows.rs` (4)
-- [ ] `src/code/renderer/tr_mesh.rs` (4)
+- [ ] `src/code/renderer/tr_shadows.rs` (4) — DEFERRED (renderer; tr_local_h.rs missing)
+- [ ] `src/code/renderer/tr_mesh.rs` (4) — DEFERRED (renderer; tr_local_h.rs missing)
 - [x] `src/code/qcommon/cm_local_h.rs` (4)
-- [ ] `src/code/game/NPC_goal.rs` (4)
-- [ ] `src/code/game/g_ref.rs` (4)
-- [ ] `src/code/game/AI_Wampa.rs` (4)
-- [ ] `src/code/ff/IFC/ImmTexture_h.rs` (4)
-- [ ] `src/code/ff/IFC/ImmEnclosure_h.rs` (4)
-- [ ] `src/code/ff/IFC/ImmCondition_h.rs` (4)
-- [ ] `src/code/cgame/cg_snapshot.rs` (4)
+- [x] `src/code/game/NPC_goal.rs` (4)
+- [x] `src/code/game/g_ref.rs` (4)
+- [x] `src/code/game/AI_Wampa.rs` (4)
+- [x] `src/code/ff/IFC/ImmTexture_h.rs` (4)
+- [x] `src/code/ff/IFC/ImmEnclosure_h.rs` (4)
+- [x] `src/code/ff/IFC/ImmCondition_h.rs` (4)
+- [x] `src/code/cgame/cg_snapshot.rs` (4)
 - [ ] `src/code/win32/win_glimp_console.rs` (3)
 - [ ] `src/code/renderer/tr_landscape_h.rs` (3)
 - [x] `src/code/jpeg-6/jdtrans.rs` (3)
