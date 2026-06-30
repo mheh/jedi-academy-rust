@@ -1,35 +1,11 @@
 // leave this line at the top of all AI_xxxx.cpp files for PCH reasons...
 #![allow(non_snake_case)]
 
-use core::ffi::{c_int, c_char, c_void};
+use crate::code::game::g_headers::*;    // g_headers.h
+use crate::code::game::b_local_h::*;    // b_local.h
+use core::ffi::{c_int, c_char};
 use core::ptr::addr_of;
 use core::ptr::addr_of_mut;
-
-// Stub type definitions (detailed definitions in game headers g_headers.h, b_local.h)
-#[repr(C)]
-pub struct gentity_t {
-    _dummy: [u8; 0],
-}
-
-#[repr(C)]
-pub struct gNPC_t {
-    _dummy: [u8; 0],
-}
-
-#[repr(C)]
-pub struct level_locals_t {
-    _dummy: [u8; 0],
-}
-
-#[repr(C)]
-pub struct usercmd_t {
-    _dummy: [u8; 0],
-}
-
-#[repr(C)]
-pub struct gameImport_t {
-    _dummy: [u8; 0],
-}
 
 // Constants
 const TURN_OFF: u32 = 0x00000100;
@@ -45,26 +21,26 @@ const LSTATE_DROP: c_int = 4;
 extern "C" {
     fn NPC_GetPainChance(self_: *mut gentity_t, damage: c_int) -> f32;
     fn TIMER_Done(ent: *mut gentity_t, timer: *const c_char) -> i32;
-    fn TIMER_Set(ent: *mut gentity_t, timer: *const c_char, duration: c_int) -> c_void;
+    fn TIMER_Set(ent: *mut gentity_t, timer: *const c_char, duration: c_int);
     fn AngleNormalize360(angle: f32) -> f32;
     fn AngleDelta(angle1: f32, angle2: f32) -> f32;
     fn Q_irand(low: c_int, high: c_int) -> c_int;
     fn random() -> f32;
     fn crandom() -> f32;
-    fn NPC_SetAnim(ent: *mut gentity_t, setanim_type: c_int, anim: c_int, flags: c_int) -> c_void;
+    fn NPC_SetAnim(ent: *mut gentity_t, setanim_type: c_int, anim: c_int, flags: c_int);
     fn NPC_MoveToGoal(allowWalk: i32) -> i32;
     fn UpdateGoal() -> i32;
-    fn NPC_UpdateAngles(reset: i32, useDesired: i32) -> c_void;
-    fn G_SoundOnEnt(ent: *mut gentity_t, channel: c_int, soundfile: *const c_char) -> c_void;
+    fn NPC_UpdateAngles(reset: i32, useDesired: i32);
+    fn G_SoundOnEnt(ent: *mut gentity_t, channel: c_int, soundfile: *const c_char);
     fn va(fmt: *const c_char, ...) -> *const c_char;
-    fn G_PlayEffect(effect: *const c_char, origin: *const [f32; 3], dir: *const [f32; 3]) -> c_void;
+    fn G_PlayEffect(effect: *const c_char, origin: *const [f32; 3], dir: *const [f32; 3]);
     fn G_SoundIndex(soundfile: *const c_char) -> c_int;
     fn G_EffectIndex(effectfile: *const c_char) -> c_int;
-    fn VectorCopy(src: *const [f32; 3], dst: *mut [f32; 3]) -> c_void;
-    fn VectorSubtract(a: *const [f32; 3], b: *const [f32; 3], out: *mut [f32; 3]) -> c_void;
+    fn VectorCopy(src: *const [f32; 3], dst: *mut [f32; 3]);
+    fn VectorSubtract(a: *const [f32; 3], b: *const [f32; 3], out: *mut [f32; 3]);
     fn VectorNormalize(v: *mut [f32; 3]) -> f32;
-    fn VectorMA(start: *const [f32; 3], scale: f32, dir: *const [f32; 3], out: *mut [f32; 3]) -> c_void;
-    fn NPC_Pain(self_: *mut gentity_t, inflictor: *mut gentity_t, other: *mut gentity_t, point: *const [f32; 3], damage: c_int, mod_: c_int) -> c_void;
+    fn VectorMA(start: *const [f32; 3], scale: f32, dir: *const [f32; 3], out: *mut [f32; 3]);
+    fn NPC_Pain(self_: *mut gentity_t, inflictor: *mut gentity_t, other: *mut gentity_t, point: *const [f32; 3], damage: c_int, mod_: c_int);
 
     // Global game state (accessed via addr_of! / addr_of_mut!)
     pub static mut NPC: *mut gentity_t;
