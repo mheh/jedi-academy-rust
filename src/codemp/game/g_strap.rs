@@ -1,38 +1,8 @@
 // rww - shared trap call system
 
 use core::ffi::{c_int, c_char, c_void};
-
-// Type declarations for function signatures
-// These correspond to C types used in trap functions
-pub type qboolean = c_int;
-pub type qhandle_t = c_int;
-pub type vec3_t = [f32; 3];
-
-// Opaque types for structures defined in headers
-#[repr(C)]
-pub struct mdxaBone_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct sharedRagDollParams_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct sharedRagDollUpdateParams_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct sharedSetBoneIKStateParams_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct sharedIKMoveParams_t {
-    _opaque: [u8; 0],
-}
+use crate::codemp::game::g_local::*;   // g_local.h (mirrors as g_local.rs); transitively provides q_shared.h shared types
+use crate::codemp::game::q_shared_h::*;   // vec3_t, qhandle_t, mdxaBone_t, sharedRagDoll*/IK params, qboolean
 
 // Extern trap functions
 extern "C" {
