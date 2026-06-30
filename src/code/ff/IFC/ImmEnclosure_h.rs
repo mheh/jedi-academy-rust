@@ -31,7 +31,10 @@
 
 **********************************************************************/
 
-use core::ffi::{c_int, c_long, c_char, c_void};
+use core::ffi::{c_int, c_long, c_char};
+use crate::code::ff::IFC::ImmBaseTypes_h::*; // ImmBaseTypes.h
+use crate::code::ff::IFC::ImmEffect_h::*; // ImmEffect.h  (POINT, GUID, BOOL, DWORD, IMM_EFFECT, CImmEffect, CImmDevice, IMM_EFFECT_* consts)
+use crate::code::ff::IFC::FeelitAPI_h::*; // real leaf for FEELIT_ENCLOSURE / GUID_Feelit_Enclosure / RECT
 
 //================================================================
 // Constants
@@ -49,44 +52,6 @@ pub const IMM_ENCLOSURE_DEFAULT_CLIPPING_MASK: c_long = 0; // IMM_CLIP_NONE - st
 
 pub const IMM_ENCLOSURE_DEFAULT_CENTER_POINT: c_long = 0; // IMM_EFFECT_MOUSE_POS_AT_START - stub
 
-//================================================================
-// Type Stubs for unported dependencies
-//================================================================
-
-// Windows GUID type
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct GUID {
-    pub Data1: u32,
-    pub Data2: u16,
-    pub Data3: u16,
-    pub Data4: [u8; 8],
-}
-
-// Windows POINT type
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct POINT {
-    pub x: c_long,
-    pub y: c_long,
-}
-
-// Windows RECT type
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct RECT {
-    pub left: c_long,
-    pub top: c_long,
-    pub right: c_long,
-    pub bottom: c_long,
-}
-
-// Windows BOOL type
-pub type BOOL = c_int;
-
-// Windows DWORD type (unsigned 32-bit)
-pub type DWORD = u32;
-
 // Windows HRESULT type
 pub type HRESULT = i32;
 
@@ -96,43 +61,7 @@ pub type LPCRECT = *const RECT;
 // TCHAR is character type
 pub type TCHAR = c_char;
 
-// Forward declaration stubs for unported Immersion types
-#[repr(C)]
-pub struct CImmDevice {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CImmEffect {
-    _opaque: [u8; 0],
-}
-
-// IMM_EFFECT structure - stub
-#[repr(C)]
-pub struct IMM_EFFECT {
-    _opaque: [u8; 0],
-}
-
-// IMM_ENCLOSURE structure - stub
-#[repr(C)]
-pub struct IMM_ENCLOSURE {
-    _opaque: [u8; 0],
-}
-
-// GUID_Imm_Enclosure - stub global
-pub static GUID_Imm_Enclosure: GUID = GUID {
-    Data1: 0,
-    Data2: 0,
-    Data3: 0,
-    Data4: [0; 8],
-};
-
-// Constants for effect initialization
-pub const IMM_EFFECT_DONT_CHANGE: c_long = -1;
-pub const IMM_EFFECT_DEFAULT_ANGLE: c_long = 0;
-pub const IMM_EFFECTTYPE_ENCLOSURE: c_long = 4;
-
-// Helper function stub for GUID comparison
+// IsEqualGUID - stand-in for the windows.h macro
 pub fn IsEqualGUID(guid1: &GUID, guid2: &GUID) -> BOOL {
     if guid1.Data1 == guid2.Data1
         && guid1.Data2 == guid2.Data2
