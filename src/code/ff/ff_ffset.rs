@@ -3,44 +3,7 @@
 use core::ffi::{c_char, c_int, c_void};
 use std::collections::HashMap;
 
-// ============================================================================
-// External Types (opaque stubs - actual definitions elsewhere)
-// ============================================================================
-
-#[repr(C)]
-pub struct cvar_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CImmDevice {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct FFConfigParser {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct FFSystem {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct MultiEffect {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CImmProject {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct ChannelCompound {
-    _opaque: [u8; 0],
-}
+use crate::code::ff::common_headers_h::*; // common_headers.h PCH — covers cvar_t, CImmDevice, CImmProject, FFConfigParser, FFSystem, MultiEffect, ChannelCompound, qboolean/QTRUE/QFALSE/FF_MAX_PATH
 
 // ============================================================================
 // Type Aliases
@@ -50,13 +13,6 @@ pub struct ChannelCompound {
 type TProject = HashMap<String, *mut CImmProject>;
 type TInclude = Vec<TProject>;
 type TNameTable = Vec<String>;
-
-// qboolean is a boolean type (typically c_int in Quake/ioquake3)
-pub type qboolean = c_int;
-
-pub const QTRUE: c_int = 1;
-pub const QFALSE: c_int = 0;
-const FF_MAX_PATH: usize = 256;
 
 // ============================================================================
 // External C Functions and Variables
