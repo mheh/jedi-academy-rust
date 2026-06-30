@@ -5,9 +5,14 @@ under the **faithful-port** import-trust skill (`skills/faithful-port/`).
 
 - Originally **179 files / 697 stubs**, all introduced by single-file blind-port
   commits dated 2026-06-28 (pre-skill, before `08c3607`).
-- As of 2026-06-30: **83 done**, **96 files / 232 stubs remaining** (worklist
+- As of 2026-06-30: **88 done**, **91 files / 202 stubs remaining** (worklist
   verified in sync with `git grep -c '[u8; 0]'`, no drift). jpeg-6 and qcommon
   subsystems fully cleared.
+- D3D8/D3DX8 `<d3d8.h>`/`<d3dx8.h>` system types (no oracle header, no crate
+  mirror) are trust-imported from a future `crate::code::win32::d3d8_h` bindings
+  module (owner decision 2026-06-30). Still-pending siblings using the same
+  pattern: `src/codemp/win32/glw_win_dx8_h.rs`, `src/code/win32/win_stencilshadow.rs`.
+  The `d3d8_h` bindings module itself is a separate future task.
 - Invariant when done (per `SKILL.md`): each file has **zero** `[u8; 0]`
   placeholders and **zero** fabricated `#[repr(C)]` external types.
 - Sorted worst-first (stub count in parentheses). Check off as each file is re-ported.
@@ -34,12 +39,12 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [x] `src/code/jpeg-6/jdapistd.rs` (7)
 - [x] `src/code/ff/ff_ffset.rs` (7)
 - [x] `src/code/cgame/cg_effects.rs` (7)
-- [ ] `src/code/win32/glw_win_dx8_h.rs` (6)
-- [ ] `src/code/ui/ui_local_h.rs` (6)
+- [x] `src/code/win32/glw_win_dx8_h.rs` (6)
+- [x] `src/code/ui/ui_local_h.rs` (6)
 - [x] `src/code/RMG/RM_InstanceFile.rs` (6)
 - [x] `src/code/RMG/RM_Instance_Group.rs` (6)
-- [ ] `src/code/game/b_local_h.rs` (6)
-- [ ] `src/code/game/AI_Seeker.rs` (6)
+- [x] `src/code/game/b_local_h.rs` (6)
+- [x] `src/code/game/AI_Seeker.rs` (6)
 - [ ] `src/code/win32/win_qal_xbox.rs` (5)
 - [x] `src/code/RMG/RM_Path.rs` (5)
 - [x] `src/code/RMG/RM_Manager.rs` (5)
@@ -143,7 +148,7 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [x] `src/codemp/RMG/RM_Instance_BSP.rs` (6)
 - [x] `src/codemp/jpeg-6/jdsample.rs` (6)
 - [x] `src/codemp/jpeg-6/jdapimin.rs` (6)
-- [ ] `src/codemp/cgame/cg_servercmds.rs` (6)
+- [x] `src/codemp/cgame/cg_servercmds.rs` (6)
 - [x] `src/codemp/RMG/RM_Path.rs` (5)
 - [x] `src/codemp/jpeg-6/jdpostct.rs` (5)
 - [x] `src/codemp/jpeg-6/jdmarker.rs` (5)
