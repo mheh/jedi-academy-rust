@@ -13,70 +13,17 @@
 
 use core::ffi::{c_char, c_int, c_void};
 
-// Opaque DirectX types - these represent COM interfaces from d3d8.h and d3dx8.h
-#[repr(C)]
-pub struct IDirect3DDevice8 {
-    _private: [u8; 0],
-}
+// <d3d8.h>/<d3dx8.h> system types — trust-import (module is a future task; unresolved is benign)
+use crate::code::win32::d3d8_h::*;
+// GLuint, GLushort, GLsizei
+use crate::code::renderer::qgl_console_h::*;
+// DWORD + win types
+use crate::code::game::q_shared::*;
+// SHADER_MAX_INDEXES / SHADER_MAX_VERTEXES
+use crate::code::qcommon::qfiles_h::*;
 
-#[repr(C)]
-pub struct ID3DXMatrixStack {
-    _private: [u8; 0],
-}
-
-// DirectX primitive type enum (D3DPRIMITIVETYPE)
-pub type D3DPRIMITIVETYPE = u32;
-
-// DirectX texture operation enum (D3DTEXTUREOP)
-pub type D3DTEXTUREOP = u32;
-
-// DirectX texture address enum (D3DTEXTUREADDRESS)
-pub type D3DTEXTUREADDRESS = u32;
-
-// DirectX texture filter type enum (D3DTEXTUREFILTERTYPE)
-pub type D3DTEXTUREFILTERTYPE = u32;
-
-// DirectX color type (D3DCOLOR)
-pub type D3DCOLOR = u32;
-
-// DirectX culling enum (D3DCULL)
-pub type D3DCULL = u32;
-
-// Opaque DirectX structure types
-#[repr(C)]
-pub struct D3DLIGHT8 {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-pub struct D3DMATERIAL8 {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-pub struct D3DVIEWPORT8 {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-pub struct D3DRECT {
-    _private: [u8; 0],
-}
-
-// OpenGL types
-pub type GLuint = u32;
-pub type GLushort = u16;
-pub type GLsizei = i32;
-
-// Windows/D3D types
-pub type DWORD = u32;
-
-// Constants
 pub const GLW_MAX_TEXTURE_STAGES: usize = 2;
 pub const GLW_MAX_STRIPS: usize = 2048;
-
-// SHADER_MAX_INDEXES defined in qfiles.h: 6 * SHADER_MAX_VERTEXES = 6 * 1000 = 6000
-pub const SHADER_MAX_INDEXES: usize = 6000;
 
 // Nested enum MatrixMode (matches C++ enum inside glwstate_t)
 #[derive(Clone, Copy, Debug)]
@@ -211,7 +158,7 @@ pub struct glwstate_t {
 // This is kept as an opaque type since it's internal to the glwstate_t.
 #[repr(C)]
 pub struct TextureInfo {
-    pub mipmap: *mut c_void, // IDirect3DTexture8*
+    pub mipmap: *mut IDirect3DTexture8,
     pub minFilter: D3DTEXTUREFILTERTYPE,
     pub mipFilter: D3DTEXTUREFILTERTYPE,
     pub magFilter: D3DTEXTUREFILTERTYPE,
