@@ -5,8 +5,9 @@ under the **faithful-port** import-trust skill (`skills/faithful-port/`).
 
 - Originally **179 files / 697 stubs**, all introduced by single-file blind-port
   commits dated 2026-06-28 (pre-skill, before `08c3607`).
-- As of 2026-06-29: **53 done**, **126 files / 324 stubs remaining** (worklist
-  verified in sync with `git grep -c '[u8; 0]'`, no drift).
+- As of 2026-06-29: **63 done**, **116 files / 309 stubs remaining** (worklist
+  verified in sync with `git grep -c '[u8; 0]'`, no drift). jpeg-6 subsystem
+  fully cleared.
 - Invariant when done (per `SKILL.md`): each file has **zero** `[u8; 0]`
   placeholders and **zero** fabricated `#[repr(C)]` external types.
 - Sorted worst-first (stub count in parentheses). Check off as each file is re-ported.
@@ -75,10 +76,10 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [ ] `src/code/qcommon/msg.rs` (2)
 - [ ] `src/code/qcommon/cm_trace.rs` (2)
 - [ ] `src/code/qcommon/cm_terrainmap.rs` (2)
-- [ ] `src/code/jpeg-6/jddctmgr.rs` (2)
-- [ ] `src/code/jpeg-6/jcomapi.rs` (2)
-- [ ] `src/code/jpeg-6/jcdctmgr.rs` (2)
-- [ ] `src/code/jpeg-6/jccolor.rs` (2)
+- [x] `src/code/jpeg-6/jddctmgr.rs` (2)
+- [x] `src/code/jpeg-6/jcomapi.rs` (2)
+- [x] `src/code/jpeg-6/jcdctmgr.rs` (2)
+- [x] `src/code/jpeg-6/jccolor.rs` (2)
 - [ ] `src/code/icarus/BlockStream.rs` (2)
 - [ ] `src/code/game/NPC_move.rs` (2)
 - [ ] `src/code/game/g_shared_h.rs` (2)
@@ -105,10 +106,10 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [ ] `src/code/qcommon/common.rs` (1)
 - [ ] `src/code/mac/mac_snddma.rs` (1)
 - [ ] `src/code/mac/mac_net.rs` (1)
-- [ ] `src/code/jpeg-6/jdmarker.rs` (1)
-- [ ] `src/code/jpeg-6/jdinput.rs` (1)
-- [ ] `src/code/jpeg-6/jdhuff_h.rs` (1)
-- [ ] `src/code/jpeg-6/jdatasrc.rs` (1)
+- [x] `src/code/jpeg-6/jdmarker.rs` (1)
+- [x] `src/code/jpeg-6/jdinput.rs` (1)
+- [x] `src/code/jpeg-6/jdhuff_h.rs` (1)
+- [x] `src/code/jpeg-6/jdatasrc.rs` (1)
 - [ ] `src/code/game/teams_h.rs` (1)
 - [ ] `src/code/game/objectives_h.rs` (1)
 - [ ] `src/code/game/g_fx.rs` (1)
@@ -170,7 +171,7 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [x] `src/codemp/jpeg-6/jmemnobs.rs` (2)
 - [x] `src/codemp/jpeg-6/jdtrans.rs` (2)
 - [x] `src/codemp/jpeg-6/jdct_h.rs` (2)
-- [ ] `src/codemp/jpeg-6/jchuff_h.rs` (2)
+- [x] `src/codemp/jpeg-6/jchuff_h.rs` (2)
 - [ ] `src/codemp/ghoul2/G2_misc.rs` (2)
 - [ ] `src/codemp/client/snd_mp3_h.rs` (2)
 - [ ] `src/codemp/botlib/be_ai_weap.rs` (2)
@@ -188,7 +189,7 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [ ] `src/codemp/qcommon/stringed_interface_h.rs` (1)
 - [ ] `src/codemp/qcommon/cm_terrainmap_h.rs` (1)
 - [ ] `src/codemp/qcommon/cm_draw_h.rs` (1)
-- [ ] `src/codemp/jpeg-6/jctrans.rs` (1)
+- [x] `src/codemp/jpeg-6/jctrans.rs` (1)
 - [ ] `src/codemp/icarus/Q3_Interface_h.rs` (1)
 - [ ] `src/codemp/client/snd_mem.rs` (1)
 - [ ] `src/codemp/client/FxScheduler.rs` (1)
