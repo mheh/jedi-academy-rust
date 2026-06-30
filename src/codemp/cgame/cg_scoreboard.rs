@@ -5,10 +5,9 @@
 #![allow(non_snake_case, non_upper_case_globals)]
 
 use core::ffi::{c_int, c_void};
-
-// Local stubs for imported types and functions from other modules
-// These are defined in cg_local.h, ui_shared.h, and bg_saga.h
-// For structural coherence, we declare them here as extern or stubs
+use crate::codemp::cgame::cg_local_h::*;   // cg_t, cgs_t, score_t, clientInfo_t, snapshot_t (+ cvar_t/playerState_t via its PCH chain) — not yet ported on disk; trust-import
+use crate::codemp::ui::ui_shared_h::*;     // UI text-style consts
+use crate::codemp::game::bg_saga_h::*;     // siegeClass_t
 
 extern "C" {
     // From cg_local.h
@@ -39,65 +38,6 @@ extern "C" {
     fn va(fmt: *const u8, ...) -> *const u8;
 }
 
-// Type stubs for structural coherence
-#[repr(C)]
-struct cg_t {
-    _data: [u8; 0],
-}
-
-#[repr(C)]
-struct cgs_t {
-    _data: [u8; 0],
-}
-
-#[repr(C)]
-struct cvar_t {
-    integer: c_int,
-    _rest: [u8; 0],
-}
-
-#[repr(C)]
-struct score_t {
-    client: c_int,
-    score: c_int,
-    ping: c_int,
-    time: c_int,
-}
-
-#[repr(C)]
-struct clientInfo_t {
-    infoValid: c_int,
-    name: [u8; 32],
-    team: c_int,
-    powerups: c_int,
-    duelTeam: c_int,
-    siegeIndex: c_int,
-    siegeDesiredTeam: c_int,
-    wins: c_int,
-    losses: c_int,
-    _rest: [u8; 0],
-}
-
-#[repr(C)]
-struct siegeClass_t {
-    classShader: c_int,
-    _rest: [u8; 0],
-}
-
-#[repr(C)]
-struct playerState_t {
-    pm_type: c_int,
-    clientNum: c_int,
-    persistant: [c_int; 16],
-    stats: [c_int; 16],
-    _rest: [u8; 0],
-}
-
-#[repr(C)]
-struct snapshot_t {
-    ps: playerState_t,
-    _rest: [u8; 0],
-}
 
 // Constants for screen dimensions and layout
 const SCOREBOARD_X: c_int = 0;
@@ -145,48 +85,6 @@ const SB_TIME_X: f32 = SB_SCORELINE_X as f32 + 0.85 * SB_SCORELINE_WIDTH as f32;
 //  wins/losses are drawn on bot icon now
 
 static mut localClient: bool = false; // true if local client has been displayed
-
-// Constants for game types and teams
-const GT_DUEL: c_int = 4;
-const GT_POWERDUEL: c_int = 6;
-const GT_TEAM: c_int = 3;
-const GT_SIEGE: c_int = 7;
-
-const TEAM_FREE: c_int = 0;
-const TEAM_RED: c_int = 1;
-const TEAM_BLUE: c_int = 2;
-const TEAM_SPECTATOR: c_int = 3;
-
-const PW_NEUTRALFLAG: c_int = 10;
-const PW_REDFLAG: c_int = 11;
-const PW_BLUEFLAG: c_int = 12;
-
-const DUELTEAM_LONE: c_int = 2;
-const DUELTEAM_DOUBLE: c_int = 3;
-
-const PERS_TEAM: c_int = 0;
-const PERS_RANK: c_int = 1;
-const PERS_SCORE: c_int = 3;
-
-const RANK_TIED_FLAG: c_int = 0x4000;
-
-const STAT_CLIENTS_READY: c_int = 4;
-
-const PM_DEAD: c_int = 2;
-const PM_INTERMISSION: c_int = 3;
-
-const SCREEN_WIDTH: c_int = 640;
-const FADE_TIME: c_int = 1000;
-
-const BIGCHAR_HEIGHT: c_int = 16;
-const ITEM_TEXTSTYLE_OUTLINED: c_int = 3;
-const FONT_MEDIUM: c_int = 0;
-const FONT_SMALL: c_int = 1;
-
-const CT_WHITE: c_int = 5;
-
-const UI_CENTER: c_int = 1;
-const UI_DROPSHADOW: c_int = 8;
 
 /*
 =================
