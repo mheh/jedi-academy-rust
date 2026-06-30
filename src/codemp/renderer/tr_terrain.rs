@@ -22,8 +22,11 @@
 use core::ffi::{c_int, c_char, c_void, c_long, c_float};
 use core::ptr::{addr_of, addr_of_mut, null_mut};
 
-use crate::codemp::renderer::tr_landscape_h::*;
+use crate::codemp::qcommon::exe_headers_h::*;
+use crate::codemp::renderer::tr_local_h::*;
 use crate::codemp::qcommon::cm_landscape_h::*;
+use crate::codemp::renderer::tr_landscape_h::*;
+use crate::codemp::qcommon::GenericParser2_h::*;
 
 // Type aliases for clarity
 type vec3_t = [f32; 3];
@@ -42,129 +45,6 @@ const SF_TERRAIN: c_int = 9;
 const RDF_NOWORLDMODEL: c_int = 0x0001;
 const RDF_PROJECTION2D: c_int = 0x0002;
 
-// External C types - opaque declarations
-#[repr(C)]
-pub struct shader_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct cvar_t {
-    pub name: *const c_char,
-    pub string: *const c_char,
-    pub resetString: *const c_char,
-    pub latched_string: *const c_char,
-    pub flags: c_int,
-    pub modified: c_int,
-    pub modificationCount: c_int,
-    pub value: f32,
-    pub integer: c_int,
-    pub next: *mut cvar_t,
-    pub prev: *mut cvar_t,
-}
-
-#[repr(C)]
-pub struct tess_t {
-    pub xyz: [[f32; 3]; 4096],                  // vertex xyz
-    pub normal: [[f32; 3]; 4096],               // vertex normal
-    pub vertexColors: [[u8; 4]; 4096],          // vertex colors
-    pub vertexAlphas: [[u8; 1]; 4096],          // vertex alphas
-    pub texCoords: [[[f32; 2]; 2]; 4096],       // texture coordinates
-    pub indexes: [u16; 8192],                   // triangle indices
-    pub numVertexes: i32,                       // current vertex count
-    pub numIndexes: i32,                        // current index count
-    pub registration: i32,                      // registration for frame
-    pub shader: *mut shader_t,                  // current shader
-}
-
-#[repr(C)]
-pub struct backEnd_t {
-    pub refdef: backEnd_refdef_t,
-    pub viewParms: backEnd_viewParms_t,
-}
-
-#[repr(C)]
-pub struct backEnd_refdef_t {
-    pub vieworg: vec3_t,
-    pub viewaxis: [[f32; 3]; 3],
-    pub time: c_int,
-    pub rdflags: c_int,
-}
-
-#[repr(C)]
-pub struct backEnd_viewParms_t {
-    pub frustum: [cplane_t; 4],
-    pub visBounds: [[f32; 3]; 2],
-}
-
-#[repr(C)]
-pub struct tr_globals_t {
-    pub distanceCull: f32,
-    pub distanceCullSquared: f32,
-    pub refdef: tr_refdef_t,
-    pub world: *mut tr_world_t,
-    pub viewParms: tr_viewParms_t,
-    pub defaultShader: *mut shader_t,
-    pub overbrightBits: c_int,
-    pub landScape: tr_landscape_t,
-}
-
-#[repr(C)]
-pub struct tr_refdef_t {
-    pub rdflags: c_int,
-    pub vieworg: [f32; 3],
-}
-
-#[repr(C)]
-pub struct tr_world_t {
-    pub globalFog: c_int,
-}
-
-#[repr(C)]
-pub struct tr_viewParms_t {
-    pub visBounds: [[f32; 3]; 2],
-}
-
-#[repr(C)]
-pub struct tr_landscape_t {
-    pub surfaceType: c_int,
-    pub landscape: *mut CTRLandScape,
-}
-
-#[repr(C)]
-pub struct surfaceInfo_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct srfTerrain_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct refdef_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct cplane_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CGenericParser2 {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CGPGroup {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CCommon {
-    _opaque: [u8; 0],
-}
 
 extern "C" {
     // CVars
@@ -174,9 +54,9 @@ extern "C" {
     pub static mut r_terrainWaterOffset: *mut cvar_t;
 
     // Global renderer state
-    pub static mut backEnd: backEnd_t;
-    pub static mut tr: tr_globals_t;
-    pub static mut tess: tess_t;
+    pub static mut backEnd: backEndState_t;
+    pub static mut tr: trGlobals_t;
+    pub static mut tess: shaderCommands_t;
     pub static mut common: *mut CCommon;
 
     fn Cvar_Get(var_name: *const c_char, var_value: *const c_char, flags: c_int) -> *mut cvar_t;
