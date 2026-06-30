@@ -5,7 +5,7 @@ under the **faithful-port** import-trust skill (`skills/faithful-port/`).
 
 - Originally **179 files / 697 stubs**, all introduced by single-file blind-port
   commits dated 2026-06-28 (pre-skill, before `08c3607`).
-- As of 2026-06-29: **15 done**, **164 files / 503 stubs remaining** (worklist
+- As of 2026-06-29: **45 done**, **134 files / 348 stubs remaining** (worklist
   verified in sync with `git grep -c '[u8; 0]'`, no drift).
 - Invariant when done (per `SKILL.md`): each file has **zero** `[u8; 0]`
   placeholders and **zero** fabricated `#[repr(C)]` external types.
@@ -27,10 +27,10 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [x] `src/code/game/g_missile.rs` (10)
 - [x] `src/code/game/AI_Stormtrooper.rs` (10)
 - [ ] `src/code/game/bg_public_h.rs` (9)
-- [ ] `src/code/jpeg-6/jcapimin.rs` (8)
+- [x] `src/code/jpeg-6/jcapimin.rs` (8)
 - [x] `src/code/RMG/RM_Terrain.rs` (7)
 - [ ] `src/code/renderer/tr_scene.rs` (7)
-- [ ] `src/code/jpeg-6/jdapistd.rs` (7)
+- [x] `src/code/jpeg-6/jdapistd.rs` (7)
 - [ ] `src/code/ff/ff_ffset.rs` (7)
 - [ ] `src/code/cgame/cg_effects.rs` (7)
 - [ ] `src/code/win32/glw_win_dx8_h.rs` (6)
@@ -140,14 +140,14 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [ ] `src/codemp/cgame/cg_drawtools.rs` (7)
 - [x] `src/codemp/RMG/RM_Manager.rs` (6)
 - [x] `src/codemp/RMG/RM_Instance_BSP.rs` (6)
-- [ ] `src/codemp/jpeg-6/jdsample.rs` (6)
-- [ ] `src/codemp/jpeg-6/jdapimin.rs` (6)
+- [x] `src/codemp/jpeg-6/jdsample.rs` (6)
+- [x] `src/codemp/jpeg-6/jdapimin.rs` (6)
 - [ ] `src/codemp/cgame/cg_servercmds.rs` (6)
 - [x] `src/codemp/RMG/RM_Path.rs` (5)
-- [ ] `src/codemp/jpeg-6/jdpostct.rs` (5)
-- [ ] `src/codemp/jpeg-6/jdmarker.rs` (5)
-- [ ] `src/codemp/jpeg-6/jdinput.rs` (5)
-- [ ] `src/codemp/jpeg-6/jcsample.rs` (5)
+- [x] `src/codemp/jpeg-6/jdpostct.rs` (5)
+- [x] `src/codemp/jpeg-6/jdmarker.rs` (5)
+- [x] `src/codemp/jpeg-6/jdinput.rs` (5)
+- [x] `src/codemp/jpeg-6/jcsample.rs` (5)
 - [ ] `src/codemp/icarus/GameInterface_h.rs` (5)
 - [ ] `src/codemp/game/g_strap.rs` (5)
 - [ ] `src/codemp/win32/glw_win_dx8_h.rs` (4)
