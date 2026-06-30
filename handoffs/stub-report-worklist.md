@@ -5,7 +5,7 @@ under the **faithful-port** import-trust skill (`skills/faithful-port/`).
 
 - Originally **179 files / 697 stubs**, all introduced by single-file blind-port
   commits dated 2026-06-28 (pre-skill, before `08c3607`).
-- As of 2026-06-29: **45 done**, **134 files / 348 stubs remaining** (worklist
+- As of 2026-06-29: **53 done**, **126 files / 324 stubs remaining** (worklist
   verified in sync with `git grep -c '[u8; 0]'`, no drift).
 - Invariant when done (per `SKILL.md`): each file has **zero** `[u8; 0]`
   placeholders and **zero** fabricated `#[repr(C)]` external types.
@@ -43,7 +43,7 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [x] `src/code/RMG/RM_Path.rs` (5)
 - [x] `src/code/RMG/RM_Manager.rs` (5)
 - [x] `src/code/RMG/RM_Instance.rs` (5)
-- [ ] `src/code/jpeg-6/jdmainct.rs` (5)
+- [x] `src/code/jpeg-6/jdmainct.rs` (5)
 - [ ] `src/code/game/AI_Sniper.rs` (5)
 - [ ] `src/code/game/AI_RocketTrooper.rs` (5)
 - [ ] `src/code/game/AI_Droid.rs` (5)
@@ -59,9 +59,9 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [ ] `src/code/cgame/cg_snapshot.rs` (4)
 - [ ] `src/code/win32/win_glimp_console.rs` (3)
 - [ ] `src/code/renderer/tr_landscape_h.rs` (3)
-- [ ] `src/code/jpeg-6/jdtrans.rs` (3)
-- [ ] `src/code/jpeg-6/jdcolor.rs` (3)
-- [ ] `src/code/jpeg-6/jctrans.rs` (3)
+- [x] `src/code/jpeg-6/jdtrans.rs` (3)
+- [x] `src/code/jpeg-6/jdcolor.rs` (3)
+- [x] `src/code/jpeg-6/jctrans.rs` (3)
 - [ ] `src/code/game/ghoul2_shared_h.rs` (3)
 - [ ] `src/code/game/AI_Mark2.rs` (3)
 - [ ] `src/code/ff/IFC/ImmBox_h.rs` (3)
@@ -155,7 +155,7 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [x] `src/codemp/RMG/RM_Manager_h.rs` (4)
 - [x] `src/codemp/RMG/RM_Instance_Void.rs` (4)
 - [ ] `src/codemp/qcommon/cm_landscape_h.rs` (4)
-- [ ] `src/codemp/jpeg-6/jdcolor.rs` (4)
+- [x] `src/codemp/jpeg-6/jdcolor.rs` (4)
 - [ ] `src/codemp/client/snd_music.rs` (4)
 - [ ] `src/codemp/server/sv_net_chan.rs` (3)
 - [ ] `src/codemp/renderer/tr_landscape_h.rs` (3)
@@ -167,9 +167,9 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [x] `src/codemp/RMG/RM_Area.rs` (2)
 - [ ] `src/codemp/renderer/tr_marks.rs` (2)
 - [ ] `src/codemp/qcommon/cm_public_h.rs` (2)
-- [ ] `src/codemp/jpeg-6/jmemnobs.rs` (2)
-- [ ] `src/codemp/jpeg-6/jdtrans.rs` (2)
-- [ ] `src/codemp/jpeg-6/jdct_h.rs` (2)
+- [x] `src/codemp/jpeg-6/jmemnobs.rs` (2)
+- [x] `src/codemp/jpeg-6/jdtrans.rs` (2)
+- [x] `src/codemp/jpeg-6/jdct_h.rs` (2)
 - [ ] `src/codemp/jpeg-6/jchuff_h.rs` (2)
 - [ ] `src/codemp/ghoul2/G2_misc.rs` (2)
 - [ ] `src/codemp/client/snd_mp3_h.rs` (2)
