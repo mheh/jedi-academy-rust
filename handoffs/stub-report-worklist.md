@@ -5,9 +5,9 @@ under the **faithful-port** import-trust skill (`skills/faithful-port/`).
 
 - Originally **179 files / 697 stubs**, all introduced by single-file blind-port
   commits dated 2026-06-28 (pre-skill, before `08c3607`).
-- As of 2026-06-29: **63 done**, **116 files / 309 stubs remaining** (worklist
-  verified in sync with `git grep -c '[u8; 0]'`, no drift). jpeg-6 subsystem
-  fully cleared.
+- As of 2026-06-29: **76 done**, **103 files / 284 stubs remaining** (worklist
+  verified in sync with `git grep -c '[u8; 0]'`, no drift). jpeg-6 and qcommon
+  subsystems fully cleared.
 - Invariant when done (per `SKILL.md`): each file has **zero** `[u8; 0]`
   placeholders and **zero** fabricated `#[repr(C)]` external types.
 - Sorted worst-first (stub count in parentheses). Check off as each file is re-ported.
@@ -50,7 +50,7 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [ ] `src/code/game/AI_Droid.rs` (5)
 - [ ] `src/code/renderer/tr_shadows.rs` (4)
 - [ ] `src/code/renderer/tr_mesh.rs` (4)
-- [ ] `src/code/qcommon/cm_local_h.rs` (4)
+- [x] `src/code/qcommon/cm_local_h.rs` (4)
 - [ ] `src/code/game/NPC_goal.rs` (4)
 - [ ] `src/code/game/g_ref.rs` (4)
 - [ ] `src/code/game/AI_Wampa.rs` (4)
@@ -73,9 +73,9 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [x] `src/code/RMG/RM_Objective.rs` (2)
 - [x] `src/code/RMG/RM_Objective_h.rs` (2)
 - [ ] `src/code/renderer/tr_public_h.rs` (2)
-- [ ] `src/code/qcommon/msg.rs` (2)
-- [ ] `src/code/qcommon/cm_trace.rs` (2)
-- [ ] `src/code/qcommon/cm_terrainmap.rs` (2)
+- [x] `src/code/qcommon/msg.rs` (2)
+- [x] `src/code/qcommon/cm_trace.rs` (2)
+- [x] `src/code/qcommon/cm_terrainmap.rs` (2)
 - [x] `src/code/jpeg-6/jddctmgr.rs` (2)
 - [x] `src/code/jpeg-6/jcomapi.rs` (2)
 - [x] `src/code/jpeg-6/jcdctmgr.rs` (2)
@@ -103,7 +103,7 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [ ] `src/code/server/sv_main.rs` (1)
 - [ ] `src/code/renderer/tr_types_h.rs` (1)
 - [ ] `src/code/renderer/tr_quicksprite_h.rs` (1)
-- [ ] `src/code/qcommon/common.rs` (1)
+- [x] `src/code/qcommon/common.rs` (1)
 - [ ] `src/code/mac/mac_snddma.rs` (1)
 - [ ] `src/code/mac/mac_net.rs` (1)
 - [x] `src/code/jpeg-6/jdmarker.rs` (1)
@@ -155,19 +155,19 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [ ] `src/codemp/unix/unix_main.rs` (4)
 - [x] `src/codemp/RMG/RM_Manager_h.rs` (4)
 - [x] `src/codemp/RMG/RM_Instance_Void.rs` (4)
-- [ ] `src/codemp/qcommon/cm_landscape_h.rs` (4)
+- [x] `src/codemp/qcommon/cm_landscape_h.rs` (4)
 - [x] `src/codemp/jpeg-6/jdcolor.rs` (4)
 - [ ] `src/codemp/client/snd_music.rs` (4)
 - [ ] `src/codemp/server/sv_net_chan.rs` (3)
 - [ ] `src/codemp/renderer/tr_landscape_h.rs` (3)
-- [ ] `src/codemp/qcommon/vm_local_h.rs` (3)
+- [x] `src/codemp/qcommon/vm_local_h.rs` (3)
 - [ ] `src/codemp/icarus/interface_h.rs` (3)
 - [ ] `src/codemp/client/FxSystem_h.rs` (3)
 - [ ] `src/codemp/botlib/be_aas_move_h.rs` (3)
 - [ ] `src/codemp/unix/vm_x86.rs` (2)
 - [x] `src/codemp/RMG/RM_Area.rs` (2)
 - [ ] `src/codemp/renderer/tr_marks.rs` (2)
-- [ ] `src/codemp/qcommon/cm_public_h.rs` (2)
+- [x] `src/codemp/qcommon/cm_public_h.rs` (2)
 - [x] `src/codemp/jpeg-6/jmemnobs.rs` (2)
 - [x] `src/codemp/jpeg-6/jdtrans.rs` (2)
 - [x] `src/codemp/jpeg-6/jdct_h.rs` (2)
@@ -184,11 +184,11 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [ ] `src/codemp/renderer/tr_shadows.rs` (1)
 - [ ] `src/codemp/renderer/tr_quicksprite.rs` (1)
 - [ ] `src/codemp/renderer/tr_arioche.rs` (1)
-- [ ] `src/codemp/qcommon/z_memman_pc.rs` (1)
-- [ ] `src/codemp/qcommon/stringed_interface.rs` (1)
-- [ ] `src/codemp/qcommon/stringed_interface_h.rs` (1)
-- [ ] `src/codemp/qcommon/cm_terrainmap_h.rs` (1)
-- [ ] `src/codemp/qcommon/cm_draw_h.rs` (1)
+- [x] `src/codemp/qcommon/z_memman_pc.rs` (1)
+- [x] `src/codemp/qcommon/stringed_interface.rs` (1)
+- [x] `src/codemp/qcommon/stringed_interface_h.rs` (1)
+- [x] `src/codemp/qcommon/cm_terrainmap_h.rs` (1)
+- [x] `src/codemp/qcommon/cm_draw_h.rs` (1)
 - [x] `src/codemp/jpeg-6/jctrans.rs` (1)
 - [ ] `src/codemp/icarus/Q3_Interface_h.rs` (1)
 - [ ] `src/codemp/client/snd_mem.rs` (1)
