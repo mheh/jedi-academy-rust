@@ -44,95 +44,26 @@
  * where SF = (smoothing_factor / 1024).
  * Currently, smoothing is only supported for 2h2v sampling factors.
  */
+#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals,
+         unused_variables, dead_code, unused_mut, unused_assignments,
+         clippy::all)]
 
-#![allow(non_snake_case)]
-
-use core::ffi::{c_int, c_void};
-
-/* ============================================================================
- * Stubs for JPEG-6 types and structures needed for structural coherence
- * ============================================================================ */
-
-pub type JSAMPLE = u8;
-pub type JSAMPROW = *mut JSAMPLE;
-pub type JSAMPARRAY = *mut JSAMPROW;
-pub type JSAMPIMAGE = *mut JSAMPARRAY;
-pub type JDIMENSION = u32;
-pub type INT32 = i32;
-pub type boolean = u8;
-
-const TRUE: boolean = 1;
-const FALSE: boolean = 0;
-
-pub const MAX_COMPONENTS: c_int = 10;
-const DCTSIZE: c_int = 8;
-
-const JPOOL_IMAGE: c_int = 1;
-
-const JERR_CCIR601_NOTIMPL: c_int = 37;
-const JERR_FRACT_SAMPLE_NOTIMPL: c_int = 38;
-const JTRC_SMOOTH_NOTIMPL: c_int = 1;
-
-#[repr(C)]
-pub struct jpeg_component_info {
-    pub h_samp_factor: c_int,
-    pub v_samp_factor: c_int,
-    pub width_in_blocks: c_int,
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct jpeg_downsampler {
-    pub start_pass: Option<unsafe extern "C" fn(j_compress_ptr)>,
-    pub downsample: Option<unsafe extern "C" fn(j_compress_ptr, JSAMPIMAGE, JDIMENSION, JSAMPIMAGE, JDIMENSION)>,
-    pub need_context_rows: boolean,
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct jpeg_memory_mgr {
-    pub alloc_small: Option<unsafe extern "C" fn(j_common_ptr, c_int, usize) -> *mut c_void>,
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct jpeg_error_mgr {
-    pub msg_code: c_int,
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct j_compress_struct {
-    pub err: *mut jpeg_error_mgr,
-    pub mem: *mut jpeg_memory_mgr,
-    pub downsample: *mut jpeg_downsampler,
-    pub max_h_samp_factor: c_int,
-    pub max_v_samp_factor: c_int,
-    pub image_width: JDIMENSION,
-    pub num_components: c_int,
-    pub comp_info: *mut jpeg_component_info,
-    pub CCIR601_sampling: boolean,
-    pub smoothing_factor: c_int,
-    _opaque: [u8; 0],
-}
-
-pub type j_compress_ptr = *mut j_compress_struct;
-pub type j_common_ptr = *mut c_void;
-
-/* External function declarations */
-extern "C" {
-    pub fn jcopy_sample_rows(input_array: JSAMPARRAY, source_row: c_int,
-                             output_array: JSAMPARRAY, dest_row: c_int,
-                             num_rows: c_int, num_cols: JDIMENSION);
-}
+//Anything above this #include will be ignored by the compiler
+/* #define JPEG_INTERNALS — triggers jpegint.h inclusion via jpeglib.h */
+use crate::codemp::qcommon::exe_headers_h::*;
+use crate::codemp::jpeg_6::jinclude_h::*;
+use crate::codemp::jpeg_6::jpeglib_h::*;
+use crate::codemp::jpeg_6::jpegint_h::*;
 
 /* Pointer to routine to downsample a single component */
-type downsample1_ptr = unsafe extern "C" fn(
-    j_compress_ptr,
-    *mut jpeg_component_info,
-    JSAMPARRAY,
-    JSAMPARRAY,
-);
+type downsample1_ptr = Option<
+    unsafe fn(
+        cinfo: j_compress_ptr,
+        compptr: *mut jpeg_component_info,
+        input_data: JSAMPARRAY,
+        output_data: JSAMPARRAY,
+    ),
+>;
 
 /* Private subobject */
 
@@ -145,29 +76,6 @@ struct my_downsampler {
 }
 
 type my_downsample_ptr = *mut my_downsampler;
-
-/* Macros */
-
-#[inline]
-unsafe fn ERREXIT(cinfo: j_compress_ptr, code: c_int) {
-    (*(*cinfo).err).msg_code = code;
-}
-
-#[inline]
-unsafe fn TRACEMS(cinfo: j_compress_ptr, _level: c_int, _code: c_int) {
-    (*(*cinfo).err).msg_code = _code;
-}
-
-#[inline]
-fn SIZEOF<T>() -> usize {
-    core::mem::size_of::<T>()
-}
-
-/* Macro: GETJSAMPLE - convert JSAMPLE (u8) to signed int for arithmetic */
-#[inline]
-fn GETJSAMPLE(val: JSAMPLE) -> c_int {
-    val as c_int
-}
 
 
 /*
@@ -186,15 +94,16 @@ unsafe fn start_pass_downsample(cinfo: j_compress_ptr) {
 
 unsafe fn expand_right_edge(
     image_data: JSAMPARRAY,
-    num_rows: c_int,
+    num_rows: core::ffi::c_int,
     input_cols: JDIMENSION,
     output_cols: JDIMENSION,
 ) {
     let mut ptr: JSAMPROW;
     let mut pixval: JSAMPLE;
-    let mut count: c_int;
-    let mut row: c_int;
-    let numcols: c_int = (output_cols - input_cols) as c_int;
+    let mut count: core::ffi::c_int;
+    let mut row: core::ffi::c_int;
+    let numcols: core::ffi::c_int =
+        output_cols.wrapping_sub(input_cols) as core::ffi::c_int;
 
     if numcols > 0 {
         row = 0;
@@ -226,15 +135,19 @@ unsafe fn sep_downsample(
     output_buf: JSAMPIMAGE,
     out_row_group_index: JDIMENSION,
 ) {
-    let downsample = (*cinfo).downsample as *mut my_downsampler;
-    let mut ci: c_int = 0;
-    let mut compptr: *mut jpeg_component_info = (*cinfo).comp_info;
+    let downsample = (*cinfo).downsample as my_downsample_ptr;
+    let mut ci: core::ffi::c_int;
+    let mut compptr: *mut jpeg_component_info;
+    let in_ptr: JSAMPARRAY;
+    let out_ptr: JSAMPARRAY;
 
+    ci = 0;
+    compptr = (*cinfo).comp_info;
     while ci < (*cinfo).num_components {
-        let in_ptr: JSAMPARRAY = (*input_buf.add(ci as usize)).add(in_row_index as usize);
-        let out_ptr: JSAMPARRAY = (*output_buf.add(ci as usize))
-            .add((out_row_group_index as c_int * (*compptr).v_samp_factor) as usize);
-        ((*downsample).methods[ci as usize])(cinfo, compptr, in_ptr, out_ptr);
+        let in_ptr = (*input_buf.add(ci as usize)).add(in_row_index as usize);
+        let out_ptr = (*output_buf.add(ci as usize))
+            .add(out_row_group_index as usize * (*compptr).v_samp_factor as usize);
+        (*downsample).methods[ci as usize].unwrap()(cinfo, compptr, in_ptr, out_ptr);
         ci += 1;
         compptr = compptr.add(1);
     }
@@ -254,20 +167,25 @@ unsafe fn int_downsample(
     input_data: JSAMPARRAY,
     output_data: JSAMPARRAY,
 ) {
-    let mut inrow: c_int;
-    let mut outrow: c_int;
-    let h_expand: c_int = (*cinfo).max_h_samp_factor / (*compptr).h_samp_factor;
-    let v_expand: c_int = (*cinfo).max_v_samp_factor / (*compptr).v_samp_factor;
-    let numpix: c_int = h_expand * v_expand;
-    let numpix2: c_int = numpix / 2;
-    let output_cols: JDIMENSION = ((*compptr).width_in_blocks * DCTSIZE) as u32;
+    let mut inrow: core::ffi::c_int;
+    let mut outrow: core::ffi::c_int;
+    let mut h_expand: core::ffi::c_int;
+    let mut v_expand: core::ffi::c_int;
+    let mut numpix: core::ffi::c_int;
+    let mut numpix2: core::ffi::c_int;
+    let mut h: core::ffi::c_int;
+    let mut v: core::ffi::c_int;
     let mut outcol: JDIMENSION;
-    let mut outcol_h: JDIMENSION;
-    let mut outptr: JSAMPROW;
+    let mut outcol_h: JDIMENSION;	/* outcol_h == outcol*h_expand */
+    let output_cols: JDIMENSION = (*compptr).width_in_blocks * DCTSIZE as JDIMENSION;
     let mut inptr: JSAMPROW;
+    let mut outptr: JSAMPROW;
     let mut outvalue: INT32;
-    let mut v: c_int;
-    let mut h: c_int;
+
+    h_expand = (*cinfo).max_h_samp_factor / (*compptr).h_samp_factor;
+    v_expand = (*cinfo).max_v_samp_factor / (*compptr).v_samp_factor;
+    numpix = h_expand * v_expand;
+    numpix2 = numpix / 2;
 
     /* Expand input data enough to let all the output samples be generated
      * by the standard loop.  Special-casing padded output would be more
@@ -277,7 +195,7 @@ unsafe fn int_downsample(
         input_data,
         (*cinfo).max_v_samp_factor,
         (*cinfo).image_width,
-        output_cols * h_expand as u32,
+        output_cols * h_expand as JDIMENSION,
     );
 
     inrow = 0;
@@ -302,7 +220,7 @@ unsafe fn int_downsample(
             *outptr = ((outvalue + numpix2 as INT32) / numpix as INT32) as JSAMPLE;
             outptr = outptr.add(1);
             outcol += 1;
-            outcol_h = (outcol_h as c_int + h_expand) as JDIMENSION;
+            outcol_h += h_expand as JDIMENSION;
         }
         inrow += v_expand;
         outrow += 1;
@@ -336,7 +254,7 @@ unsafe fn fullsize_downsample(
         output_data,
         (*cinfo).max_v_samp_factor,
         (*cinfo).image_width,
-        ((*compptr).width_in_blocks * DCTSIZE) as JDIMENSION,
+        (*compptr).width_in_blocks * DCTSIZE as JDIMENSION,
     );
 }
 
@@ -359,12 +277,12 @@ unsafe fn h2v1_downsample(
     input_data: JSAMPARRAY,
     output_data: JSAMPARRAY,
 ) {
-    let mut outrow: c_int;
+    let mut outrow: core::ffi::c_int;
     let mut outcol: JDIMENSION;
-    let output_cols: JDIMENSION = ((*compptr).width_in_blocks * DCTSIZE) as u32;
+    let output_cols: JDIMENSION = (*compptr).width_in_blocks * DCTSIZE as JDIMENSION;
     let mut inptr: JSAMPROW;
     let mut outptr: JSAMPROW;
-    let mut bias: c_int;
+    let mut bias: core::ffi::c_int;
 
     /* Expand input data enough to let all the output samples be generated
      * by the standard loop.  Special-casing padded output would be more
@@ -384,10 +302,11 @@ unsafe fn h2v1_downsample(
         bias = 0;			/* bias = 0,1,0,1,... for successive samples */
         outcol = 0;
         while outcol < output_cols {
-            *outptr = ((GETJSAMPLE(*inptr) + GETJSAMPLE(*inptr.offset(1)) + bias) >> 1) as JSAMPLE;
+            *outptr = ((GETJSAMPLE(*inptr) + GETJSAMPLE(*inptr.add(1))
+                        + bias) >> 1) as JSAMPLE;
+            outptr = outptr.add(1);
             bias ^= 1;		/* 0=>1, 1=>0 */
             inptr = inptr.add(2);
-            outptr = outptr.add(1);
             outcol += 1;
         }
         outrow += 1;
@@ -407,14 +326,14 @@ unsafe fn h2v2_downsample(
     input_data: JSAMPARRAY,
     output_data: JSAMPARRAY,
 ) {
-    let mut inrow: c_int;
-    let mut outrow: c_int;
+    let mut inrow: core::ffi::c_int;
+    let mut outrow: core::ffi::c_int;
     let mut outcol: JDIMENSION;
-    let output_cols: JDIMENSION = ((*compptr).width_in_blocks * DCTSIZE) as u32;
+    let output_cols: JDIMENSION = (*compptr).width_in_blocks * DCTSIZE as JDIMENSION;
     let mut inptr0: JSAMPROW;
     let mut inptr1: JSAMPROW;
     let mut outptr: JSAMPROW;
-    let mut bias: c_int;
+    let mut bias: core::ffi::c_int;
 
     /* Expand input data enough to let all the output samples be generated
      * by the standard loop.  Special-casing padded output would be more
@@ -436,12 +355,13 @@ unsafe fn h2v2_downsample(
         bias = 1;			/* bias = 1,2,1,2,... for successive samples */
         outcol = 0;
         while outcol < output_cols {
-            *outptr = ((GETJSAMPLE(*inptr0) + GETJSAMPLE(*inptr0.offset(1))
-                + GETJSAMPLE(*inptr1) + GETJSAMPLE(*inptr1.offset(1)) + bias) >> 2) as JSAMPLE;
+            *outptr = ((GETJSAMPLE(*inptr0) + GETJSAMPLE(*inptr0.add(1)) +
+                        GETJSAMPLE(*inptr1) + GETJSAMPLE(*inptr1.add(1))
+                        + bias) >> 2) as JSAMPLE;
+            outptr = outptr.add(1);
             bias ^= 3;		/* 1=>2, 2=>1 */
             inptr0 = inptr0.add(2);
             inptr1 = inptr1.add(2);
-            outptr = outptr.add(1);
             outcol += 1;
         }
         inrow += 2;
@@ -450,23 +370,25 @@ unsafe fn h2v2_downsample(
 }
 
 
-#[cfg(feature = "input_smoothing_supported")]
+/* #ifdef INPUT_SMOOTHING_SUPPORTED */
+
 /*
  * Downsample pixel values of a single component.
  * This version handles the standard case of 2:1 horizontal and 2:1 vertical,
  * with smoothing.  One row of context is required.
  */
 
+#[cfg(feature = "input_smoothing_supported")]
 unsafe fn h2v2_smooth_downsample(
     cinfo: j_compress_ptr,
     compptr: *mut jpeg_component_info,
     input_data: JSAMPARRAY,
     output_data: JSAMPARRAY,
 ) {
-    let mut inrow: c_int;
-    let mut outrow: c_int;
+    let mut inrow: core::ffi::c_int;
+    let mut outrow: core::ffi::c_int;
     let mut colctr: JDIMENSION;
-    let output_cols: JDIMENSION = ((*compptr).width_in_blocks * DCTSIZE) as u32;
+    let output_cols: JDIMENSION = (*compptr).width_in_blocks * DCTSIZE as JDIMENSION;
     let mut inptr0: JSAMPROW;
     let mut inptr1: JSAMPROW;
     let mut above_ptr: JSAMPROW;
@@ -482,7 +404,7 @@ unsafe fn h2v2_smooth_downsample(
      * efficient.
      */
     expand_right_edge(
-        (*input_data).offset(-1),
+        input_data.offset(-1),
         (*cinfo).max_v_samp_factor + 2,
         (*cinfo).image_width,
         output_cols * 2,
@@ -501,8 +423,8 @@ unsafe fn h2v2_smooth_downsample(
      * Also recall that SF = smoothing_factor / 1024.
      */
 
-    let memberscale = 16384i32 - ((*cinfo).smoothing_factor as i32) * 80; /* scaled (1-5*SF)/4 */
-    let neighscale = ((*cinfo).smoothing_factor as i32) * 16; /* scaled SF/4 */
+    let memberscale = 16384 - (*cinfo).smoothing_factor as INT32 * 80; /* scaled (1-5*SF)/4 */
+    let neighscale = (*cinfo).smoothing_factor as INT32 * 16; /* scaled SF/4 */
 
     inrow = 0;
     outrow = 0;
@@ -510,64 +432,68 @@ unsafe fn h2v2_smooth_downsample(
         outptr = *output_data.add(outrow as usize);
         inptr0 = *input_data.add(inrow as usize);
         inptr1 = *input_data.add((inrow + 1) as usize);
-        above_ptr = *input_data.add((inrow - 1) as usize);
+        above_ptr = *input_data.offset(inrow as isize - 1);
         below_ptr = *input_data.add((inrow + 2) as usize);
 
         /* Special case for first column: pretend column -1 is same as column 0 */
-        membersum = GETJSAMPLE(*inptr0) as INT32 + GETJSAMPLE(*inptr0.offset(1)) as INT32
-            + GETJSAMPLE(*inptr1) as INT32 + GETJSAMPLE(*inptr1.offset(1)) as INT32;
-        neighsum = GETJSAMPLE(*above_ptr) as INT32 + GETJSAMPLE(*above_ptr.offset(1)) as INT32
-            + GETJSAMPLE(*below_ptr) as INT32 + GETJSAMPLE(*below_ptr.offset(1)) as INT32
-            + GETJSAMPLE(*inptr0) as INT32 + GETJSAMPLE(*inptr0.offset(2)) as INT32
-            + GETJSAMPLE(*inptr1) as INT32 + GETJSAMPLE(*inptr1.offset(2)) as INT32;
+        membersum = GETJSAMPLE(*inptr0) as INT32 + GETJSAMPLE(*inptr0.add(1)) as INT32
+            + GETJSAMPLE(*inptr1) as INT32 + GETJSAMPLE(*inptr1.add(1)) as INT32;
+        neighsum = GETJSAMPLE(*above_ptr) as INT32 + GETJSAMPLE(*above_ptr.add(1)) as INT32
+            + GETJSAMPLE(*below_ptr) as INT32 + GETJSAMPLE(*below_ptr.add(1)) as INT32
+            + GETJSAMPLE(*inptr0) as INT32 + GETJSAMPLE(*inptr0.add(2)) as INT32
+            + GETJSAMPLE(*inptr1) as INT32 + GETJSAMPLE(*inptr1.add(2)) as INT32;
         neighsum += neighsum;
-        neighsum += GETJSAMPLE(*above_ptr) as INT32 + GETJSAMPLE(*above_ptr.offset(2)) as INT32
-            + GETJSAMPLE(*below_ptr) as INT32 + GETJSAMPLE(*below_ptr.offset(2)) as INT32;
+        neighsum += GETJSAMPLE(*above_ptr) as INT32 + GETJSAMPLE(*above_ptr.add(2)) as INT32
+            + GETJSAMPLE(*below_ptr) as INT32 + GETJSAMPLE(*below_ptr.add(2)) as INT32;
         membersum = membersum * memberscale + neighsum * neighscale;
         *outptr = ((membersum + 32768) >> 16) as JSAMPLE;
+        outptr = outptr.add(1);
         inptr0 = inptr0.add(2);
         inptr1 = inptr1.add(2);
         above_ptr = above_ptr.add(2);
         below_ptr = below_ptr.add(2);
-        outptr = outptr.add(1);
 
-        colctr = output_cols - 2;
+        colctr = output_cols.wrapping_sub(2);
         while colctr > 0 {
             /* sum of pixels directly mapped to this output element */
-            membersum = GETJSAMPLE(*inptr0) as INT32 + GETJSAMPLE(*inptr0.offset(1)) as INT32
-                + GETJSAMPLE(*inptr1) as INT32 + GETJSAMPLE(*inptr1.offset(1)) as INT32;
+            membersum = GETJSAMPLE(*inptr0) as INT32 + GETJSAMPLE(*inptr0.add(1)) as INT32
+                + GETJSAMPLE(*inptr1) as INT32 + GETJSAMPLE(*inptr1.add(1)) as INT32;
             /* sum of edge-neighbor pixels */
-            neighsum = GETJSAMPLE(*above_ptr) as INT32 + GETJSAMPLE(*above_ptr.offset(1)) as INT32
-                + GETJSAMPLE(*below_ptr) as INT32 + GETJSAMPLE(*below_ptr.offset(1)) as INT32
-                + GETJSAMPLE(*inptr0.offset(-1)) as INT32 + GETJSAMPLE(*inptr0.offset(2)) as INT32
-                + GETJSAMPLE(*inptr1.offset(-1)) as INT32 + GETJSAMPLE(*inptr1.offset(2)) as INT32;
+            neighsum = GETJSAMPLE(*above_ptr) as INT32 + GETJSAMPLE(*above_ptr.add(1)) as INT32
+                + GETJSAMPLE(*below_ptr) as INT32 + GETJSAMPLE(*below_ptr.add(1)) as INT32
+                + GETJSAMPLE(*inptr0.offset(-1)) as INT32 + GETJSAMPLE(*inptr0.add(2)) as INT32
+                + GETJSAMPLE(*inptr1.offset(-1)) as INT32 + GETJSAMPLE(*inptr1.add(2)) as INT32;
             /* The edge-neighbors count twice as much as corner-neighbors */
             neighsum += neighsum;
             /* Add in the corner-neighbors */
-            neighsum += GETJSAMPLE(*above_ptr.offset(-1)) as INT32 + GETJSAMPLE(*above_ptr.offset(2)) as INT32
-                + GETJSAMPLE(*below_ptr.offset(-1)) as INT32 + GETJSAMPLE(*below_ptr.offset(2)) as INT32;
+            neighsum += GETJSAMPLE(*above_ptr.offset(-1)) as INT32
+                + GETJSAMPLE(*above_ptr.add(2)) as INT32
+                + GETJSAMPLE(*below_ptr.offset(-1)) as INT32
+                + GETJSAMPLE(*below_ptr.add(2)) as INT32;
             /* form final output scaled up by 2^16 */
             membersum = membersum * memberscale + neighsum * neighscale;
             /* round, descale and output it */
             *outptr = ((membersum + 32768) >> 16) as JSAMPLE;
+            outptr = outptr.add(1);
             inptr0 = inptr0.add(2);
             inptr1 = inptr1.add(2);
             above_ptr = above_ptr.add(2);
             below_ptr = below_ptr.add(2);
-            outptr = outptr.add(1);
             colctr -= 1;
         }
 
         /* Special case for last column */
-        membersum = GETJSAMPLE(*inptr0) as INT32 + GETJSAMPLE(*inptr0.offset(1)) as INT32
-            + GETJSAMPLE(*inptr1) as INT32 + GETJSAMPLE(*inptr1.offset(1)) as INT32;
-        neighsum = GETJSAMPLE(*above_ptr) as INT32 + GETJSAMPLE(*above_ptr.offset(1)) as INT32
-            + GETJSAMPLE(*below_ptr) as INT32 + GETJSAMPLE(*below_ptr.offset(1)) as INT32
-            + GETJSAMPLE(*inptr0.offset(-1)) as INT32 + GETJSAMPLE(*inptr0.offset(1)) as INT32
-            + GETJSAMPLE(*inptr1.offset(-1)) as INT32 + GETJSAMPLE(*inptr1.offset(1)) as INT32;
+        membersum = GETJSAMPLE(*inptr0) as INT32 + GETJSAMPLE(*inptr0.add(1)) as INT32
+            + GETJSAMPLE(*inptr1) as INT32 + GETJSAMPLE(*inptr1.add(1)) as INT32;
+        neighsum = GETJSAMPLE(*above_ptr) as INT32 + GETJSAMPLE(*above_ptr.add(1)) as INT32
+            + GETJSAMPLE(*below_ptr) as INT32 + GETJSAMPLE(*below_ptr.add(1)) as INT32
+            + GETJSAMPLE(*inptr0.offset(-1)) as INT32 + GETJSAMPLE(*inptr0.add(1)) as INT32
+            + GETJSAMPLE(*inptr1.offset(-1)) as INT32 + GETJSAMPLE(*inptr1.add(1)) as INT32;
         neighsum += neighsum;
-        neighsum += GETJSAMPLE(*above_ptr.offset(-1)) as INT32 + GETJSAMPLE(*above_ptr.offset(1)) as INT32
-            + GETJSAMPLE(*below_ptr.offset(-1)) as INT32 + GETJSAMPLE(*below_ptr.offset(1)) as INT32;
+        neighsum += GETJSAMPLE(*above_ptr.offset(-1)) as INT32
+            + GETJSAMPLE(*above_ptr.add(1)) as INT32
+            + GETJSAMPLE(*below_ptr.offset(-1)) as INT32
+            + GETJSAMPLE(*below_ptr.add(1)) as INT32;
         membersum = membersum * memberscale + neighsum * neighscale;
         *outptr = ((membersum + 32768) >> 16) as JSAMPLE;
 
@@ -577,22 +503,22 @@ unsafe fn h2v2_smooth_downsample(
 }
 
 
-#[cfg(feature = "input_smoothing_supported")]
 /*
  * Downsample pixel values of a single component.
  * This version handles the special case of a full-size component,
  * with smoothing.  One row of context is required.
  */
 
+#[cfg(feature = "input_smoothing_supported")]
 unsafe fn fullsize_smooth_downsample(
     cinfo: j_compress_ptr,
     compptr: *mut jpeg_component_info,
     input_data: JSAMPARRAY,
     output_data: JSAMPARRAY,
 ) {
-    let mut outrow: c_int;
+    let mut outrow: core::ffi::c_int;
     let mut colctr: JDIMENSION;
-    let output_cols: JDIMENSION = ((*compptr).width_in_blocks * DCTSIZE) as u32;
+    let output_cols: JDIMENSION = (*compptr).width_in_blocks * DCTSIZE as JDIMENSION;
     let mut inptr: JSAMPROW;
     let mut above_ptr: JSAMPROW;
     let mut below_ptr: JSAMPROW;
@@ -601,16 +527,16 @@ unsafe fn fullsize_smooth_downsample(
     let mut neighsum: INT32;
     let memberscale: INT32;
     let neighscale: INT32;
-    let mut colsum: c_int;
-    let mut lastcolsum: c_int;
-    let mut nextcolsum: c_int;
+    let mut colsum: core::ffi::c_int;
+    let mut lastcolsum: core::ffi::c_int;
+    let mut nextcolsum: core::ffi::c_int;
 
     /* Expand input data enough to let all the output samples be generated
      * by the standard loop.  Special-casing padded output would be more
      * efficient.
      */
     expand_right_edge(
-        (*input_data).offset(-1),
+        input_data.offset(-1),
         (*cinfo).max_v_samp_factor + 2,
         (*cinfo).image_width,
         output_cols,
@@ -622,41 +548,42 @@ unsafe fn fullsize_smooth_downsample(
      * Also recall that SF = smoothing_factor / 1024.
      */
 
-    let memberscale = 65536i32 - ((*cinfo).smoothing_factor as i32) * 512; /* scaled 1-8*SF */
-    let neighscale = ((*cinfo).smoothing_factor as i32) * 64; /* scaled SF */
+    let memberscale = 65536 - (*cinfo).smoothing_factor as INT32 * 512; /* scaled 1-8*SF */
+    let neighscale = (*cinfo).smoothing_factor as INT32 * 64; /* scaled SF */
 
     outrow = 0;
     while outrow < (*compptr).v_samp_factor {
         outptr = *output_data.add(outrow as usize);
         inptr = *input_data.add(outrow as usize);
-        above_ptr = *input_data.add((outrow - 1) as usize);
+        above_ptr = *input_data.offset(outrow as isize - 1);
         below_ptr = *input_data.add((outrow + 1) as usize);
 
         /* Special case for first column */
-        colsum = GETJSAMPLE(*above_ptr) as c_int + GETJSAMPLE(*below_ptr) as c_int
-            + GETJSAMPLE(*inptr) as c_int;
+        colsum = GETJSAMPLE(*above_ptr) + GETJSAMPLE(*below_ptr)
+            + GETJSAMPLE(*inptr);
         above_ptr = above_ptr.add(1);
         below_ptr = below_ptr.add(1);
         membersum = GETJSAMPLE(*inptr) as INT32;
         inptr = inptr.add(1);
-        nextcolsum = GETJSAMPLE(*above_ptr) as c_int + GETJSAMPLE(*below_ptr) as c_int
-            + GETJSAMPLE(*inptr) as c_int;
-        neighsum = (colsum + (colsum - membersum as c_int) + nextcolsum) as INT32;
+        nextcolsum = GETJSAMPLE(*above_ptr) + GETJSAMPLE(*below_ptr)
+            + GETJSAMPLE(*inptr);
+        neighsum = (colsum + (colsum - membersum as core::ffi::c_int) + nextcolsum) as INT32;
         membersum = membersum * memberscale + neighsum * neighscale;
         *outptr = ((membersum + 32768) >> 16) as JSAMPLE;
         outptr = outptr.add(1);
         lastcolsum = colsum;
         colsum = nextcolsum;
 
-        colctr = output_cols - 2;
+        colctr = output_cols.wrapping_sub(2);
         while colctr > 0 {
             membersum = GETJSAMPLE(*inptr) as INT32;
             inptr = inptr.add(1);
             above_ptr = above_ptr.add(1);
             below_ptr = below_ptr.add(1);
-            nextcolsum = GETJSAMPLE(*above_ptr) as c_int + GETJSAMPLE(*below_ptr) as c_int
-                + GETJSAMPLE(*inptr) as c_int;
-            neighsum = (lastcolsum + (colsum - membersum as c_int) + nextcolsum) as INT32;
+            nextcolsum = GETJSAMPLE(*above_ptr) + GETJSAMPLE(*below_ptr)
+                + GETJSAMPLE(*inptr);
+            neighsum =
+                (lastcolsum + (colsum - membersum as core::ffi::c_int) + nextcolsum) as INT32;
             membersum = membersum * memberscale + neighsum * neighscale;
             *outptr = ((membersum + 32768) >> 16) as JSAMPLE;
             outptr = outptr.add(1);
@@ -667,13 +594,15 @@ unsafe fn fullsize_smooth_downsample(
 
         /* Special case for last column */
         membersum = GETJSAMPLE(*inptr) as INT32;
-        neighsum = (lastcolsum + (colsum - membersum as c_int) + colsum) as INT32;
+        neighsum = (lastcolsum + (colsum - membersum as core::ffi::c_int) + colsum) as INT32;
         membersum = membersum * memberscale + neighsum * neighscale;
         *outptr = ((membersum + 32768) >> 16) as JSAMPLE;
 
         outrow += 1;
     }
 }
+
+/* #endif */ /* INPUT_SMOOTHING_SUPPORTED */
 
 
 /*
@@ -682,20 +611,20 @@ unsafe fn fullsize_smooth_downsample(
  */
 
 pub unsafe fn jinit_downsampler(cinfo: j_compress_ptr) {
-    let mut downsample: *mut my_downsampler;
-    let mut ci: c_int;
+    let mut downsample: my_downsample_ptr;
+    let mut ci: core::ffi::c_int;
     let mut compptr: *mut jpeg_component_info;
     let mut smoothok: boolean = TRUE;
 
     downsample = (*(*cinfo).mem).alloc_small.unwrap()(
         cinfo as j_common_ptr,
         JPOOL_IMAGE,
-        SIZEOF::<my_downsampler>(),
-    ) as *mut my_downsampler;
-    (*cinfo).downsample = &mut (*downsample).pub_ as *mut jpeg_downsampler;
-    (*(*cinfo).downsample).start_pass = Some(start_pass_downsample);
-    (*(*cinfo).downsample).downsample = Some(sep_downsample);
-    (*(*cinfo).downsample).need_context_rows = FALSE;
+        core::mem::size_of::<my_downsampler>(),
+    ) as my_downsample_ptr;
+    (*cinfo).downsample = downsample as *mut jpeg_downsampler;
+    (*downsample).pub_.start_pass = Some(start_pass_downsample);
+    (*downsample).pub_.downsample = Some(sep_downsample);
+    (*downsample).pub_.need_context_rows = FALSE;
 
     if (*cinfo).CCIR601_sampling != 0 {
         ERREXIT(cinfo, JERR_CCIR601_NOTIMPL);
@@ -708,45 +637,45 @@ pub unsafe fn jinit_downsampler(cinfo: j_compress_ptr) {
         if (*compptr).h_samp_factor == (*cinfo).max_h_samp_factor
             && (*compptr).v_samp_factor == (*cinfo).max_v_samp_factor
         {
+            /* Porting note: C uses #ifdef INPUT_SMOOTHING_SUPPORTED to gate the
+             * inner if/else (not an outer else-if arm), so we duplicate the
+             * assignment under cfg(feature) / cfg(not(feature)) blocks. */
             #[cfg(feature = "input_smoothing_supported")]
-            {
-                if (*cinfo).smoothing_factor != 0 {
-                    (*downsample).methods[ci as usize] = fullsize_smooth_downsample;
-                    (*(*cinfo).downsample).need_context_rows = TRUE;
-                } else {
-                    (*downsample).methods[ci as usize] = fullsize_downsample;
-                }
+            if (*cinfo).smoothing_factor != 0 {
+                (*downsample).methods[ci as usize] = Some(fullsize_smooth_downsample);
+                (*downsample).pub_.need_context_rows = TRUE;
+            } else {
+                (*downsample).methods[ci as usize] = Some(fullsize_downsample);
             }
             #[cfg(not(feature = "input_smoothing_supported"))]
             {
-                (*downsample).methods[ci as usize] = fullsize_downsample;
+                (*downsample).methods[ci as usize] = Some(fullsize_downsample);
             }
         } else if (*compptr).h_samp_factor * 2 == (*cinfo).max_h_samp_factor
             && (*compptr).v_samp_factor == (*cinfo).max_v_samp_factor
         {
             smoothok = FALSE;
-            (*downsample).methods[ci as usize] = h2v1_downsample;
+            (*downsample).methods[ci as usize] = Some(h2v1_downsample);
         } else if (*compptr).h_samp_factor * 2 == (*cinfo).max_h_samp_factor
             && (*compptr).v_samp_factor * 2 == (*cinfo).max_v_samp_factor
         {
+            /* Same cfg pattern as the fullsize case above */
             #[cfg(feature = "input_smoothing_supported")]
-            {
-                if (*cinfo).smoothing_factor != 0 {
-                    (*downsample).methods[ci as usize] = h2v2_smooth_downsample;
-                    (*(*cinfo).downsample).need_context_rows = TRUE;
-                } else {
-                    (*downsample).methods[ci as usize] = h2v2_downsample;
-                }
+            if (*cinfo).smoothing_factor != 0 {
+                (*downsample).methods[ci as usize] = Some(h2v2_smooth_downsample);
+                (*downsample).pub_.need_context_rows = TRUE;
+            } else {
+                (*downsample).methods[ci as usize] = Some(h2v2_downsample);
             }
             #[cfg(not(feature = "input_smoothing_supported"))]
             {
-                (*downsample).methods[ci as usize] = h2v2_downsample;
+                (*downsample).methods[ci as usize] = Some(h2v2_downsample);
             }
         } else if ((*cinfo).max_h_samp_factor % (*compptr).h_samp_factor) == 0
             && ((*cinfo).max_v_samp_factor % (*compptr).v_samp_factor) == 0
         {
             smoothok = FALSE;
-            (*downsample).methods[ci as usize] = int_downsample;
+            (*downsample).methods[ci as usize] = Some(int_downsample);
         } else {
             ERREXIT(cinfo, JERR_FRACT_SAMPLE_NOTIMPL);
         }
@@ -754,10 +683,10 @@ pub unsafe fn jinit_downsampler(cinfo: j_compress_ptr) {
         compptr = compptr.add(1);
     }
 
+    /* #ifdef INPUT_SMOOTHING_SUPPORTED */
     #[cfg(feature = "input_smoothing_supported")]
-    {
-        if (*cinfo).smoothing_factor != 0 && smoothok == FALSE {
-            TRACEMS(cinfo, 0, JTRC_SMOOTH_NOTIMPL);
-        }
+    if (*cinfo).smoothing_factor != 0 && smoothok == 0 {
+        TRACEMS(cinfo, 0, JTRC_SMOOTH_NOTIMPL);
     }
+    /* #endif */
 }
