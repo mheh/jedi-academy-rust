@@ -1,14 +1,16 @@
 // #[allow(non_snake_case)]
 
+use crate::code::game::g_headers::*;    // g_headers.h
+use crate::code::game::b_local_h::*;    // b_local.h
 use core::ffi::{c_int, c_void};
 
 // extern declarations for functions from g_headers.h and b_local.h
 extern "C" {
-    fn PM_FlippingAnim(anim: c_int) -> bool;
+    fn PM_FlippingAnim(anim: c_int) -> qboolean;
     fn NPC_BSST_Patrol();
 
     fn RT_FlyStart(self_: *mut gentity_t);
-    fn Q3_TaskIDPending(ent: *mut gentity_t, taskType: c_int) -> bool;
+    fn Q3_TaskIDPending(ent: *mut gentity_t, taskType: c_int) -> qboolean;
 
     fn G_SoundIndex(filename: *const c_char) -> c_int;
     fn G_EffectIndex(filename: *const c_char) -> c_int;
@@ -65,26 +67,7 @@ extern "C" {
     fn fabs(x: f32) -> f32;
 
     // Global struct gi (game interface) - accessed for tracing
-    static mut gi: game_import_t;
-}
-
-// Forward declarations for types we'll reference but not fully define
-#[repr(C)]
-pub struct gentity_t {
-    // Placeholder - real structure defined elsewhere
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct trace_t {
-    // Placeholder - real structure defined elsewhere
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct game_import_t {
-    // Placeholder - real structure defined elsewhere
-    _opaque: [u8; 0],
+    static mut gi: gameImport_t;
 }
 
 // Globals from the module (must be declared as static mut and accessed via addr_of!)
@@ -97,18 +80,6 @@ extern "C" {
     static mut ucmd: usercmd_t;
 }
 
-#[repr(C)]
-pub struct cvar_t {
-    // Placeholder
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct usercmd_t {
-    // Placeholder
-    _opaque: [u8; 0],
-}
-
 // Macros converted to constants
 const VELOCITY_DECAY: f32 = 0.7;
 
@@ -118,40 +89,6 @@ const RT_FLYING_UPWARD_PUSH: i32 = 150;
 
 const RT_FLYING_FORWARD_BASE_SPEED: i32 = 50;
 const RT_FLYING_FORWARD_MULTIPLIER: i32 = 10;
-
-// Constants that appear in the code
-const ENTITYNUM_NONE: c_int = -1;
-const MIN_ROCKET_DIST_SQUARED: f32 = 128.0 * 128.0;
-const SPOT_HEAD: c_int = 0; // placeholder
-const MASK_SHOT: c_int = 0; // placeholder
-const MASK_SOLID: c_int = 0; // placeholder
-const BUTTON_ATTACK: c_int = 1; // placeholder
-const BUTTON_ALT_ATTACK: c_int = 2; // placeholder
-const PMF_TIME_KNOCKBACK: c_int = 1; // placeholder
-const SVF_CUSTOM_GRAVITY: c_int = 1; // placeholder
-const MT_FLYSWIM: c_int = 1; // placeholder
-const MT_RUNJUMP: c_int = 0; // placeholder
-const NPCAI_FLY: c_int = 1; // placeholder
-const TID_MOVE_NAV: c_int = 0; // placeholder
-const CHAN_ITEM: c_int = 0; // placeholder
-const Q3_INFINITE: c_int = -1; // placeholder
-const RANK_LT: c_int = 0; // placeholder
-const WP_NONE: c_int = 0; // placeholder
-const WP_ROCKET_LAUNCHER: c_int = 5; // placeholder
-const WP_CONCUSSION: c_int = 6; // placeholder
-const WP_FLECHETTE: c_int = 7; // placeholder
-const WP_REPEATER: c_int = 8; // placeholder
-const WP_THERMAL: c_int = 9; // placeholder
-const WP_TRIP_MINE: c_int = 10; // placeholder
-const WP_DET_PACK: c_int = 11; // placeholder
-const WP_EMPLACED_GUN: c_int = 12; // placeholder
-const SCF_ALT_FIRE: c_int = 1; // placeholder
-const SCF_CHASE_ENEMIES: c_int = 2; // placeholder
-const SCF_FIRE_WEAPON: c_int = 4; // placeholder
-const SVF_GLASS_BRUSH: c_int = 1; // placeholder
-const FP_LEVITATION: c_int = 0; // placeholder
-const YAW: usize = 1;
-const PITCH: usize = 0;
 
 pub fn RT_Precache() {
     unsafe {
@@ -256,7 +193,7 @@ pub fn RT_FireDecide() {
                             //can hit enemy or enemy ally or will hit glass or other minor breakable (or in emplaced gun), so shoot anyway
                             enemyCS = true;
                             //NPC_AimAdjust( 2 );//adjust aim better longer we have clear shot at enemy
-                            VectorCopy(&(*(*NPC).enemy).currentOrigin, &mut (*NPCInfo as *mut c_void as *mut [f32; 3]);
+                            VectorCopy(&(*(*NPC).enemy).currentOrigin, &mut (*NPCInfo as *mut c_void as *mut [f32; 3]));
                         } else if !hitEnt.is_null() {
                             // Continue with hitEnt checks...
                             //Hmm, have to get around this bastard
@@ -296,7 +233,7 @@ pub fn RT_FireDecide() {
             if !enemyCS {
                 //if have a clear shot, always try
                 //See if we should continue to fire on their last position
-                //!TIMER_Done( NPC, "stick" ) ||
+                // !TIMER_Done( NPC, "stick" ) ||
                 if !hitAlly { //we're not going to hit an ally
                     // && enemyInFOV //enemy is in our FOV //FIXME: or we don't have a clear LOS?
                     // && NPCInfo->enemyLastSeenTime > 0 //we've seen the enemy
@@ -520,7 +457,7 @@ pub fn RT_JetPackEffect(duration: c_int) {
 pub fn RT_Flying_ApplyFriction(frictionScale: f32) {
     unsafe {
         if (*(*NPC).client).ps.velocity[0] != 0.0 {
-            (*(*NPC).client).ps.velocity[0] *= VELOCITY_DECAY; ///frictionScale;
+            (*(*NPC).client).ps.velocity[0] *= VELOCITY_DECAY; // /frictionScale;
 
             if fabs((*(*NPC).client).ps.velocity[0]) < 1.0 {
                 (*(*NPC).client).ps.velocity[0] = 0.0;
@@ -528,7 +465,7 @@ pub fn RT_Flying_ApplyFriction(frictionScale: f32) {
         }
 
         if (*(*NPC).client).ps.velocity[1] != 0.0 {
-            (*(*NPC).client).ps.velocity[1] *= VELOCITY_DECAY; ///frictionScale;
+            (*(*NPC).client).ps.velocity[1] *= VELOCITY_DECAY; // /frictionScale;
 
             if fabs((*(*NPC).client).ps.velocity[1]) < 1.0 {
                 (*(*NPC).client).ps.velocity[1] = 0.0;
