@@ -15,132 +15,34 @@
  * shared by compression and decompression, and jdtrans.c for the transcoding
  * case.
  */
+//Anything above this #include will be ignored by the compiler
+// Porting: #define JPEG_INTERNALS enables jpegint.h inclusion via jpeglib.h;
+// handled by the jpegint_h glob-import below.
+
+#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals)]
 
 use core::ffi::c_int;
+use crate::codemp::qcommon::exe_headers_h::*;
+use crate::codemp::jpeg_6::jinclude_h::*;
+use crate::codemp::jpeg_6::jpeglib_h::*;
+use crate::codemp::jpeg_6::jpegint_h::*;
 
-// ============================================================================
-// Stubs for JPEG-6 types and structures needed for structural coherence
-// ============================================================================
-
-pub type JDIMENSION = u32;
-pub type boolean = u8;
-
-const TRUE: boolean = 1;
-const FALSE: boolean = 0;
-
-const NUM_QUANT_TBLS: usize = 4;
-const NUM_HUFF_TBLS: usize = 4;
-
-const DSTATE_START: c_int = 200;
-const DSTATE_INHEADER: c_int = 201;
-const DSTATE_READY: c_int = 202;
-const DSTATE_PRELOAD: c_int = 203;
-const DSTATE_PRESCAN: c_int = 204;
-const DSTATE_SCANNING: c_int = 205;
-const DSTATE_RAW_OK: c_int = 206;
-const DSTATE_BUFIMAGE: c_int = 207;
-const DSTATE_BUFPOST: c_int = 208;
-const DSTATE_STOPPING: c_int = 210;
-
-const JPEG_SUSPENDED: c_int = 0;
-const JPEG_REACHED_SOS: c_int = 1;
-const JPEG_REACHED_EOI: c_int = 2;
-const JPEG_HEADER_OK: c_int = 0;
-const JPEG_HEADER_TABLES_ONLY: c_int = 1;
-
-const JPEG_COM: c_int = 0xfe;
-const JPEG_APP0: c_int = 0xe0;
-
-const JCS_UNKNOWN: c_int = 0;
-const JCS_GRAYSCALE: c_int = 1;
-const JCS_RGB: c_int = 2;
-const JCS_YCbCr: c_int = 3;
-const JCS_CMYK: c_int = 4;
-const JCS_YCCK: c_int = 5;
-
-const JDCT_DEFAULT: c_int = 0;
-
-const JDITHER_FS: c_int = 1;
-
-// Opaque forward declarations
-#[repr(C)]
-pub struct j_decompress_struct {
-    _opaque: [u8; 0],
-}
-pub type j_decompress_ptr = *mut j_decompress_struct;
-
-#[repr(C)]
-pub struct j_common_struct {
-    _opaque: [u8; 0],
-}
-pub type j_common_ptr = *mut j_common_struct;
-
-#[repr(C)]
-pub struct jpeg_source_mgr {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct jpeg_marker_reader {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct jpeg_input_controller {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct jpeg_decomp_master {
-    _opaque: [u8; 0],
-}
-
-// Macro equivalent: SIZEOF(object) -> sizeof(object)
-#[inline]
-fn SIZEOF<T>() -> usize {
-    core::mem::size_of::<T>()
-}
-
-// Stub error/warning/trace functions
-fn ERREXIT1(_cinfo: j_decompress_ptr, _code: c_int, _p1: c_int) {
-    // Stub: error reporting disabled for porting
-}
-
-fn WARNMS1(_cinfo: j_decompress_ptr, _code: c_int, _p1: c_int) {
-    // Stub: warning reporting disabled for porting
-}
-
-fn TRACEMS3(_cinfo: j_decompress_ptr, _level: c_int, _code: c_int, _p1: c_int, _p2: c_int, _p3: c_int) {
-    // Stub: trace disabled for porting
-}
-
-// Forward declarations for init functions
-extern "C" {
-    fn jinit_memory_mgr(cinfo: j_common_ptr);
-    fn jinit_marker_reader(cinfo: j_decompress_ptr);
-    fn jinit_input_controller(cinfo: j_decompress_ptr);
-    fn jpeg_destroy(cinfo: j_common_ptr);
-    fn jpeg_abort(cinfo: j_common_ptr);
-    fn jpeg_consume_input(cinfo: j_decompress_ptr) -> c_int;
-}
 
 /*
  * Initialization of a JPEG decompression object.
  * The error manager must already be set up (in case memory manager fails).
  */
 
-pub unsafe fn jpeg_create_decompress(cinfo: j_decompress_ptr)
-{
+pub unsafe fn jpeg_create_decompress(cinfo: j_decompress_ptr) {
     let mut i: c_int;
 
     /* For debugging purposes, zero the whole master structure.
      * But error manager pointer is already there, so save and restore it.
      */
     {
-        let err = addr_of_mut!((*cinfo).err);
-        // MEMZERO(cinfo, SIZEOF(struct jpeg_decompress_struct));
-        core::ptr::write_bytes(cinfo as *mut u8, 0, SIZEOF::<j_decompress_struct>());
-        (*cinfo).err = *err;
+        let err: *mut jpeg_error_mgr = (*cinfo).err;
+        MEMZERO!(cinfo, SIZEOF!(jpeg_decompress_struct));
+        (*cinfo).err = err;
     }
     (*cinfo).is_decompressor = TRUE;
 
@@ -152,13 +54,13 @@ pub unsafe fn jpeg_create_decompress(cinfo: j_decompress_ptr)
     (*cinfo).src = core::ptr::null_mut();
 
     i = 0;
-    while i < NUM_QUANT_TBLS as c_int {
+    while i < NUM_QUANT_TBLS {
         (*cinfo).quant_tbl_ptrs[i as usize] = core::ptr::null_mut();
         i += 1;
     }
 
     i = 0;
-    while i < NUM_HUFF_TBLS as c_int {
+    while i < NUM_HUFF_TBLS {
         (*cinfo).dc_huff_tbl_ptrs[i as usize] = core::ptr::null_mut();
         (*cinfo).ac_huff_tbl_ptrs[i as usize] = core::ptr::null_mut();
         i += 1;
@@ -181,8 +83,7 @@ pub unsafe fn jpeg_create_decompress(cinfo: j_decompress_ptr)
  * Destruction of a JPEG decompression object
  */
 
-pub unsafe fn jpeg_destroy_decompress(cinfo: j_decompress_ptr)
-{
+pub unsafe fn jpeg_destroy_decompress(cinfo: j_decompress_ptr) {
     jpeg_destroy(cinfo as j_common_ptr); /* use common routine */
 }
 
@@ -192,8 +93,7 @@ pub unsafe fn jpeg_destroy_decompress(cinfo: j_decompress_ptr)
  * but don't destroy the object itself.
  */
 
-pub unsafe fn jpeg_abort_decompress(cinfo: j_decompress_ptr)
-{
+pub unsafe fn jpeg_abort_decompress(cinfo: j_decompress_ptr) {
     jpeg_abort(cinfo as j_common_ptr); /* use common routine */
 }
 
@@ -202,15 +102,17 @@ pub unsafe fn jpeg_abort_decompress(cinfo: j_decompress_ptr)
  * Install a special processing method for COM or APPn markers.
  */
 
-pub unsafe fn jpeg_set_marker_processor(cinfo: j_decompress_ptr, marker_code: c_int,
-                routine: *const core::ffi::c_void)
-{
+pub unsafe fn jpeg_set_marker_processor(
+    cinfo: j_decompress_ptr,
+    marker_code: c_int,
+    routine: jpeg_marker_parser_method,
+) {
     if marker_code == JPEG_COM {
         (*(*cinfo).marker).process_COM = routine;
-    } else if marker_code >= JPEG_APP0 && marker_code <= JPEG_APP0+15 {
-        (*(*cinfo).marker).process_APPn[(marker_code-JPEG_APP0) as usize] = routine;
+    } else if marker_code >= JPEG_APP0 && marker_code <= JPEG_APP0 + 15 {
+        (*(*cinfo).marker).process_APPn[(marker_code - JPEG_APP0) as usize] = routine;
     } else {
-        ERREXIT1(cinfo, 38, marker_code); /* JERR_UNKNOWN_MARKER */
+        ERREXIT1!(cinfo, JERR_UNKNOWN_MARKER, marker_code);
     }
 }
 
@@ -219,77 +121,76 @@ pub unsafe fn jpeg_set_marker_processor(cinfo: j_decompress_ptr, marker_code: c_
  * Set default decompression parameters.
  */
 
-unsafe fn default_decompress_parms(cinfo: j_decompress_ptr)
-{
+unsafe fn default_decompress_parms(cinfo: j_decompress_ptr) {
     /* Guess the input colorspace, and set output colorspace accordingly. */
     /* (Wish JPEG committee had provided a real way to specify this...) */
     /* Note application may override our guesses. */
     match (*cinfo).num_components {
-    1 => {
-        (*cinfo).jpeg_color_space = JCS_GRAYSCALE;
-        (*cinfo).out_color_space = JCS_GRAYSCALE;
-    },
+        1 => {
+            (*cinfo).jpeg_color_space = JCS_GRAYSCALE;
+            (*cinfo).out_color_space = JCS_GRAYSCALE;
+        }
 
-    3 => {
-        if (*cinfo).saw_JFIF_marker != 0 {
-            (*cinfo).jpeg_color_space = JCS_YCbCr; /* JFIF implies YCbCr */
-        } else if (*cinfo).saw_Adobe_marker != 0 {
-            match (*cinfo).Adobe_transform {
-            0 => {
-                (*cinfo).jpeg_color_space = JCS_RGB;
-            },
-            1 => {
-                (*cinfo).jpeg_color_space = JCS_YCbCr;
-            },
-            _ => {
-                WARNMS1(cinfo, 40, (*cinfo).Adobe_transform); /* JWRN_ADOBE_XFORM */
-                (*cinfo).jpeg_color_space = JCS_YCbCr; /* assume it's YCbCr */
-            },
-            }
-        } else {
-            /* Saw no special markers, try to guess from the component IDs */
-            let cid0 = (*(*cinfo).comp_info[0]).component_id;
-            let cid1 = (*(*cinfo).comp_info[1]).component_id;
-            let cid2 = (*(*cinfo).comp_info[2]).component_id;
-
-            if cid0 == 1 && cid1 == 2 && cid2 == 3 {
-                (*cinfo).jpeg_color_space = JCS_YCbCr; /* assume JFIF w/out marker */
-            } else if cid0 == 82 && cid1 == 71 && cid2 == 66 {
-                (*cinfo).jpeg_color_space = JCS_RGB; /* ASCII 'R', 'G', 'B' */
+        3 => {
+            if (*cinfo).saw_JFIF_marker != FALSE {
+                (*cinfo).jpeg_color_space = JCS_YCbCr; /* JFIF implies YCbCr */
+            } else if (*cinfo).saw_Adobe_marker != FALSE {
+                match (*cinfo).Adobe_transform {
+                    0 => {
+                        (*cinfo).jpeg_color_space = JCS_RGB;
+                    }
+                    1 => {
+                        (*cinfo).jpeg_color_space = JCS_YCbCr;
+                    }
+                    _ => {
+                        WARNMS1!(cinfo, JWRN_ADOBE_XFORM, (*cinfo).Adobe_transform);
+                        (*cinfo).jpeg_color_space = JCS_YCbCr; /* assume it's YCbCr */
+                    }
+                }
             } else {
-                TRACEMS3(cinfo, 1, 1, cid0, cid1, cid2); /* JTRC_UNKNOWN_IDS */
-                (*cinfo).jpeg_color_space = JCS_YCbCr; /* assume it's YCbCr */
-            }
-        }
-        /* Always guess RGB is proper output colorspace. */
-        (*cinfo).out_color_space = JCS_RGB;
-    },
+                /* Saw no special markers, try to guess from the component IDs */
+                let cid0: c_int = (*(*cinfo).comp_info.add(0)).component_id;
+                let cid1: c_int = (*(*cinfo).comp_info.add(1)).component_id;
+                let cid2: c_int = (*(*cinfo).comp_info.add(2)).component_id;
 
-    4 => {
-        if (*cinfo).saw_Adobe_marker != 0 {
-            match (*cinfo).Adobe_transform {
-            0 => {
+                if cid0 == 1 && cid1 == 2 && cid2 == 3 {
+                    (*cinfo).jpeg_color_space = JCS_YCbCr; /* assume JFIF w/out marker */
+                } else if cid0 == 82 && cid1 == 71 && cid2 == 66 {
+                    (*cinfo).jpeg_color_space = JCS_RGB; /* ASCII 'R', 'G', 'B' */
+                } else {
+                    TRACEMS3!(cinfo, 1, JTRC_UNKNOWN_IDS, cid0, cid1, cid2);
+                    (*cinfo).jpeg_color_space = JCS_YCbCr; /* assume it's YCbCr */
+                }
+            }
+            /* Always guess RGB is proper output colorspace. */
+            (*cinfo).out_color_space = JCS_RGB;
+        }
+
+        4 => {
+            if (*cinfo).saw_Adobe_marker != FALSE {
+                match (*cinfo).Adobe_transform {
+                    0 => {
+                        (*cinfo).jpeg_color_space = JCS_CMYK;
+                    }
+                    2 => {
+                        (*cinfo).jpeg_color_space = JCS_YCCK;
+                    }
+                    _ => {
+                        WARNMS1!(cinfo, JWRN_ADOBE_XFORM, (*cinfo).Adobe_transform);
+                        (*cinfo).jpeg_color_space = JCS_YCCK; /* assume it's YCCK */
+                    }
+                }
+            } else {
+                /* No special markers, assume straight CMYK. */
                 (*cinfo).jpeg_color_space = JCS_CMYK;
-            },
-            2 => {
-                (*cinfo).jpeg_color_space = JCS_YCCK;
-            },
-            _ => {
-                WARNMS1(cinfo, 40, (*cinfo).Adobe_transform); /* JWRN_ADOBE_XFORM */
-                (*cinfo).jpeg_color_space = JCS_YCCK; /* assume it's YCCK */
-            },
             }
-        } else {
-            /* No special markers, assume straight CMYK. */
-            (*cinfo).jpeg_color_space = JCS_CMYK;
+            (*cinfo).out_color_space = JCS_CMYK;
         }
-        (*cinfo).out_color_space = JCS_CMYK;
-    },
 
-    _ => {
-        (*cinfo).jpeg_color_space = JCS_UNKNOWN;
-        (*cinfo).out_color_space = JCS_UNKNOWN;
-    },
+        _ => {
+            (*cinfo).jpeg_color_space = JCS_UNKNOWN;
+            (*cinfo).out_color_space = JCS_UNKNOWN;
+        }
     }
 
     /* Set defaults for other decompression parameters. */
@@ -304,14 +205,10 @@ unsafe fn default_decompress_parms(cinfo: j_decompress_ptr)
     (*cinfo).quantize_colors = FALSE;
     /* We set these in case application only sets quantize_colors. */
     (*cinfo).dither_mode = JDITHER_FS;
-    #[cfg(feature = "QUANT_2PASS_SUPPORTED")]
-    {
-        (*cinfo).two_pass_quantize = TRUE;
-    }
-    #[cfg(not(feature = "QUANT_2PASS_SUPPORTED"))]
-    {
-        (*cinfo).two_pass_quantize = FALSE;
-    }
+    #[cfg(feature = "quant_2pass_supported")]
+    { (*cinfo).two_pass_quantize = TRUE; }
+    #[cfg(not(feature = "quant_2pass_supported"))]
+    { (*cinfo).two_pass_quantize = FALSE; }
     (*cinfo).desired_number_of_colors = 256;
     (*cinfo).colormap = core::ptr::null_mut();
     /* Initialize for no mode change in buffered-image mode. */
@@ -348,24 +245,22 @@ unsafe fn default_decompress_parms(cinfo: j_decompress_ptr)
  * extra error checking.
  */
 
-pub unsafe fn jpeg_read_header(cinfo: j_decompress_ptr, require_image: boolean) -> c_int
-{
+pub unsafe fn jpeg_read_header(cinfo: j_decompress_ptr, require_image: boolean) -> c_int {
     let mut retcode: c_int;
 
     if (*cinfo).global_state != DSTATE_START &&
-        (*cinfo).global_state != DSTATE_INHEADER {
-        ERREXIT1(cinfo, 37, (*cinfo).global_state); /* JERR_BAD_STATE */
+       (*cinfo).global_state != DSTATE_INHEADER
+    {
+        ERREXIT1!(cinfo, JERR_BAD_STATE, (*cinfo).global_state);
     }
 
     retcode = jpeg_consume_input(cinfo);
 
-    match retcode {
-    JPEG_REACHED_SOS => {
+    if retcode == JPEG_REACHED_SOS {
         retcode = JPEG_HEADER_OK;
-    },
-    JPEG_REACHED_EOI => {
-        if require_image != 0 {  /* Complain if application wanted an image */
-            ERREXIT1(cinfo, 36, 0); /* JERR_NO_IMAGE */
+    } else if retcode == JPEG_REACHED_EOI {
+        if require_image != FALSE {	/* Complain if application wanted an image */
+            ERREXIT!(cinfo, JERR_NO_IMAGE);
         }
         /* Reset to start state; it would be safer to require the application to
          * call jpeg_abort, but we can't change it now for compatibility reasons.
@@ -373,16 +268,11 @@ pub unsafe fn jpeg_read_header(cinfo: j_decompress_ptr, require_image: boolean) 
          */
         jpeg_abort(cinfo as j_common_ptr); /* sets state = DSTATE_START */
         retcode = JPEG_HEADER_TABLES_ONLY;
-    },
-    JPEG_SUSPENDED => {
+    } else if retcode == JPEG_SUSPENDED {
         /* no work */
-    },
-    _ => {
-        /* no work */
-    },
     }
 
-    return retcode;
+    retcode
 }
 
 
@@ -398,67 +288,50 @@ pub unsafe fn jpeg_read_header(cinfo: j_decompress_ptr, require_image: boolean) 
  * method.
  */
 
-pub unsafe fn jpeg_consume_input(cinfo: j_decompress_ptr) -> c_int
-{
+pub unsafe fn jpeg_consume_input(cinfo: j_decompress_ptr) -> c_int {
     let mut retcode: c_int = JPEG_SUSPENDED;
+    let gs: c_int = (*cinfo).global_state;
 
     /* NB: every possible DSTATE value should be listed in this switch */
-    match (*cinfo).global_state {
-    DSTATE_START => {
+    if gs == DSTATE_START {
         /* Start-of-datastream actions: reset appropriate modules */
-        if let Some(reset_fn) = (*(*cinfo).inputctl).reset_input_controller {
-            reset_fn(cinfo);
-        }
+        ((*(*cinfo).inputctl).reset_input_controller)(cinfo);
         /* Initialize application's data source module */
-        if let Some(init_fn) = (*(*cinfo).src).init_source {
-            init_fn(cinfo);
-        }
+        ((*(*cinfo).src).init_source)(cinfo);
         (*cinfo).global_state = DSTATE_INHEADER;
         /*FALLTHROUGH*/
-        /* Fall through to DSTATE_INHEADER */
-        if true {
-            if let Some(consume_fn) = (*(*cinfo).inputctl).consume_input {
-                retcode = consume_fn(cinfo);
-            }
-            if retcode == JPEG_REACHED_SOS { /* Found SOS, prepare to decompress */
-                /* Set up default parameters based on header data */
-                default_decompress_parms(cinfo);
-                /* Set global state: ready for start_decompress */
-                (*cinfo).global_state = DSTATE_READY;
-            }
-        }
-    },
-    DSTATE_INHEADER => {
-        if let Some(consume_fn) = (*(*cinfo).inputctl).consume_input {
-            retcode = consume_fn(cinfo);
-        }
+        /* Porting: C fallthrough from DSTATE_START into DSTATE_INHEADER body. */
+        retcode = ((*(*cinfo).inputctl).consume_input)(cinfo);
         if retcode == JPEG_REACHED_SOS { /* Found SOS, prepare to decompress */
             /* Set up default parameters based on header data */
             default_decompress_parms(cinfo);
             /* Set global state: ready for start_decompress */
             (*cinfo).global_state = DSTATE_READY;
         }
-    },
-    DSTATE_READY => {
+    } else if gs == DSTATE_INHEADER {
+        retcode = ((*(*cinfo).inputctl).consume_input)(cinfo);
+        if retcode == JPEG_REACHED_SOS { /* Found SOS, prepare to decompress */
+            /* Set up default parameters based on header data */
+            default_decompress_parms(cinfo);
+            /* Set global state: ready for start_decompress */
+            (*cinfo).global_state = DSTATE_READY;
+        }
+    } else if gs == DSTATE_READY {
         /* Can't advance past first SOS until start_decompress is called */
         retcode = JPEG_REACHED_SOS;
-    },
-    DSTATE_PRELOAD |
-    DSTATE_PRESCAN |
-    DSTATE_SCANNING |
-    DSTATE_RAW_OK |
-    DSTATE_BUFIMAGE |
-    DSTATE_BUFPOST |
-    DSTATE_STOPPING => {
-        if let Some(consume_fn) = (*(*cinfo).inputctl).consume_input {
-            retcode = consume_fn(cinfo);
-        }
-    },
-    _ => {
-        ERREXIT1(cinfo, 37, (*cinfo).global_state); /* JERR_BAD_STATE */
-    },
+    } else if gs == DSTATE_PRELOAD
+           || gs == DSTATE_PRESCAN
+           || gs == DSTATE_SCANNING
+           || gs == DSTATE_RAW_OK
+           || gs == DSTATE_BUFIMAGE
+           || gs == DSTATE_BUFPOST
+           || gs == DSTATE_STOPPING
+    {
+        retcode = ((*(*cinfo).inputctl).consume_input)(cinfo);
+    } else {
+        ERREXIT1!(cinfo, JERR_BAD_STATE, (*cinfo).global_state);
     }
-    return retcode;
+    retcode
 }
 
 
@@ -466,14 +339,14 @@ pub unsafe fn jpeg_consume_input(cinfo: j_decompress_ptr) -> c_int
  * Have we finished reading the input file?
  */
 
-pub unsafe fn jpeg_input_complete(cinfo: j_decompress_ptr) -> boolean
-{
+pub unsafe fn jpeg_input_complete(cinfo: j_decompress_ptr) -> boolean {
     /* Check for valid jpeg object */
     if (*cinfo).global_state < DSTATE_START ||
-        (*cinfo).global_state > DSTATE_STOPPING {
-        ERREXIT1(cinfo, 37, (*cinfo).global_state); /* JERR_BAD_STATE */
+       (*cinfo).global_state > DSTATE_STOPPING
+    {
+        ERREXIT1!(cinfo, JERR_BAD_STATE, (*cinfo).global_state);
     }
-    return (*(*cinfo).inputctl).eoi_reached;
+    (*(*cinfo).inputctl).eoi_reached
 }
 
 
@@ -481,14 +354,14 @@ pub unsafe fn jpeg_input_complete(cinfo: j_decompress_ptr) -> boolean
  * Is there more than one scan?
  */
 
-pub unsafe fn jpeg_has_multiple_scans(cinfo: j_decompress_ptr) -> boolean
-{
+pub unsafe fn jpeg_has_multiple_scans(cinfo: j_decompress_ptr) -> boolean {
     /* Only valid after jpeg_read_header completes */
     if (*cinfo).global_state < DSTATE_READY ||
-        (*cinfo).global_state > DSTATE_STOPPING {
-        ERREXIT1(cinfo, 37, (*cinfo).global_state); /* JERR_BAD_STATE */
+       (*cinfo).global_state > DSTATE_STOPPING
+    {
+        ERREXIT1!(cinfo, JERR_BAD_STATE, (*cinfo).global_state);
     }
-    return (*(*cinfo).inputctl).has_multiple_scans;
+    (*(*cinfo).inputctl).has_multiple_scans
 }
 
 
@@ -501,38 +374,32 @@ pub unsafe fn jpeg_has_multiple_scans(cinfo: j_decompress_ptr) -> boolean
  * a suspending data source is used.
  */
 
-pub unsafe fn jpeg_finish_decompress(cinfo: j_decompress_ptr) -> boolean
-{
+pub unsafe fn jpeg_finish_decompress(cinfo: j_decompress_ptr) -> boolean {
     if ((*cinfo).global_state == DSTATE_SCANNING ||
-        (*cinfo).global_state == DSTATE_RAW_OK) && (*cinfo).buffered_image == FALSE {
+        (*cinfo).global_state == DSTATE_RAW_OK) && (*cinfo).buffered_image == FALSE
+    {
         /* Terminate final pass of non-buffered mode */
         if (*cinfo).output_scanline < (*cinfo).output_height {
-            ERREXIT1(cinfo, 35, 0); /* JERR_TOO_LITTLE_DATA */
+            ERREXIT!(cinfo, JERR_TOO_LITTLE_DATA);
         }
-        if let Some(finish_fn) = (*(*cinfo).master).finish_output_pass {
-            finish_fn(cinfo);
-        }
+        ((*(*cinfo).master).finish_output_pass)(cinfo);
         (*cinfo).global_state = DSTATE_STOPPING;
     } else if (*cinfo).global_state == DSTATE_BUFIMAGE {
         /* Finishing after a buffered-image operation */
         (*cinfo).global_state = DSTATE_STOPPING;
     } else if (*cinfo).global_state != DSTATE_STOPPING {
         /* STOPPING = repeat call after a suspension, anything else is error */
-        ERREXIT1(cinfo, 37, (*cinfo).global_state); /* JERR_BAD_STATE */
+        ERREXIT1!(cinfo, JERR_BAD_STATE, (*cinfo).global_state);
     }
     /* Read until EOI */
     while (*(*cinfo).inputctl).eoi_reached == FALSE {
-        if let Some(consume_fn) = (*(*cinfo).inputctl).consume_input {
-            if consume_fn(cinfo) == JPEG_SUSPENDED {
-                return FALSE;		/* Suspend, come back later */
-            }
+        if ((*(*cinfo).inputctl).consume_input)(cinfo) == JPEG_SUSPENDED {
+            return FALSE;		/* Suspend, come back later */
         }
     }
     /* Do final cleanup */
-    if let Some(term_fn) = (*(*cinfo).src).term_source {
-        term_fn(cinfo);
-    }
+    ((*(*cinfo).src).term_source)(cinfo);
     /* We can use jpeg_abort to release memory and reset global_state */
     jpeg_abort(cinfo as j_common_ptr);
-    return TRUE;
+    TRUE
 }
