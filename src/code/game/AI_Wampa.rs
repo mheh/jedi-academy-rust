@@ -1,6 +1,6 @@
 // leave this line at the top of all AI_xxxx.cpp files for PCH reasons...
-// #include "g_headers.h"
-// #include "b_local.h"
+use crate::code::game::g_headers::*;  // g_headers.h
+use crate::code::game::b_local_h::*;  // b_local.h
 
 use core::ffi::{c_int, c_void};
 
@@ -16,133 +16,6 @@ const LSTATE_WAITING: c_int = 1;
 
 static mut enemyDist: f32 = 0.0;
 
-// Stub type declarations for FFI
-#[repr(C)]
-pub struct gentity_t {
-    _marker: [u8; 0],
-}
-
-#[repr(C)]
-pub struct trace_t {
-    _marker: [u8; 0],
-}
-
-#[repr(C)]
-pub struct cvar_t {
-    _marker: [u8; 0],
-}
-
-#[repr(C)]
-pub struct playerState_t {
-    _marker: [u8; 0],
-}
-
-extern "C" {
-    pub fn NAV_CheckAhead(
-        selff: *mut gentity_t,
-        end: *const [f32; 3],
-        trace: *mut trace_t,
-        clipmask: c_int,
-    ) -> bool;
-    pub fn PM_AnimLength(index: c_int, anim: c_int) -> c_int;
-    pub static mut g_dismemberment: *mut cvar_t;
-
-    pub fn G_SoundIndex(name: *const u8) -> c_int;
-    pub fn UpdateGoal() -> bool;
-    pub fn NPC_MoveToGoal(visible: bool) -> bool;
-    pub fn NPC_CheckEnemyExt(distanceCheck: bool) -> bool;
-    pub fn Wampa_Idle();
-    pub fn NPC_SetAnim(
-        ent: *mut gentity_t,
-        setAnimParts: c_int,
-        anim: c_int,
-        flags: c_int,
-    );
-    pub fn TIMER_Set(ent: *mut gentity_t, label: *const u8, duration: c_int);
-    pub fn TIMER_Done(ent: *const gentity_t, label: *const u8) -> bool;
-    pub fn TIMER_Done2(
-        ent: *const gentity_t,
-        label: *const u8,
-        remove: bool,
-    ) -> bool;
-    pub fn TIMER_Exists(ent: *const gentity_t, label: *const u8) -> bool;
-    pub fn TIMER_Remove(ent: *mut gentity_t, label: *const u8);
-    pub fn NPC_ClearLOS(ent: *mut gentity_t) -> bool;
-    pub fn NPC_FaceEnemy(addPainAnim: bool);
-    pub fn Distance(start: *const [f32; 3], end: *const [f32; 3]) -> f32;
-    pub fn DistanceSquared(start: *const [f32; 3], end: *const [f32; 3]) -> f32;
-    pub fn G_Knockdown(
-        selff: *mut gentity_t,
-        attacker: *mut gentity_t,
-        pushDir: *const [f32; 3],
-        strength: f32,
-        breakSaberLock: bool,
-    );
-    pub fn G_DoDismemberment(
-        selff: *mut gentity_t,
-        point: *const [f32; 3],
-        mod_: c_int,
-        damage: c_int,
-        hitLoc: c_int,
-        force: bool,
-    ) -> bool;
-    pub fn NPC_GetEntsNearBolt(
-        radiusEnts: *mut *mut gentity_t,
-        radius: f32,
-        boltIndex: c_int,
-        boltOrg: *mut [f32; 3],
-    ) -> c_int;
-    pub fn G_Damage(
-        victim: *mut gentity_t,
-        inflictor: *mut gentity_t,
-        attacker: *mut gentity_t,
-        dir: *const [f32; 3],
-        point: *const [f32; 3],
-        damage: c_int,
-        dflags: c_int,
-        mod_: c_int,
-    );
-    pub fn G_Throw(victim: *mut gentity_t, dir: *const [f32; 3], strength: c_int);
-    pub fn G_Sound(ent: *mut gentity_t, index: c_int);
-    pub fn G_SoundOnEnt(ent: *mut gentity_t, channel: c_int, soundPath: *const u8);
-    pub fn NPC_CheckEnemyExt(distanceCheck: bool) -> bool;
-    pub fn NPC_ValidEnemy(ent: *const gentity_t) -> bool;
-    pub fn NPC_CheckEnemy(
-        IgnoreTeam: bool,
-        checkSightlineToBody: bool,
-        setBusy: bool,
-    ) -> *mut gentity_t;
-    pub fn G_SetEnemy(ent: *mut gentity_t, enemy: *mut gentity_t);
-    pub fn NPC_UpdateAngles(addPainAnim: bool, lookAtEnemy: bool);
-    pub fn NPC_EnemyRangeFromBolt(boltIndex: c_int) -> f32;
-    pub fn AngleVectors(
-        angles: *const [f32; 3],
-        forward: *mut [f32; 3],
-        right: *mut [f32; 3],
-        up: *mut [f32; 3],
-    );
-    pub fn VectorCopy(src: *const [f32; 3], dst: *mut [f32; 3]);
-    pub fn VectorScale(src: *const [f32; 3], scale: f32, dst: *mut [f32; 3]);
-    pub fn AngleNormalize180(angle: f32) -> f32;
-    pub fn Q_irand(low: c_int, high: c_int) -> c_int;
-    pub fn Q_flrand(low: f32, high: f32) -> f32;
-    pub fn Q_random() -> f32;
-    pub fn InFOV(
-        spot: *const [f32; 3],
-        from: *const [f32; 3],
-        angles: *const [f32; 3],
-        fovXY: c_int,
-        fovZ: c_int,
-    ) -> bool;
-    pub fn SetClientViewAngle(ent: *mut gentity_t, angle: *const [f32; 3]);
-    pub fn fabs(x: f32) -> f32;
-
-    pub static mut NPC: *mut gentity_t;
-    pub static mut NPCInfo: *mut c_void; // Opaque for now
-    pub static mut ucmd: c_void; // Opaque for now
-    pub static mut level: c_void; // Opaque for now
-    pub static mut gi: c_void; // Opaque for now
-}
 
 /*
 -------------------------
@@ -1076,7 +949,7 @@ pub extern "C" fn NPC_BSWampa_Default() {
                 && (*(*NPC).enemy).enemy != NPC //enemy's enemy is not me
                 && ((*(*NPC).enemy).enemy.is_null()
                     || (*(*(*(*NPC).enemy).enemy).client).is_null()
-                    || (*(*(*(*(*NPC).enemy).enemy).client).NPC_class != 25)
+                    || (*(*(*(*(*NPC).enemy).enemy).client).NPC_class != 25))
             {
                 // enemy's enemy is not a client or is not a rancor (which is scarier than me)
                 //they should be scared of ME and no-one else
