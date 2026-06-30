@@ -4,86 +4,10 @@
 // #include "b_local.h"
 // #include "g_nav.h"
 
-extern "C" {
-    fn NPC_BSST_Patrol();
-    fn Boba_FireDecide();
-    fn CreateMissile(org: *const [f32; 3], dir: *const [f32; 3], vel: f32, life: i32, owner: *mut gentity_t, altFire: c_uint) -> *mut gentity_t;
-    fn G_SoundIndex(sound: *const c_char) -> i32;
-    fn G_EffectIndex(effect: *const c_char) -> i32;
-    fn G_Damage(targ: *mut gentity_t, inflictor: *mut gentity_t, attacker: *mut gentity_t, dir: *const [f32; 3], point: *const [f32; 3], damage: i32, dflags: i32, mod_: i32);
-    fn SaveNPCGlobals();
-    fn SetNPCGlobals(self_: *mut gentity_t);
-    fn RestoreNPCGlobals();
-    fn NPC_Pain(self_: *mut gentity_t, inflictor: *mut gentity_t, other: *mut gentity_t, point: *const [f32; 3], damage: i32, mod_: i32);
-    fn NPC_UpdateAngles(doPitch: c_uint, doYaw: c_uint);
-    fn TIMER_Done(ent: *mut gentity_t, timer: *const c_char) -> c_uint;
-    fn TIMER_Set(ent: *mut gentity_t, timer: *const c_char, duration: i32);
-    fn Q_irand(min: i32, max: i32) -> i32;
-    fn Q_flrand(min: f32, max: f32) -> f32;
-    fn AngleVectors(angles: *const [f32; 3], forward: *mut [f32; 3], right: *mut [f32; 3], up: *mut [f32; 3]);
-    fn VectorMA(veca: *const [f32; 3], scale: f32, vecb: *const [f32; 3], out: *mut [f32; 3]);
-    fn VectorSubtract(veca: *const [f32; 3], vecb: *const [f32; 3], out: *mut [f32; 3]);
-    fn VectorNormalize(v: *mut [f32; 3]) -> f32;
-    fn VectorScale(vin: *const [f32; 3], scale: f32, vout: *mut [f32; 3]);
-    fn VectorSet(v: *mut [f32; 3], x: f32, y: f32, z: f32);
-    fn G_Sound(ent: *mut gentity_t, index: i32);
-    fn NPC_FaceEnemy(doPitch: c_uint);
-    fn NPC_MoveToGoal(allowGo: c_uint);
-    fn NPC_ClearLOS(ent: *mut gentity_t) -> c_uint;
-    fn DistanceHorizontalSquared(p1: *const [f32; 3], p2: *const [f32; 3]) -> f32;
-    fn CalcEntitySpot(ent: *mut gentity_t, spot: i32, point: *mut [f32; 3]);
-    fn G_PlayEffect(effect: *const c_char, origin: *const [f32; 3], dir: *const [f32; 3]);
-    fn crandom() -> f32;
-    fn random() -> f32;
-    fn rand() -> i32;
-
-    static mut NPC: *mut gentity_t;
-    static mut NPCInfo: *mut npcinfoState_t;
-    static mut ucmd: usercmd_t;
-    static mut level: level_locals_t;
-    static mut g_entities: [gentity_t; 2048];
-    static mut in_camera: c_uint;
-    static mut g_spskill: *mut cvar_t;
-}
-
 use core::ffi::{c_int, c_char, c_uint, c_void};
-
-// Stub structures for portability - these are placeholders for the full definitions
-#[repr(C)]
-pub struct gentity_t {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-pub struct npcinfoState_t {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-pub struct usercmd_t {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-pub struct level_locals_t {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-pub struct cvar_t {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-pub struct trace_t {
-    _private: [u8; 0],
-}
-
-extern "C" {
-    fn gi_trace(tr: *mut trace_t, start: *const [f32; 3], mins: *const [f32; 3], maxs: *const [f32; 3], end: *const [f32; 3], passent: i32, contentmask: i32);
-}
-
-fn Seeker_Strafe();
+use crate::code::game::g_headers::*;
+use crate::code::game::b_local_h::*;
+use crate::code::game::g_nav_h::*;
 
 const VELOCITY_DECAY: f32 = 0.7f32;
 
@@ -114,9 +38,6 @@ fn NPC_Seeker_Precache() {
 //------------------------------------
 fn NPC_Seeker_Pain(self_: *mut gentity_t, inflictor: *mut gentity_t, other: *mut gentity_t, point: *const [f32; 3], damage: i32, mod_: i32, hitLoc: i32) {
     unsafe {
-        // Assuming SVF_CUSTOM_GRAVITY is a flag constant
-        const SVF_CUSTOM_GRAVITY: u32 = 0x1000; // placeholder
-
         if ((*self_).svFlags & SVF_CUSTOM_GRAVITY) == 0 {
             //void G_Damage( gentity_t *targ, gentity_t *inflictor, gentity_t *attacker, vec3_t dir, vec3_t point, int damage, int dflags, int mod, int hitLoc=HL_NONE );
             G_Damage( self_, core::ptr::null_mut(), core::ptr::null_mut(), vec3_origin as *const _, (vec3_origin as *const f32) as *const _, 999, 0, 4 ); // MOD_FALLING assumed to be 4
@@ -129,8 +50,6 @@ fn NPC_Seeker_Pain(self_: *mut gentity_t, inflictor: *mut gentity_t, other: *mut
         NPC_Pain( self_, inflictor, other, point, damage, mod_ );
     }
 }
-
-static vec3_origin: [f32; 3] = [0.0, 0.0, 0.0];
 
 //------------------------------------
 fn Seeker_MaintainHeight() {
