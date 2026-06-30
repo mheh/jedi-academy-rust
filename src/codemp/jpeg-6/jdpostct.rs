@@ -16,64 +16,12 @@
  * entirely.
  */
 // Anything above this #include will be ignored by the compiler
+#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code, unused_variables)]
 
-use core::ffi::c_int;
-use core::mem;
-use core::ptr;
-
-// ============================================================================
-// External JPEG library types and structures (from jpeglib.h, jinclude.h)
-// ============================================================================
-
-// Opaque types from JPEG library
-#[repr(C)]
-pub struct jpeg_d_post_controller {
-    // public fields
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct j_decompress_struct {
-    // Opaque structure - full definition is in JPEG library
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct jpeg_memory_mgr {
-    // Opaque structure
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct jpeg_upsampler {
-    // Opaque structure
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct jpeg_color_quantizer {
-    // Opaque structure
-    _opaque: [u8; 0],
-}
-
-pub type j_decompress_ptr = *mut j_decompress_struct;
-pub type j_common_ptr = *mut core::ffi::c_void;
-pub type jvirt_sarray_ptr = *mut core::ffi::c_void;
-pub type JSAMPARRAY = *mut *mut u8;
-pub type JSAMPIMAGE = *mut *mut u8;
-pub type JDIMENSION = u32;
-pub type boolean = i32;
-
-// J_BUF_MODE enum values
-pub const JBUF_PASS_THRU: i32 = 0;
-pub const JBUF_SAVE_AND_PASS: i32 = 1;
-pub const JBUF_CRANK_DEST: i32 = 2;
-
-// Error codes
-pub const JERR_BAD_BUFFER_MODE: i32 = 130;
-
-// Memory pool constants
-pub const JPOOL_IMAGE: i32 = 1;
+use crate::codemp::qcommon::exe_headers_h::*;
+use crate::codemp::jpeg_6::jinclude_h::*;
+use crate::codemp::jpeg_6::jpeglib_h::*;
+use crate::codemp::jpeg_6::jpegint_h::*;
 
 /* Private buffer controller object */
 
@@ -87,59 +35,27 @@ pub struct my_post_controller {
      * for one-pass operation, a strip buffer is sufficient.
      */
     pub whole_image: jvirt_sarray_ptr, /* virtual array, or NULL if one-pass */
-    pub buffer: JSAMPARRAY, /* strip buffer, or current strip of virtual */
-    pub strip_height: JDIMENSION, /* buffer size in rows */
+    pub buffer: JSAMPARRAY,            /* strip buffer, or current strip of virtual */
+    pub strip_height: JDIMENSION,      /* buffer size in rows */
     /* for two-pass mode only: */
     pub starting_row: JDIMENSION, /* row # of first row in current strip */
-    pub next_row: JDIMENSION, /* index of next row to fill/empty in strip */
+    pub next_row: JDIMENSION,     /* index of next row to fill/empty in strip */
 }
 
 pub type my_post_ptr = *mut my_post_controller;
 
+
 /* Forward declarations */
-extern "C" {
-    fn post_process_1pass(
-        cinfo: j_decompress_ptr,
-        input_buf: JSAMPIMAGE,
-        in_row_group_ctr: *mut JDIMENSION,
-        in_row_groups_avail: JDIMENSION,
-        output_buf: JSAMPARRAY,
-        out_row_ctr: *mut JDIMENSION,
-        out_rows_avail: JDIMENSION,
-    );
+// post_process_1pass (and post_process_prepass, post_process_2pass under
+// QUANT_2PASS_SUPPORTED) are defined below; Rust does not require forward declarations.
 
-    #[cfg(feature = "QUANT_2PASS_SUPPORTED")]
-    fn post_process_prepass(
-        cinfo: j_decompress_ptr,
-        input_buf: JSAMPIMAGE,
-        in_row_group_ctr: *mut JDIMENSION,
-        in_row_groups_avail: JDIMENSION,
-        output_buf: JSAMPARRAY,
-        out_row_ctr: *mut JDIMENSION,
-        out_rows_avail: JDIMENSION,
-    );
-
-    #[cfg(feature = "QUANT_2PASS_SUPPORTED")]
-    fn post_process_2pass(
-        cinfo: j_decompress_ptr,
-        input_buf: JSAMPIMAGE,
-        in_row_group_ctr: *mut JDIMENSION,
-        in_row_groups_avail: JDIMENSION,
-        output_buf: JSAMPARRAY,
-        out_row_ctr: *mut JDIMENSION,
-        out_rows_avail: JDIMENSION,
-    );
-
-    fn jround_up(a: i32, b: i32) -> i32;
-    fn ERREXIT(cinfo: j_decompress_ptr, code: i32) -> !;
-}
 
 /*
  * Initialize for a processing pass.
  */
 
-unsafe extern "C" fn start_pass_dpost(cinfo: j_decompress_ptr, pass_mode: i32) {
-    let post = (*cinfo).post as my_post_ptr;
+unsafe fn start_pass_dpost(cinfo: j_decompress_ptr, pass_mode: J_BUF_MODE) {
+    let post: my_post_ptr = (*cinfo).post as my_post_ptr;
 
     match pass_mode {
         JBUF_PASS_THRU => {
@@ -150,13 +66,13 @@ unsafe extern "C" fn start_pass_dpost(cinfo: j_decompress_ptr, pass_mode: i32) {
                  * color quantization; in that case, jinit_d_post_controller did not
                  * allocate a strip buffer.  Use the virtual-array buffer as workspace.
                  */
-                if (*post).buffer == ptr::null_mut() {
+                if (*post).buffer.is_null() {
                     (*post).buffer = ((*(*cinfo).mem).access_virt_sarray)(
                         cinfo as j_common_ptr,
                         (*post).whole_image,
                         0 as JDIMENSION,
                         (*post).strip_height,
-                        1 as i32,
+                        TRUE,
                     );
                 }
             } else {
@@ -166,36 +82,38 @@ unsafe extern "C" fn start_pass_dpost(cinfo: j_decompress_ptr, pass_mode: i32) {
                 (*post).pub_.post_process_data = (*(*cinfo).upsample).upsample;
             }
         }
-        #[cfg(feature = "QUANT_2PASS_SUPPORTED")]
+        #[cfg(feature = "quant_2pass_supported")]
         JBUF_SAVE_AND_PASS => {
             /* First pass of 2-pass quantization */
-            if (*post).whole_image == ptr::null_mut() {
+            if (*post).whole_image.is_null() {
                 ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);
             }
             (*post).pub_.post_process_data = post_process_prepass;
         }
-        #[cfg(feature = "QUANT_2PASS_SUPPORTED")]
+        #[cfg(feature = "quant_2pass_supported")]
         JBUF_CRANK_DEST => {
             /* Second pass of 2-pass quantization */
-            if (*post).whole_image == ptr::null_mut() {
+            if (*post).whole_image.is_null() {
                 ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);
             }
             (*post).pub_.post_process_data = post_process_2pass;
         }
+        /* QUANT_2PASS_SUPPORTED */
         _ => {
             ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);
         }
     }
-    (*post).starting_row = 0 as JDIMENSION;
-    (*post).next_row = 0 as JDIMENSION;
+    (*post).starting_row = 0;
+    (*post).next_row = 0;
 }
+
 
 /*
  * Process some data in the one-pass (strip buffer) case.
  * This is used for color precision reduction as well as one-pass quantization.
  */
 
-unsafe extern "C" fn post_process_1pass(
+unsafe fn post_process_1pass(
     cinfo: j_decompress_ptr,
     input_buf: JSAMPIMAGE,
     in_row_group_ctr: *mut JDIMENSION,
@@ -204,7 +122,7 @@ unsafe extern "C" fn post_process_1pass(
     out_row_ctr: *mut JDIMENSION,
     out_rows_avail: JDIMENSION,
 ) {
-    let post = (*cinfo).post as my_post_ptr;
+    let post: my_post_ptr = (*cinfo).post as my_post_ptr;
     let mut num_rows: JDIMENSION;
     let mut max_rows: JDIMENSION;
 
@@ -214,7 +132,7 @@ unsafe extern "C" fn post_process_1pass(
     if max_rows > (*post).strip_height {
         max_rows = (*post).strip_height;
     }
-    num_rows = 0 as JDIMENSION;
+    num_rows = 0;
     ((*(*cinfo).upsample).upsample)(
         cinfo,
         input_buf,
@@ -227,15 +145,20 @@ unsafe extern "C" fn post_process_1pass(
     /* Quantize and emit data. */
     ((*(*cinfo).cquantize).color_quantize)(
         cinfo,
-        (*post).buffer.add(*out_row_ctr as usize),
-        output_buf,
-        num_rows as c_int,
+        (*post).buffer,
+        output_buf.add(*out_row_ctr as usize),
+        num_rows as core::ffi::c_int,
     );
     *out_row_ctr += num_rows;
 }
 
-#[cfg(feature = "QUANT_2PASS_SUPPORTED")]
-unsafe extern "C" fn post_process_prepass(
+
+/*
+ * Process some data in the first pass of 2-pass quantization.
+ */
+
+#[cfg(feature = "quant_2pass_supported")]
+unsafe fn post_process_prepass(
     cinfo: j_decompress_ptr,
     input_buf: JSAMPIMAGE,
     in_row_group_ctr: *mut JDIMENSION,
@@ -244,18 +167,18 @@ unsafe extern "C" fn post_process_prepass(
     out_row_ctr: *mut JDIMENSION,
     out_rows_avail: JDIMENSION,
 ) {
-    let post = (*cinfo).post as my_post_ptr;
-    let mut old_next_row: JDIMENSION;
-    let mut num_rows: JDIMENSION;
+    let post: my_post_ptr = (*cinfo).post as my_post_ptr;
+    let old_next_row: JDIMENSION;
+    let num_rows: JDIMENSION;
 
     /* Reposition virtual buffer if at start of strip. */
-    if (*post).next_row == 0 as JDIMENSION {
+    if (*post).next_row == 0 {
         (*post).buffer = ((*(*cinfo).mem).access_virt_sarray)(
             cinfo as j_common_ptr,
             (*post).whole_image,
             (*post).starting_row,
             (*post).strip_height,
-            1 as i32,
+            TRUE,
         );
     }
 
@@ -278,8 +201,8 @@ unsafe extern "C" fn post_process_prepass(
         ((*(*cinfo).cquantize).color_quantize)(
             cinfo,
             (*post).buffer.add(old_next_row as usize),
-            ptr::null_mut(),
-            num_rows as c_int,
+            core::ptr::null_mut() as JSAMPARRAY,
+            num_rows as core::ffi::c_int,
         );
         *out_row_ctr += num_rows;
     }
@@ -287,12 +210,17 @@ unsafe extern "C" fn post_process_prepass(
     /* Advance if we filled the strip. */
     if (*post).next_row >= (*post).strip_height {
         (*post).starting_row += (*post).strip_height;
-        (*post).next_row = 0 as JDIMENSION;
+        (*post).next_row = 0;
     }
 }
 
-#[cfg(feature = "QUANT_2PASS_SUPPORTED")]
-unsafe extern "C" fn post_process_2pass(
+
+/*
+ * Process some data in the second pass of 2-pass quantization.
+ */
+
+#[cfg(feature = "quant_2pass_supported")]
+unsafe fn post_process_2pass(
     cinfo: j_decompress_ptr,
     input_buf: JSAMPIMAGE,
     in_row_group_ctr: *mut JDIMENSION,
@@ -301,18 +229,18 @@ unsafe extern "C" fn post_process_2pass(
     out_row_ctr: *mut JDIMENSION,
     out_rows_avail: JDIMENSION,
 ) {
-    let post = (*cinfo).post as my_post_ptr;
+    let post: my_post_ptr = (*cinfo).post as my_post_ptr;
     let mut num_rows: JDIMENSION;
     let mut max_rows: JDIMENSION;
 
     /* Reposition virtual buffer if at start of strip. */
-    if (*post).next_row == 0 as JDIMENSION {
+    if (*post).next_row == 0 {
         (*post).buffer = ((*(*cinfo).mem).access_virt_sarray)(
             cinfo as j_common_ptr,
             (*post).whole_image,
             (*post).starting_row,
             (*post).strip_height,
-            0 as i32,
+            FALSE,
         );
     }
 
@@ -333,7 +261,7 @@ unsafe extern "C" fn post_process_2pass(
         cinfo,
         (*post).buffer.add((*post).next_row as usize),
         output_buf.add(*out_row_ctr as usize),
-        num_rows as c_int,
+        num_rows as core::ffi::c_int,
     );
     *out_row_ctr += num_rows;
 
@@ -341,30 +269,31 @@ unsafe extern "C" fn post_process_2pass(
     (*post).next_row += num_rows;
     if (*post).next_row >= (*post).strip_height {
         (*post).starting_row += (*post).strip_height;
-        (*post).next_row = 0 as JDIMENSION;
+        (*post).next_row = 0;
     }
 }
+
+/* QUANT_2PASS_SUPPORTED */
+
 
 /*
  * Initialize postprocessing controller.
  */
 
-pub unsafe extern "C" fn jinit_d_post_controller(
-    cinfo: j_decompress_ptr,
-    need_full_buffer: boolean,
-) {
+pub unsafe fn jinit_d_post_controller(cinfo: j_decompress_ptr, need_full_buffer: boolean) {
     let post: my_post_ptr;
 
     post = ((*(*cinfo).mem).alloc_small)(
         cinfo as j_common_ptr,
         JPOOL_IMAGE,
-        mem::size_of::<my_post_controller>(),
+        core::mem::size_of::<my_post_controller>(),
     ) as my_post_ptr;
-    (*cinfo).post =
-        &mut (*post).pub_ as *mut jpeg_d_post_controller as *mut core::ffi::c_void;
+    // Port note: C casts post (my_post_ptr) to (struct jpeg_d_post_controller *) via
+    // first-member aliasing; in Rust take the address of the first field directly.
+    (*cinfo).post = core::ptr::addr_of_mut!((*post).pub_);
     (*post).pub_.start_pass = start_pass_dpost;
-    (*post).whole_image = ptr::null_mut(); /* flag for no virtual arrays */
-    (*post).buffer = ptr::null_mut(); /* flag for no strip buffer */
+    (*post).whole_image = core::ptr::null_mut(); /* flag for no virtual arrays */
+    (*post).buffer = core::ptr::null_mut();      /* flag for no strip buffer */
 
     /* Create the quantization buffer, if needed */
     if (*cinfo).quantize_colors != 0 {
@@ -376,30 +305,31 @@ pub unsafe extern "C" fn jinit_d_post_controller(
         if need_full_buffer != 0 {
             /* Two-pass color quantization: need full-image storage. */
             /* We round up the number of rows to a multiple of the strip height. */
-            #[cfg(feature = "QUANT_2PASS_SUPPORTED")]
+            #[cfg(feature = "quant_2pass_supported")]
             {
                 (*post).whole_image = ((*(*cinfo).mem).request_virt_sarray)(
                     cinfo as j_common_ptr,
                     JPOOL_IMAGE,
-                    0 as i32,
-                    ((*cinfo).output_width * (*cinfo).out_color_components) as u32,
+                    FALSE,
+                    (*cinfo).output_width * (*cinfo).out_color_components,
                     jround_up(
-                        (*cinfo).output_height as i32,
-                        (*post).strip_height as i32,
+                        (*cinfo).output_height as core::ffi::c_long,
+                        (*post).strip_height as core::ffi::c_long,
                     ) as JDIMENSION,
                     (*post).strip_height,
                 );
             }
-            #[cfg(not(feature = "QUANT_2PASS_SUPPORTED"))]
+            #[cfg(not(feature = "quant_2pass_supported"))]
             {
                 ERREXIT(cinfo, JERR_BAD_BUFFER_MODE);
             }
+            /* QUANT_2PASS_SUPPORTED */
         } else {
             /* One-pass color quantization: just make a strip buffer. */
             (*post).buffer = ((*(*cinfo).mem).alloc_sarray)(
                 cinfo as j_common_ptr,
                 JPOOL_IMAGE,
-                ((*cinfo).output_width * (*cinfo).out_color_components) as u32,
+                (*cinfo).output_width * (*cinfo).out_color_components,
                 (*post).strip_height,
             );
         }
