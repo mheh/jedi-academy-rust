@@ -1,4 +1,6 @@
-//! Mechanical port of `codemp/qcommon/vm_local.h`.
+// rww - so that I may utilize vm debugging features WITHOUT DROPPING TO 0.1FPS
+// Porting: CRAZY_SYMBOL_MAP is defined when not targeting Xbox (#ifndef _XBOX / #define CRAZY_SYMBOL_MAP).
+// Mapped to Cargo feature "crazy_symbol_map".
 
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
@@ -6,16 +8,21 @@
 #![allow(dead_code)]
 #![allow(unexpected_cfgs)]
 
-use crate::codemp::game::q_shared_h::{byte, qboolean, MAX_QPATH};
 use core::ffi::{c_char, c_int, c_void};
 
-// rww - so that I may utilize vm debugging features WITHOUT DROPPING TO 0.1FPS
-// #ifndef _XBOX
-// #define CRAZY_SYMBOL_MAP
-// #endif
+// Porting note: vm_local.h carries no explicit #include for q_shared.h; these base
+// types (MAX_QPATH, qboolean, byte) are trusted to arrive from the enclosing
+// compilation unit.  Imported here so the Rust module is self-contained.
+use crate::codemp::qcommon::q_shared_h::*;
+
+// vmHeader_t real definition lives in qfiles.h; imported from there.
+use crate::codemp::qcommon::qfiles_h::*;
+
+// #include <map> is conditional on CRAZY_SYMBOL_MAP
+#[cfg(feature = "crazy_symbol_map")]
+use std::collections::BTreeMap;
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum opcode_t {
     OP_UNDEF,
 
@@ -118,29 +125,20 @@ pub type vmSymbol_t = vmSymbol_s;
 pub const VM_OFFSET_PROGRAM_STACK: c_int = 0;
 pub const VM_OFFSET_SYSTEM_CALL: c_int = 4;
 
-// Header-local stub for `qfiles.h`, which owns the real VM bytecode header.
-#[repr(C)]
-pub struct vmHeader_t {
-    _private: [u8; 0],
-}
-
-pub type vmEntryPoint_t = Option<unsafe extern "C" fn(callNum: c_int, ...) -> c_int>;
-pub type vmSystemCall_t = Option<unsafe extern "C" fn(parms: *mut c_int) -> c_int>;
-
 #[repr(C)]
 pub struct vm_s {
     // DO NOT MOVE OR CHANGE THESE WITHOUT CHANGING THE VM_OFFSET_* DEFINES
     // USED BY THE ASM CODE
     pub programStack: c_int, // the vm may be recursively entered
-    pub systemCall: vmSystemCall_t,
+    pub systemCall: Option<unsafe extern "C" fn(*mut c_int) -> c_int>,
 
     //------------------------------------
 
-    pub name: [c_char; MAX_QPATH],
+    pub name: [c_char; MAX_QPATH as usize],
 
     // for dynamic linked modules
     pub dllHandle: *mut c_void,
-    pub entryPoint: vmEntryPoint_t,
+    pub entryPoint: Option<unsafe extern "C" fn(callNum: c_int, ...) -> c_int>,
 
     // for interpreted modules
     pub currentlyInterpreting: qboolean,
@@ -165,23 +163,21 @@ pub struct vm_s {
     pub breakCount: c_int,
 }
 
+// Porting note: C++ makes `vm_s` and `vm_t` distinct names; `vm_t` is typedef'd
+// as `struct vm_s` in the wider codebase and used extensively in this header.
 pub type vm_t = vm_s;
 
-const _: () = assert!(core::mem::offset_of!(vm_s, programStack) == VM_OFFSET_PROGRAM_STACK as usize);
+const _: () =
+    assert!(core::mem::offset_of!(vm_s, programStack) == VM_OFFSET_PROGRAM_STACK as usize);
 
-#[cfg(not(feature = "xbox"))]
-#[repr(C)]
-pub struct symbolMap_t {
-    _private: [u8; 0],
-}
+#[cfg(feature = "crazy_symbol_map")]
+pub type symbolMap_t = BTreeMap<c_int, *mut vmSymbol_s>;
 
-#[cfg(not(feature = "xbox"))]
-#[repr(C)]
-pub struct symbolVMMap_t {
-    _private: [u8; 0],
-}
+#[cfg(feature = "crazy_symbol_map")]
+pub type symbolVMMap_t = BTreeMap<*mut vm_t, symbolMap_t>;
 
-#[cfg(not(feature = "xbox"))]
+#[cfg(feature = "crazy_symbol_map")]
+#[allow(improper_ctypes)]
 unsafe extern "C" {
     pub static mut g_vmMap: symbolVMMap_t;
     pub static mut g_symbolMap: *mut symbolMap_t;
@@ -194,13 +190,16 @@ do not have to do a map lookup for the VM with
 each symbol request.
 -rww
 */
-#[cfg(not(feature = "xbox"))]
+#[cfg(feature = "crazy_symbol_map")]
 #[inline]
 pub unsafe fn VM_SetSymbolMap(vm: *mut vm_t) {
-    // Porting deviation: the C++ original indexes `std::map<vm_t*, symbolMap_t>`.
-    // The map ABI is not available to this header-only Rust port, so keep the
-    // declaration shape and leave the lookup for a future C++ VM map binding.
-    let _ = vm;
+    use core::ptr::addr_of_mut;
+    // C++: g_symbolMap = &g_vmMap[vm];
+    // std::map::operator[] inserts a default entry when the key is absent.
+    // Translated using BTreeMap::entry().or_insert_with().
+    *addr_of_mut!(g_symbolMap) = (*addr_of_mut!(g_vmMap))
+        .entry(vm)
+        .or_insert_with(symbolMap_t::new) as *mut symbolMap_t;
 }
 
 unsafe extern "C" {
