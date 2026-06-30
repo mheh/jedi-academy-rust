@@ -32,61 +32,15 @@
 
 #![allow(non_snake_case)]
 
-use core::ffi::{c_int, c_ulong};
-
-// Windows types - preserved for ABI compatibility
-pub type BOOL = c_int;
-pub type DWORD = c_ulong;
-pub type LONG = c_int;
-
-/// POINT struct equivalent to Windows POINT
-#[repr(C)]
-#[derive(Debug, Clone, Copy)]
-pub struct POINT {
-    pub x: LONG,
-    pub y: LONG,
-}
-
-/// GUID struct equivalent to Windows GUID
-#[repr(C)]
-#[derive(Debug, Clone, Copy)]
-pub struct GUID {
-    pub Data1: u32,
-    pub Data2: u16,
-    pub Data3: u16,
-    pub Data4: [u8; 8],
-}
-
-// Stub types from ImmBaseTypes.h and ImmEffect.h to maintain structural coherence
-// These would be properly imported from those modules when fully ported
-#[repr(C)]
-pub struct IMM_TEXTURE {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct IMM_EFFECT {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CImmEffect {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CImmDevice {
-    _opaque: [u8; 0],
-}
+use crate::code::ff::IFC::ImmBaseTypes_h::*; // ImmBaseTypes.h
+use crate::code::ff::IFC::ImmEffect_h::*; // ImmEffect.h  (POINT, GUID, BOOL, DWORD, LONG, IMM_EFFECT, CImmEffect, CImmDevice)
+use crate::code::ff::IFC::FeelitAPI_h::*; // real leaf for FEELIT_TEXTURE / GUID_Feelit_* (pulled transitively via ImmBaseTypes.h)
+use core::ffi::c_int;
 
 pub type LPCIMM_TEXTURE = *const IMM_TEXTURE;
 
-// External constants from Windows API
-extern "C" {
-    pub static GUID_Imm_Texture: GUID;
-}
-
 // External Windows API functions
+// IsEqualGUID is a <windows.h> macro stand-in; no crate mirror — kept as local extern
 extern "C" {
     pub fn IsEqualGUID(guid1: *const GUID, guid2: GUID) -> BOOL;
 }
@@ -111,7 +65,6 @@ pub const IMM_TEXTURE_DEFAULT_SPACING: u32 = 20;
 // ------ PUBLIC INTERFACE ------
 //
 
-/// Texture Class for Feelit API Foundation Classes
 pub struct CImmTexture {
     //
     // ATTRIBUTES
