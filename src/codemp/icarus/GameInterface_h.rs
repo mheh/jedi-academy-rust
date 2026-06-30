@@ -1,12 +1,11 @@
 #![allow(non_camel_case_types)]
 
 use core::ffi::{c_char, c_int, c_long};
+use std::collections::BTreeMap;
 use crate::ffi::types::qboolean;
-
-// Stub for C++ class ICARUS_Instance (opaque in Rust)
-pub struct ICARUS_Instance {
-    _private: [u8; 0],
-}
+use crate::codemp::icarus::instance_h::ICARUS_Instance;
+use crate::codemp::icarus::interface_h::interface_export_t;
+use crate::codemp::game::g_public_h::sharedEntity_t;
 
 #[repr(C)]
 pub struct pscript_s {
@@ -16,25 +15,9 @@ pub struct pscript_s {
 
 pub type pscript_t = pscript_s;
 
-// Stub for C++ std::map<string, int, ...>
-pub struct entlist_t {
-    _private: [u8; 0],
-}
+pub type entlist_t = BTreeMap<String, c_int>;
 
-// Stub for C++ std::map<string, pscript_t*, ...>
-pub struct bufferlist_t {
-    _private: [u8; 0],
-}
-
-// Forward declaration stub for interface_export_t (defined elsewhere)
-pub struct interface_export_t {
-    _private: [u8; 0],
-}
-
-// Stub for sharedEntity_t
-pub struct sharedEntity_t {
-    _private: [u8; 0],
-}
+pub type bufferlist_t = BTreeMap<String, *mut pscript_t>;
 
 // ICARUS includes
 unsafe extern "C" {
