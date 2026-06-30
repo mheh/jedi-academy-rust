@@ -1,70 +1,12 @@
 #![allow(non_snake_case)]
-//! NPC_goal.cpp
-//! leave this line at the top for all NPC_xxxx.cpp files...
+// b_goal.cpp
+// leave this line at the top for all NPC_xxxx.cpp files...
 
-use core::ffi::c_int;
 use core::ptr;
 
-// Opaque types for structures defined in other modules
-#[repr(C)]
-pub struct gentity_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct gNPCStats_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct usercmd_t {
-    _opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct level_t {
-    _opaque: [u8; 0],
-}
-
-// Type aliases for Q3 types
-pub type qboolean = c_int;
-pub type vec3_t = [f32; 3];
-
-// Q3 constants
-const qtrue: qboolean = 1;
-const qfalse: qboolean = 0;
-
-// AI flags
-const NPCAI_MOVING: c_int = 0x00000001;
-const NPCAI_TOUCHED_GOAL: c_int = 0x00000002;
-
-// Entity flags
-const EF_NODRAW: c_int = 0x00000001;
-
-// Task IDs
-const TID_MOVE_NAV: c_int = 1;
-
-extern "C" {
-    pub static mut NPC: *mut gentity_t;
-    pub static mut NPCInfo: *mut gNPCStats_t;
-    pub static level: level_t;
-    pub static mut ucmd: usercmd_t;
-
-    pub fn FlyingCreature(ent: *mut gentity_t) -> qboolean;
-    pub fn Q3_TaskIDComplete(ent: *mut gentity_t, taskID: c_int) -> ();
-
-    // STEER::Reached - C++ namespace function
-    // Using raw function name; actual C++ mangling may vary
-    pub fn STEER_Reached(
-        npc: *mut gentity_t,
-        goal: *mut gentity_t,
-        goalRadius: f32,
-        flying: qboolean,
-    ) -> qboolean;
-
-    // NPCInfo field accessors - these will be accessed through pointer arithmetic
-    // in a faithful port, but we declare NPC_SetGoal, NPC_ClearGoal, etc.
-}
+use crate::code::game::g_headers::*; // g_headers.h
+use crate::code::game::b_local_h::*; // b_local.h
+use crate::code::game::Q3_Interface_h::*; // Q3_Interface.h
 
 /*
 SetGoal
