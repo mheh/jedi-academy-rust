@@ -4,92 +4,23 @@
 #![allow(non_snake_case)]
 
 use core::ffi::{c_int, c_char, c_void};
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
-// Type definitions
-pub type qboolean = c_int;
-pub type vec3_t = [f32; 3];
+use crate::code::game::g_headers::*;     // g_headers.h (empty stub)
+use crate::code::game::g_local_h::*;     // g_local.h  -> g_local_h.rs
+use crate::code::game::g_functions::*;   // g_functions.h -> on-disk g_functions.rs (no _h suffix)
+use crate::code::game::g_nav_h::*;       // g_nav.h
 
-// Constants
-const qtrue: qboolean = 1;
-const qfalse: qboolean = 0;
-const MAX_REFNAME: usize = 32;
 const TAG_GENERIC_NAME: &[u8] = b"__WORLD__\0"; //If a designer chooses this name, cut a finger off as an example to the others
-
-const RTF_NAVGOAL: c_int = 0x00000001;
-const NODE_NAVGOAL: c_int = 3;
-
-// reference_tag_t structure
-#[repr(C)]
-pub struct reference_tag_t {
-    pub name: [c_char; MAX_REFNAME],
-    pub origin: vec3_t,
-    pub angles: vec3_t,
-    pub flags: c_int,   //Just in case
-    pub radius: c_int,  //For nav goals
-}
-
-// Stub types needed for declarations
-#[repr(C)]
-pub struct gentity_s {
-    pub currentOrigin: vec3_t,
-    pub s: entityState_t,
-    pub targetname: *mut c_char,
-    pub ownername: *mut c_char,
-    pub target: *mut c_char,
-    pub e_ThinkFunc: c_int,
-    pub nextthink: c_int,
-    _dummy: [u8; 0],
-}
-pub type gentity_t = gentity_s;
-
-#[repr(C)]
-pub struct entityState_t {
-    pub origin: vec3_t,
-    pub angles: vec3_t,
-    _dummy: [u8; 0],
-}
-
-#[repr(C)]
-pub struct level_locals_t {
-    pub time: c_int,
-    _dummy: [u8; 0],
-}
-
-// Partial gameImport_t stub
-#[repr(C)]
-pub struct gameImport_t {
-    pub Printf: Option<unsafe extern "C" fn(*const c_char, ...)>,
-    pub inPVS: Option<unsafe extern "C" fn(*const vec3_t, *const vec3_t) -> c_int>,
-    _dummy: [u8; 0],
-}
 
 // tagOwner structure to hold vectors and maps of tags
 pub struct tagOwner_t {
     pub tags: Vec<Box<reference_tag_t>>,
-    pub tagMap: HashMap<String, *mut reference_tag_t>,
-}
-
-// External declarations
-extern "C" {
-    pub static mut delayedShutDown: c_int;
-    pub static mut level: level_locals_t;
-    pub static mut g_entities: [gentity_t; 1024];
-    pub static mut gi: gameImport_t;
-
-    pub fn G_Find(from: *mut gentity_t, fieldofs: c_int, match_: *const c_char) -> *mut gentity_t;
-    pub fn G_FreeEntity(e: *mut gentity_t);
-    pub fn CG_DrawNode(origin: vec3_t, node_type: c_int);
-    pub fn VectorCopy(src: *const vec3_t, dst: *mut vec3_t);
-    pub fn VectorSubtract(veca: *const vec3_t, vecb: *const vec3_t, out: *mut vec3_t);
-    pub fn VectorNormalize(v: *mut vec3_t) -> f32;
-    pub fn vectoangles(vec: *const vec3_t, angles: *mut vec3_t);
-    pub fn Q_strncpyz(dest: *mut c_char, src: *const c_char, destsize: c_int, bBarfIfTooLong: qboolean);
-    pub fn strlwr(s: *mut c_char) -> *mut c_char;
+    pub tagMap: BTreeMap<String, *mut reference_tag_t>,
 }
 
 // Global map for storing tag owners
-static mut refTagOwnerMap: Option<HashMap<String, Box<tagOwner_t>>> = None;
+static mut refTagOwnerMap: Option<BTreeMap<String, Box<tagOwner_t>>> = None;
 
 // Utility functions
 #[inline]
@@ -169,7 +100,7 @@ pub unsafe fn TAG_Init() {
     }
 
     // Reinitialize the map
-    refTagOwnerMap = Some(HashMap::new());
+    refTagOwnerMap = Some(BTreeMap::new());
 }
 
 /*
@@ -359,7 +290,7 @@ pub unsafe fn TAG_Add(
 
     // Initialize map if needed
     if refTagOwnerMap.is_none() {
-        refTagOwnerMap = Some(HashMap::new());
+        refTagOwnerMap = Some(BTreeMap::new());
     }
 
     if let Some(map) = &mut refTagOwnerMap {
@@ -371,7 +302,7 @@ pub unsafe fn TAG_Add(
             //Create a new owner list
             let mut tag_owner = tagOwner_t {
                 tags: Vec::new(),
-                tagMap: HashMap::new(),
+                tagMap: BTreeMap::new(),
             };
 
             //Insert the information
@@ -510,8 +441,6 @@ targetname	- the name of this tag
 ownername	- the owner of this tag
 target		- use to point the tag at something for angles
 */
-
-const FOFS_targetname: c_int = 0; // Field offset - would need proper definition
 
 #[allow(non_snake_case)]
 unsafe fn ref_link(ent: *mut gentity_t) {
