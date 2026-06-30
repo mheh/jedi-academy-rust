@@ -1,13 +1,23 @@
-//! `cm_draw.h` — 32-bit pixel drawing declarations.
+// ///////////////////////////////////////////////////////////////////////////////
+// CDraw32 Class Interface
+//
+// Basic drawing routines for 32-bit per pixel buffer
+// ///////////////////////////////////////////////////////////////////////////////
 
-#![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 #![allow(non_upper_case_globals)]
+#![allow(non_camel_case_types)]
 #![allow(dead_code)]
+#![allow(unused_imports)]
+#![allow(unused_variables)]
 
-use crate::codemp::game::q_shared_h::byte;
 use core::ffi::c_long;
 use core::ptr::{addr_of, addr_of_mut};
+
+// #ifndef __linux__
+// //#include <windows.h>
+use crate::codemp::qcommon::platform_h::*;
+// #endif
 
 // calc offset into image array for a pixel at (x,y)
 #[inline]
@@ -94,6 +104,8 @@ pub fn CEILING(a: f64) -> f64 {
     }
 }
 
+// #include <stdlib.h>  -- C system header; no Rust module import needed
+
 #[repr(C)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct CPixel32 {
@@ -113,19 +125,16 @@ impl Default for CPixel32 {
 impl CPixel32 {
     #[inline]
     pub const fn new(R: byte, G: byte, B: byte, A: byte) -> Self {
-        Self {
-            r: R,
-            g: G,
-            b: B,
-            a: A,
-        }
+        Self { r: R, g: G, b: B, a: A }
     }
 
+    // CPixel32(byte R = 0, byte G = 0, byte B = 0, byte A = 255) default ctor
     #[inline]
     pub const fn default_c() -> Self {
         Self::new(0, 0, 0, 255)
     }
 
+    // CPixel32(long l)
     #[inline]
     pub const fn from_long(l: c_long) -> Self {
         Self {
@@ -164,7 +173,7 @@ pub const fn ALPHA_PIX(x: CPixel32, y: CPixel32, alpha: c_long, inv_alpha: c_lon
         r: (((x.r as c_long * alpha + y.r as c_long * inv_alpha) >> 8) & 0xff) as byte,
         g: (((x.g as c_long * alpha + y.g as c_long * inv_alpha) >> 8) & 0xff) as byte,
         b: (((x.b as c_long * alpha + y.b as c_long * inv_alpha) >> 8) & 0xff) as byte,
-        // t.a = (byte)((x.a*alpha + y.a*inv_alpha)>>8);  return t;
+        // t.a = (byte)((x.a*alpha + y.a*inv_alpha)>>8);  return t;}
         a: y.a,
     }
 }
@@ -179,34 +188,41 @@ pub const fn LIGHT_PIX(p: CPixel32, light: c_long) -> CPixel32 {
     }
 }
 
-// `POINT` comes from Windows headers in the original non-Linux include path.
-// It is left as a minimal layout stub until the platform header is fully ported.
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct POINT {
-    pub x: c_long,
-    pub y: c_long,
-}
+// Colors are 32-bit RGBA
 
 // draw class
-#[repr(C)]
-pub struct CDraw32 {
-    _private: [u8; 0],
-}
-
+// static drawing context - static so we set only ONCE for many draw calls
 pub static mut buffer: *mut CPixel32 = core::ptr::null_mut(); // pointer to pixel buffer (one active)
-pub static mut buf_width: c_long = 0; // size of buffer
-pub static mut buf_height: c_long = 0; // size of buffer
-pub static mut stride: c_long = 0; // stride of buffer in pixels
-pub static mut clip_min_x: c_long = 0; // clip bounds
-pub static mut clip_min_y: c_long = 0; // clip bounds
-pub static mut clip_max_x: c_long = 0; // clip bounds
-pub static mut clip_max_y: c_long = 0; // clip bounds
-pub static mut row_off: *mut c_long = core::ptr::null_mut(); // Table for quick Y calculations
+pub static mut buf_width: c_long = 0;                          // size of buffer
+pub static mut buf_height: c_long = 0;                         // size of buffer
+pub static mut stride: c_long = 0;                             // stride of buffer in pixels
+pub static mut clip_min_x: c_long = 0;                        // clip bounds
+pub static mut clip_min_y: c_long = 0;                        // clip bounds
+pub static mut clip_max_x: c_long = 0;                        // clip bounds
+pub static mut clip_max_y: c_long = 0;                        // clip bounds
+pub static mut row_off: *mut c_long = core::ptr::null_mut();  // Table for quick Y calculations
+
+// CDraw32 has ONLY static members; zero-sized unit struct is the faithful representation.
+pub struct CDraw32;
 
 impl CDraw32 {
+    // CDraw32()  -- constructor defined in cm_draw.cpp
+    pub fn new() -> Self { CDraw32 }
+
+    // ~CDraw32() -- destructor defined in cm_draw.cpp
+
     // private: BlitClip
-    // public: CDraw32, ~CDraw32
+    unsafe fn BlitClip(
+        &mut self,
+        dstX: *mut c_long,
+        dstY: *mut c_long,
+        width: *mut c_long,
+        height: *mut c_long,
+        srcX: *mut c_long,
+        srcY: *mut c_long,
+    ) {
+        unimplemented!() // defined in cm_draw.cpp
+    }
 
     // set the rect to clip drawing functions to
     #[inline]
@@ -243,14 +259,20 @@ impl CDraw32 {
     }
 
     // set the dimensions of the off-screen buffer
-    // static bool SetBufferSize(long width,long height,long stride_len);
+    pub unsafe fn SetBufferSize(width: c_long, height: c_long, stride_len: c_long) -> bool {
+        unimplemented!() // defined in cm_draw.cpp
+    }
 
     // call this to free the table for quick y calcs before the program ends
     #[inline]
     pub unsafe fn CleanUp() {
         unsafe {
-            // Original C++ deletes row_off here. Allocation ownership is unported,
-            // so this blind header only clears the static drawing context.
+            // C++: if (row_off) delete [] row_off;
+            // porting note: dealloc must match SetBufferSize allocation; see cm_draw.cpp port
+            let ro = *addr_of!(row_off);
+            if !ro.is_null() {
+                let _ = ro; // TODO: free with correct deallocator when cm_draw.cpp is ported
+            }
             *addr_of_mut!(row_off) = core::ptr::null_mut();
             *addr_of_mut!(buf_width) = 0;
             *addr_of_mut!(buf_height) = 0;
@@ -348,78 +370,287 @@ impl CDraw32 {
     }
 
     // clear screen buffer to color from start to end line
-    // void ClearLines(CPixel32 color,long start,long end);
+    pub unsafe fn ClearLines(&mut self, color: CPixel32, start: c_long, end: c_long) {
+        unimplemented!() // defined in cm_draw.cpp
+    }
 
     // clear screen buffer to color provided
-    // void ClearBuffer(CPixel32 color) {ClearLines(color,0,buf_height-1);}
+    #[inline]
+    pub unsafe fn ClearBuffer(&mut self, color: CPixel32) {
+        unsafe {
+            self.ClearLines(color, 0, *addr_of!(buf_height) - 1);
+        }
+    }
 
     // fill buffer alpha from start to end line
-    // void SetAlphaLines(byte alpha,long start,long end);
+    pub unsafe fn SetAlphaLines(&mut self, alpha: byte, start: c_long, end: c_long) {
+        unimplemented!() // defined in cm_draw.cpp
+    }
 
     // clear screen buffer to color provided
-    // void SetAlphaBuffer(byte alpha) {SetAlphaLines(alpha,0,buf_height-1);}
+    #[inline]
+    pub unsafe fn SetAlphaBuffer(&mut self, alpha: byte) {
+        unsafe {
+            self.SetAlphaLines(alpha, 0, *addr_of!(buf_height) - 1);
+        }
+    }
 
     // clip a line segment to the clip rect
-    // bool ClipLine(long& x1, long& y1, long& x2, long& y2);
+    pub fn ClipLine(
+        &self,
+        x1: *mut c_long,
+        y1: *mut c_long,
+        x2: *mut c_long,
+        y2: *mut c_long,
+    ) -> bool {
+        unimplemented!() // defined in cm_draw.cpp
+    }
 
     // draw a solid colored line, no clipping
-    // void DrawLineNC(long x1, long y1, long x2, long y2, CPixel32 color);
+    pub unsafe fn DrawLineNC(
+        &mut self,
+        x1: c_long,
+        y1: c_long,
+        x2: c_long,
+        y2: c_long,
+        color: CPixel32,
+    ) {
+        unimplemented!() // defined in cm_draw.cpp
+    }
 
     // draw a solid color line
-    // void DrawLine(long x1, long y1, long x2, long y2, CPixel32 color)
-    //     { if (ClipLine(x1,y1,x2,y2)) DrawLineNC(x1,y1,x2,y2,color); }
+    #[inline]
+    pub unsafe fn DrawLine(
+        &mut self,
+        mut x1: c_long,
+        mut y1: c_long,
+        mut x2: c_long,
+        mut y2: c_long,
+        color: CPixel32,
+    ) {
+        if self.ClipLine(&mut x1 as *mut c_long, &mut y1 as *mut c_long, &mut x2 as *mut c_long, &mut y2 as *mut c_long) {
+            unsafe { self.DrawLineNC(x1, y1, x2, y2, color); }
+        }
+    }
 
-    // void DrawLineAveNC(long x1, long y1, long x2, long y2, CPixel32 color);
+    pub unsafe fn DrawLineAveNC(
+        &mut self,
+        x1: c_long,
+        y1: c_long,
+        x2: c_long,
+        y2: c_long,
+        color: CPixel32,
+    ) {
+        unimplemented!() // defined in cm_draw.cpp
+    }
 
     // draw a translucent solid color line
-    // void DrawLineAve(long x1, long y1, long x2, long y2, CPixel32 color)
-    //     { if (ClipLine(x1,y1,x2,y2)) DrawLineAveNC(x1,y1,x2,y2,color); }
+    #[inline]
+    pub unsafe fn DrawLineAve(
+        &mut self,
+        mut x1: c_long,
+        mut y1: c_long,
+        mut x2: c_long,
+        mut y2: c_long,
+        color: CPixel32,
+    ) {
+        if self.ClipLine(&mut x1 as *mut c_long, &mut y1 as *mut c_long, &mut x2 as *mut c_long, &mut y2 as *mut c_long) {
+            unsafe { self.DrawLineAveNC(x1, y1, x2, y2, color); }
+        }
+    }
 
     // draw an anti-aliased line, no clipping
-    // void DrawLineAANC(long x0, long y0, long x1, long y1, CPixel32 color);
+    pub unsafe fn DrawLineAANC(
+        &mut self,
+        x0: c_long,
+        y0: c_long,
+        x1: c_long,
+        y1: c_long,
+        color: CPixel32,
+    ) {
+        unimplemented!() // defined in cm_draw.cpp
+    }
 
     // draw an anti-aliased line
-    // void DrawLineAA(long x1, long y1, long x2, long y2, CPixel32 color)
-    //     { if (ClipLine(x1,y1,x2,y2)) DrawLineAANC(x1,y1,x2,y2,color); }
+    #[inline]
+    pub unsafe fn DrawLineAA(
+        &mut self,
+        mut x1: c_long,
+        mut y1: c_long,
+        mut x2: c_long,
+        mut y2: c_long,
+        color: CPixel32,
+    ) {
+        if self.ClipLine(&mut x1 as *mut c_long, &mut y1 as *mut c_long, &mut x2 as *mut c_long, &mut y2 as *mut c_long) {
+            unsafe { self.DrawLineAANC(x1, y1, x2, y2, color); }
+        }
+    }
 
     // draw a filled rectangle, no clipping
-    // void DrawRectNC(long ulx, long uly, long width, long height,CPixel32 color);
+    pub unsafe fn DrawRectNC(
+        &mut self,
+        ulx: c_long,
+        uly: c_long,
+        width: c_long,
+        height: c_long,
+        color: CPixel32,
+    ) {
+        unimplemented!() // defined in cm_draw.cpp
+    }
 
     // draw a filled rectangle
-    // void DrawRect(long ulx, long uly, long width, long height, CPixel32 color);
+    pub fn DrawRect(
+        &mut self,
+        ulx: c_long,
+        uly: c_long,
+        width: c_long,
+        height: c_long,
+        color: CPixel32,
+    ) {
+        unimplemented!() // defined in cm_draw.cpp
+    }
 
     // draw a filled rectangle
-    // void DrawRectAve(long ulx, long uly, long width, long height,CPixel32 color);
+    pub fn DrawRectAve(
+        &mut self,
+        ulx: c_long,
+        uly: c_long,
+        width: c_long,
+        height: c_long,
+        color: CPixel32,
+    ) {
+        unimplemented!() // defined in cm_draw.cpp
+    }
 
     // draw a box (unfilled rectangle) no clip
-    // void DrawBoxNC(long ulx, long uly, long width, long height, CPixel32 color);
+    pub unsafe fn DrawBoxNC(
+        &mut self,
+        ulx: c_long,
+        uly: c_long,
+        width: c_long,
+        height: c_long,
+        color: CPixel32,
+    ) {
+        unimplemented!() // defined in cm_draw.cpp
+    }
 
     // draw a box (unfilled rectangle)
-    // void DrawBox(long ulx, long uly, long width, long height, CPixel32 color);
+    pub fn DrawBox(
+        &mut self,
+        ulx: c_long,
+        uly: c_long,
+        width: c_long,
+        height: c_long,
+        color: CPixel32,
+    ) {
+        unimplemented!() // defined in cm_draw.cpp
+    }
 
     // draw a box (unfilled rectangle)
-    // void DrawBoxAve(long ulx, long uly, long width, long height, CPixel32 color);
+    pub fn DrawBoxAve(
+        &mut self,
+        ulx: c_long,
+        uly: c_long,
+        width: c_long,
+        height: c_long,
+        color: CPixel32,
+    ) {
+        unimplemented!() // defined in cm_draw.cpp
+    }
 
     // draw a circle with fill and edge colors
-    // void DrawCircle(long xc, long yc, long r, CPixel32 edge, CPixel32 fill);
+    pub fn DrawCircle(
+        &mut self,
+        xc: c_long,
+        yc: c_long,
+        r: c_long,
+        edge: CPixel32,
+        fill: CPixel32,
+    ) {
+        unimplemented!() // defined in cm_draw.cpp
+    }
 
     // draw a circle with fill and edge colors averaged with dest
-    // void DrawCircleAve(long xc, long yc, long r, CPixel32 edge, CPixel32 fill);
+    pub fn DrawCircleAve(
+        &mut self,
+        xc: c_long,
+        yc: c_long,
+        r: c_long,
+        edge: CPixel32,
+        fill: CPixel32,
+    ) {
+        unimplemented!() // defined in cm_draw.cpp
+    }
 
     // draw a polygon (complex) with fill and edge colors
-    // void DrawPolygon(long nvert, POINT *point, CPixel32 edge, CPixel32 fill);
+    pub fn DrawPolygon(
+        &mut self,
+        nvert: c_long,
+        point: *mut POINT,
+        edge: CPixel32,
+        fill: CPixel32,
+    ) {
+        unimplemented!() // defined in cm_draw.cpp
+    }
 
     // simple blit function
-    // void BlitNC(long dstX, long dstY, long dstWidth, long dstHeight,
-    //             CPixel32* srcImage, long srcX, long srcY, long srcStride);
+    pub unsafe fn BlitNC(
+        &mut self,
+        dstX: c_long,
+        dstY: c_long,
+        dstWidth: c_long,
+        dstHeight: c_long,
+        srcImage: *mut CPixel32,
+        srcX: c_long,
+        srcY: c_long,
+        srcStride: c_long,
+    ) {
+        unimplemented!() // defined in cm_draw.cpp
+    }
 
-    // void Blit(long dstX, long dstY, long dstWidth, long dstHeight,
-    //           CPixel32* srcImage, long srcX, long srcY, long srcStride);
+    pub fn Blit(
+        &mut self,
+        dstX: c_long,
+        dstY: c_long,
+        dstWidth: c_long,
+        dstHeight: c_long,
+        srcImage: *mut CPixel32,
+        srcX: c_long,
+        srcY: c_long,
+        srcStride: c_long,
+    ) {
+        unimplemented!() // defined in cm_draw.cpp
+    }
 
     // blit image times color
-    // void BlitColor(long dstX, long dstY, long dstWidth, long dstHeight,
-    //                CPixel32* srcImage, long srcX, long srcY, long srcStride, CPixel32 color);
+    pub fn BlitColor(
+        &mut self,
+        dstX: c_long,
+        dstY: c_long,
+        dstWidth: c_long,
+        dstHeight: c_long,
+        srcImage: *mut CPixel32,
+        srcX: c_long,
+        srcY: c_long,
+        srcStride: c_long,
+        color: CPixel32,
+    ) {
+        unimplemented!() // defined in cm_draw.cpp
+    }
 
-    // void Emboss(long dstX, long dstY, long width, long height,
-    //             CPixel32* clrImage, long clrX, long clrY, long clrStride);
+    pub fn Emboss(
+        &mut self,
+        dstX: c_long,
+        dstY: c_long,
+        width: c_long,
+        height: c_long,
+        clrImage: *mut CPixel32,
+        clrX: c_long,
+        clrY: c_long,
+        clrStride: c_long,
+    ) {
+        unimplemented!() // defined in cm_draw.cpp
+    }
 }
+
+// ///////////////////////////////////////////////////////////////////////////////
