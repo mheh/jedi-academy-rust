@@ -3,11 +3,13 @@
 
 use core::ffi::{c_char, c_int, c_void};
 
-// Dependency modules referenced from original includes
-// #include "weapons.h"
-// #include "g_items.h"
-// #include "teams.h"
-// #include "statindex.h"
+use crate::code::game::weapons_h::*;       // weaponData_t, ammoData_t, weapon_t
+use crate::code::game::g_items_h::*;
+use crate::code::game::teams_h::*;
+use crate::code::game::statindex_h::*;
+use crate::code::game::q_shared::*;        // NOTE: q_shared (NO _h suffix); provides playerState_t, usercmd_t, trace_t, trajectory_t, entityState_t, vec3_t, qboolean
+use crate::code::game::surfaceflags_h::*;  // CONTENTS_*
+use crate::code::game::ghoul2_shared_h::*; // EG2_Collision (an enum)
 
 pub const DEFAULT_GRAVITY: c_int = 800;
 pub const GIB_HEALTH: c_int = -40;
@@ -132,8 +134,10 @@ mod trace_functor {
 
 pub const MAXTOUCH: c_int = 32;
 
-// Forward declarations
-// typedef struct gentity_s gentity_t;
+// typedef struct gentity_s gentity_t;  (oracle line 129 — forward decl owned by this header)
+#[repr(C)]
+pub struct gentity_s;
+pub type gentity_t = gentity_s;
 
 #[repr(C)]
 pub struct pmove_t {
@@ -873,68 +877,3 @@ extern "C" {
         atTime: c_int,
     ) -> qboolean;
 }
-
-// ===== Forward declarations for dependencies =====
-// These are placeholder types for external dependencies that are defined elsewhere
-
-#[repr(C)]
-pub struct playerState_t {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-pub struct usercmd_t {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-pub struct gentity_t {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-pub struct trace_t {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-pub struct EG2_Collision {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-pub struct trajectory_t {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-pub struct entityState_t {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-pub struct weaponData_t {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-pub struct ammoData_t {
-    _private: [u8; 0],
-}
-
-pub type weapon_t = c_int;
-pub type vec3_t = [f32; 3];
-pub type qboolean = c_int;
-
-// Content flags (from shared headers, referenced by MASK macros)
-pub const CONTENTS_SOLID: c_int = 1;
-pub const CONTENTS_TERRAIN: c_int = 2;
-pub const CONTENTS_PLAYERCLIP: c_int = 4;
-pub const CONTENTS_BODY: c_int = 8;
-pub const CONTENTS_MONSTERCLIP: c_int = 16;
-pub const CONTENTS_WATER: c_int = 32;
-pub const CONTENTS_LAVA: c_int = 64;
-pub const CONTENTS_SLIME: c_int = 128;
-pub const CONTENTS_OPAQUE: c_int = 256;
-pub const CONTENTS_CORPSE: c_int = 512;
-pub const CONTENTS_SHOTCLIP: c_int = 1024;
