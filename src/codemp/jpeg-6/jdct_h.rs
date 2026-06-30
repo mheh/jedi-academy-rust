@@ -12,7 +12,16 @@
  * machine-dependent tuning (e.g., assembly coding).
  */
 
-use core::ffi::{c_int, c_void};
+#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals)]
+
+/* Port note: jdct.h has no #include directives of its own; all external types
+ * come from the JPEG library headers that any including file would already have.
+ * Glob-importing the three key jpeg-6 headers to bring those types into scope. */
+use core::ffi::c_int;
+use crate::codemp::jpeg_6::jpeglib_h::*;
+use crate::codemp::jpeg_6::jpegint_h::*;
+use crate::codemp::jpeg_6::jmorecfg_h::*;
+
 
 /*
  * A forward DCT routine is given a pointer to a work area of type DCTELEM[];
@@ -29,12 +38,11 @@ use core::ffi::{c_int, c_void};
 
 #[cfg(feature = "BITS_IN_JSAMPLE_8")]
 pub type DCTELEM = c_int;		/* 16 or 32 bits is fine */
-
 #[cfg(not(feature = "BITS_IN_JSAMPLE_8"))]
-pub type DCTELEM = i32;		/* must have 32 bits */
+pub type DCTELEM = INT32;		/* must have 32 bits */
 
-pub type forward_DCT_method_ptr = extern "C" fn(*mut DCTELEM);
-pub type float_DCT_method_ptr = extern "C" fn(*mut FAST_FLOAT);
+pub type forward_DCT_method_ptr = unsafe extern "C" fn(*mut DCTELEM);
+pub type float_DCT_method_ptr = unsafe extern "C" fn(*mut FAST_FLOAT);
 
 
 /*
@@ -58,11 +66,11 @@ pub type ISLOW_MULT_TYPE = MULTIPLIER; /* short or int, whichever is faster */
 #[cfg(feature = "BITS_IN_JSAMPLE_8")]
 pub type IFAST_MULT_TYPE = MULTIPLIER; /* 16 bits is OK, use short if faster */
 #[cfg(feature = "BITS_IN_JSAMPLE_8")]
-pub const IFAST_SCALE_BITS: c_int = 2;	/* fractional bits in scale factors */
+pub const IFAST_SCALE_BITS: i32 = 2;	/* fractional bits in scale factors */
 #[cfg(not(feature = "BITS_IN_JSAMPLE_8"))]
-pub type IFAST_MULT_TYPE = i32;	/* need 32 bits for scaled quantizers */
+pub type IFAST_MULT_TYPE = INT32;	/* need 32 bits for scaled quantizers */
 #[cfg(not(feature = "BITS_IN_JSAMPLE_8"))]
-pub const IFAST_SCALE_BITS: c_int = 13;	/* fractional bits in scale factors */
+pub const IFAST_SCALE_BITS: i32 = 13;	/* fractional bits in scale factors */
 pub type FLOAT_MULT_TYPE = FAST_FLOAT; /* preferred floating type */
 
 
@@ -75,15 +83,39 @@ pub type FLOAT_MULT_TYPE = FAST_FLOAT; /* preferred floating type */
  * prepare_range_limit_table (in jdmaster.c) for more info.
  */
 
-/* IDCT_range_limit(cinfo)  ((cinfo)->sample_range_limit + CENTERJSAMPLE) */
+/* #define IDCT_range_limit(cinfo)  ((cinfo)->sample_range_limit + CENTERJSAMPLE) */
+/* Port note: translated as an unsafe inline fn; sample_range_limit field and
+ * JSAMPLE type are imported from jpeglib_h / jmorecfg_h. */
+#[inline]
+pub unsafe fn IDCT_range_limit(cinfo: j_decompress_ptr) -> *mut JSAMPLE {
+    /* SAFETY: caller must ensure cinfo is non-null and properly initialised */
+    unsafe { (*cinfo).sample_range_limit.offset(CENTERJSAMPLE as isize) }
+}
 
-pub const RANGE_MASK: c_int = (MAXJSAMPLE * 4 + 3); /* 2 bits wider than legal samples */
+pub const RANGE_MASK: i32 = MAXJSAMPLE as i32 * 4 + 3; /* 2 bits wider than legal samples */
 
 
 /* Short forms of external names for systems with brain-damaged linkers. */
 
+/* #ifdef NEED_SHORT_EXTERNAL_NAMES */
+/* #define jpeg_fdct_islow	jFDislow */
+/* #define jpeg_fdct_ifast	jFDifast */
+/* #define jpeg_fdct_float	jFDfloat */
+/* #define jpeg_idct_islow	jRDislow */
+/* #define jpeg_idct_ifast	jRDifast */
+/* #define jpeg_idct_float	jRDfloat */
+/* #define jpeg_idct_4x4		jRD4x4  */
+/* #define jpeg_idct_2x2		jRD2x2  */
+/* #define jpeg_idct_1x1		jRD1x1  */
+/* #endif */
+/* Port note: the short-name #defines are preprocessor renames applied before
+ * the extern declarations below.  In Rust this is rendered as two cfg-gated
+ * extern "C" blocks — one with #[link_name] aliases, one without. */
+
+/* Extern declarations for the forward and inverse DCT routines. */
+
 #[cfg(feature = "NEED_SHORT_EXTERNAL_NAMES")]
-extern "C" {
+unsafe extern "C" {
     #[link_name = "jFDislow"]
     pub fn jpeg_fdct_islow(data: *mut DCTELEM);
     #[link_name = "jFDifast"]
@@ -142,9 +174,7 @@ extern "C" {
 }
 
 #[cfg(not(feature = "NEED_SHORT_EXTERNAL_NAMES"))]
-extern "C" {
-    /* Extern declarations for the forward and inverse DCT routines. */
-
+unsafe extern "C" {
     pub fn jpeg_fdct_islow(data: *mut DCTELEM);
     pub fn jpeg_fdct_ifast(data: *mut DCTELEM);
     pub fn jpeg_fdct_float(data: *mut FAST_FLOAT);
@@ -204,22 +234,43 @@ extern "C" {
  * and may differ from one module to the next.
  */
 
-pub const ONE: i32 = 1;
-/* CONST_SCALE (ONE << CONST_BITS) */
+pub const ONE: INT32 = 1;
+
+/* #define CONST_SCALE (ONE << CONST_BITS) */
+/* Port note: CONST_BITS is undefined here (each module defines it locally), so
+ * CONST_SCALE and the macros that depend on it are rendered as macro_rules!
+ * so that CONST_BITS is resolved at the call site, matching C preprocessor
+ * semantics. */
+#[macro_export]
+macro_rules! CONST_SCALE {
+    () => { ONE << CONST_BITS }
+}
 
 /* Convert a positive real constant to an integer scaled by CONST_SCALE.
  * Caution: some C compilers fail to reduce "FIX(constant)" at compile time,
  * thus causing a lot of useless floating-point operations at run time.
  */
 
-/* FIX(x)	((INT32) ((x) * CONST_SCALE + 0.5)) */
+/* #define FIX(x)	((INT32) ((x) * CONST_SCALE + 0.5)) */
+#[macro_export]
+macro_rules! FIX {
+    ($x:expr) => {
+        (($x * (ONE << CONST_BITS) as f64 + 0.5) as INT32)
+    }
+}
 
 /* Descale and correctly round an INT32 value that's scaled by N bits.
  * We assume RIGHT_SHIFT rounds towards minus infinity, so adding
  * the fudge factor is correct for either sign of X.
  */
 
-/* DESCALE(x,n)  RIGHT_SHIFT((x) + (ONE << ((n)-1)), n) */
+/* #define DESCALE(x,n)  RIGHT_SHIFT((x) + (ONE << ((n)-1)), n) */
+#[macro_export]
+macro_rules! DESCALE {
+    ($x:expr, $n:expr) => {
+        RIGHT_SHIFT!(($x) + (ONE << (($n) - 1)), $n)
+    }
+}
 
 /* Multiply an INT32 variable by an INT32 constant to yield an INT32 result.
  * This macro is used only when the two inputs will actually be no more than
@@ -230,39 +281,37 @@ pub const ONE: i32 = 1;
  * correct combination of casts.
  */
 
-#[cfg(feature = "SHORTxSHORT_32")]
-/* MULTIPLY16C16(var,const)  (((INT16) (var)) * ((INT16) (const))) */
+/* Port note: C logic is — if SHORTxLCONST_32: SHORT*LONG form (wins over
+ * SHORTxSHORT_32 when both defined, since the second #define overwrites the
+ * first); elif SHORTxSHORT_32 alone: SHORT*SHORT form; else: default.
+ * Rendered as three mutually-exclusive cfg-gated macro_rules! items. */
 
-#[cfg(feature = "SHORTxLCONST_32")]
-/* MULTIPLY16C16(var,const)  (((INT16) (var)) * ((INT32) (const))) */
-
-#[cfg(not(any(feature = "SHORTxSHORT_32", feature = "SHORTxLCONST_32")))]
-/* MULTIPLY16C16(var,const)  ((var) * (const)) */
+#[cfg(feature = "SHORTxLCONST_32")]		/* known to work with Microsoft C 6.0 */
+#[macro_export]
+macro_rules! MULTIPLY16C16 {
+    ($var:expr, $const:expr) => { ((($var) as INT16) as INT32 * (($const) as INT32)) }
+}
+#[cfg(all(feature = "SHORTxSHORT_32", not(feature = "SHORTxLCONST_32")))]	/* may work if 'int' is 32 bits */
+#[macro_export]
+macro_rules! MULTIPLY16C16 {
+    ($var:expr, $const:expr) => { ((($var) as INT16) as INT32 * (($const) as INT16) as INT32) }
+}
+#[cfg(not(any(feature = "SHORTxSHORT_32", feature = "SHORTxLCONST_32")))]	/* default definition */
+#[macro_export]
+macro_rules! MULTIPLY16C16 {
+    ($var:expr, $const:expr) => { ($var) * ($const) }
+}
 
 /* Same except both inputs are variables. */
 
-#[cfg(feature = "SHORTxSHORT_32")]
-/* MULTIPLY16V16(var1,var2)  (((INT16) (var1)) * ((INT16) (var2))) */
-
-#[cfg(not(feature = "SHORTxSHORT_32"))]
-/* MULTIPLY16V16(var1,var2)  ((var1) * (var2)) */
-
-/* Opaque types from JPEG library — imported from jpeglib/jpegint */
-pub type FAST_FLOAT = f32;
-pub type MULTIPLIER = c_int;
-#[repr(C)]
-pub struct j_decompress {
-    _private: [u8; 0],
+#[cfg(feature = "SHORTxSHORT_32")]		/* may work if 'int' is 32 bits */
+#[macro_export]
+macro_rules! MULTIPLY16V16 {
+    ($var1:expr, $var2:expr) => { ((($var1) as INT16) as INT32 * (($var2) as INT16) as INT32) }
 }
-pub type j_decompress_ptr = *mut j_decompress;
-#[repr(C)]
-pub struct jpeg_component_info {
-    _private: [u8; 0],
-}
-pub type JCOEFPTR = *mut c_int;
-pub type JSAMPARRAY = *mut *mut u8;
-pub type JDIMENSION = c_int;
 
-/* JPEG constants from jmorecfg.h */
-pub const MAXJSAMPLE: c_int = 255;
-pub const CENTERJSAMPLE: c_int = 128;
+#[cfg(not(feature = "SHORTxSHORT_32"))]	/* default definition */
+#[macro_export]
+macro_rules! MULTIPLY16V16 {
+    ($var1:expr, $var2:expr) => { ($var1) * ($var2) }
+}
