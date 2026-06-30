@@ -1,13 +1,15 @@
-//! `cm_landscape.h` — common terrain landscape declarations.
+// cm_landscape.h — common terrain landscape types shared by server and renderer.
 
-#![allow(non_camel_case_types)]
-#![allow(non_snake_case)]
-#![allow(non_upper_case_globals)]
-#![allow(dead_code)]
+#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals, dead_code, unused_imports)]
 
-use crate::codemp::game::q_shared_h::{byte, vec3_t, vec3pair_t};
-use crate::codemp::qcommon::files_h::cvar_t;
 use core::ffi::{c_char, c_int, c_ulong, c_void};
+use std::collections::LinkedList;
+
+// Porting note: thandle_t imported from q_shared_h per TRIAGE CAUTIONS (oracle uses via value, no #include in header)
+use crate::codemp::qcommon::q_shared_h::*;
+// Porting note: cbrush_s, cbrushside_s, CCMShader imported from cm_local_h per TRIAGE CAUTIONS
+// (oracle forward-declares and uses via pointer; no #include in header)
+use crate::codemp::qcommon::cm_local_h::*;
 
 // These are the root classes using data shared in both the server and the renderer.
 // This common data is also available to physics
@@ -26,47 +28,9 @@ pub const MAX_VARIANCE_SIZE: c_int = 16;
 // Maximum number of instances to pick from an instance file
 pub const MAX_INSTANCE_TYPES: c_int = 16;
 
-// Header-local stubs for q_shared.h/qcommon terrain symbols not yet ported here.
-pub type thandle_t = c_int;
-
-#[repr(C)]
-pub struct cbrush_s {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-pub struct cbrushside_s {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CCMShader {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-pub struct CRandomTerrain {
-    _private: [u8; 0],
-}
-
-// Opaque storage stubs for the C++ STL list members. The original ABI layout is
-// implementation-specific; these keep the declarations structurally visible only.
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct areaList_t {
-    pub _opaque: [usize; 3],
-}
-
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct areaIter_t {
-    pub _opaque: *mut c_void,
-}
-
 // Types of areas
 
 #[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum areaType_t {
     AT_NONE,
     AT_FLAT,
@@ -78,31 +42,37 @@ pub enum areaType_t {
     AT_PLAYER,
 }
 
+pub use areaType_t::*;
+
 #[repr(C)]
 pub struct CArea {
-    pub mPosition: vec3_t,
-    pub mRadius: f32,
-    pub mAngle: f32,
-    pub mAngleDiff: f32,
-    pub mType: c_int,
-    pub mVillageID: c_int,
+    // private:
+    mPosition: vec3_t,
+    mRadius: f32,
+    mAngle: f32,
+    mAngleDiff: f32,
+    mType: c_int,
+    mVillageID: c_int,
 }
 
 impl CArea {
-    // C++ member declarations, in class order:
-    // public: CArea, ~CArea, Init, GetRadius, GetAngle, GetAngleDiff,
-    // GetPosition, GetType, GetVillageID
+    // CArea(void) {}
+    pub unsafe fn new() -> Self {
+        core::mem::zeroed()
+    }
+
+    // ~CArea(void) {}
 
     pub unsafe fn Init(
         &mut self,
-        pos: *const vec3_t,
+        pos: vec3_t,
         radius: f32,
         angle: f32,
         type_: c_int,
         angleDiff: f32,
         villageID: c_int,
     ) {
-        self.mPosition = *pos;
+        self.mPosition = pos; // VectorCopy(pos, mPosition)
         self.mRadius = radius;
         self.mAngle = angle;
         self.mAngleDiff = angleDiff;
@@ -111,58 +81,47 @@ impl CArea {
     }
 
     #[inline]
-    pub fn GetRadius(&self) -> f32 {
-        self.mRadius
-    }
-
+    pub fn GetRadius(&self) -> f32 { self.mRadius }
     #[inline]
-    pub fn GetAngle(&self) -> f32 {
-        self.mAngle
-    }
-
+    pub fn GetAngle(&self) -> f32 { self.mAngle }
     #[inline]
-    pub fn GetAngleDiff(&self) -> f32 {
-        self.mAngleDiff
-    }
-
+    pub fn GetAngleDiff(&self) -> f32 { self.mAngleDiff }
     #[inline]
-    pub fn GetPosition(&mut self) -> *mut vec3_t {
-        &mut self.mPosition
-    }
-
+    pub fn GetPosition(&mut self) -> &mut vec3_t { &mut self.mPosition }
     #[inline]
-    pub fn GetType(&self) -> c_int {
-        self.mType
-    }
-
+    pub fn GetType(&self) -> c_int { self.mType }
     #[inline]
-    pub fn GetVillageID(&self) -> c_int {
-        self.mVillageID
-    }
+    pub fn GetVillageID(&self) -> c_int { self.mVillageID }
 }
+
+// typedef list<CArea*>              areaList_t;
+pub type areaList_t = LinkedList<*mut CArea>;
+// typedef list<CArea*>::iterator    areaIter_t;
+// Porting note: C++ std::list<CArea*>::iterator; translated as IterMut<'static, *mut CArea>.
+// The stored mAreasIt field in CCMLandScape is a self-referential pattern in C++;
+// requires unsafe access in Rust and cannot be safely default-initialized.
+pub type areaIter_t = std::collections::linked_list::IterMut<'static, *mut CArea>;
 
 #[repr(C)]
 pub struct CCMHeightDetails {
-    pub mContents: c_int,
-    pub mSurfaceFlags: c_int,
+    // private:
+    mContents: c_int,
+    mSurfaceFlags: c_int,
 }
 
 impl CCMHeightDetails {
-    // C++ member declarations, in class order:
-    // public: CCMHeightDetails, ~CCMHeightDetails, GetSurfaceFlags,
-    // GetContents, SetFlags
+    // CCMHeightDetails(void) {}
+    pub unsafe fn new() -> Self {
+        core::mem::zeroed()
+    }
+
+    // ~CCMHeightDetails(void) {}
 
     // Accessors
     #[inline]
-    pub fn GetSurfaceFlags(&self) -> c_int {
-        self.mSurfaceFlags
-    }
-
+    pub fn GetSurfaceFlags(&self) -> c_int { self.mSurfaceFlags }
     #[inline]
-    pub fn GetContents(&self) -> c_int {
-        self.mContents
-    }
-
+    pub fn GetContents(&self) -> c_int { self.mContents }
     #[inline]
     pub fn SetFlags(&mut self, con: c_int, sf: c_int) {
         self.mContents = con;
@@ -170,344 +129,387 @@ impl CCMHeightDetails {
     }
 }
 
+// class CRandomTerrain; — local forward declaration; type defined elsewhere in the codebase
+// Porting note: unit struct stands in for the C++ forward declaration; only used via raw pointer.
+pub struct CRandomTerrain;
+
 #[repr(C)]
 pub struct CCMPatch {
-    pub owner: *mut CCMLandScape,             // Owning landscape
-    pub mHx: c_int,
-    pub mHy: c_int,                          // Terxel coords of patch
-    pub mHeightMap: *mut byte,               // Pointer to height map to use
-    pub mCornerHeights: [byte; 4],           // Heights at the corners of the patch
-    pub mWorldCoords: vec3_t,                // World coordinate offset of this patch.
-    pub mBounds: vec3pair_t,                 // mins and maxs of the patch for culling
-    pub mNumBrushes: c_int,                  // number of brushes to collide with in the patch
-    pub mPatchBrushData: *mut cbrush_s,      // List of brushes that make up the patch
-    pub mSurfaceFlags: c_int,                // surfaceflag of the heightshader
-    pub mContentFlags: c_int,                // contents of the heightshader
+    // protected:
+    owner: *mut CCMLandScape,              // Owning landscape
+    mHx: c_int,
+    mHy: c_int,                           // Terxel coords of patch
+    mHeightMap: *mut byte,                // Pointer to height map to use
+    mCornerHeights: [byte; 4],            // Heights at the corners of the patch
+    mWorldCoords: vec3_t,                 // World coordinate offset of this patch.
+    mBounds: vec3pair_t,                  // mins and maxs of the patch for culling
+    mNumBrushes: c_int,                   // number of brushes to collide with in the patch
+    mPatchBrushData: *mut cbrush_s,       // List of brushes that make up the patch
+    mSurfaceFlags: c_int,                 // surfaceflag of the heightshader
+    mContentFlags: c_int,                 // contents of the heightshader
 }
 
 impl CCMPatch {
-    // C++ member declarations, in class order:
-    // public: CCMPatch, ~CCMPatch, GetWorld, GetMins, GetMaxs, GetBounds,
-    // GetHeightMapX, GetHeightMapY, GetHeight, GetNumBrushes,
-    // GetCollisionData, SetSurfaceFlags, GetSurfaceFlags, SetContents,
-    // GetContents, Init, InitPlane, CreatePatchPlaneData,
-    // GetAdjacentBrushX, GetAdjacentBrushY
+    // CCMPatch(void) {}
+    pub unsafe fn new() -> Self {
+        core::mem::zeroed()
+    }
 
     // Accessors
     #[inline]
-    pub fn GetWorld(&self) -> *const vec3_t {
-        &self.mWorldCoords
-    }
+    pub fn GetWorld(&self) -> &vec3_t { &self.mWorldCoords }
+    #[inline]
+    pub fn GetMins(&self) -> &vec3_t { &self.mBounds[0] }
+    #[inline]
+    pub fn GetMaxs(&self) -> &vec3_t { &self.mBounds[1] }
+    #[inline]
+    pub fn GetBounds(&self) -> &vec3pair_t { &self.mBounds }
+    #[inline]
+    pub fn GetHeightMapX(&self) -> c_int { self.mHx }
+    #[inline]
+    pub fn GetHeightMapY(&self) -> c_int { self.mHy }
+    #[inline]
+    pub fn GetHeight(&self, corner: c_int) -> c_int { self.mCornerHeights[corner as usize] as c_int }
+    #[inline]
+    pub fn GetNumBrushes(&self) -> c_int { self.mNumBrushes }
+    #[inline]
+    pub fn GetCollisionData(&self) -> *mut cbrush_s { self.mPatchBrushData }
 
     #[inline]
-    pub fn GetMins(&self) -> *const vec3_t {
-        &self.mBounds[0]
+    pub fn SetSurfaceFlags(&mut self, in_: c_int) { self.mSurfaceFlags = in_; }
+    #[inline]
+    pub fn GetSurfaceFlags(&self) -> c_int { self.mSurfaceFlags }
+    #[inline]
+    pub fn SetContents(&mut self, in_: c_int) { self.mContentFlags = in_; }
+    #[inline]
+    pub fn GetContents(&self) -> c_int { self.mContentFlags }
+
+    // Prototypes
+    pub unsafe fn Init(
+        &mut self,
+        ls: *mut CCMLandScape,
+        heightX: c_int,
+        heightY: c_int,
+        world: vec3_t,
+        hMap: *mut byte,
+        patchBrushData: *mut byte,
+    ) {
+        unimplemented!()
     }
 
-    #[inline]
-    pub fn GetMaxs(&self) -> *const vec3_t {
-        &self.mBounds[1]
+    pub unsafe fn InitPlane(
+        &mut self,
+        side: *mut cbrushside_s,
+        plane: *mut cplane_t,
+        p0: vec3_t,
+        p1: vec3_t,
+        p2: vec3_t,
+    ) {
+        unimplemented!()
     }
 
-    #[inline]
-    pub fn GetBounds(&self) -> *const vec3pair_t {
-        &self.mBounds
+    pub unsafe fn CreatePatchPlaneData(&mut self) {
+        unimplemented!()
     }
 
-    #[inline]
-    pub fn GetHeightMapX(&self) -> c_int {
-        self.mHx
+    pub unsafe fn GetAdjacentBrushX(&mut self, x: c_int, y: c_int) -> *mut c_void {
+        unimplemented!()
     }
 
-    #[inline]
-    pub fn GetHeightMapY(&self) -> c_int {
-        self.mHy
-    }
-
-    #[inline]
-    pub unsafe fn GetHeight(&self, corner: c_int) -> c_int {
-        *self.mCornerHeights.as_ptr().add(corner as usize) as c_int
-    }
-
-    #[inline]
-    pub fn GetNumBrushes(&self) -> c_int {
-        self.mNumBrushes
-    }
-
-    #[inline]
-    pub fn GetCollisionData(&self) -> *mut cbrush_s {
-        self.mPatchBrushData
-    }
-
-    #[inline]
-    pub fn SetSurfaceFlags(&mut self, in_: c_int) {
-        self.mSurfaceFlags = in_;
-    }
-
-    #[inline]
-    pub fn GetSurfaceFlags(&self) -> c_int {
-        self.mSurfaceFlags
-    }
-
-    #[inline]
-    pub fn SetContents(&mut self, in_: c_int) {
-        self.mContentFlags = in_;
-    }
-
-    #[inline]
-    pub fn GetContents(&self) -> c_int {
-        self.mContentFlags
+    pub unsafe fn GetAdjacentBrushY(&mut self, x: c_int, y: c_int) -> *mut c_void {
+        unimplemented!()
     }
 }
 
-#[repr(C)]
+impl Drop for CCMPatch {
+    // ~CCMPatch(void) — non-trivial destructor; body in cm_landscape.cpp
+    fn drop(&mut self) {
+        unimplemented!()
+    }
+}
+
+// Porting note: CCMLandScape contains std::collections::LinkedList (C++ std::list) fields;
+// cannot be #[repr(C)] because LinkedList is not a C-layout type.
 pub struct CCMLandScape {
-    pub mRefCount: c_int,                            // Number of times this class is referenced
-    pub mTerrainHandle: thandle_t,
-    pub mHeightMap: *mut byte,                       // Pointer to byte array of height samples
-    pub mFlattenMap: *mut byte,                      // Pointer to byte array of flatten samples
-    pub mWidth: c_int,
-    pub mHeight: c_int,                              // Width and height of heightMap excluding the 1 pixel edge
-    pub mTerxels: c_int,                             // Number of terxels per patch side
-    pub mTerxelSize: vec3_t,                         // Vector to scale heightMap samples to real world coords
-    pub mBounds: vec3pair_t,                         // Real world bounds of terrain brush
-    pub mSize: vec3_t,                               // Size of terrain brush in real world coords excluding 1 patch edge
-    pub mPatchSize: vec3_t,                          // Size of each patch in the x and y directions only
-    pub mPatchScalarSize: f32,                       // Horizontal size of the patch
-    pub mBlockWidth: c_int,
-    pub mBlockHeight: c_int,                         // Width and height of heightfield on blocks
-    pub mPatches: *mut CCMPatch,
-    pub mPatchBrushData: *mut byte,                  // Base memory from which the patch brush data is taken
-    pub mHasPhysics: bool,                           // Set to true unless disabled
-    pub mRandomTerrain: *mut CRandomTerrain,
+    // private:
+    mRefCount: c_int,                           // Number of times this class is referenced
+    mTerrainHandle: thandle_t,
+    mHeightMap: *mut byte,                      // Pointer to byte array of height samples
+    mFlattenMap: *mut byte,                     // Pointer to byte array of flatten samples
+    mWidth: c_int,
+    mHeight: c_int,                             // Width and height of heightMap excluding the 1 pixel edge
+    mTerxels: c_int,                            // Number of terxels per patch side
+    mTerxelSize: vec3_t,                        // Vector to scale heightMap samples to real world coords
+    mBounds: vec3pair_t,                        // Real world bounds of terrain brush
+    mSize: vec3_t,                              // Size of terrain brush in real world coords excluding 1 patch edge
+    mPatchSize: vec3_t,                         // Size of each patch in the x and y directions only
+    mPatchScalarSize: f32,                      // Horizontal size of the patch
+    mBlockWidth: c_int,
+    mBlockHeight: c_int,                        // Width and height of heightfield on blocks
+    mPatches: *mut CCMPatch,
+    mPatchBrushData: *mut byte,                 // Base memory from which the patch brush data is taken
+    mHasPhysics: bool,                          // Set to true unless disabled
+    mRandomTerrain: *mut CRandomTerrain,
 
-    pub mBaseWaterHeight: c_int,                     // Base water height in terxels
-    pub mWaterHeight: f32,                           // Real world height of the water
-    pub mWaterContents: c_int,                       // Contents of the water shader
-    pub mWaterSurfaceFlags: c_int,                   // Surface flags of the water shader
+    mBaseWaterHeight: c_int,                    // Base water height in terxels
+    mWaterHeight: f32,                          // Real world height of the water
+    mWaterContents: c_int,                      // Contents of the water shader
+    mWaterSurfaceFlags: c_int,                  // Surface flags of the water shader
 
-    pub holdrand: c_ulong,
+    holdrand: c_ulong,
 
-    pub mAreas: areaList_t,                          // List of flattened areas on this landscape
-    pub mAreasIt: areaIter_t,
+    mAreas: LinkedList<*mut CArea>,             // List of flattened areas on this landscape
+    // Porting note: original is list<CArea*>::iterator; see areaIter_t note above.
+    mAreasIt: areaIter_t,
 
-    pub mHeightDetails: [CCMHeightDetails; HEIGHT_RESOLUTION], // Surfaceflags per height
-    pub mCoords: *mut vec3_t,                        // Temp storage for real world coords
+    mHeightDetails: [CCMHeightDetails; HEIGHT_RESOLUTION], // Surfaceflags per height
+    mCoords: *mut vec3_t,                       // Temp storage for real world coords
 }
 
 impl CCMLandScape {
+    // CCMLandScape(const char *configstring, bool server)
+    pub unsafe fn new(configstring: *const c_char, server: bool) -> Self {
+        unimplemented!()
+    }
+
+    pub unsafe fn GetPatch(&mut self, x: c_int, y: c_int) -> *mut CCMPatch {
+        unimplemented!()
+    }
+
+    // Prototypes
+    pub unsafe fn PatchCollide(
+        &mut self,
+        tw: *mut traceWork_s,
+        trace: &mut trace_t,
+        start: vec3_t,
+        end: vec3_t,
+        checkcount: c_int,
+    ) {
+        unimplemented!()
+    }
+
+    pub unsafe fn TerrainPatchIterate(
+        &self,
+        IterateFunc: Option<unsafe extern "C" fn(*mut CCMPatch, *mut c_void)>,
+        userdata: *mut c_void,
+    ) {
+        unimplemented!()
+    }
+
+    pub unsafe fn GetWorldHeight(
+        &self,
+        origin: vec3_t,
+        bounds: vec3pair_t,
+        aboveGround: bool,
+    ) -> f32 {
+        unimplemented!()
+    }
+
+    pub unsafe fn WaterCollide(
+        &self,
+        begin: vec3_t,
+        end: vec3_t,
+        fraction: f32,
+    ) -> f32 {
+        unimplemented!()
+    }
+
+    pub unsafe fn UpdatePatches(&mut self) {
+        unimplemented!()
+    }
+
+    pub unsafe fn GetTerxelLocalCoords(&mut self, x: c_int, y: c_int, coords: *mut vec3_t) {
+        unimplemented!()
+    }
+
+    pub unsafe fn LoadTerrainDef(&mut self, td: *const c_char) {
+        unimplemented!()
+    }
+
+    pub unsafe fn SetShaders(&mut self, height: c_int, shader: *mut CCMShader) {
+        unimplemented!()
+    }
+
+    pub unsafe fn FlattenArea(
+        &mut self,
+        area: *mut CArea,
+        height: c_int,
+        save: bool,
+        forceHeight: bool,
+        smooth: bool,
+    ) {
+        unimplemented!()
+    }
+
+    pub unsafe fn CarveLine(
+        &mut self,
+        start: vec3_t,
+        end: vec3_t,
+        depth: c_int,
+        width: c_int,
+    ) {
+        unimplemented!()
+    }
+
+    pub unsafe fn CarveBezierCurve(
+        &mut self,
+        numCtlPoints: c_int,
+        ctlPoints: *mut vec3_t,
+        steps: c_int,
+        depth: c_int,
+        size: c_int,
+    ) {
+        unimplemented!()
+    }
+
+    pub unsafe fn SaveArea(&mut self, area: *mut CArea) {
+        unimplemented!()
+    }
+
+    pub unsafe fn FractionBelowLevel(&mut self, area: *mut CArea, height: c_int) -> f32 {
+        unimplemented!()
+    }
+
+    pub unsafe fn AreaCollision(
+        &mut self,
+        area: *mut CArea,
+        areaTypes: *mut c_int,
+        areaTypeCount: c_int,
+    ) -> bool {
+        unimplemented!()
+    }
+
+    pub unsafe fn GetFirstArea(&mut self) -> *mut CArea {
+        unimplemented!()
+    }
+
+    pub unsafe fn GetFirstObjectiveArea(&mut self) -> *mut CArea {
+        unimplemented!()
+    }
+
+    pub unsafe fn GetPlayerArea(&mut self) -> *mut CArea {
+        unimplemented!()
+    }
+
+    pub unsafe fn GetNextArea(&mut self) -> *mut CArea {
+        unimplemented!()
+    }
+
+    pub unsafe fn GetNextObjectiveArea(&mut self) -> *mut CArea {
+        unimplemented!()
+    }
+
     // Accessors
     #[inline]
-    pub fn GetRefCount(&self) -> c_int {
-        self.mRefCount
-    }
-
+    pub fn GetRefCount(&self) -> c_int { self.mRefCount }
     #[inline]
-    pub fn IncreaseRefCount(&mut self) {
-        self.mRefCount += 1;
-    }
-
+    pub fn IncreaseRefCount(&mut self) { self.mRefCount += 1; }
     #[inline]
-    pub fn DecreaseRefCount(&mut self) {
-        self.mRefCount -= 1;
-    }
-
+    pub fn DecreaseRefCount(&mut self) { self.mRefCount -= 1; }
     #[inline]
-    pub fn GetBounds(&self) -> *const vec3pair_t {
-        &self.mBounds
-    }
-
+    pub fn GetBounds(&self) -> &vec3pair_t { &self.mBounds }
     #[inline]
-    pub fn GetMins(&self) -> *const vec3_t {
-        &self.mBounds[0]
-    }
-
+    pub fn GetMins(&self) -> &vec3_t { &self.mBounds[0] }
     #[inline]
-    pub fn GetMaxs(&self) -> *const vec3_t {
-        &self.mBounds[1]
-    }
-
+    pub fn GetMaxs(&self) -> &vec3_t { &self.mBounds[1] }
     #[inline]
-    pub fn GetSize(&self) -> *const vec3_t {
-        &self.mSize
-    }
-
+    pub fn GetSize(&self) -> &vec3_t { &self.mSize }
     #[inline]
-    pub fn GetTerxelSize(&self) -> *const vec3_t {
-        &self.mTerxelSize
-    }
-
+    pub fn GetTerxelSize(&self) -> &vec3_t { &self.mTerxelSize }
     #[inline]
-    pub fn GetPatchSize(&self) -> *const vec3_t {
-        &self.mPatchSize
-    }
-
+    pub fn GetPatchSize(&self) -> &vec3_t { &self.mPatchSize }
     #[inline]
-    pub fn GetPatchWidth(&self) -> f32 {
-        self.mPatchSize[0]
-    }
-
+    pub fn GetPatchWidth(&self) -> f32 { self.mPatchSize[0] }
     #[inline]
-    pub fn GetPatchHeight(&self) -> f32 {
-        self.mPatchSize[1]
-    }
-
+    pub fn GetPatchHeight(&self) -> f32 { self.mPatchSize[1] }
     #[inline]
-    pub fn GetPatchScalarSize(&self) -> f32 {
-        self.mPatchScalarSize
-    }
-
+    pub fn GetPatchScalarSize(&self) -> f32 { self.mPatchScalarSize }
     #[inline]
-    pub fn GetTerxels(&self) -> c_int {
-        self.mTerxels
-    }
-
+    pub fn GetTerxels(&self) -> c_int { self.mTerxels }
     #[inline]
-    pub fn GetRealWidth(&self) -> c_int {
-        self.mWidth + 1
-    }
-
+    pub fn GetRealWidth(&self) -> c_int { self.mWidth + 1 }
     #[inline]
-    pub fn GetRealHeight(&self) -> c_int {
-        self.mHeight + 1
-    }
-
+    pub fn GetRealHeight(&self) -> c_int { self.mHeight + 1 }
     #[inline]
-    pub fn GetRealArea(&self) -> c_int {
-        (self.mWidth + 1) * (self.mHeight + 1)
-    }
-
+    pub fn GetRealArea(&self) -> c_int { (self.mWidth + 1) * (self.mHeight + 1) }
     #[inline]
-    pub fn GetWidth(&self) -> c_int {
-        self.mWidth
-    }
-
+    pub fn GetWidth(&self) -> c_int { self.mWidth }
     #[inline]
-    pub fn GetHeight(&self) -> c_int {
-        self.mHeight
-    }
-
+    pub fn GetHeight(&self) -> c_int { self.mHeight }
     #[inline]
-    pub fn GetArea(&self) -> c_int {
-        self.mWidth * self.mHeight
-    }
-
+    pub fn GetArea(&self) -> c_int { self.mWidth * self.mHeight }
     #[inline]
-    pub fn GetBlockWidth(&self) -> c_int {
-        self.mBlockWidth
-    }
-
+    pub fn GetBlockWidth(&self) -> c_int { self.mBlockWidth }
     #[inline]
-    pub fn GetBlockHeight(&self) -> c_int {
-        self.mBlockHeight
-    }
-
+    pub fn GetBlockHeight(&self) -> c_int { self.mBlockHeight }
     #[inline]
-    pub fn GetBlockCount(&self) -> c_int {
-        self.mBlockWidth * self.mBlockHeight
-    }
-
+    pub fn GetBlockCount(&self) -> c_int { self.mBlockWidth * self.mBlockHeight }
     #[inline]
-    pub fn GetHeightMap(&self) -> *mut byte {
-        self.mHeightMap
-    }
-
+    pub fn GetHeightMap(&self) -> *mut byte { self.mHeightMap }
     #[inline]
-    pub fn GetFlattenMap(&self) -> *mut byte {
-        self.mFlattenMap
-    }
-
+    pub fn GetFlattenMap(&self) -> *mut byte { self.mFlattenMap }
     #[inline]
-    pub fn GetTerrainId(&self) -> thandle_t {
-        self.mTerrainHandle
-    }
-
+    pub fn GetTerrainId(&self) -> thandle_t { self.mTerrainHandle }
     #[inline]
-    pub fn SetTerrainId(&mut self, terrainId: thandle_t) {
-        self.mTerrainHandle = terrainId;
-    }
-
+    pub fn SetTerrainId(&mut self, terrainId: thandle_t) { self.mTerrainHandle = terrainId; }
     #[inline]
     pub fn CalcWorldHeight(&self, height: c_int) -> f32 {
         (height as f32 * self.mTerxelSize[2]) + self.mBounds[0][2]
     }
+    #[inline]
+    pub fn GetHasPhysics(&self) -> bool { self.mHasPhysics }
+    #[inline]
+    pub fn GetIsRandom(&self) -> bool { !self.mRandomTerrain.is_null() }
+    #[inline]
+    pub fn GetSurfaceFlags(&self, height: c_int) -> c_int {
+        self.mHeightDetails[height as usize].GetSurfaceFlags()
+    }
+    #[inline]
+    pub fn GetContentFlags(&self, height: c_int) -> c_int {
+        self.mHeightDetails[height as usize].GetContents()
+    }
+    pub unsafe fn CalcRealCoords(&mut self) {
+        unimplemented!()
+    }
+    #[inline]
+    pub fn GetCoords(&self) -> *mut vec3_t { self.mCoords }
 
     #[inline]
-    pub fn GetHasPhysics(&self) -> bool {
-        self.mHasPhysics
-    }
-
-    #[inline]
-    pub fn GetIsRandom(&self) -> bool {
-        !self.mRandomTerrain.is_null()
-    }
-
-    #[inline]
-    pub unsafe fn GetSurfaceFlags(&self, height: c_int) -> c_int {
-        (*self.mHeightDetails.as_ptr().add(height as usize)).GetSurfaceFlags()
-    }
-
-    #[inline]
-    pub unsafe fn GetContentFlags(&self, height: c_int) -> c_int {
-        (*self.mHeightDetails.as_ptr().add(height as usize)).GetContents()
-    }
-
-    #[inline]
-    pub fn GetCoords(&self) -> *mut vec3_t {
-        self.mCoords
-    }
-
-    #[inline]
-    pub fn GetBaseWaterHeight(&self) -> c_int {
-        self.mBaseWaterHeight
-    }
-
+    pub fn GetBaseWaterHeight(&self) -> c_int { self.mBaseWaterHeight }
     #[inline]
     pub fn SetRealWaterHeight(&mut self, height: c_int) {
         self.mWaterHeight = height as f32 * self.mTerxelSize[2];
     }
+    #[inline]
+    pub fn GetWaterHeight(&self) -> f32 { self.mWaterHeight }
+    #[inline]
+    pub fn GetWaterContents(&self) -> c_int { self.mWaterContents }
+    #[inline]
+    pub fn GetWaterSurfaceFlags(&self) -> c_int { self.mWaterSurfaceFlags }
 
     #[inline]
-    pub fn GetWaterHeight(&self) -> f32 {
-        self.mWaterHeight
+    pub fn GetRandomTerrain(&mut self) -> *mut CRandomTerrain { self.mRandomTerrain }
+
+    pub unsafe fn rand_seed(&mut self, seed: c_int) {
+        unimplemented!()
     }
-
     #[inline]
-    pub fn GetWaterContents(&self) -> c_int {
-        self.mWaterContents
+    pub fn get_rand_seed(&self) -> c_ulong { self.holdrand }
+
+    pub unsafe fn flrand(&mut self, min: f32, max: f32) -> f32 {
+        unimplemented!()
     }
-
-    #[inline]
-    pub fn GetWaterSurfaceFlags(&self) -> c_int {
-        self.mWaterSurfaceFlags
-    }
-
-    #[inline]
-    pub fn GetRandomTerrain(&mut self) -> *mut CRandomTerrain {
-        self.mRandomTerrain
-    }
-
-    #[inline]
-    pub fn get_rand_seed(&self) -> c_ulong {
-        self.holdrand
+    pub unsafe fn irand(&mut self, min: c_int, max: c_int) -> c_int {
+        unimplemented!()
     }
 }
 
-// CCMLandScape C++ member declarations, in class order:
-// public: CCMLandScape, ~CCMLandScape, GetPatch, PatchCollide,
-// TerrainPatchIterate, GetWorldHeight, WaterCollide, UpdatePatches,
-// GetTerxelLocalCoords, LoadTerrainDef, SetShaders, FlattenArea, CarveLine,
-// CarveBezierCurve, SaveArea, FractionBelowLevel, AreaCollision, GetFirstArea,
-// GetFirstObjectiveArea, GetPlayerArea, GetNextArea, GetNextObjectiveArea,
-// GetRefCount, IncreaseRefCount, DecreaseRefCount, GetBounds, GetMins, GetMaxs,
-// GetSize, GetTerxelSize, GetPatchSize, GetPatchWidth, GetPatchHeight,
-// GetPatchScalarSize, GetTerxels, GetRealWidth, GetRealHeight, GetRealArea,
-// GetWidth, GetHeight, GetArea, GetBlockWidth, GetBlockHeight, GetBlockCount,
-// GetHeightMap, GetFlattenMap, GetTerrainId, SetTerrainId, CalcWorldHeight,
-// GetHasPhysics, GetIsRandom, GetSurfaceFlags, GetContentFlags, CalcRealCoords,
-// GetCoords, GetBaseWaterHeight, SetRealWaterHeight, GetWaterHeight,
-// GetWaterContents, GetWaterSurfaceFlags, GetRandomTerrain, rand_seed,
-// get_rand_seed, flrand, irand
+impl Drop for CCMLandScape {
+    // ~CCMLandScape(void) — non-trivial destructor; body in cm_landscape.cpp
+    fn drop(&mut self) {
+        unimplemented!()
+    }
+}
 
 unsafe extern "C" {
     pub fn CM_TerrainPatchIterate(
@@ -522,8 +524,8 @@ unsafe extern "C" {
     ) -> *mut CCMLandScape;
     pub fn CM_GetWorldHeight(
         landscape: *const CCMLandScape,
-        origin: *mut vec3_t,
-        bounds: *const vec3pair_t,
+        origin: vec3_t,
+        bounds: vec3pair_t,
         aboveGround: bool,
     ) -> f32;
     pub fn CM_FlattenArea(
