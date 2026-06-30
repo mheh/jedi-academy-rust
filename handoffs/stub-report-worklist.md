@@ -5,7 +5,7 @@ under the **faithful-port** import-trust skill (`skills/faithful-port/`).
 
 - Originally **179 files / 697 stubs**, all introduced by single-file blind-port
   commits dated 2026-06-28 (pre-skill, before `08c3607`).
-- As of 2026-06-30: **77 done**, **102 files / 275 stubs remaining** (worklist
+- As of 2026-06-30: **83 done**, **96 files / 232 stubs remaining** (worklist
   verified in sync with `git grep -c '[u8; 0]'`, no drift). jpeg-6 and qcommon
   subsystems fully cleared.
 - Invariant when done (per `SKILL.md`): each file has **zero** `[u8; 0]`
@@ -30,10 +30,10 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [x] `src/code/game/bg_public_h.rs` (9)
 - [x] `src/code/jpeg-6/jcapimin.rs` (8)
 - [x] `src/code/RMG/RM_Terrain.rs` (7)
-- [ ] `src/code/renderer/tr_scene.rs` (7)
+- [x] `src/code/renderer/tr_scene.rs` (7)
 - [x] `src/code/jpeg-6/jdapistd.rs` (7)
-- [ ] `src/code/ff/ff_ffset.rs` (7)
-- [ ] `src/code/cgame/cg_effects.rs` (7)
+- [x] `src/code/ff/ff_ffset.rs` (7)
+- [x] `src/code/cgame/cg_effects.rs` (7)
 - [ ] `src/code/win32/glw_win_dx8_h.rs` (6)
 - [ ] `src/code/ui/ui_local_h.rs` (6)
 - [x] `src/code/RMG/RM_InstanceFile.rs` (6)
@@ -135,10 +135,10 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [x] `src/codemp/RMG/RM_InstanceFile.rs` (8)
 - [x] `src/codemp/RMG/RM_Instance.rs` (8)
 - [x] `src/codemp/RMG/RM_Instance_Group_h.rs` (8)
-- [ ] `src/codemp/renderer/tr_terrain.rs` (8)
+- [x] `src/codemp/renderer/tr_terrain.rs` (8)
 - [x] `src/codemp/RMG/RM_Terrain.rs` (7)
-- [ ] `src/codemp/cgame/cg_scoreboard.rs` (7)
-- [ ] `src/codemp/cgame/cg_drawtools.rs` (7)
+- [x] `src/codemp/cgame/cg_scoreboard.rs` (7)
+- [x] `src/codemp/cgame/cg_drawtools.rs` (7)
 - [x] `src/codemp/RMG/RM_Manager.rs` (6)
 - [x] `src/codemp/RMG/RM_Instance_BSP.rs` (6)
 - [x] `src/codemp/jpeg-6/jdsample.rs` (6)
