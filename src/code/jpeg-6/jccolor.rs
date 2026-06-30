@@ -8,81 +8,23 @@
  * This file contains input colorspace conversion routines.
  */
 
+
 // leave this as first line for PCH reasons...
 //
 
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
+#![allow(unused_variables)]
+#![allow(unused_mut)]
+
+use crate::code::server::exe_headers_h::*;
+use crate::code::jpeg_6::jinclude_h::*;
+use crate::code::jpeg_6::jpeglib_h::*;
+use crate::code::jpeg_6::jpegint_h::*;
+use crate::code::jpeg_6::jmorecfg_h::*;
 
 use core::ffi::c_int;
-use core::ptr::null_mut;
 
-/* JPEG Library Types and Constants */
-
-pub type JSAMPLE = u8;
-pub type JSAMPROW = *mut JSAMPLE;
-pub type JSAMPARRAY = *mut JSAMPROW;
-pub type JSAMPIMAGE = *mut JSAMPARRAY;
-pub type JDIMENSION = u32;
-pub type INT32 = i32;
-pub type boolean = u8;
-
-const MAXJSAMPLE: u32 = 255;
-const CENTERJSAMPLE: u32 = 128;
-
-const JPOOL_IMAGE: i32 = 1;
-
-const JERR_BAD_IN_COLORSPACE: c_int = 60;
-const JERR_BAD_J_COLORSPACE: c_int = 50;
-const JERR_CONVERSION_NOTIMPL: c_int = 67;
-
-const RGB_RED: usize = 0;		/* Offset of Red in an RGB scanline element */
-const RGB_GREEN: usize = 1;		/* Offset of Green */
-const RGB_BLUE: usize = 2;		/* Offset of Blue */
-const RGB_PIXELSIZE: usize = 4;	/* JSAMPLEs per RGB scanline element */
-
-/* Color space enum */
-#[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum J_COLOR_SPACE {
-    JCS_UNKNOWN = 0,	/* error/unspecified */
-    JCS_GRAYSCALE = 1,	/* monochrome */
-    JCS_RGB = 2,		/* red/green/blue */
-    JCS_YCbCr = 3,		/* Y/Cb/Cr (also known as YUV) */
-    JCS_CMYK = 4,		/* C/M/Y/K */
-    JCS_YCCK = 5,		/* Y/Cb/Cr/K */
-}
-
-/* JPEG compression structures (opaque) */
-#[repr(C)]
-pub struct jpeg_memory_mgr {
-    pub alloc_small: Option<unsafe extern "C" fn(*mut core::ffi::c_void, i32, usize) -> *mut core::ffi::c_void>,
-    _priv: [u8; 0],
-}
-
-pub type j_common_ptr = *mut core::ffi::c_void;
-
-#[repr(C)]
-pub struct jpeg_color_converter {
-    pub start_pass: Option<unsafe extern "C" fn(*mut core::ffi::c_void)>,
-    pub color_convert: Option<
-        unsafe extern "C" fn(*mut core::ffi::c_void, JSAMPARRAY, JSAMPIMAGE, JDIMENSION, c_int),
-    >,
-}
-
-#[repr(C)]
-pub struct jpeg_compress_struct {
-    pub mem: *mut jpeg_memory_mgr,
-    pub cconvert: *mut jpeg_color_converter,
-    pub image_width: JDIMENSION,
-    pub input_components: c_int,
-    pub num_components: c_int,
-    pub in_color_space: J_COLOR_SPACE,
-    pub jpeg_color_space: J_COLOR_SPACE,
-    _priv: [u8; 0],
-}
-
-pub type j_compress_ptr = *mut jpeg_compress_struct;
 
 /* Private subobject */
 
@@ -91,7 +33,7 @@ struct my_color_converter {
     pub_: jpeg_color_converter, /* public fields */
 
     /* Private state for RGB->YCC conversion */
-    rgb_ycc_tab: *mut INT32,		/* => table for RGB to YCbCr conversion */
+    rgb_ycc_tab: *mut INT32,        /* => table for RGB to YCbCr conversion */
 }
 
 type my_cconvert_ptr = *mut my_color_converter;
@@ -127,12 +69,13 @@ type my_cconvert_ptr = *mut my_color_converter;
  * in the tables to save adding them separately in the inner loop.
  */
 
-const SCALEBITS: u32 = 16;	/* speediest right-shift on some machines */
-const CBCR_OFFSET: INT32 = (CENTERJSAMPLE << SCALEBITS) as INT32;
+const SCALEBITS: u32 = 16; /* speediest right-shift on some machines */
+const CBCR_OFFSET: INT32 = (CENTERJSAMPLE as INT32) << SCALEBITS;
 const ONE_HALF: INT32 = 1i32 << (SCALEBITS - 1);
 
+#[inline]
 fn FIX(x: f64) -> INT32 {
-    ((x * (1i64 << SCALEBITS) as f64 + 0.5) as INT32)
+    (x * (1i64 << SCALEBITS) as f64 + 0.5) as INT32
 }
 
 /* We allocate one big table and divide it up into eight parts, instead of
@@ -141,15 +84,15 @@ fn FIX(x: f64) -> INT32 {
  * machines (more than can hold all eight addresses, anyway).
  */
 
-const R_Y_OFF: usize = 0;			/* offset to R => Y section */
-const G_Y_OFF: usize = 1 * (MAXJSAMPLE as usize + 1);	/* offset to G => Y section */
-const B_Y_OFF: usize = 2 * (MAXJSAMPLE as usize + 1);	/* etc. */
-const R_CB_OFF: usize = 3 * (MAXJSAMPLE as usize + 1);
-const G_CB_OFF: usize = 4 * (MAXJSAMPLE as usize + 1);
-const B_CB_OFF: usize = 5 * (MAXJSAMPLE as usize + 1);
-const R_CR_OFF: usize = B_CB_OFF;		/* B=>Cb, R=>Cr are the same */
-const G_CR_OFF: usize = 6 * (MAXJSAMPLE as usize + 1);
-const B_CR_OFF: usize = 7 * (MAXJSAMPLE as usize + 1);
+const R_Y_OFF: usize    = 0;                               /* offset to R => Y section */
+const G_Y_OFF: usize    = 1 * (MAXJSAMPLE as usize + 1);  /* offset to G => Y section */
+const B_Y_OFF: usize    = 2 * (MAXJSAMPLE as usize + 1);  /* etc. */
+const R_CB_OFF: usize   = 3 * (MAXJSAMPLE as usize + 1);
+const G_CB_OFF: usize   = 4 * (MAXJSAMPLE as usize + 1);
+const B_CB_OFF: usize   = 5 * (MAXJSAMPLE as usize + 1);
+const R_CR_OFF: usize   = B_CB_OFF;                        /* B=>Cb, R=>Cr are the same */
+const G_CR_OFF: usize   = 6 * (MAXJSAMPLE as usize + 1);
+const B_CR_OFF: usize   = 7 * (MAXJSAMPLE as usize + 1);
 const TABLE_SIZE: usize = 8 * (MAXJSAMPLE as usize + 1);
 
 
@@ -157,38 +100,37 @@ const TABLE_SIZE: usize = 8 * (MAXJSAMPLE as usize + 1);
  * Initialize for RGB->YCC colorspace conversion.
  */
 
-unsafe fn rgb_ycc_start(cinfo: j_compress_ptr) {
+unsafe extern "C" fn rgb_ycc_start(cinfo: j_compress_ptr) {
     let cconvert = (*cinfo).cconvert as my_cconvert_ptr;
-    let mut rgb_ycc_tab: *mut INT32;
+    let rgb_ycc_tab: *mut INT32;
     let mut i: INT32;
 
     /* Allocate and fill in the conversion tables. */
-    if let Some(alloc_small) = (*(*cinfo).mem).alloc_small {
-        (*cconvert).rgb_ycc_tab = rgb_ycc_tab = alloc_small(
-            cinfo as j_common_ptr,
-            JPOOL_IMAGE,
-            TABLE_SIZE * core::mem::size_of::<INT32>(),
-        ) as *mut INT32;
+    (*cconvert).rgb_ycc_tab = ((*(*cinfo).mem).alloc_small)(
+        cinfo as j_common_ptr,
+        JPOOL_IMAGE,
+        TABLE_SIZE * core::mem::size_of::<INT32>(),
+    ) as *mut INT32;
+    rgb_ycc_tab = (*cconvert).rgb_ycc_tab;
 
-        i = 0;
-        while i <= MAXJSAMPLE as INT32 {
-            *rgb_ycc_tab.add(i as usize + R_Y_OFF) = FIX(0.29900) * i;
-            *rgb_ycc_tab.add(i as usize + G_Y_OFF) = FIX(0.58700) * i;
-            *rgb_ycc_tab.add(i as usize + B_Y_OFF) = FIX(0.11400) * i + ONE_HALF;
-            *rgb_ycc_tab.add(i as usize + R_CB_OFF) = (-FIX(0.16874)) * i;
-            *rgb_ycc_tab.add(i as usize + G_CB_OFF) = (-FIX(0.33126)) * i;
-            /* We use a rounding fudge-factor of 0.5-epsilon for Cb and Cr.
-             * This ensures that the maximum output will round to MAXJSAMPLE
-             * not MAXJSAMPLE+1, and thus that we don't have to range-limit.
-             */
-            *rgb_ycc_tab.add(i as usize + B_CB_OFF) = FIX(0.50000) * i + CBCR_OFFSET + ONE_HALF - 1;
-            /*  B=>Cb and R=>Cr tables are the same
-                rgb_ycc_tab[i+R_CR_OFF] = FIX(0.50000) * i    + CBCR_OFFSET + ONE_HALF-1;
-            */
-            *rgb_ycc_tab.add(i as usize + G_CR_OFF) = (-FIX(0.41869)) * i;
-            *rgb_ycc_tab.add(i as usize + B_CR_OFF) = (-FIX(0.08131)) * i;
-            i += 1;
-        }
+    i = 0;
+    while i <= MAXJSAMPLE as INT32 {
+        *rgb_ycc_tab.add(i as usize + R_Y_OFF) = FIX(0.29900) * i;
+        *rgb_ycc_tab.add(i as usize + G_Y_OFF) = FIX(0.58700) * i;
+        *rgb_ycc_tab.add(i as usize + B_Y_OFF) = FIX(0.11400) * i     + ONE_HALF;
+        *rgb_ycc_tab.add(i as usize + R_CB_OFF) = (-FIX(0.16874)) * i;
+        *rgb_ycc_tab.add(i as usize + G_CB_OFF) = (-FIX(0.33126)) * i;
+        /* We use a rounding fudge-factor of 0.5-epsilon for Cb and Cr.
+         * This ensures that the maximum output will round to MAXJSAMPLE
+         * not MAXJSAMPLE+1, and thus that we don't have to range-limit.
+         */
+        *rgb_ycc_tab.add(i as usize + B_CB_OFF) = FIX(0.50000) * i    + CBCR_OFFSET + ONE_HALF-1;
+        /* B=>Cb and R=>Cr tables are the same
+           rgb_ycc_tab[i+R_CR_OFF] = FIX(0.50000) * i    + CBCR_OFFSET + ONE_HALF-1;
+        */
+        *rgb_ycc_tab.add(i as usize + G_CR_OFF) = (-FIX(0.41869)) * i;
+        *rgb_ycc_tab.add(i as usize + B_CR_OFF) = (-FIX(0.08131)) * i;
+        i += 1;
     }
 }
 
@@ -205,7 +147,7 @@ unsafe fn rgb_ycc_start(cinfo: j_compress_ptr) {
  * offset required on that side.
  */
 
-unsafe fn rgb_ycc_convert(
+unsafe extern "C" fn rgb_ycc_convert(
     cinfo: j_compress_ptr,
     mut input_buf: JSAMPARRAY,
     output_buf: JSAMPIMAGE,
@@ -216,7 +158,7 @@ unsafe fn rgb_ycc_convert(
     let mut r: c_int;
     let mut g: c_int;
     let mut b: c_int;
-    let mut ctab: *mut INT32 = (*cconvert).rgb_ycc_tab;
+    let ctab: *mut INT32 = (*cconvert).rgb_ycc_tab;
     let mut inptr: JSAMPROW;
     let mut outptr0: JSAMPROW;
     let mut outptr1: JSAMPROW;
@@ -224,8 +166,8 @@ unsafe fn rgb_ycc_convert(
     let mut col: JDIMENSION;
     let num_cols: JDIMENSION = (*cinfo).image_width;
 
-    while num_rows > 0 {
-        num_rows -= 1;
+    num_rows -= 1;
+    while num_rows >= 0 {
         inptr = *input_buf;
         input_buf = input_buf.add(1);
         outptr0 = *(*output_buf.add(0)).add(output_row as usize);
@@ -234,10 +176,10 @@ unsafe fn rgb_ycc_convert(
         output_row += 1;
         col = 0;
         while col < num_cols {
-            r = *inptr.add(RGB_RED) as c_int;
-            g = *inptr.add(RGB_GREEN) as c_int;
-            b = *inptr.add(RGB_BLUE) as c_int;
-            inptr = inptr.add(RGB_PIXELSIZE);
+            r = GETJSAMPLE(*inptr.add(RGB_RED as usize));
+            g = GETJSAMPLE(*inptr.add(RGB_GREEN as usize));
+            b = GETJSAMPLE(*inptr.add(RGB_BLUE as usize));
+            inptr = inptr.add(RGB_PIXELSIZE as usize);
             /* If the inputs are 0..MAXJSAMPLE, the outputs of these equations
              * must be too; we do not need an explicit range-limiting operation.
              * Hence the value being shifted is never negative, and we don't
@@ -245,27 +187,28 @@ unsafe fn rgb_ycc_convert(
              */
             /* Y */
             *outptr0.add(col as usize) = (
-                ((*ctab.add((r as usize + R_Y_OFF)))
-                    + (*ctab.add((g as usize + G_Y_OFF)))
-                    + (*ctab.add((b as usize + B_Y_OFF))))
-                    >> SCALEBITS
+                (*ctab.add(r as usize + R_Y_OFF)
+                    + *ctab.add(g as usize + G_Y_OFF)
+                    + *ctab.add(b as usize + B_Y_OFF))
+                >> SCALEBITS
             ) as JSAMPLE;
             /* Cb */
             *outptr1.add(col as usize) = (
-                ((*ctab.add((r as usize + R_CB_OFF)))
-                    + (*ctab.add((g as usize + G_CB_OFF)))
-                    + (*ctab.add((b as usize + B_CB_OFF))))
-                    >> SCALEBITS
+                (*ctab.add(r as usize + R_CB_OFF)
+                    + *ctab.add(g as usize + G_CB_OFF)
+                    + *ctab.add(b as usize + B_CB_OFF))
+                >> SCALEBITS
             ) as JSAMPLE;
             /* Cr */
             *outptr2.add(col as usize) = (
-                ((*ctab.add((r as usize + R_CR_OFF)))
-                    + (*ctab.add((g as usize + G_CR_OFF)))
-                    + (*ctab.add((b as usize + B_CR_OFF))))
-                    >> SCALEBITS
+                (*ctab.add(r as usize + R_CR_OFF)
+                    + *ctab.add(g as usize + G_CR_OFF)
+                    + *ctab.add(b as usize + B_CR_OFF))
+                >> SCALEBITS
             ) as JSAMPLE;
             col += 1;
         }
+        num_rows -= 1;
     }
 }
 
@@ -280,7 +223,7 @@ unsafe fn rgb_ycc_convert(
  * We assume rgb_ycc_start has been called (we only use the Y tables).
  */
 
-unsafe fn rgb_gray_convert(
+unsafe extern "C" fn rgb_gray_convert(
     cinfo: j_compress_ptr,
     mut input_buf: JSAMPARRAY,
     output_buf: JSAMPIMAGE,
@@ -291,33 +234,34 @@ unsafe fn rgb_gray_convert(
     let mut r: c_int;
     let mut g: c_int;
     let mut b: c_int;
-    let mut ctab: *mut INT32 = (*cconvert).rgb_ycc_tab;
+    let ctab: *mut INT32 = (*cconvert).rgb_ycc_tab;
     let mut inptr: JSAMPROW;
     let mut outptr: JSAMPROW;
     let mut col: JDIMENSION;
     let num_cols: JDIMENSION = (*cinfo).image_width;
 
-    while num_rows > 0 {
-        num_rows -= 1;
+    num_rows -= 1;
+    while num_rows >= 0 {
         inptr = *input_buf;
         input_buf = input_buf.add(1);
         outptr = *(*output_buf.add(0)).add(output_row as usize);
         output_row += 1;
         col = 0;
         while col < num_cols {
-            r = *inptr.add(RGB_RED) as c_int;
-            g = *inptr.add(RGB_GREEN) as c_int;
-            b = *inptr.add(RGB_BLUE) as c_int;
-            inptr = inptr.add(RGB_PIXELSIZE);
+            r = GETJSAMPLE(*inptr.add(RGB_RED as usize));
+            g = GETJSAMPLE(*inptr.add(RGB_GREEN as usize));
+            b = GETJSAMPLE(*inptr.add(RGB_BLUE as usize));
+            inptr = inptr.add(RGB_PIXELSIZE as usize);
             /* Y */
             *outptr.add(col as usize) = (
-                ((*ctab.add((r as usize + R_Y_OFF)))
-                    + (*ctab.add((g as usize + G_Y_OFF)))
-                    + (*ctab.add((b as usize + B_Y_OFF))))
-                    >> SCALEBITS
+                (*ctab.add(r as usize + R_Y_OFF)
+                    + *ctab.add(g as usize + G_Y_OFF)
+                    + *ctab.add(b as usize + B_Y_OFF))
+                >> SCALEBITS
             ) as JSAMPLE;
             col += 1;
         }
+        num_rows -= 1;
     }
 }
 
@@ -330,7 +274,7 @@ unsafe fn rgb_gray_convert(
  * We assume rgb_ycc_start has been called.
  */
 
-unsafe fn cmyk_ycck_convert(
+unsafe extern "C" fn cmyk_ycck_convert(
     cinfo: j_compress_ptr,
     mut input_buf: JSAMPARRAY,
     output_buf: JSAMPIMAGE,
@@ -341,7 +285,7 @@ unsafe fn cmyk_ycck_convert(
     let mut r: c_int;
     let mut g: c_int;
     let mut b: c_int;
-    let mut ctab: *mut INT32 = (*cconvert).rgb_ycc_tab;
+    let ctab: *mut INT32 = (*cconvert).rgb_ycc_tab;
     let mut inptr: JSAMPROW;
     let mut outptr0: JSAMPROW;
     let mut outptr1: JSAMPROW;
@@ -350,8 +294,8 @@ unsafe fn cmyk_ycck_convert(
     let mut col: JDIMENSION;
     let num_cols: JDIMENSION = (*cinfo).image_width;
 
-    while num_rows > 0 {
-        num_rows -= 1;
+    num_rows -= 1;
+    while num_rows >= 0 {
         inptr = *input_buf;
         input_buf = input_buf.add(1);
         outptr0 = *(*output_buf.add(0)).add(output_row as usize);
@@ -361,11 +305,11 @@ unsafe fn cmyk_ycck_convert(
         output_row += 1;
         col = 0;
         while col < num_cols {
-            r = (MAXJSAMPLE as c_int) - (*inptr.add(0) as c_int);
-            g = (MAXJSAMPLE as c_int) - (*inptr.add(1) as c_int);
-            b = (MAXJSAMPLE as c_int) - (*inptr.add(2) as c_int);
+            r = MAXJSAMPLE as c_int - GETJSAMPLE(*inptr.add(0));
+            g = MAXJSAMPLE as c_int - GETJSAMPLE(*inptr.add(1));
+            b = MAXJSAMPLE as c_int - GETJSAMPLE(*inptr.add(2));
             /* K passes through as-is */
-            *outptr3.add(col as usize) = *inptr.add(3);	/* don't need GETJSAMPLE here */
+            *outptr3.add(col as usize) = *inptr.add(3); /* don't need GETJSAMPLE here */
             inptr = inptr.add(4);
             /* If the inputs are 0..MAXJSAMPLE, the outputs of these equations
              * must be too; we do not need an explicit range-limiting operation.
@@ -374,27 +318,28 @@ unsafe fn cmyk_ycck_convert(
              */
             /* Y */
             *outptr0.add(col as usize) = (
-                ((*ctab.add((r as usize + R_Y_OFF)))
-                    + (*ctab.add((g as usize + G_Y_OFF)))
-                    + (*ctab.add((b as usize + B_Y_OFF))))
-                    >> SCALEBITS
+                (*ctab.add(r as usize + R_Y_OFF)
+                    + *ctab.add(g as usize + G_Y_OFF)
+                    + *ctab.add(b as usize + B_Y_OFF))
+                >> SCALEBITS
             ) as JSAMPLE;
             /* Cb */
             *outptr1.add(col as usize) = (
-                ((*ctab.add((r as usize + R_CB_OFF)))
-                    + (*ctab.add((g as usize + G_CB_OFF)))
-                    + (*ctab.add((b as usize + B_CB_OFF))))
-                    >> SCALEBITS
+                (*ctab.add(r as usize + R_CB_OFF)
+                    + *ctab.add(g as usize + G_CB_OFF)
+                    + *ctab.add(b as usize + B_CB_OFF))
+                >> SCALEBITS
             ) as JSAMPLE;
             /* Cr */
             *outptr2.add(col as usize) = (
-                ((*ctab.add((r as usize + R_CR_OFF)))
-                    + (*ctab.add((g as usize + G_CR_OFF)))
-                    + (*ctab.add((b as usize + B_CR_OFF))))
-                    >> SCALEBITS
+                (*ctab.add(r as usize + R_CR_OFF)
+                    + *ctab.add(g as usize + G_CR_OFF)
+                    + *ctab.add(b as usize + B_CR_OFF))
+                >> SCALEBITS
             ) as JSAMPLE;
             col += 1;
         }
+        num_rows -= 1;
     }
 }
 
@@ -405,7 +350,7 @@ unsafe fn cmyk_ycck_convert(
  * The source can be either plain grayscale or YCbCr (since Y == gray).
  */
 
-unsafe fn grayscale_convert(
+unsafe extern "C" fn grayscale_convert(
     cinfo: j_compress_ptr,
     mut input_buf: JSAMPARRAY,
     output_buf: JSAMPIMAGE,
@@ -418,18 +363,19 @@ unsafe fn grayscale_convert(
     let num_cols: JDIMENSION = (*cinfo).image_width;
     let instride: c_int = (*cinfo).input_components;
 
-    while num_rows > 0 {
-        num_rows -= 1;
+    num_rows -= 1;
+    while num_rows >= 0 {
         inptr = *input_buf;
         input_buf = input_buf.add(1);
         outptr = *(*output_buf.add(0)).add(output_row as usize);
         output_row += 1;
         col = 0;
         while col < num_cols {
-            *outptr.add(col as usize) = *inptr.add(0);	/* don't need GETJSAMPLE() here */
+            *outptr.add(col as usize) = *inptr.add(0); /* don't need GETJSAMPLE() here */
             inptr = inptr.add(instride as usize);
             col += 1;
         }
+        num_rows -= 1;
     }
 }
 
@@ -440,7 +386,7 @@ unsafe fn grayscale_convert(
  * We assume input_components == num_components.
  */
 
-unsafe fn null_convert(
+unsafe extern "C" fn null_convert(
     cinfo: j_compress_ptr,
     mut input_buf: JSAMPARRAY,
     output_buf: JSAMPIMAGE,
@@ -454,8 +400,8 @@ unsafe fn null_convert(
     let nc: c_int = (*cinfo).num_components;
     let num_cols: JDIMENSION = (*cinfo).image_width;
 
-    while num_rows > 0 {
-        num_rows -= 1;
+    num_rows -= 1;
+    while num_rows >= 0 {
         /* It seems fastest to make a separate pass for each component. */
         ci = 0;
         while ci < nc {
@@ -471,6 +417,7 @@ unsafe fn null_convert(
         }
         input_buf = input_buf.add(1);
         output_row += 1;
+        num_rows -= 1;
     }
 }
 
@@ -479,7 +426,7 @@ unsafe fn null_convert(
  * Empty method for start_pass.
  */
 
-unsafe fn null_method(cinfo: j_compress_ptr) {
+unsafe extern "C" fn null_method(cinfo: j_compress_ptr) {
     /* no work needed */
 }
 
@@ -490,133 +437,139 @@ unsafe fn null_method(cinfo: j_compress_ptr) {
 
 #[no_mangle]
 pub unsafe extern "C" fn jinit_color_converter(cinfo: j_compress_ptr) {
-    let mut cconvert: my_cconvert_ptr;
+    let cconvert: my_cconvert_ptr;
 
-    if let Some(alloc_small) = (*(*cinfo).mem).alloc_small {
-        cconvert = alloc_small(
-            cinfo as j_common_ptr,
-            JPOOL_IMAGE,
-            core::mem::size_of::<my_color_converter>(),
-        ) as my_cconvert_ptr;
-        (*cinfo).cconvert = cconvert as *mut jpeg_color_converter;
-        /* set start_pass to null method until we find out differently */
-        (*cconvert).pub_.start_pass = Some(null_method);
+    cconvert = ((*(*cinfo).mem).alloc_small)(
+        cinfo as j_common_ptr,
+        JPOOL_IMAGE,
+        core::mem::size_of::<my_color_converter>(),
+    ) as my_cconvert_ptr;
+    (*cinfo).cconvert = cconvert as *mut jpeg_color_converter;
+    /* set start_pass to null method until we find out differently */
+    (*cconvert).pub_.start_pass = Some(null_method);
 
-        /* Make sure input_components agrees with in_color_space */
-        match (*cinfo).in_color_space {
-            J_COLOR_SPACE::JCS_GRAYSCALE => {
-                if (*cinfo).input_components != 1 {
-                    // ERREXIT(cinfo, JERR_BAD_IN_COLORSPACE);
-                }
-            }
-
-            J_COLOR_SPACE::JCS_RGB => {
-                #[cfg(feature = "RGB_PIXELSIZE_is_not_3")]
-                {
-                    if (*cinfo).input_components != RGB_PIXELSIZE as c_int {
-                        // ERREXIT(cinfo, JERR_BAD_IN_COLORSPACE);
-                    }
-                }
-                /* else share code with YCbCr */
-            }
-
-            J_COLOR_SPACE::JCS_YCbCr => {
-                if (*cinfo).input_components != 3 {
-                    // ERREXIT(cinfo, JERR_BAD_IN_COLORSPACE);
-                }
-            }
-
-            J_COLOR_SPACE::JCS_CMYK | J_COLOR_SPACE::JCS_YCCK => {
-                if (*cinfo).input_components != 4 {
-                    // ERREXIT(cinfo, JERR_BAD_IN_COLORSPACE);
-                }
-            }
-
-            J_COLOR_SPACE::JCS_UNKNOWN => {
-                /* JCS_UNKNOWN can be anything */
-                if (*cinfo).input_components < 1 {
-                    // ERREXIT(cinfo, JERR_BAD_IN_COLORSPACE);
-                }
+    /* Make sure input_components agrees with in_color_space */
+    match (*cinfo).in_color_space {
+        JCS_GRAYSCALE => {
+            if (*cinfo).input_components != 1 {
+                ERREXIT!(cinfo, JERR_BAD_IN_COLORSPACE);
             }
         }
 
-        /* Check num_components, set conversion method based on requested space */
-        match (*cinfo).jpeg_color_space {
-            J_COLOR_SPACE::JCS_GRAYSCALE => {
-                if (*cinfo).num_components != 1 {
-                    // ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
-                }
-                if (*cinfo).in_color_space == J_COLOR_SPACE::JCS_GRAYSCALE {
-                    (*cconvert).pub_.color_convert = Some(grayscale_convert);
-                } else if (*cinfo).in_color_space == J_COLOR_SPACE::JCS_RGB {
-                    (*cconvert).pub_.start_pass = Some(rgb_ycc_start);
-                    (*cconvert).pub_.color_convert = Some(rgb_gray_convert);
-                } else if (*cinfo).in_color_space == J_COLOR_SPACE::JCS_YCbCr {
-                    (*cconvert).pub_.color_convert = Some(grayscale_convert);
-                } else {
-                    // ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
-                }
+        /* Port note: C has #if RGB_PIXELSIZE != 3 guarding this arm including its break.
+         * When RGB_PIXELSIZE == 3 the arm has no content and falls through to JCS_YCbCr.
+         * Represent the fallthrough with | for the default case; gate the separate arm
+         * with cfg for the non-default case. */
+        #[cfg(not(feature = "rgb_pixelsize_ne_3"))]
+        JCS_RGB | JCS_YCbCr => {
+            /* else share code with YCbCr */
+            if (*cinfo).input_components != 3 {
+                ERREXIT!(cinfo, JERR_BAD_IN_COLORSPACE);
             }
+        }
 
-            J_COLOR_SPACE::JCS_RGB => {
-                if (*cinfo).num_components != 3 {
-                    // ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
-                }
-                if (*cinfo).in_color_space == J_COLOR_SPACE::JCS_RGB && RGB_PIXELSIZE == 3 {
-                    (*cconvert).pub_.color_convert = Some(null_convert);
-                } else {
-                    // ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
-                }
+        #[cfg(feature = "rgb_pixelsize_ne_3")]
+        JCS_RGB => {
+            if (*cinfo).input_components != RGB_PIXELSIZE as c_int {
+                ERREXIT!(cinfo, JERR_BAD_IN_COLORSPACE);
             }
-
-            J_COLOR_SPACE::JCS_YCbCr => {
-                if (*cinfo).num_components != 3 {
-                    // ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
-                }
-                if (*cinfo).in_color_space == J_COLOR_SPACE::JCS_RGB {
-                    (*cconvert).pub_.start_pass = Some(rgb_ycc_start);
-                    (*cconvert).pub_.color_convert = Some(rgb_ycc_convert);
-                } else if (*cinfo).in_color_space == J_COLOR_SPACE::JCS_YCbCr {
-                    (*cconvert).pub_.color_convert = Some(null_convert);
-                } else {
-                    // ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
-                }
+        }
+        /* else share code with YCbCr */
+        #[cfg(feature = "rgb_pixelsize_ne_3")]
+        JCS_YCbCr => {
+            if (*cinfo).input_components != 3 {
+                ERREXIT!(cinfo, JERR_BAD_IN_COLORSPACE);
             }
+        }
 
-            J_COLOR_SPACE::JCS_CMYK => {
-                if (*cinfo).num_components != 4 {
-                    // ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
-                }
-                if (*cinfo).in_color_space == J_COLOR_SPACE::JCS_CMYK {
-                    (*cconvert).pub_.color_convert = Some(null_convert);
-                } else {
-                    // ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
-                }
+        JCS_CMYK | JCS_YCCK => {
+            if (*cinfo).input_components != 4 {
+                ERREXIT!(cinfo, JERR_BAD_IN_COLORSPACE);
             }
+        }
 
-            J_COLOR_SPACE::JCS_YCCK => {
-                if (*cinfo).num_components != 4 {
-                    // ERREXIT(cinfo, JERR_BAD_J_COLORSPACE);
-                }
-                if (*cinfo).in_color_space == J_COLOR_SPACE::JCS_CMYK {
-                    (*cconvert).pub_.start_pass = Some(rgb_ycc_start);
-                    (*cconvert).pub_.color_convert = Some(cmyk_ycck_convert);
-                } else if (*cinfo).in_color_space == J_COLOR_SPACE::JCS_YCCK {
-                    (*cconvert).pub_.color_convert = Some(null_convert);
-                } else {
-                    // ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
-                }
+        _ => {             /* JCS_UNKNOWN can be anything */
+            if (*cinfo).input_components < 1 {
+                ERREXIT!(cinfo, JERR_BAD_IN_COLORSPACE);
             }
+        }
+    }
 
-            J_COLOR_SPACE::JCS_UNKNOWN => {
-                /* allow null conversion of JCS_UNKNOWN */
-                if (*cinfo).jpeg_color_space != (*cinfo).in_color_space
-                    || (*cinfo).num_components != (*cinfo).input_components
-                {
-                    // ERREXIT(cinfo, JERR_CONVERSION_NOTIMPL);
-                }
+    /* Check num_components, set conversion method based on requested space */
+    match (*cinfo).jpeg_color_space {
+        JCS_GRAYSCALE => {
+            if (*cinfo).num_components != 1 {
+                ERREXIT!(cinfo, JERR_BAD_J_COLORSPACE);
+            }
+            if (*cinfo).in_color_space == JCS_GRAYSCALE {
+                (*cconvert).pub_.color_convert = Some(grayscale_convert);
+            } else if (*cinfo).in_color_space == JCS_RGB {
+                (*cconvert).pub_.start_pass = Some(rgb_ycc_start);
+                (*cconvert).pub_.color_convert = Some(rgb_gray_convert);
+            } else if (*cinfo).in_color_space == JCS_YCbCr {
+                (*cconvert).pub_.color_convert = Some(grayscale_convert);
+            } else {
+                ERREXIT!(cinfo, JERR_CONVERSION_NOTIMPL);
+            }
+        }
+
+        JCS_RGB => {
+            if (*cinfo).num_components != 3 {
+                ERREXIT!(cinfo, JERR_BAD_J_COLORSPACE);
+            }
+            if (*cinfo).in_color_space == JCS_RGB && RGB_PIXELSIZE == 3 {
                 (*cconvert).pub_.color_convert = Some(null_convert);
+            } else {
+                ERREXIT!(cinfo, JERR_CONVERSION_NOTIMPL);
             }
+        }
+
+        JCS_YCbCr => {
+            if (*cinfo).num_components != 3 {
+                ERREXIT!(cinfo, JERR_BAD_J_COLORSPACE);
+            }
+            if (*cinfo).in_color_space == JCS_RGB {
+                (*cconvert).pub_.start_pass = Some(rgb_ycc_start);
+                (*cconvert).pub_.color_convert = Some(rgb_ycc_convert);
+            } else if (*cinfo).in_color_space == JCS_YCbCr {
+                (*cconvert).pub_.color_convert = Some(null_convert);
+            } else {
+                ERREXIT!(cinfo, JERR_CONVERSION_NOTIMPL);
+            }
+        }
+
+        JCS_CMYK => {
+            if (*cinfo).num_components != 4 {
+                ERREXIT!(cinfo, JERR_BAD_J_COLORSPACE);
+            }
+            if (*cinfo).in_color_space == JCS_CMYK {
+                (*cconvert).pub_.color_convert = Some(null_convert);
+            } else {
+                ERREXIT!(cinfo, JERR_CONVERSION_NOTIMPL);
+            }
+        }
+
+        JCS_YCCK => {
+            if (*cinfo).num_components != 4 {
+                ERREXIT!(cinfo, JERR_BAD_J_COLORSPACE);
+            }
+            if (*cinfo).in_color_space == JCS_CMYK {
+                (*cconvert).pub_.start_pass = Some(rgb_ycc_start);
+                (*cconvert).pub_.color_convert = Some(cmyk_ycck_convert);
+            } else if (*cinfo).in_color_space == JCS_YCCK {
+                (*cconvert).pub_.color_convert = Some(null_convert);
+            } else {
+                ERREXIT!(cinfo, JERR_CONVERSION_NOTIMPL);
+            }
+        }
+
+        _ => {              /* allow null conversion of JCS_UNKNOWN */
+            if (*cinfo).jpeg_color_space != (*cinfo).in_color_space
+                || (*cinfo).num_components != (*cinfo).input_components
+            {
+                ERREXIT!(cinfo, JERR_CONVERSION_NOTIMPL);
+            }
+            (*cconvert).pub_.color_convert = Some(null_convert);
         }
     }
 }
