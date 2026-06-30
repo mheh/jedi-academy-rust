@@ -1,40 +1,14 @@
+#![allow(non_snake_case)]
 // leave this line at the top of all AI_xxxx.cpp files for PCH reasons...
 // (C header: g_headers.h)
 
-// b_local.h
-// g_nav.h
-// anims.h
-// g_navigator.h
-
+use crate::code::game::g_headers::*;        // g_headers.h
+use crate::code::game::b_local_h::*;        // b_local.h
+use crate::code::game::g_nav_h::*;          // g_nav.h
+use crate::code::game::anims_h::*;          // anims.h
+use crate::code::game::g_navigator_h::*;    // g_navigator.h
 use core::ffi::{c_int, c_char, c_void};
 
-#![allow(non_snake_case)]
-
-// Stub type declarations for external game types
-#[repr(C)]
-pub struct gentity_t {
-    _stub: [u8; 0],
-}
-
-#[repr(C)]
-pub struct gentity_s {
-    _stub: [u8; 0],
-}
-
-#[repr(C)]
-pub struct gclient_t {
-    _stub: [u8; 0],
-}
-
-#[repr(C)]
-pub struct gNPC_t {
-    _stub: [u8; 0],
-}
-
-#[repr(C)]
-pub struct trace_t {
-    _stub: [u8; 0],
-}
 
 // External function declarations
 extern "C" {
@@ -99,15 +73,9 @@ extern "C" {
     pub fn STEER_Reached(NPC: *mut gentity_t, ent: *mut gentity_t, radius: c_int, flying: c_int) -> c_int;
 }
 
-// Type aliases for qboolean and vec3_t
-pub type qboolean = c_int;
-pub const QTRUE: c_int = 1;
-pub const QFALSE: c_int = 0;
-pub type vec3_t = [f32; 3];
 
 // Macro definitions translated
-#[inline]
-fn SPF_NO_HIDE() -> c_int { 2 }
+const SPF_NO_HIDE: c_int = 2;
 
 const MAX_VIEW_DIST: c_int = 1024;
 const MAX_VIEW_SPEED: c_int = 250;
@@ -128,35 +96,6 @@ const LSTATE_NONE: c_int = 0;
 const LSTATE_UNDERFIRE: c_int = 1;
 const LSTATE_INVESTIGATE: c_int = 2;
 
-// Squad state constants
-const SQUAD_IDLE: c_int = 0;
-const SQUAD_STAND_AND_SHOOT: c_int = 1;
-const SQUAD_RETREAT: c_int = 2;
-const SQUAD_TRANSITION: c_int = 3;
-const SQUAD_SCOUT: c_int = 4;
-const SQUAD_COVER: c_int = 5;
-
-// Alert event level constants
-const AEL_SUSPICIOUS: c_int = 1;
-const AEL_DISCOVERED: c_int = 2;
-const AEL_DANGER: c_int = 3;
-
-// Script flag constants
-const SCF_LOOK_FOR_ENEMIES: c_int = 1;
-const SCF_IGNORE_ALERTS: c_int = 2;
-const SCF_CHASE_ENEMIES: c_int = 4;
-const SCF_DONT_FIRE: c_int = 8;
-const SCF_ALT_FIRE: c_int = 16;
-const SCF_USE_CP_NEAREST: c_int = 32;
-
-// Combat point constants
-const CP_CLEAR: c_int = 1;
-const CP_HAS_ROUTE: c_int = 2;
-const CP_FLANK: c_int = 4;
-const CP_APPROACH_ENEMY: c_int = 8;
-const CP_CLOSEST: c_int = 16;
-const CP_NEAREST: c_int = 32;
-const CP_HORZ_DIST_COLL: c_int = 64;
 
 // Button constants
 const BUTTON_WALKING: c_int = 1;
@@ -783,7 +722,7 @@ pub fn NPC_BSSniper_Attack() {
         //NPC_CheckEnemy( qtrue, qfalse );
         //If we don't have an enemy, just idle
         if NPC_CheckEnemyExt() == QFALSE {
-            //!NPC->enemy )//
+            // !NPC->enemy )//
             NPC_BSSniper_Patrol();//FIXME: or patrol?
             return;
         }
@@ -983,7 +922,7 @@ pub fn NPC_BSSniper_Attack() {
                 // }
 
                 //took a shot, now hide
-                if ((*NPC).spawnflags&SPF_NO_HIDE()) == 0 && Q_irand(0, 1) == 0 {
+                if ((*NPC).spawnflags&SPF_NO_HIDE) == 0 && Q_irand(0, 1) == 0 {
                     //FIXME: do this if in combat point and combat point has duck-type cover... also handle lean-type cover
                     Sniper_StartHide();
                 }
