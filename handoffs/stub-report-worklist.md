@@ -5,7 +5,7 @@ under the **faithful-port** import-trust skill (`skills/faithful-port/`).
 
 - Originally **179 files / 697 stubs**, all introduced by single-file blind-port
   commits dated 2026-06-28 (pre-skill, before `08c3607`).
-- As of 2026-06-29: **76 done**, **103 files / 284 stubs remaining** (worklist
+- As of 2026-06-30: **77 done**, **102 files / 275 stubs remaining** (worklist
   verified in sync with `git grep -c '[u8; 0]'`, no drift). jpeg-6 and qcommon
   subsystems fully cleared.
 - Invariant when done (per `SKILL.md`): each file has **zero** `[u8; 0]`
@@ -27,7 +27,7 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [x] `src/code/game/g_svcmds.rs` (10)
 - [x] `src/code/game/g_missile.rs` (10)
 - [x] `src/code/game/AI_Stormtrooper.rs` (10)
-- [ ] `src/code/game/bg_public_h.rs` (9)
+- [x] `src/code/game/bg_public_h.rs` (9)
 - [x] `src/code/jpeg-6/jcapimin.rs` (8)
 - [x] `src/code/RMG/RM_Terrain.rs` (7)
 - [ ] `src/code/renderer/tr_scene.rs` (7)
