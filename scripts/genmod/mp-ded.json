@@ -1,0 +1,2 @@
+{ "crate": "mp-ded", "kind": "bin",
+  "seed_dirs": ["codemp/server","codemp/qcommon","codemp/botlib","codemp/null","codemp/unix"] }

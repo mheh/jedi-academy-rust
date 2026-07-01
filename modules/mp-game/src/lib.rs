@@ -1,0 +1,20 @@
+//! mp-game — GENERATED module manifest.
+//! Mounts the unchanged `src/` pool via #[path]; do not edit by hand.
+//! Regenerate with scripts/genmod (see handoffs).
+
+#![allow(non_snake_case)]
+
+#[macro_use]
+#[path = "../../../src/macros.rs"]
+mod macros;
+
+pub mod codemp;
+#[path = "../../../src/ffi/mod.rs"]
+pub mod ffi;
+#[cfg(feature = "oracle")]
+#[path = "../../../src/oracle.rs"]
+pub mod oracle;
+#[path = "../../../src/trap/mod.rs"]
+pub mod trap;
+
+pub use ffi::exports::{dllEntry, vmMain};

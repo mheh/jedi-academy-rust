@@ -1,0 +1,15 @@
+[package]
+name = "jamp"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.77"
+license = "GPL-2.0-only"
+description = "Jedi Academy MP engine executable (jamp) — WIP scaffold"
+
+[[bin]]
+name = "jamp"
+path = "src/main.rs"
+
+[features]
+oracle = []
+vm = []

@@ -1,0 +1,25 @@
+[package]
+name = "jampgame"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.77"  # core::mem::offset_of! (used in q_shared_h layout asserts)
+license = "GPL-2.0-only"
+description = "Jedi Academy MP server game module (jampgame)"
+build = "build.rs"
+
+# Produces the JKA MP server game module. `cdylib` is the shipped artifact (the
+# shared library the engine loads); `rlib` lets `cargo test` build the unit tests.
+# The engine expects the arch-suffixed name (jampgamex86_64.so, jampgamex86.dll);
+# packaging renames Cargo's `libjampgame.{so,dylib}` / `jampgame.dll` accordingly.
+[lib]
+name = "jampgame"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# Compile & link the extracted original C (oracle_c/) for parity tests.
+# OFF by default; the shipped cdylib is pure Rust. `cargo test --features oracle`.
+oracle = []
+# Rust mirror of the original-JKA `Q3_VM` define; provides no-libc shims for a
+# VM/WASM target. OFF by default (native build uses std/libc).
+vm = []

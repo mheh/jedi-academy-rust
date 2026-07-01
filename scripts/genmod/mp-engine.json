@@ -1,0 +1,2 @@
+{ "crate": "mp-engine", "kind": "bin",
+  "seed_dirs": ["codemp/client","codemp/server","codemp/qcommon","codemp/renderer","codemp/ghoul2","codemp/icarus","codemp/botlib","codemp/unix"] }

@@ -1,0 +1,15 @@
+[package]
+name = "jasp"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.77"
+license = "GPL-2.0-only"
+description = "Jedi Academy SP engine executable (jasp) — WIP scaffold"
+
+[[bin]]
+name = "jasp"
+path = "src/main.rs"
+
+[features]
+oracle = []
+vm = []

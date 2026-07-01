@@ -1,0 +1,2 @@
+{ "crate": "mp-game", "seed_dirs": ["codemp/game", "ffi", "trap"],
+  "reexport": ["ffi::exports::{dllEntry, vmMain}"] }

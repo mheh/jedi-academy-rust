@@ -3,5 +3,29 @@
 version = 3
 
 [[package]]
-name = "jedi-academy-rust"
+name = "cgame"
+version = "0.1.0"
+
+[[package]]
+name = "jagame"
+version = "0.1.0"
+
+[[package]]
+name = "jamp"
+version = "0.1.0"
+
+[[package]]
+name = "jampded"
+version = "0.1.0"
+
+[[package]]
+name = "jampgame"
+version = "0.1.0"
+
+[[package]]
+name = "jasp"
+version = "0.1.0"
+
+[[package]]
+name = "ui"
 version = "0.1.0"

@@ -1,7 +1,9 @@
-//! Build script. Only does work when the `oracle` cargo feature is enabled:
-//! compiles the extracted original C functions in `oracle_c/` into a static lib and
-//! links it, so tests can call the real Raven C as a parity oracle. Dependency-free
-//! (invokes the system `cc`/`ar` directly) to avoid any crates.io fetch.
+// Build script. Only does work when the `oracle` cargo feature is enabled:
+// compiles the extracted original C functions in `oracle_c/` into a static lib and
+// links it, so tests can call the real Raven C as a parity oracle. Dependency-free
+// (invokes the system `cc`/`ar` directly) to avoid any crates.io fetch.
+// NOTE: uses `//` not `//!` so it stays valid when `include!`d from a module crate's
+// build.rs (an inner doc comment is only legal at file top, not at an include site).
 
 use std::env;
 use std::path::PathBuf;

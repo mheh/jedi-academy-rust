@@ -1,0 +1,16 @@
+[package]
+name = "jagame"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.77"
+license = "GPL-2.0-only"
+description = "Jedi Academy SP game module (jagame)"
+
+[lib]
+name = "jagame"
+path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
+
+[features]
+oracle = []
+vm = []

@@ -1,0 +1,2 @@
+{ "crate": "sp-engine", "kind": "bin",
+  "seed_dirs": ["code/client","code/server","code/qcommon","code/renderer","code/cgame","code/ui","code/ghoul2","code/icarus","code/unix"] }
