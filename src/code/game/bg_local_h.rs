@@ -2,25 +2,10 @@
 
 #![allow(non_snake_case)]
 
-use core::ffi::{c_int, c_float};
-
-// Forward declarations for opaque types from included headers
-#[repr(C)]
-pub struct pmove_t {
-	_opaque: [u8; 0],
-}
-
-#[repr(C)]
-pub struct trace_t {
-	_opaque: [u8; 0],
-}
-
-// Type aliases
-pub type vec3_t = [f32; 3];
-pub type qboolean = c_int;
+use core::ffi::{c_float, c_int};
 
 pub const TIMER_LAND: c_int = 130;
-pub const TIMER_GESTURE: c_int = (34*66+50);
+pub const TIMER_GESTURE: c_int = 34 * 66 + 50;
 
 pub const OVERCLIP: f32 = 1.001;
 
