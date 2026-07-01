@@ -1,81 +1,73 @@
-// Faithful translation of oracle/code/game/g_shared.h
-// Preserve original C behavior and layout
+// oracle/code/game/g_shared.h
 
-#![allow(non_snake_case, non_upper_case_globals)]
+#![allow(non_snake_case)]
+#![allow(non_camel_case_types)]
+#![allow(non_upper_case_globals)]
 
-use core::ffi::{c_int, c_char, c_void};
+use crate::code::game::bg_public_h::*;
+use crate::code::game::g_public_h::*;
+use crate::code::game::b_public_h::*;
+use crate::code::Icarus::StdAfx_h::*; //need stl
+use crate::code::renderer::tr_types_h::*;
+use crate::code::cgame::cg_public_h::*;
+use crate::code::game::g_vehicles_h::*;
+use crate::code::game::hitlocs_h::*;
+use crate::code::game::bset_h::*;
 
-// Include dependencies from other modules (local stubs as needed for structural coherence)
-// Note: These types are defined elsewhere in the Rust translation
-use crate::code::game::bg_public::*;
-use crate::code::game::g_public::*;
-use crate::code::game::b_public::*;
-use crate::code::Icarus::Stdafx::*;
-use crate::code::renderer::tr_types::*;
-use crate::code::cgame::cg_public::*;
-use crate::code::game::G_Vehicles::*;
-use crate::code::game::hitlocs::*;
-use crate::code::game::bset::*;
+use core::ffi::{c_char, c_int, c_schar};
 
-// FOFS(x) macro - calculates field offset from gentity_t pointer cast
-// #define FOFS(x) ((int)&(((gentity_t *)0)->x))
-// In Rust, we use a function-like macro via const
-pub const fn FOFS<T>() -> usize {
-    // This is a compile-time stub; actual offset calculations would use offset_of! or memoffset
-    0
+// #define	FOFS(x) ((int)&(((gentity_t *)0)->x))
+macro_rules! FOFS {
+    ($field:ident) => {
+        core::mem::offset_of!(gentity_t, $field) as c_int
+    };
 }
 
 // #ifdef _XBOX
-// #define MAX_NPC_WATER_UPDATE_PER_FRAME	2	// maxmum number of NPCs that will get updated water infromation per frame
-// #endif
 #[cfg(target_os = "xbox")]
 pub const MAX_NPC_WATER_UPDATE_PER_FRAME: c_int = 2; // maxmum number of NPCs that will get updated water infromation per frame
+// #endif
 
-/// taskID_e enum - used to track task timers
+// typedef enum //# taskID_e
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub enum taskID_e {
+pub enum taskID_t {
     TID_CHAN_VOICE = 0, // Waiting for a voice sound to complete
-    TID_ANIM_UPPER,     // Waiting to finish a lower anim holdtime
-    TID_ANIM_LOWER,     // Waiting to finish a lower anim holdtime
-    TID_ANIM_BOTH,      // Waiting to finish lower and upper anim holdtimes or normal md3 animating
-    TID_MOVE_NAV,       // Trying to get to a navgoal or For ET_MOVERS
-    TID_ANGLE_FACE,     // Turning to an angle or facing
-    TID_BSTATE,         // Waiting for a certain bState to finish
-    TID_LOCATION,       // Waiting for ent to enter a specific trigger_location
-    // TID_MISSIONSTATUS,	// Waiting for player to finish reading MISSION STATUS SCREEN
-    TID_RESIZE,  // Waiting for clear bbox to inflate size
-    TID_SHOOT,   // Waiting for fire event
-    NUM_TIDS,    // for def of taskID array
+    TID_ANIM_UPPER, // Waiting to finish a lower anim holdtime
+    TID_ANIM_LOWER, // Waiting to finish a lower anim holdtime
+    TID_ANIM_BOTH, // Waiting to finish lower and upper anim holdtimes or normal md3 animating
+    TID_MOVE_NAV, // Trying to get to a navgoal or For ET_MOVERS
+    TID_ANGLE_FACE, // Turning to an angle or facing
+    TID_BSTATE, // Waiting for a certain bState to finish
+    TID_LOCATION, // Waiting for ent to enter a specific trigger_location
+    //	TID_MISSIONSTATUS,	// Waiting for player to finish reading MISSION STATUS SCREEN
+    TID_RESIZE, // Waiting for clear bbox to inflate size
+    TID_SHOOT, // Waiting for fire event
+    NUM_TIDS, // for def of taskID array
 }
 
-pub type taskID_t = taskID_e;
 
-/// material_e enum - material types for chunk effects
+// typedef enum //# material_e
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub enum material_e {
-    MAT_METAL = 0,      // scorched blue-grey metal
-    MAT_GLASS,          // not a real chunk type, just plays an effect with glass sprites
-    MAT_ELECTRICAL,     // sparks only
-    MAT_ELEC_METAL,     // sparks/electrical type metal
-    MAT_DRK_STONE,      // brown
-    MAT_LT_STONE,       // tan
-    MAT_GLASS_METAL,    // glass sprites and METAl chunk
-    MAT_METAL2,         // electrical metal type
-    MAT_NONE,           // no chunks
-    MAT_GREY_STONE,     // grey
-    MAT_METAL3,         // METAL and METAL2 chunks
-    MAT_CRATE1,         // yellow multi-colored crate chunks
-    MAT_GRATE1,         // grate chunks
-    MAT_ROPE,           // for yavin trial...no chunks, just wispy bits
-    MAT_CRATE2,         // read multi-colored crate chunks
-    MAT_WHITE_METAL,    // white angular chunks
+pub enum material_t {
+    MAT_METAL = 0, // scorched blue-grey metal
+    MAT_GLASS, // not a real chunk type, just plays an effect with glass sprites
+    MAT_ELECTRICAL, // sparks only
+    MAT_ELEC_METAL, // sparks/electrical type metal
+    MAT_DRK_STONE, // brown
+    MAT_LT_STONE, // tan
+    MAT_GLASS_METAL,// glass sprites and METAl chunk
+    MAT_METAL2, // electrical metal type
+    MAT_NONE, // no chunks
+    MAT_GREY_STONE, // grey
+    MAT_METAL3, // METAL and METAL2 chunks
+    MAT_CRATE1, // yellow multi-colored crate chunks
+    MAT_GRATE1, // grate chunks
+    MAT_ROPE, // for yavin trial...no chunks, just wispy bits
+    MAT_CRATE2, // read multi-colored crate chunks
+    MAT_WHITE_METAL,// white angular chunks
 
     NUM_MATERIALS,
 }
-
-pub type material_t = material_e;
 
 //===From cg_local.h================================================
 pub const DEFAULT_HEADMODEL: &[u8] = b"";
@@ -91,11 +83,7 @@ pub const MAX_CUSTOM_BASIC_SOUNDS: usize = 14;
 pub const MAX_CUSTOM_COMBAT_SOUNDS: usize = 17;
 pub const MAX_CUSTOM_EXTRA_SOUNDS: usize = 36;
 pub const MAX_CUSTOM_JEDI_SOUNDS: usize = 22;
-pub const MAX_CUSTOM_SOUNDS: usize = MAX_CUSTOM_JEDI_SOUNDS
-    + MAX_CUSTOM_EXTRA_SOUNDS
-    + MAX_CUSTOM_COMBAT_SOUNDS
-    + MAX_CUSTOM_BASIC_SOUNDS;
-
+pub const MAX_CUSTOM_SOUNDS: usize = MAX_CUSTOM_JEDI_SOUNDS + MAX_CUSTOM_EXTRA_SOUNDS + MAX_CUSTOM_COMBAT_SOUNDS + MAX_CUSTOM_BASIC_SOUNDS;
 // !!!!!!!!!! LOADSAVE-affecting structure !!!!!!!!!!
 #[repr(C)]
 pub struct clientInfo_t {
@@ -104,7 +92,8 @@ pub struct clientInfo_t {
     pub name: [c_char; MAX_QPATH],
     pub team: team_t,
 
-    pub score: c_int,      // updated by score servercmds
+    pub score: c_int, // updated by score servercmds
+
     pub handicap: c_int,
 
     pub legsModel: qhandle_t,
@@ -126,23 +115,21 @@ pub struct clientInfo_t {
     pub customJediSoundDir: *mut c_char,
 }
 
+
 //==================================================================
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub enum moverState_e {
+pub enum moverState_t {
     MOVER_POS1,
     MOVER_POS2,
     MOVER_1TO2,
     MOVER_2TO1,
 }
 
-pub type moverState_t = moverState_e;
-
 // Rendering information structure
 
+
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub enum targetModel_e {
+pub enum targetModel_t {
     MODEL_LEGS = 0,
     MODEL_TORSO,
     MODEL_HEAD,
@@ -154,20 +141,29 @@ pub enum targetModel_e {
     NUM_TARGET_MODELS,
 }
 
-pub type targetModel_t = targetModel_e;
-
 //renderFlags
 pub const RF_LOCKEDANGLE: c_int = 1;
 
 // !!!!!!!!!! LOADSAVE-affecting structure !!!!!!!!!!
+// C uses an anonymous union for the first member of renderInfo_s so both names
+// (legsModelName / modelName) alias the same 32 bytes. Rust has no anonymous-union
+// struct field, so it is named `legsModelName` here; access the alternate name via
+// `.legsModelName.modelName`.
 #[repr(C)]
-pub struct renderInfo_s {
-    // Legs model, or full model on one piece entities
+pub union renderInfo_t_legsModelName_u {
     pub legsModelName: [c_char; 32], // -slc[]
-    // (unnamed union field, use legsModelName or access as modelName overlay)
+    pub modelName: [c_char; 32], // -slc[]
+}
+
+#[repr(C)]
+pub struct renderInfo_s
+{
+    // Legs model, or full model on one piece entities
+
+    pub legsModelName: renderInfo_t_legsModelName_u,
 
     pub torsoModelName: [c_char; 32], // -slc[]
-    pub headModelName: [c_char; 32],  // -slc[]
+    pub headModelName: [c_char; 32], // -slc[]
 
     //In whole degrees, How far to let the different model parts yaw and pitch
     pub headYawRangeLeft: c_int,
@@ -187,7 +183,7 @@ pub struct renderInfo_s {
     pub torsoFpsMod: f32,
 
     //Fields to apply to entire model set, individual model's equivalents will modify this value
-    pub customRGBA: [u8; 4], //Red Green Blue, 0 = don't apply
+    pub customRGBA: [byte; 4], //Red Green Blue, 0 = don't apply
 
     //Allow up to 4 PCJ lookup values to be stored here.
     //The resolve to configstrings which contain the name of the
@@ -217,34 +213,34 @@ pub struct renderInfo_s {
     pub muzzleDir: vec3_t,
     pub muzzlePointOld: vec3_t,
     pub muzzleDirOld: vec3_t,
-    //pub muzzlePointNext: vec3_t,	// Muzzle point one server frame in the future!
-    //pub muzzleDirNext: vec3_t,
+    //vec3_t		muzzlePointNext;	// Muzzle point one server frame in the future!
+    //vec3_t		muzzleDirNext;
     pub mPCalcTime: c_int, //Last time muzzle point was calced
 
     //
     pub lockYaw: f32, //
 
     //
-    pub headPoint: vec3_t,    //Where your tag_head is
-    pub headAngles: vec3_t,   //where the tag_head in the torso is pointing
-    pub handRPoint: vec3_t,   //where your right hand is
-    pub handLPoint: vec3_t,   //where your left hand is
-    pub crotchPoint: vec3_t,  //Where your crotch is
-    pub footRPoint: vec3_t,   //where your right hand is
-    pub footLPoint: vec3_t,   //where your left hand is
-    pub torsoPoint: vec3_t,   //Where your chest is
-    pub torsoAngles: vec3_t,  //Where the chest is pointing
-    pub eyePoint: vec3_t,     //Where your eyes are
-    pub eyeAngles: vec3_t,    //Where your eyes face
-    pub lookTarget: c_int,    //Which ent to look at with lookAngles
+    pub headPoint: vec3_t, //Where your tag_head is
+    pub headAngles: vec3_t, //where the tag_head in the torso is pointing
+    pub handRPoint: vec3_t, //where your right hand is
+    pub handLPoint: vec3_t, //where your left hand is
+    pub crotchPoint: vec3_t, //Where your crotch is
+    pub footRPoint: vec3_t, //where your right hand is
+    pub footLPoint: vec3_t, //where your left hand is
+    pub torsoPoint: vec3_t, //Where your chest is
+    pub torsoAngles: vec3_t, //Where the chest is pointing
+    pub eyePoint: vec3_t, //Where your eyes are
+    pub eyeAngles: vec3_t, //Where your eyes face
+    pub lookTarget: c_int, //Which ent to look at with lookAngles
     pub lookMode: lookMode_t,
     pub lookTargetClearTime: c_int, //Time to clear the lookTarget
-    pub lastVoiceVolume: c_int,     //Last frame's voice volume
-    pub lastHeadAngles: vec3_t,     //Last headAngles, NOT actual facing of head model
-    pub headBobAngles: vec3_t,      //headAngle offsets
+    pub lastVoiceVolume: c_int, //Last frame's voice volume
+    pub lastHeadAngles: vec3_t, //Last headAngles, NOT actual facing of head model
+    pub headBobAngles: vec3_t, //headAngle offsets
     pub targetHeadBobAngles: vec3_t, //head bob angles will try to get to targetHeadBobAngles
     pub lookingDebounceTime: c_int, //When we can stop using head looking angle behavior
-    pub legsYaw: f32,               //yaw angle your legs are actually rendering at
+    pub legsYaw: f32, //yaw angle your legs are actually rendering at
 }
 
 pub type renderInfo_t = renderInfo_s;
@@ -252,63 +248,53 @@ pub type renderInfo_t = renderInfo_s;
 // Movement information structure
 
 /*
-pub struct moveInfo_s {	// !!!!!!!!!! LOADSAVE-affecting struct !!!!!!!!
-    pub desiredAngles: vec3_t,	// Desired facing angles
-    pub speed: f32,	// Speed of movement
-    pub aspeed: f32,	// Speed of angular movement
-    pub moveDir: vec3_t,	// Direction of movement
-    pub velocity: vec3_t,	// movement velocity
-    pub flags: c_int,			// Special state flags
-}
-
-pub type moveInfo_t = moveInfo_s;
+typedef struct moveInfo_s	// !!!!!!!!!! LOADSAVE-affecting struct !!!!!!!!
+{
+	vec3_t	desiredAngles;	// Desired facing angles
+	float	speed;	// Speed of movement
+	float	aspeed;	// Speed of angular movement
+	vec3_t	moveDir;	// Direction of movement
+	vec3_t	velocity;	// movement velocity
+	int		flags;			// Special state flags
+} moveInfo_t;
 */
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub enum clientConnected_e {
+pub enum clientConnected_t {
     CON_DISCONNECTED,
     CON_CONNECTING,
     CON_CONNECTED,
 }
 
-pub type clientConnected_t = clientConnected_e;
-
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub enum playerTeamStateState_e {
-    TEAM_BEGIN,  // Beginning a team game, spawn at base
+pub enum playerTeamStateState_t {
+    TEAM_BEGIN, // Beginning a team game, spawn at base
     TEAM_ACTIVE, // Now actively playing
 }
-
-pub type playerTeamStateState_t = playerTeamStateState_e;
-
 /*
-pub enum race_e {
-    RACE_NONE = 0,
-    RACE_HUMAN,
-    RACE_BORG,
-    RACE_KLINGON,
-    RACE_HIROGEN,
-    RACE_MALON,
-    RACE_STASIS,
-    RACE_8472,
-    RACE_BOT,
-    RACE_HARVESTER,
-    RACE_REAVER,
-    RACE_AVATAR,
-    RACE_PARASITE,
-    RACE_VULCAN,
-    RACE_BETAZOID,
-    RACE_BOLIAN,
-    RACE_TALAXIAN,
-    RACE_BAJORAN,
-    RACE_HOLOGRAM,
-}
-
-pub type race_t = race_e;
+typedef enum //# race_e
+{
+	RACE_NONE = 0,
+	RACE_HUMAN,
+	RACE_BORG,
+	RACE_KLINGON,
+	RACE_HIROGEN,
+	RACE_MALON,
+	RACE_STASIS,
+	RACE_8472,
+	RACE_BOT,
+	RACE_HARVESTER,
+	RACE_REAVER,
+	RACE_AVATAR,
+	RACE_PARASITE,
+	RACE_VULCAN,
+	RACE_BETAZOID,
+	RACE_BOLIAN,
+	RACE_TALAXIAN,
+	RACE_BAJORAN,
+	RACE_HOLOGRAM
+} race_t;
 */
-
 // !!!!!!!!!! LOADSAVE-affecting structure !!!!!!!!!!
 #[repr(C)]
 pub struct playerTeamState_t {
@@ -329,36 +315,35 @@ pub struct playerTeamState_t {
 
 // !!!!!!!!!! LOADSAVE-affecting structure !!!!!!!!!!
 #[repr(C)]
-pub struct objectives_s {
+pub struct objectives_s
+{
     pub display: qboolean, // A displayable objective?
-    pub status: c_int,     // Succeed or fail or pending
+    pub status: c_int, // Succeed or fail or pending
 }
-
 pub type objectives_t = objectives_s;
-
 // NOTE: This is an arbitrary number greater than our current number of objectives with
 // some fluff just in case we add more in the future.
 pub const MAX_MISSION_OBJ: usize = 100;
 
 // !!!!!!!!!! LOADSAVE-affecting structure !!!!!!!!!!
 #[repr(C)]
-pub struct missionStats_s {
-    pub secretsFound: c_int,               // # of secret areas found
-    pub totalSecrets: c_int,               // # of secret areas that could have been found
-    pub shotsFired: c_int,                 // total number of shots fired
-    pub hits: c_int,                       // Shots that did damage
-    pub enemiesSpawned: c_int,             // # of enemies spawned
-    pub enemiesKilled: c_int,              // # of enemies killed
-    pub saberThrownCnt: c_int,             // # of times saber was thrown
-    pub saberBlocksCnt: c_int,             // # of times saber was used to block
-    pub legAttacksCnt: c_int,              // # of times legs were hit with saber
-    pub armAttacksCnt: c_int,              // # of times arm were hit with saber
-    pub torsoAttacksCnt: c_int,            // # of times torso was hit with saber
-    pub otherAttacksCnt: c_int,            // # of times anything else on a monster was hit with saber
+pub struct missionStats_s
+{
+    pub secretsFound: c_int, // # of secret areas found
+    pub totalSecrets: c_int, // # of secret areas that could have been found
+    pub shotsFired: c_int, // total number of shots fired
+    pub hits: c_int, // Shots that did damage
+    pub enemiesSpawned: c_int, // # of enemies spawned
+    pub enemiesKilled: c_int, // # of enemies killed
+    pub saberThrownCnt: c_int, // # of times saber was thrown
+    pub saberBlocksCnt: c_int, // # of times saber was used to block
+    pub legAttacksCnt: c_int, // # of times legs were hit with saber
+    pub armAttacksCnt: c_int, // # of times arm were hit with saber
+    pub torsoAttacksCnt: c_int, // # of times torso was hit with saber
+    pub otherAttacksCnt: c_int, // # of times anything else on a monster was hit with saber
     pub forceUsed: [c_int; NUM_FORCE_POWERS], // # of times each force power was used
-    pub weaponUsed: [c_int; WP_NUM_WEAPONS],  // # of times each weapon was used
+    pub weaponUsed: [c_int; WP_NUM_WEAPONS], // # of times each weapon was used
 }
-
 pub type missionStats_t = missionStats_s;
 
 // the auto following clients don't follow a specific client
@@ -374,7 +359,7 @@ pub const FOLLOW_ACTIVE2: c_int = -2;
 // !!!!!!!!!! LOADSAVE-affecting structure !!!!!!!!!!
 #[repr(C)]
 pub struct clientSession_t {
-    pub missionObjectivesShown: c_int,     // Number of times mission objectives have been updated
+    pub missionObjectivesShown: c_int, // Number of times mission objectives have been updated
     pub sessionTeam: team_t,
     pub mission_objectives: [objectives_t; MAX_MISSION_OBJ],
     pub missionStats: missionStats_t, // Various totals while on a mission
@@ -388,26 +373,22 @@ pub struct clientPersistant_t {
     pub connected: clientConnected_t,
     pub lastCommand: usercmd_t,
     pub netname: [c_char; 34],
-    pub maxHealth: c_int,      // for handicapping
-    pub enterTime: c_int,      // level.time the client entered the game
-    pub cmd_angles: [i16; 3],  // angles sent over in the last command
+    pub maxHealth: c_int, // for handicapping
+    pub enterTime: c_int, // level.time the client entered the game
+    pub cmd_angles: [i16; 3], // angles sent over in the last command
 
     pub teamState: playerTeamState_t, // status in teamplay games
 }
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub enum saberBlockType_e {
+pub enum saberBlockType_t {
     BLK_NO,
     BLK_TIGHT, // Block only attacks and shots around the saber itself, a bbox of around 12x12x12
-    BLK_WIDE,  // Block all attacks in an area around the player in a rough arc of 180 degrees
+    BLK_WIDE, // Block all attacks in an area around the player in a rough arc of 180 degrees
 }
 
-pub type saberBlockType_t = saberBlockType_e;
-
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub enum saberBlockedType_e {
+pub enum saberBlockedType_t {
     BLOCKED_NONE,
     BLOCKED_PARRY_BROKEN,
     BLOCKED_ATK_BOUNCE,
@@ -423,19 +404,16 @@ pub enum saberBlockedType_e {
     BLOCKED_TOP_PROJ,
 }
 
-pub type saberBlockedType_t = saberBlockedType_e;
-
+// typedef enum //# movetype_e
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub enum movetype_e {
+pub enum movetype_t
+{
     MT_STATIC = 0,
     MT_WALK,
     MT_RUNJUMP,
     MT_FLYSWIM,
     NUM_MOVETYPES,
 }
-
-pub type movetype_t = movetype_e;
 
 // !!!!!!!!!! LOADSAVE-affecting structure !!!!!!!!!!
 
@@ -460,18 +438,18 @@ pub struct gclient_s {
 
     // sum up damage over an entire frame, so
     // shotgun blasts give a single big kick
-    pub damage_armor: c_int,      // damage absorbed by armor
-    pub damage_blood: c_int,      // damage taken out of health
-    pub damage_from: vec3_t,      // origin for vector calculation
-    pub damage_fromWorld: bool,   // if true, don't use the damage_from vector
+    pub damage_armor: c_int, // damage absorbed by armor
+    pub damage_blood: c_int, // damage taken out of health
+    pub damage_from: vec3_t, // origin for vector calculation
+    pub damage_fromWorld: bool, // if true, don't use the damage_from vector
     pub noclip: bool,
     //icarus forced moving.  is this still used?
-    pub forced_forwardmove: i8,
-    pub forced_rightmove: i8,
+    pub forced_forwardmove: c_schar,
+    pub forced_rightmove: c_schar,
 
     // timers
     pub respawnTime: c_int, // can respawn when time > this, force after g_forcerespwan
-    pub idleTime: c_int,    // for playing idleAnims
+    pub idleTime: c_int, // for playing idleAnims
 
     pub airOutTime: c_int,
 
@@ -481,8 +459,8 @@ pub struct gclient_s {
 
     // Facial Expression Timers
 
-    pub facial_blink: f32,  // time before next blink. If a minus value, we are in blink mode
-    pub facial_timer: f32,  // time before next alert, frown or smile. If a minus value, we are in anim mode
+    pub facial_blink: f32, // time before next blink. If a minus value, we are in blink mode
+    pub facial_timer: f32, // time before next alert, frown or smile. If a minus value, we are in anim mode
     pub facial_anim: c_int, // anim to show in anim mode
 
     //Client info - updated when ClientInfoChanged is called, instead of using configstrings
@@ -497,37 +475,37 @@ pub struct gclient_s {
     //Used to be in gentity_t, now here.. mostly formation stuff
     pub playerTeam: team_t,
     pub enemyTeam: team_t,
-    pub leader: *mut gentity_s,
+    pub leader: *mut gentity_t,
     pub NPC_class: class_t,
 
     //FIXME: could combine these
-    pub hiddenDist: f32,    //How close ents have to be to pick you up as an enemy
-    pub hiddenDir: vec3_t,  //Normalized direction in which NPCs can't see you (you are hidden)
+    pub hiddenDist: f32, //How close ents have to be to pick you up as an enemy
+    pub hiddenDir: vec3_t, //Normalized direction in which NPCs can't see you (you are hidden)
 
     pub renderInfo: renderInfo_t,
 
     //dismember tracker
     pub dismembered: bool,
-    pub dismemberProbLegs: c_char,   // probability of the legs being dismembered (located in NPC.cfg, 0 = never, 100 = always)
-    pub dismemberProbHead: c_char,   // probability of the head being dismembered (located in NPC.cfg, 0 = never, 100 = always)
-    pub dismemberProbArms: c_char,   // probability of the arms being dismembered (located in NPC.cfg, 0 = never, 100 = always)
-    pub dismemberProbHands: c_char,  // probability of the hands being dismembered (located in NPC.cfg, 0 = never, 100 = always)
-    pub dismemberProbWaist: c_char,  // probability of the waist being dismembered (located in NPC.cfg, 0 = never, 100 = always)
+    pub dismemberProbLegs: c_char, // probability of the legs being dismembered (located in NPC.cfg, 0 = never, 100 = always)
+    pub dismemberProbHead: c_char, // probability of the head being dismembered (located in NPC.cfg, 0 = never, 100 = always)
+    pub dismemberProbArms: c_char, // probability of the arms being dismembered (located in NPC.cfg, 0 = never, 100 = always)
+    pub dismemberProbHands: c_char, // probability of the hands being dismembered (located in NPC.cfg, 0 = never, 100 = always)
+    pub dismemberProbWaist: c_char, // probability of the waist being dismembered (located in NPC.cfg, 0 = never, 100 = always)
 
     pub standheight: c_int,
     pub crouchheight: c_int,
-    pub poisonDamage: c_int,             // Amount of poison damage to be given
-    pub poisonTime: c_int,               // When to apply poison damage
-    pub slopeRecalcTime: c_int,          // debouncer for slope-foot-height-diff calcing
+    pub poisonDamage: c_int, // Amount of poison damage to be given
+    pub poisonTime: c_int, // When to apply poison damage
+    pub slopeRecalcTime: c_int, // debouncer for slope-foot-height-diff calcing
 
     pub pushVec: vec3_t,
     pub pushVecTime: c_int,
 
-    pub noRagTime: c_int,           //don't do ragdoll stuff if > level.time
+    pub noRagTime: c_int, //don't do ragdoll stuff if > level.time
     pub isRagging: qboolean,
-    pub overridingBones: c_int,     //dragging body or doing something else to override one or more ragdoll effector's/pcj's
+    pub overridingBones: c_int, //dragging body or doing something else to override one or more ragdoll effector's/pcj's
 
-    pub ragLastOrigin: vec3_t,      //keeping track of positions between rags while dragging corpses
+    pub ragLastOrigin: vec3_t, //keeping track of positions between rags while dragging corpses
     pub ragLastOriginTime: c_int,
 
     //push refraction effect vars
@@ -545,359 +523,393 @@ pub struct gclient_s {
     pub inSpaceIndex: c_int,
 }
 
-pub type gclient_t = gclient_s;
-
 pub const MAX_PARMS: usize = 16;
 pub const MAX_PARM_STRING_LENGTH: usize = MAX_QPATH; //was 16, had to lengthen it so they could take a valid file path
-
 #[repr(C)]
-pub struct parms_t {
+pub struct parms_t
+{
     pub parm: [[c_char; MAX_PARM_STRING_LENGTH]; MAX_PARMS],
 }
 
+// #ifdef GAME_INCLUDE
+//these hold the place for the enums in functions.h so i don't have to recompile everytime it changes
 #[cfg(feature = "GAME_INCLUDE")]
-pub mod game_include {
-    use super::*;
-
-    //these hold the place for the enums in functions.h so i don't have to recompile everytime it changes
-    pub type thinkFunc_t = c_int;
-    pub type clThinkFunc_t = c_int;
-    pub type reachedFunc_t = c_int;
-    pub type blockedFunc_t = c_int;
-    pub type touchFunc_t = c_int;
-    pub type useFunc_t = c_int;
-    pub type painFunc_t = c_int;
-    pub type dieFunc_t = c_int;
-
-    pub const MAX_FAILED_NODES: usize = 8;
-    pub const MAX_INHAND_WEAPONS: usize = 2;
-
-    pub struct centity_s {
-        _placeholder: [u8; 0],
-    }
-    pub type centity_t = centity_s;
-
-    // !!!!!!!!!!! LOADSAVE-affecting struct !!!!!!!!!!!!!
-    #[repr(C)]
-    pub struct gentity_s {
-        pub s: entityState_t, // communicated by server to clients
-        pub client: *mut super::gclient_s, // NULL if not a player (unless it's NPC ( if (this->NPC != NULL)  )  <sigh>... -slc)
-        pub inuse: qboolean,
-        pub linked: qboolean, // qfalse if not in any good cluster
-
-        pub svFlags: c_int, // SVF_NOCLIENT, SVF_BROADCAST, etc
-
-        pub bmodel: qboolean, // if false, assume an explicit mins / maxs bounding box
-                              // only set by gi.SetBrushModel
-        pub mins: vec3_t,
-        pub maxs: vec3_t,
-        pub contents: c_int, // CONTENTS_TRIGGER, CONTENTS_SOLID, CONTENTS_BODY, etc
-                             // a non-solid entity should set to 0
-
-        pub absmin: vec3_t,
-        pub absmax: vec3_t, // derived from mins/maxs and origin + rotation
-
-        // currentOrigin will be used for all collision detection and world linking.
-        // it will not necessarily be the same as the trajectory evaluation for the current
-        // time, because each entity must be moved one at a time after time is advanced
-        // to avoid simultanious collision issues
-        pub currentOrigin: vec3_t,
-        pub currentAngles: vec3_t,
-
-        pub owner: *mut gentity_s, // objects never interact with their owners, to
-                                    // prevent player missiles from immediately
-                                    // colliding with their owner
-        /*
-        Ghoul2 Insert Start
-        */
-        // this marker thing of Jake's is used for memcpy() length calcs, so don't put any ordinary fields (like above)
-        //	below this point or they won't work, and will mess up all sorts of stuff.
-        //
-        pub ghoul2: CGhoul2Info_v,
-
-        pub modelScale: vec3_t, //needed for g2 collision
-        /*
-        Ghoul2 Insert End
-        */
-
-        // DO NOT MODIFY ANYTHING ABOVE THIS, THE SERVER
-        // EXPECTS THE FIELDS IN THAT ORDER!
-
-        //==========================================================================================
-
-        //Essential entity fields
-        // note: all the char* fields from here on should be left as ptrs, not declared, because of the way that ent-parsing
-        //	works by forcing field offset ptrs as char* and using G_NewString()!! (see G_ParseField() in gmae/g_spawn.cpp -slc
-        //
-        pub classname: *mut c_char,  // set in QuakeEd
-        pub spawnflags: c_int,       // set in QuakeEd
-
-        pub flags: c_int, // FL_* variables
-
-        pub model: *mut c_char,  // Normal model, or legs model on tri-models
-        pub model2: *mut c_char, // Torso model
-
-        pub freetime: c_int, // sv.time when the object was freed
-
-        pub eventTime: c_int, // events will be cleared EVENT_VALID_MSEC after set
-        pub freeAfterEvent: qboolean,
-        //	pub unlinkAfterEvent: qboolean,
-
-        //Physics and movement fields
-        pub physicsBounce: f32, // 1.0 = continuous bounce, 0.0 = no bounce
-        pub clipmask: c_int,    // brushes with this content value will be collided against
-                                // when moving.  items and corpses do not collide against
-                                // players, for instance
-        //	pub moveInfo: moveInfo_t,		//FIXME: use this more?
-        pub speed: f32,
-        pub resultspeed: f32,
-        pub lastMoveTime: c_int,
-        pub movedir: vec3_t,
-        pub lastOrigin: vec3_t,  //Where you were last frame
-        pub lastAngles: vec3_t,  //Where you were looking last frame
-        pub mass: f32,           //How heavy you are
-        pub lastImpact: c_int,   //Last time you impacted something
-
-        //Variables reflecting environment
-        pub watertype: c_int,
-        pub waterlevel: c_int,
-        pub wupdate: i16,
-        pub prev_waterlevel: i16,
-
-        //Targeting/linking fields
-        pub angle: f32,           // set in editor, -1 = up, -2 = down
-        pub target: *mut c_char,
-        pub target2: *mut c_char, //For multiple targets, not used for firing/triggering/using, though, only for path branches
-        pub target3: *mut c_char, //For multiple targets, not used for firing/triggering/using, though, only for path branches
-        pub target4: *mut c_char, //For multiple targets, not used for firing/triggering/using, though, only for path branches
-        pub targetJump: *mut c_char,
-        pub targetname: *mut c_char,
-        pub team: *mut c_char,
-
-        pub roff: *mut c_char, // the roff file to use, if there is one
-        // fxFile overlay: name of the external effect file
-
-        pub roff_ctr: c_int, // current roff frame we are playing
-
-        pub next_roff_time: c_int,
-        pub fx_time: c_int, // timer for beam in/out effects.
-
-        //Think Functions
-        pub nextthink: c_int,                      //Used to determine if it's time to call e_ThinkFunc again
-        pub e_ThinkFunc: game_include::thinkFunc_t,    //Called once every game frame for every ent
-        pub e_clThinkFunc: game_include::clThinkFunc_t, //Think func for equivalent centity
-        pub e_ReachedFunc: game_include::reachedFunc_t, // movers call this when hitting endpoint
-        pub e_BlockedFunc: game_include::blockedFunc_t,
-        pub e_TouchFunc: game_include::touchFunc_t,
-        pub e_UseFunc: game_include::useFunc_t, //Called by G_UseTargets
-        pub e_PainFunc: game_include::painFunc_t,  //Called by G_Damage when damage is taken
-        pub e_DieFunc: game_include::dieFunc_t,   //Called by G_Damage when health reaches <= 0
-
-        //Health and damage fields
-        pub health: c_int,
-        pub max_health: c_int,
-        pub takedamage: qboolean,
-        pub material: material_t,
-        pub damage: c_int,
-        pub dflags: c_int,
-        //explosives, breakable brushes
-        pub splashDamage: c_int, // quad will increase this without increasing radius
-        pub splashRadius: c_int,
-        pub methodOfDeath: c_int,
-        pub splashMethodOfDeath: c_int,
-        //pub hitLoc: c_int,//where you were last hit
-        pub locationDamage: [c_int; HL_MAX], // Damage accumulated on different body locations
-
-        //Entity pointers
-        pub chain: *mut gentity_s,
-        pub enemy: *mut gentity_s,
-        pub activator: *mut gentity_s,
-        pub teamchain: *mut gentity_s,     // next entity in team
-        pub teammaster: *mut gentity_s,    // master of the team
-        pub lastEnemy: *mut gentity_s,
-
-        //Timing variables, counters and debounce times
-        pub wait: f32,
-        pub random: f32,
-        pub delay: c_int,
-        pub alt_fire: qboolean,
-        pub count: c_int,
-        pub bounceCount: c_int,
-        pub fly_sound_debounce_time: c_int, // wind tunnel
-        pub painDebounceTime: c_int,
-        pub disconnectDebounceTime: c_int,
-        pub attackDebounceTime: c_int,
-        pub pushDebounceTime: c_int,
-        pub aimDebounceTime: c_int,
-        pub useDebounceTime: c_int,
-
-        //Unions for miscellaneous fields used under very specific circumstances
-        pub trigger_formation: qboolean,
-        // misc_dlight_active overlay
-        // has_bounced overlay: for thermal Det.  we force at least one bounce to happen before it can do proximity checks
-
-        //Navigation
-        pub spawnContents: c_int,        // store contents of ents on spawn so nav system can restore them
-        pub waypoint: c_int,             //Set once per frame, if you've moved, and if someone asks
-        pub wayedge: c_int,              //Used by doors and breakable things to know what edge goes through them
-        pub lastWaypoint: c_int,         //To make sure you don't double-back
-        pub lastInAirTime: c_int,
-        pub noWaypointTime: c_int,       //Debouncer - so don't keep checking every waypoint in existance every frame that you can't find one
-        pub combatPoint: c_int,
-        pub followPos: vec3_t,
-        pub followPosRecalcTime: c_int,
-        pub followPosWaypoint: c_int,
-
-        //Animation
-        pub loopAnim: qboolean,
-        pub startFrame: c_int,
-        pub endFrame: c_int,
-
-        //Script/ICARUS-related fields
-        pub m_iIcarusID: c_int,
-        pub taskID: [c_int; NUM_TIDS],
-        pub parms: *mut parms_t,
-        pub behaviorSet: [*mut c_char; NUM_BSETS],
-        pub script_targetname: *mut c_char,
-        pub delayScriptTime: c_int,
-
-        // Ambient sound info
-        pub soundSet: *mut c_char, //Only used for local sets
-        pub setTime: c_int,
-
-        //Used by cameras to locate subjects
-        pub cameraGroup: *mut c_char,
-
-        //For damage
-        pub noDamageTeam: team_t,
-
-        // Ghoul2 Animation info
-        pub playerModel: i16,
-        pub weaponModel: [i16; MAX_INHAND_WEAPONS],
-        pub handRBolt: i16,
-        pub handLBolt: i16,
-        pub headBolt: i16,
-        pub cervicalBolt: i16,
-        pub chestBolt: i16,
-        pub gutBolt: i16,
-        pub torsoBolt: i16,
-        pub crotchBolt: i16,
-        pub motionBolt: i16,
-        pub kneeLBolt: i16,
-        pub kneeRBolt: i16,
-        pub elbowLBolt: i16,
-        pub elbowRBolt: i16,
-        pub footLBolt: i16,
-        pub footRBolt: i16,
-        pub faceBone: i16,
-        pub craniumBone: i16,
-        pub cervicalBone: i16,
-        pub thoracicBone: i16,
-        pub upperLumbarBone: i16,
-        pub lowerLumbarBone: i16,
-        pub hipsBone: i16,
-        pub motionBone: i16,
-        pub rootBone: i16,
-        pub footLBone: i16,
-        pub footRBone: i16,
-        pub humerusRBone: i16,
-
-        pub genericBone1: i16,     // For bones special to an entity
-        pub genericBone2: i16,
-        pub genericBone3: i16,
-
-        pub genericBolt1: i16,     // For bolts special to an entity
-        pub genericBolt2: i16,
-        pub genericBolt3: i16,
-        pub genericBolt4: i16,
-        pub genericBolt5: i16,
-
-        pub cinematicModel: qhandle_t,
-
-        //==========================================================================================
-
-        //FIELDS USED EXCLUSIVELY BY SPECIFIC CLASSES OF ENTITIES
-        // Vehicle information.
-        // The vehicle object.
-        pub m_pVehicle: *mut Vehicle_t,
-
-        //NPC/Player entity fields
-        //FIXME: Make these client only?
-        pub NPC: *mut gNPC_t, //Only allocated if the entity becomes an NPC
-
-        //Other NPC/Player-related entity fields
-        pub ownername: *mut c_char, //Used by squadpaths to locate owning NPC
-
-        //FIXME: Only used by NPCs, move it to gNPC_t
-        pub cantHitEnemyCounter: c_int, //HACK - Makes them look for another enemy on the same team if the one they're after can't be hit
-
-        //Only used by NPC_spawners
-        pub NPC_type: *mut c_char,
-        pub NPC_targetname: *mut c_char,
-        pub NPC_target: *mut c_char,
-
-        //Variables used by movers (most likely exclusively by them)
-        pub moverState: moverState_t,
-        pub soundPos1: c_int,
-        pub sound1to2: c_int,
-        pub sound2to1: c_int,
-        pub soundPos2: c_int,
-        pub soundLoop: c_int,
-        pub nextTrain: *mut gentity_s,
-        pub prevTrain: *mut gentity_s,
-        pub pos1: vec3_t,
-        pub pos2: vec3_t,
-        pub pos3: vec3_t,
-        pub sounds: c_int,
-        pub closetarget: *mut c_char,
-        pub opentarget: *mut c_char,
-        pub paintarget: *mut c_char,
-        pub lockCount: c_int, //for maglocks- actually get put on the trigger for the door
-
-        //Variables used only by waypoints (for the most part)
-        pub radius: f32,
-
-        pub wpIndex: c_int,
-        // fxID overlay: id of the external effect file
-
-        pub noise_index: c_int,
-
-        pub startRGBA: vec4_t,
-
-        pub finalRGBA: vec4_t,
-        // pos4 overlay: vec3_t
-        // modelAngles overlay: vec3_t	//for brush entities with an attached md3 model, as an offset to the brush's angles
-
-        //FIXME: Are these being used anymore?
-        pub item: *mut gitem_t,    // for bonus items -
-        pub message: *mut c_char,  //Used by triggers to print a message when activated
-
-        pub lightLevel: f32,
-
-        //FIXME: can these be removed/condensed/absorbed?
-        //Rendering info
-        //pub color: c_int,
-
-        //Force effects
-        pub forcePushTime: c_int,
-        pub forcePuller: c_int, //who force-pulled me (so we don't damage them if we hit them)
-    }
-
-    pub type gentity_t = gentity_s;
-}
-
-// External declarations
-#[cfg(not(feature = "GAME_INCLUDE"))]
-extern "C" {
-    pub static mut g_entities: [gentity_s; MAX_GENTITIES];
-}
+pub type thinkFunc_t = c_int;
+#[cfg(feature = "GAME_INCLUDE")]
+pub type clThinkFunc_t = c_int;
+#[cfg(feature = "GAME_INCLUDE")]
+pub type reachedFunc_t = c_int;
+#[cfg(feature = "GAME_INCLUDE")]
+pub type blockedFunc_t = c_int;
+#[cfg(feature = "GAME_INCLUDE")]
+pub type touchFunc_t = c_int;
+#[cfg(feature = "GAME_INCLUDE")]
+pub type useFunc_t = c_int;
+#[cfg(feature = "GAME_INCLUDE")]
+pub type painFunc_t = c_int;
+#[cfg(feature = "GAME_INCLUDE")]
+pub type dieFunc_t = c_int;
 
 #[cfg(feature = "GAME_INCLUDE")]
-pub use game_include::gentity_s;
+pub const MAX_FAILED_NODES: c_int = 8;
+#[cfg(feature = "GAME_INCLUDE")]
+pub const MAX_INHAND_WEAPONS: usize = 2;
 
-#[cfg(not(target_os = "windows"))]
+
+// typedef struct centity_s centity_t; — forward declaration only; the struct body is
+// defined outside this header (cg_local.h), which is not among this file's #includes,
+// so it is left as an opaque (zero-variant, uninstantiable) type rather than fabricated.
+#[cfg(feature = "GAME_INCLUDE")]
+pub enum centity_s {}
+#[cfg(feature = "GAME_INCLUDE")]
+pub type centity_t = centity_s;
+
+// Anonymous unions used inside `struct gentity_s` below. Rust has no anonymous-union
+// struct fields, so each is given a name (matching the C source's first alternative)
+// and a dedicated union type; the other C names become alternate union members.
+
+// union { char *roff; char *fxFile; };
+#[cfg(feature = "GAME_INCLUDE")]
+#[repr(C)]
+pub union gentity_s_roff_u {
+    pub roff: *mut c_char, // the roff file to use, if there is one
+    pub fxFile: *mut c_char, // name of the external effect file
+}
+
+// union { qboolean trigger_formation; qboolean misc_dlight_active; qboolean has_bounced; };
+#[cfg(feature = "GAME_INCLUDE")]
+#[repr(C)]
+pub union gentity_s_trigger_formation_u {
+    pub trigger_formation: qboolean,
+    pub misc_dlight_active: qboolean,
+    pub has_bounced: qboolean, // for thermal Det.  we force at least one bounce to happen before it can do proximity checks
+}
+
+// union { int wpIndex; int fxID; };
+#[cfg(feature = "GAME_INCLUDE")]
+#[repr(C)]
+pub union gentity_s_wpIndex_u {
+    pub wpIndex: c_int,
+    pub fxID: c_int, // id of the external effect file
+}
+
+// union { vec4_t finalRGBA; vec3_t pos4; vec3_t modelAngles; };
+#[cfg(feature = "GAME_INCLUDE")]
+#[repr(C)]
+pub union gentity_s_finalRGBA_u {
+    pub finalRGBA: vec4_t,
+    pub pos4: vec3_t,
+    pub modelAngles: vec3_t, //for brush entities with an attached md3 model, as an offset to the brush's angles
+}
+
+// !!!!!!!!!!! LOADSAVE-affecting struct !!!!!!!!!!!!!
+#[cfg(feature = "GAME_INCLUDE")]
+#[repr(C)]
+pub struct gentity_s {
+    pub s: entityState_t, // communicated by server to clients
+    pub client: *mut gclient_s, // NULL if not a player (unless it's NPC ( if (this->NPC != NULL)  )  <sigh>... -slc)
+    pub inuse: qboolean,
+    pub linked: qboolean, // qfalse if not in any good cluster
+
+    pub svFlags: c_int, // SVF_NOCLIENT, SVF_BROADCAST, etc
+
+    pub bmodel: qboolean, // if false, assume an explicit mins / maxs bounding box
+                          // only set by gi.SetBrushModel
+    pub mins: vec3_t,
+    pub maxs: vec3_t,
+    pub contents: c_int, // CONTENTS_TRIGGER, CONTENTS_SOLID, CONTENTS_BODY, etc
+                         // a non-solid entity should set to 0
+
+    pub absmin: vec3_t,
+    pub absmax: vec3_t, // derived from mins/maxs and origin + rotation
+
+    // currentOrigin will be used for all collision detection and world linking.
+    // it will not necessarily be the same as the trajectory evaluation for the current
+    // time, because each entity must be moved one at a time after time is advanced
+    // to avoid simultanious collision issues
+    pub currentOrigin: vec3_t,
+    pub currentAngles: vec3_t,
+
+    pub owner: *mut gentity_t, // objects never interact with their owners, to
+                               // prevent player missiles from immediately
+                               // colliding with their owner
+/*
+Ghoul2 Insert Start
+*/
+    // this marker thing of Jake's is used for memcpy() length calcs, so don't put any ordinary fields (like above)
+    //	below this point or they won't work, and will mess up all sorts of stuff.
+    //
+    pub ghoul2: CGhoul2Info_v,
+
+    pub modelScale: vec3_t, //needed for g2 collision
+/*
+Ghoul2 Insert End
+*/
+
+    // DO NOT MODIFY ANYTHING ABOVE THIS, THE SERVER
+    // EXPECTS THE FIELDS IN THAT ORDER!
+
+//==========================================================================================
+
+//Essential entity fields
+    // note: all the char* fields from here on should be left as ptrs, not declared, because of the way that ent-parsing
+    //	works by forcing field offset ptrs as char* and using G_NewString()!! (see G_ParseField() in gmae/g_spawn.cpp -slc
+    //
+    pub classname: *mut c_char, // set in QuakeEd
+    pub spawnflags: c_int, // set in QuakeEd
+
+    pub flags: c_int, // FL_* variables
+
+    pub model: *mut c_char, // Normal model, or legs model on tri-models
+    pub model2: *mut c_char, // Torso model
+
+    pub freetime: c_int, // sv.time when the object was freed
+
+    pub eventTime: c_int, // events will be cleared EVENT_VALID_MSEC after set
+    pub freeAfterEvent: qboolean,
+//	qboolean	unlinkAfterEvent;
+
+//Physics and movement fields
+    pub physicsBounce: f32, // 1.0 = continuous bounce, 0.0 = no bounce
+    pub clipmask: c_int, // brushes with this content value will be collided against
+                        // when moving.  items and corpses do not collide against
+                        // players, for instance
+//	moveInfo_t	moveInfo;		//FIXME: use this more?
+    pub speed: f32,
+    pub resultspeed: f32,
+    pub lastMoveTime: c_int,
+    pub movedir: vec3_t,
+    pub lastOrigin: vec3_t, //Where you were last frame
+    pub lastAngles: vec3_t, //Where you were looking last frame
+    pub mass: f32, //How heavy you are
+    pub lastImpact: c_int, //Last time you impacted something
+
+//Variables reflecting environment
+    pub watertype: c_int,
+    pub waterlevel: c_int,
+    pub wupdate: i16,
+    pub prev_waterlevel: i16,
+
+//Targeting/linking fields
+    pub angle: f32, // set in editor, -1 = up, -2 = down
+    pub target: *mut c_char,
+    pub target2: *mut c_char, //For multiple targets, not used for firing/triggering/using, though, only for path branches
+    pub target3: *mut c_char, //For multiple targets, not used for firing/triggering/using, though, only for path branches
+    pub target4: *mut c_char, //For multiple targets, not used for firing/triggering/using, though, only for path branches
+    pub targetJump: *mut c_char,
+    pub targetname: *mut c_char,
+    pub team: *mut c_char,
+
+    pub roff: gentity_s_roff_u,
+
+    pub roff_ctr: c_int, // current roff frame we are playing
+
+    pub next_roff_time: c_int,
+    pub fx_time: c_int, // timer for beam in/out effects.
+
+//Think Functions
+    pub nextthink: c_int, //Used to determine if it's time to call e_ThinkFunc again
+    pub e_ThinkFunc: thinkFunc_t, //Called once every game frame for every ent
+    pub e_clThinkFunc: clThinkFunc_t, //Think func for equivalent centity
+    pub e_ReachedFunc: reachedFunc_t, // movers call this when hitting endpoint
+    pub e_BlockedFunc: blockedFunc_t,
+    pub e_TouchFunc: touchFunc_t, //Called by G_UseTargets
+    pub e_UseFunc: useFunc_t, //Called by G_UseTargets
+    pub e_PainFunc: painFunc_t, //Called by G_Damage when damage is taken
+    pub e_DieFunc: dieFunc_t, //Called by G_Damage when health reaches <= 0
+
+//Health and damage fields
+    pub health: c_int,
+    pub max_health: c_int,
+    pub takedamage: qboolean,
+    pub material: material_t,
+    pub damage: c_int,
+    pub dflags: c_int,
+    //explosives, breakable brushes
+    pub splashDamage: c_int, // quad will increase this without increasing radius
+    pub splashRadius: c_int,
+    pub methodOfDeath: c_int,
+    pub splashMethodOfDeath: c_int,
+    //int			hitLoc;//where you were last hit
+    pub locationDamage: [c_int; HL_MAX], // Damage accumulated on different body locations
+
+//Entity pointers
+    pub chain: *mut gentity_t,
+    pub enemy: *mut gentity_t,
+    pub activator: *mut gentity_t,
+    pub teamchain: *mut gentity_t, // next entity in team
+    pub teammaster: *mut gentity_t, // master of the team
+    pub lastEnemy: *mut gentity_t,
+
+//Timing variables, counters and debounce times
+    pub wait: f32,
+    pub random: f32,
+    pub delay: c_int,
+    pub alt_fire: qboolean,
+    pub count: c_int,
+    pub bounceCount: c_int,
+    pub fly_sound_debounce_time: c_int, // wind tunnel
+    pub painDebounceTime: c_int,
+    pub disconnectDebounceTime: c_int,
+    pub attackDebounceTime: c_int,
+    pub pushDebounceTime: c_int,
+    pub aimDebounceTime: c_int,
+    pub useDebounceTime: c_int,
+
+//Unions for miscellaneous fields used under very specific circumstances
+    pub trigger_formation: gentity_s_trigger_formation_u,
+
+//Navigation
+    pub spawnContents: c_int, // store contents of ents on spawn so nav system can restore them
+    pub waypoint: c_int, //Set once per frame, if you've moved, and if someone asks
+    pub wayedge: c_int, //Used by doors and breakable things to know what edge goes through them
+    pub lastWaypoint: c_int, //To make sure you don't double-back
+    pub lastInAirTime: c_int,
+    pub noWaypointTime: c_int, //Debouncer - so don't keep checking every waypoint in existance every frame that you can't find one
+    pub combatPoint: c_int,
+    pub followPos: vec3_t,
+    pub followPosRecalcTime: c_int,
+    pub followPosWaypoint: c_int,
+
+//Animation
+    pub loopAnim: qboolean,
+    pub startFrame: c_int,
+    pub endFrame: c_int,
+
+//Script/ICARUS-related fields
+    pub m_iIcarusID: c_int,
+    pub taskID: [c_int; NUM_TIDS],
+    pub parms: *mut parms_t,
+    pub behaviorSet: [*mut c_char; NUM_BSETS],
+    pub script_targetname: *mut c_char,
+    pub delayScriptTime: c_int,
+
+// Ambient sound info
+    pub soundSet: *mut c_char, //Only used for local sets
+    pub setTime: c_int,
+
+//Used by cameras to locate subjects
+    pub cameraGroup: *mut c_char,
+
+//For damage
+    pub noDamageTeam: team_t,
+
+// Ghoul2 Animation info
+    pub playerModel: i16,
+    pub weaponModel: [i16; MAX_INHAND_WEAPONS],
+    pub handRBolt: i16,
+    pub handLBolt: i16,
+    pub headBolt: i16,
+    pub cervicalBolt: i16,
+    pub chestBolt: i16,
+    pub gutBolt: i16,
+    pub torsoBolt: i16,
+    pub crotchBolt: i16,
+    pub motionBolt: i16,
+    pub kneeLBolt: i16,
+    pub kneeRBolt: i16,
+    pub elbowLBolt: i16,
+    pub elbowRBolt: i16,
+    pub footLBolt: i16,
+    pub footRBolt: i16,
+    pub faceBone: i16,
+    pub craniumBone: i16,
+    pub cervicalBone: i16,
+    pub thoracicBone: i16,
+    pub upperLumbarBone: i16,
+    pub lowerLumbarBone: i16,
+    pub hipsBone: i16,
+    pub motionBone: i16,
+    pub rootBone: i16,
+    pub footLBone: i16,
+    pub footRBone: i16,
+    pub humerusRBone: i16,
+
+    pub genericBone1: i16, // For bones special to an entity
+    pub genericBone2: i16,
+    pub genericBone3: i16,
+
+    pub genericBolt1: i16, // For bolts special to an entity
+    pub genericBolt2: i16,
+    pub genericBolt3: i16,
+    pub genericBolt4: i16,
+    pub genericBolt5: i16,
+
+    pub cinematicModel: qhandle_t,
+
+//==========================================================================================
+
+//FIELDS USED EXCLUSIVELY BY SPECIFIC CLASSES OF ENTITIES
+    // Vehicle information.
+    // The vehicle object.
+    pub m_pVehicle: *mut Vehicle_t,
+
+    //NPC/Player entity fields
+    //FIXME: Make these client only?
+    pub NPC: *mut gNPC_t, //Only allocated if the entity becomes an NPC
+
+    //Other NPC/Player-related entity fields
+    pub ownername: *mut c_char, //Used by squadpaths to locate owning NPC
+
+//FIXME: Only used by NPCs, move it to gNPC_t
+    pub cantHitEnemyCounter: c_int, //HACK - Makes them look for another enemy on the same team if the one they're after can't be hit
+
+//Only used by NPC_spawners
+    pub NPC_type: *mut c_char,
+    pub NPC_targetname: *mut c_char,
+    pub NPC_target: *mut c_char,
+
+//Variables used by movers (most likely exclusively by them)
+    pub moverState: moverState_t,
+    pub soundPos1: c_int,
+    pub sound1to2: c_int,
+    pub sound2to1: c_int,
+    pub soundPos2: c_int,
+    pub soundLoop: c_int,
+    pub nextTrain: *mut gentity_t,
+    pub prevTrain: *mut gentity_t,
+    pub pos1: vec3_t,
+    pub pos2: vec3_t,
+    pub pos3: vec3_t,
+    pub sounds: c_int,
+    pub closetarget: *mut c_char,
+    pub opentarget: *mut c_char,
+    pub paintarget: *mut c_char,
+    pub lockCount: c_int, //for maglocks- actually get put on the trigger for the door
+
+//Variables used only by waypoints (for the most part)
+    pub radius: f32,
+
+    pub wpIndex: gentity_s_wpIndex_u,
+
+    pub noise_index: c_int,
+
+    pub startRGBA: vec4_t,
+
+    pub finalRGBA: gentity_s_finalRGBA_u,
+
+//FIXME: Are these being used anymore?
+    pub item: *mut gitem_t, // for bonus items -
+    pub message: *mut c_char, //Used by triggers to print a message when activated
+
+    pub lightLevel: f32,
+
+    //FIXME: can these be removed/condensed/absorbed?
+    //Rendering info
+    //int			color;
+
+    //Force effects
+    pub forcePushTime: c_int,
+    pub forcePuller: c_int, //who force-pulled me (so we don't damage them if we hit them)
+}
+// #endif //#ifdef GAME_INCLUDE
+
 extern "C" {
-    pub static gi: game_import_t;
+    pub static mut g_entities: [gentity_t; MAX_GENTITIES as usize];
+}
+#[cfg(not(feature = "_USRDLL"))]
+extern "C" {
+    pub static mut gi: game_import_t;
 }
 
 // each WP_* weapon enum has an associated weaponInfo_t
@@ -908,15 +920,15 @@ pub struct weaponInfo_s {
     pub registered: qboolean,
     pub item: *mut gitem_t,
 
-    pub handsModel: qhandle_t,        // the hands don't actually draw, they just position the weapon
-    pub weaponModel: qhandle_t,       //for in view
-    pub weaponWorldModel: qhandle_t,  //for in their hands
+    pub handsModel: qhandle_t, // the hands don't actually draw, they just position the weapon
+    pub weaponModel: qhandle_t, //for in view
+    pub weaponWorldModel: qhandle_t, //for in their hands
     pub barrelModel: [qhandle_t; 4],
 
     pub weaponMidpoint: vec3_t, // so it will rotate centered instead of by tag
 
-    pub weaponIcon: qhandle_t,        // The version of the icon with a glowy background
-    pub weaponIconNoAmmo: qhandle_t,  // The version of the icon with no ammo warning
+    pub weaponIcon: qhandle_t, // The version of the icon with a glowy background
+    pub weaponIconNoAmmo: qhandle_t, // The version of the icon with no ammo warning
     pub ammoIcon: qhandle_t,
 
     pub ammoModel: qhandle_t,
@@ -929,8 +941,8 @@ pub struct weaponInfo_s {
     pub alt_missileSound: sfxHandle_t,
     pub alt_missileTrailFunc: Option<unsafe extern "C" fn(*mut centity_t, *const weaponInfo_s)>,
 
-    //	pub flashSound: sfxHandle_t,
-    //	pub altFlashSound: sfxHandle_t,
+//	sfxHandle_t		flashSound;
+//	sfxHandle_t		altFlashSound;
 
     pub firingSound: sfxHandle_t,
     pub altFiringSound: sfxHandle_t,
@@ -957,23 +969,16 @@ pub struct weaponInfo_s {
     pub altChargeForce: ffHandle_t,
     #[cfg(feature = "_IMMERSION")]
     pub selectForce: ffHandle_t,
+    // #endif // _IMMERSION
 }
-
 pub type weaponInfo_t = weaponInfo_s;
-
-#[cfg(not(feature = "GAME_INCLUDE"))]
-pub struct centity_s {
-    _placeholder: [u8; 0],
-}
-
-#[cfg(not(feature = "GAME_INCLUDE"))]
-pub type centity_t = centity_s;
 
 extern "C" {
     pub fn CAS_GetBModelSound(name: *const c_char, stage: c_int) -> sfxHandle_t;
 }
 
-// Edge type constants
+// enum
+// {
 pub const EDGE_NORMAL: c_int = 0;
 pub const EDGE_PATH: c_int = 1;
 pub const EDGE_BLOCKED: c_int = 2;
@@ -1003,9 +1008,12 @@ pub const EDGE_WHITE_ONESECOND: c_int = 21;
 pub const EDGE_WHITE_TWOSECOND: c_int = 22;
 pub const EDGE_RED_ONESECOND: c_int = 23;
 pub const EDGE_RED_TWOSECOND: c_int = 24;
+// };
 
-// Node type constants
+// enum
+// {
 pub const NODE_NORMAL: c_int = 0;
 pub const NODE_FLOATING: c_int = 1;
 pub const NODE_GOAL: c_int = 2;
 pub const NODE_NAVGOAL: c_int = 3;
+// };
