@@ -593,7 +593,7 @@ unsafe fn GM_CheckFireState() {
 
                 //see if impact would be too close to me
                 distThreshold = 16384.0; /*128*128*/
-                //default
+ //default
                 if (*NPC).s.weapon == WP_REPEATER {
                     if (*NPCInfo).scriptFlags & SCF_ALT_FIRE != 0 {
                         distThreshold = 65536.0; /*256*256*/
@@ -609,7 +609,7 @@ unsafe fn GM_CheckFireState() {
                     //we've haven't seen them in the last 5 seconds
                     //see if it's too far from where he is
                     distThreshold = 65536.0; /*256*256*/
-                    //default
+ //default
                     if (*NPC).s.weapon == WP_REPEATER {
                         if (*NPCInfo).scriptFlags & SCF_ALT_FIRE != 0 {
                             distThreshold = 262144.0; /*512*512*/
