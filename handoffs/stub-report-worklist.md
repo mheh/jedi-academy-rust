@@ -5,9 +5,10 @@ under the **faithful-port** import-trust skill (`skills/faithful-port/`).
 
 - Originally **179 files / 697 stubs**, all introduced by single-file blind-port
   commits dated 2026-06-28 (pre-skill, before `08c3607`).
-- As of 2026-06-30: **105 done**, **74 files / 134 stubs remaining** (worklist
+- As of 2026-06-30: **111 done**, **68 files remaining** (worklist
   verified in sync with `git grep -c '[u8; 0]'`, no drift). jpeg-6 and qcommon
-  subsystems fully cleared.
+  subsystems fully cleared. Latest batch (6): cl_input_hotswap, BlockStream,
+  NPC_move, g_shared_h, bg_local_h, AI_Grenadier.
 - ENGINE-SPLIT STRATEGY (owner decision 2026-06-30): the two engines `code/`
   (single-player) and `codemp/` (multiplayer) are independent and worked as
   separate streams; clean game-logic (game/cgame/ff/client/server/icarus) is
@@ -84,7 +85,7 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [x] `src/code/game/ghoul2_shared_h.rs` (3)
 - [x] `src/code/game/AI_Mark2.rs` (3)
 - [x] `src/code/ff/IFC/ImmBox_h.rs` (3)
-- [ ] `src/code/client/cl_input_hotswap.rs` (3)
+- [x] `src/code/client/cl_input_hotswap.rs` (3)
 - [x] `src/code/cgame/cg_media_h.rs` (3)
 - [x] `src/code/cgame/cg_info.rs` (3)
 - [ ] `src/code/win32/win_stencilshadow.rs` (2)
@@ -98,11 +99,11 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [x] `src/code/jpeg-6/jcomapi.rs` (2)
 - [x] `src/code/jpeg-6/jcdctmgr.rs` (2)
 - [x] `src/code/jpeg-6/jccolor.rs` (2)
-- [ ] `src/code/icarus/BlockStream.rs` (2)
-- [ ] `src/code/game/NPC_move.rs` (2)
-- [ ] `src/code/game/g_shared_h.rs` (2)
-- [ ] `src/code/game/bg_local_h.rs` (2)
-- [ ] `src/code/game/AI_Grenadier.rs` (2)
+- [x] `src/code/icarus/BlockStream.rs` (2)
+- [x] `src/code/game/NPC_move.rs` (2)
+- [x] `src/code/game/g_shared_h.rs` (2)
+- [x] `src/code/game/bg_local_h.rs` (2)
+- [x] `src/code/game/AI_Grenadier.rs` (2)
 - [ ] `src/code/ff/IFC/ImmSpring_h.rs` (2)
 - [ ] `src/code/ff/IFC/ImmRamp_h.rs` (2)
 - [ ] `src/code/ff/IFC/ImmPeriodic_h.rs` (2)
