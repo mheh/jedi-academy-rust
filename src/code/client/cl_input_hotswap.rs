@@ -7,182 +7,224 @@
 */
 
 #![allow(non_snake_case)]
+#![allow(non_upper_case_globals)]
 
-use core::ffi::{c_int, c_char, c_void};
+use core::ffi::{c_char, c_int};
 
-// Note: These includes represent the original C header dependencies.
-// Actual implementations would need to be ported separately or linked via FFI.
+#[cfg(feature = "jk2mp")]
+use crate::codemp::client::client_h::*;
+#[cfg(feature = "jk2mp")]
+use crate::codemp::cgame::cg_local_h::*;
 
+#[cfg(not(feature = "jk2mp"))]
+use crate::code::client::client_h::*;
+#[cfg(not(feature = "jk2mp"))]
+use crate::code::cgame::cg_local_h::*;
+
+use crate::code::client::cl_input_hotswap_h::*;
+
+// <stdio.h> is not included directly by this file, but sprintf() is used below;
+// declare it as a trusted system libc function per porting rules.
 extern "C" {
-	pub static mut cg: cg_t;
-	pub static mut cls: clientStatic_t;
-	pub static mut showPowers: [c_int; 16]; // MAX_SHOWPOWERS
-
-	pub fn Cvar_Get(var_name: *const c_char, default_value: *const c_char, flags: c_int) -> *mut cvar_t;
-	pub fn Cvar_Set(var_name: *const c_char, value: *const c_char);
-	pub fn Cbuf_ExecuteText(exec_when: c_int, text: *const c_char);
-	pub fn va(fmt: *const c_char, ...) -> *const c_char;
-	pub fn S_RegisterSound(name: *const c_char) -> c_int;
-	pub fn S_StartLocalSound(sfxHandle: c_int, channelNum: c_int);
-	pub fn cgi_S_RegisterSound(name: *const c_char) -> c_int;
-	pub fn cgi_S_StartLocalSound(sfxHandle: c_int, channelNum: c_int);
-	pub fn sprintf(s: *mut c_char, fmt: *const c_char, ...) -> c_int;
+	fn sprintf(s: *mut c_char, fmt: *const c_char, ...) -> c_int;
 }
 
-// Forward declarations of external types
-#[repr(C)]
-pub struct cvar_t {
-	pub name: *mut c_char,
-	pub string: *mut c_char,
-	pub resetString: *mut c_char,
-	pub latchedString: *mut c_char,
-	pub flags: c_int,
-	pub modified: c_int,
-	pub modificationCount: c_int,
-	pub value: f32,
-	pub integer: c_int,
-	pub next: *mut cvar_t,
+
+// #ifdef _JK2MP
+// #define FORCESELECTTIME forceSelectTime
+// #define FORCESELECT		forceSelect
+// #define INVSELECTTIME	invenSelectTime
+// #define INVSELECT		itemSelect
+// #define REGISTERSOUND	S_RegisterSound
+// #define STARTSOUND		S_StartLocalSound
+// #define WEAPONBINDSTR	"weaponclean"
+// #else
+// #define FORCESELECTTIME forcepowerSelectTime
+// #define FORCESELECT		forcepowerSelect
+// #define INVSELECTTIME	inventorySelectTime
+// #define INVSELECT		inventorySelect
+// #define REGISTERSOUND	cgi_S_RegisterSound
+// #define STARTSOUND		cgi_S_StartLocalSound
+// #define WEAPONBINDSTR	"weapon"
+// #endif
+//
+// The FORCESELECT*/INVSELECT* macros stand for differing cg_t member names between
+// _JK2MP and the single-player build; translated below as small cfg-gated accessor
+// functions (Section 3: macros -> const/type/#[inline] fns) since Rust has no
+// member-name macros. REGISTERSOUND/STARTSOUND stand for differing engine function
+// names and are translated the same way. WEAPONBINDSTR stands for differing string
+// literals and is translated as a cfg-gated byte-string const.
+
+#[cfg(feature = "jk2mp")]
+const WEAPONBINDSTR: &[u8] = b"weaponclean\0";
+#[cfg(not(feature = "jk2mp"))]
+const WEAPONBINDSTR: &[u8] = b"weapon\0";
+
+#[cfg(feature = "jk2mp")]
+#[inline]
+unsafe fn FORCESELECTTIME() -> c_int {
+	cg.forceSelectTime
+}
+#[cfg(not(feature = "jk2mp"))]
+#[inline]
+unsafe fn FORCESELECTTIME() -> c_int {
+	cg.forcepowerSelectTime
 }
 
 #[cfg(feature = "jk2mp")]
-#[repr(C)]
-pub struct cg_t {
-	// JK2MP version of cg_t
-	// Minimal placeholder - actual structure would be much larger
-	pub snap: *mut c_void,
-	pub weaponSelect: c_int,
-	pub weaponSelectTime: c_int,
-	pub forceSelect: c_int,
-	pub forceSelectTime: f32,
-	pub itemSelect: c_int,
-	pub invenSelectTime: f32,
-	pub time: c_int,
-	// ... more fields would follow
-	_opaque: [u8; 0],
+#[inline]
+unsafe fn FORCESELECT() -> c_int {
+	cg.forceSelect
 }
-
 #[cfg(not(feature = "jk2mp"))]
-#[repr(C)]
-pub struct cg_t {
-	// Non-JK2MP version of cg_t
-	// Minimal placeholder - actual structure would be much larger
-	pub snap: *mut c_void,
-	pub weaponSelect: c_int,
-	pub weaponSelectTime: c_int,
-	pub forcepowerSelect: c_int,
-	pub forcepowerSelectTime: c_int,
-	pub inventorySelect: c_int,
-	pub inventorySelectTime: c_int,
-	pub time: c_int,
-	// ... more fields would follow
-	_opaque: [u8; 0],
+#[inline]
+unsafe fn FORCESELECT() -> c_int {
+	showPowers[cg.forcepowerSelect as usize]
 }
 
-#[repr(C)]
-pub struct clientStatic_t {
-	pub frametime: c_int,
-	// ... more fields would follow
-	_opaque: [u8; 0],
-}
-
-// Conditional compilation mapping to the original C code
 #[cfg(feature = "jk2mp")]
-const WEAPONBINDSTR: &[u8] = b"weaponclean";
-
+#[inline]
+unsafe fn INVSELECTTIME() -> c_int {
+	cg.invenSelectTime
+}
 #[cfg(not(feature = "jk2mp"))]
-const WEAPONBINDSTR: &[u8] = b"weapon";
+#[inline]
+unsafe fn INVSELECTTIME() -> c_int {
+	cg.inventorySelectTime
+}
+
+#[cfg(feature = "jk2mp")]
+#[inline]
+unsafe fn INVSELECT() -> c_int {
+	cg.itemSelect
+}
+#[cfg(not(feature = "jk2mp"))]
+#[inline]
+unsafe fn INVSELECT() -> c_int {
+	cg.inventorySelect
+}
+
+#[cfg(feature = "jk2mp")]
+#[inline]
+unsafe fn REGISTERSOUND(name: *const c_char) -> c_int {
+	S_RegisterSound(name)
+}
+#[cfg(not(feature = "jk2mp"))]
+#[inline]
+unsafe fn REGISTERSOUND(name: *const c_char) -> c_int {
+	cgi_S_RegisterSound(name)
+}
+
+#[cfg(feature = "jk2mp")]
+#[inline]
+unsafe fn STARTSOUND(sfxHandle: c_int, channelNum: c_int) {
+	S_StartLocalSound(sfxHandle, channelNum)
+}
+#[cfg(not(feature = "jk2mp"))]
+#[inline]
+unsafe fn STARTSOUND(sfxHandle: c_int, channelNum: c_int) {
+	cgi_S_StartLocalSound(sfxHandle, channelNum)
+}
 
 const BIND_TIME: c_int = 3000; //number of milliseconds button is held before binding
-const EXEC_TIME: c_int = 500;  //max ms button can be held to execute in bind mode
-const EXEC_APPEND: c_int = 2;
+const EXEC_TIME: c_int = 500; //max ms button can be held to execute in bind mode
+
 
 #[cfg(feature = "jk2mp")]
-const ITEMCOMMANDS_LEN: usize = 12; // HI_NUM_HOLDABLE
+const itemCommands: [*const c_char; 12] = [
+	core::ptr::null(),						//HI_NONE
+	b"use_seeker\n\0".as_ptr() as *const c_char,
+	b"use_field\n\0".as_ptr() as *const c_char,
+	b"use_bacta\n\0".as_ptr() as *const c_char,
+	b"use_bactabig\n\0".as_ptr() as *const c_char,
+	b"use_electrobinoculars\n\0".as_ptr() as *const c_char,
+	b"use_sentry\n\0".as_ptr() as *const c_char,
+	b"use_jetpack\n\0".as_ptr() as *const c_char,
+	core::ptr::null(),						//ammo dispenser
+	core::ptr::null(),						//health dispenser
+	b"use_eweb\n\0".as_ptr() as *const c_char,
+	b"use_cloak\n\0".as_ptr() as *const c_char,
+];
 #[cfg(not(feature = "jk2mp"))]
-const ITEMCOMMANDS_LEN: usize = 7;  // INV_MAX
-
-const HOTSWAP_CAT_WEAPON: c_int = 0;
-const HOTSWAP_CAT_ITEM: c_int = 1;
-const HOTSWAP_CAT_FORCE: c_int = 2;
-
-const WEAPON_SELECT_TIME: c_int = 1400;
-
-#[cfg(feature = "jk2mp")]
-const ITEMCOMMANDS: &[Option<&[u8]>] = &[
-	None,						//HI_NONE
-	Some(b"use_seeker\n"),
-	Some(b"use_field\n"),
-	Some(b"use_bacta\n"),
-	Some(b"use_bactabig\n"),
-	Some(b"use_electrobinoculars\n"),
-	Some(b"use_sentry\n"),
-	Some(b"use_jetpack\n"),
-	None,						//ammo dispenser
-	None,						//health dispenser
-	Some(b"use_eweb\n"),
-	Some(b"use_cloak\n"),
+const itemCommands: [*const c_char; 7] = [
+	b"use_electrobinoculars\n\0".as_ptr() as *const c_char,
+	b"use_bacta\n\0".as_ptr() as *const c_char,
+	b"use_seeker\n\0".as_ptr() as *const c_char,
+	b"use_goggles\n\0".as_ptr() as *const c_char,
+	b"use_sentry\n\0".as_ptr() as *const c_char,
+	core::ptr::null(),						//goodie key
+	core::ptr::null(),						//security key
 ];
 
-#[cfg(not(feature = "jk2mp"))]
-const ITEMCOMMANDS: &[Option<&[u8]>] = &[
-	Some(b"use_electrobinoculars\n"),
-	Some(b"use_bacta\n"),
-	Some(b"use_seeker\n"),
-	Some(b"use_goggles\n"),
-	Some(b"use_sentry\n"),
-	None,						//goodie key
-	None,						//security key
-];
 
-#[repr(C)]
-pub struct HotSwapManager {
-	down: bool,		//Is the button down?
-	noExec: bool,	//Don't execute the button's bind.
-	noBind: bool,	//Don't bind the button.
-	forceBound: bool,//Is a force power currently bound?
-	downTime: c_int,	//How long the button has been held down.
-	bindTime: c_int,	//How long the button has been down with the selection up.
-	uniqueID: c_int,	//Unique ID for this button.
-}
+
+// Note: HotSwapManager (with its private fields down/noExec/noBind/forceBound/
+// downTime/bindTime/uniqueID) is declared in cl_input_hotswap_h.rs (glob-imported
+// above) rather than in this file, mirroring the C++ split between class
+// declaration (.h) and out-of-line member definitions (.cpp).
 
 impl HotSwapManager {
+	// HotSwapManager::HotSwapManager(int uniqueID)
 	pub fn new(uniqueID: c_int) -> Self {
 		let mut manager = HotSwapManager {
-			uniqueID,
+			down: false, //not in the C++ member-init list; overwritten by Reset() below
+			noExec: false, //not in the C++ member-init list; overwritten by Reset() below
+			noBind: false, //not in the C++ member-init list; overwritten by Reset() below
 			forceBound: false,
-			down: false,
-			noExec: false,
-			noBind: false,
-			downTime: 0,
-			bindTime: 0,
+			downTime: 0, //not in the C++ member-init list; overwritten by Reset() below
+			bindTime: 0, //not in the C++ member-init list; overwritten by Reset() below
+			uniqueID,
 		};
 		manager.Reset();
 		manager
 	}
+
 
 	fn GetBinding(&self) -> *mut c_char {
 		unsafe {
 			let mut buf: [c_char; 64] = [0; 64];
 
 			sprintf(buf.as_mut_ptr(), b"hotswap%d\0".as_ptr() as *const c_char, self.uniqueID);
-			let cvar = Cvar_Get(buf.as_ptr(), b"\0".as_ptr() as *const c_char, 1); // CVAR_ARCHIVE
+			let cvar = Cvar_Get(buf.as_ptr(), b"\0".as_ptr() as *const c_char, CVAR_ARCHIVE);
 
-			if !cvar.is_null() && !(*cvar).string.is_null() {
-				if *(*cvar).string != 0 {
-					return (*cvar).string;
-				}
+			if !cvar.is_null() && *(*cvar).string != 0 {
+				(*cvar).string
+			} else {
+				core::ptr::null_mut()
 			}
-			core::ptr::null_mut()
 		}
 	}
+
+
+	fn Bind(&mut self) {
+		self.forceBound = false;
+
+		unsafe {
+			if self.WeaponSelectUp() {
+				HotSwapBind(self.uniqueID, HOTSWAP_CAT_WEAPON, cg.weaponSelect);
+			} else if self.ForceSelectUp() {
+				self.forceBound = true;
+				HotSwapBind(self.uniqueID, HOTSWAP_CAT_FORCE, FORCESELECT());
+			} else if self.ItemSelectUp() {
+				HotSwapBind(self.uniqueID, HOTSWAP_CAT_ITEM, INVSELECT());
+			} else {
+				assert!(false);
+			}
+
+			self.noExec = true;
+			self.noBind = true;
+			STARTSOUND(REGISTERSOUND(b"sound/interface/update\0".as_ptr() as *const c_char), 0);
+		}
+	}
+
 
 	fn ForceSelectUp(&self) -> bool {
 		unsafe {
-			let force_select_time = self.get_force_select_time();
-			force_select_time != 0 &&
-				(force_select_time + WEAPON_SELECT_TIME >= cg.time)
+			FORCESELECTTIME() != 0 &&
+				(FORCESELECTTIME() + WEAPON_SELECT_TIME >= cg.time)
 		}
 	}
+
 
 	fn WeaponSelectUp(&self) -> bool {
 		unsafe {
@@ -191,63 +233,19 @@ impl HotSwapManager {
 		}
 	}
 
+
 	fn ItemSelectUp(&self) -> bool {
 		unsafe {
-			let inv_select_time = self.get_inv_select_time();
-			inv_select_time != 0 &&
-				(inv_select_time + WEAPON_SELECT_TIME >= cg.time)
+			INVSELECTTIME() != 0 &&
+				(INVSELECTTIME() + WEAPON_SELECT_TIME >= cg.time)
 		}
 	}
+
 
 	fn HUDInBindState(&self) -> bool {
 		self.ForceSelectUp() || self.WeaponSelectUp() || self.ItemSelectUp()
 	}
 
-	fn Bind(&mut self) {
-		self.forceBound = false;
-
-		if self.WeaponSelectUp() {
-			unsafe {
-				HotSwapBind(self.uniqueID, HOTSWAP_CAT_WEAPON, cg.weaponSelect);
-			}
-		} else if self.ForceSelectUp() {
-			self.forceBound = true;
-			let force_idx = unsafe { self.get_force_select_value() };
-			HotSwapBind(self.uniqueID, HOTSWAP_CAT_FORCE, force_idx);
-		} else if self.ItemSelectUp() {
-			let inv_select = unsafe { self.get_inv_select_value() };
-			HotSwapBind(self.uniqueID, HOTSWAP_CAT_ITEM, inv_select);
-		} else {
-			assert!(false, "HotSwapManager::Bind: No selection active");
-		}
-
-		self.noExec = true;
-		self.noBind = true;
-		unsafe {
-			let sfx = Self::register_sound(b"sound/interface/update\0".as_ptr() as *const c_char);
-			Self::start_sound(sfx, 0);
-		}
-	}
-
-	fn Execute(&mut self) {
-		let binding = self.GetBinding();
-		if !binding.is_null() && !self.noExec {
-			if !self.forceBound {
-				self.noExec = true;
-			}
-			unsafe {
-				Cbuf_ExecuteText(EXEC_APPEND, binding);
-			}
-		}
-	}
-
-	fn Reset(&mut self) {
-		self.down = false;
-		self.downTime = 0;
-		self.bindTime = 0;
-		self.noExec = false;
-		self.noBind = false;
-	}
 
 	pub fn Update(&mut self) {
 		unsafe {
@@ -276,6 +274,20 @@ impl HotSwapManager {
 		}
 	}
 
+
+	fn Execute(&mut self) {
+		let binding = self.GetBinding();
+		if !binding.is_null() && !self.noExec {
+			if !self.forceBound {
+				self.noExec = true;
+			}
+			unsafe {
+				Cbuf_ExecuteText(EXEC_APPEND, binding as *const c_char);
+			}
+		}
+	}
+
+
 	pub fn SetDown(&mut self) {
 		//Set the down flag.
 		self.down = true;
@@ -286,6 +298,7 @@ impl HotSwapManager {
 		}
 	}
 
+
 	pub fn SetUp(&mut self) {
 		//Execute the bind if the button was held down for long enough.
 		if self.downTime <= EXEC_TIME {
@@ -295,81 +308,25 @@ impl HotSwapManager {
 		self.Reset();
 	}
 
-	pub fn ButtonDown(&self) -> bool {
-		self.down
-	}
 
-	// Helper method to get force select time based on JK2MP config
-	#[cfg(feature = "jk2mp")]
-	unsafe fn get_force_select_time(&self) -> c_int {
-		cg.forceSelectTime as c_int
-	}
-
-	#[cfg(not(feature = "jk2mp"))]
-	unsafe fn get_force_select_time(&self) -> c_int {
-		cg.forcepowerSelectTime
-	}
-
-	// Helper method to get inventory select time based on JK2MP config
-	#[cfg(feature = "jk2mp")]
-	unsafe fn get_inv_select_time(&self) -> c_int {
-		cg.invenSelectTime as c_int
-	}
-
-	#[cfg(not(feature = "jk2mp"))]
-	unsafe fn get_inv_select_time(&self) -> c_int {
-		cg.inventorySelectTime
-	}
-
-	// Helper method to get force select value based on JK2MP config
-	#[cfg(feature = "jk2mp")]
-	unsafe fn get_force_select_value(&self) -> c_int {
-		cg.forceSelect
-	}
-
-	#[cfg(not(feature = "jk2mp"))]
-	unsafe fn get_force_select_value(&self) -> c_int {
-		showPowers[cg.forcepowerSelect as usize]
-	}
-
-	// Helper method to get inventory select value based on JK2MP config
-	#[cfg(feature = "jk2mp")]
-	unsafe fn get_inv_select_value(&self) -> c_int {
-		cg.itemSelect
-	}
-
-	#[cfg(not(feature = "jk2mp"))]
-	unsafe fn get_inv_select_value(&self) -> c_int {
-		cg.inventorySelect
-	}
-
-	// Helper methods for sound functions based on JK2MP config
-	#[cfg(feature = "jk2mp")]
-	unsafe fn register_sound(name: *const c_char) -> c_int {
-		S_RegisterSound(name)
-	}
-
-	#[cfg(not(feature = "jk2mp"))]
-	unsafe fn register_sound(name: *const c_char) -> c_int {
-		cgi_S_RegisterSound(name)
-	}
-
-	#[cfg(feature = "jk2mp")]
-	unsafe fn start_sound(sfxHandle: c_int, channelNum: c_int) {
-		S_StartLocalSound(sfxHandle, channelNum)
-	}
-
-	#[cfg(not(feature = "jk2mp"))]
-	unsafe fn start_sound(sfxHandle: c_int, channelNum: c_int) {
-		cgi_S_StartLocalSound(sfxHandle, channelNum)
+	fn Reset(&mut self) {
+		self.down = false;
+		self.downTime = 0;
+		self.bindTime = 0;
+		self.noExec = false;
+		self.noBind = false;
 	}
 }
 
-fn HotSwapBind_internal(uniqueID: *const c_char, value: *const c_char) {
-	unsafe {
-		Cvar_Set(uniqueID, value);
-	}
+
+// static void HotSwapBind(const char *uniqueID, const char *value)
+// Renamed from HotSwapBind to HotSwapBind_internal: C++ overload resolution (this
+// 2-arg static/file-local function vs. the public 3-arg HotSwapBind below) has no
+// direct Rust equivalent since Rust does not support free-function overloading.
+unsafe fn HotSwapBind_internal(uniqueID: *const c_char, value: *const c_char) {
+	Cvar_Set(uniqueID, value);
 }
+
 
 pub fn HotSwapBind(buttonID: c_int, category: c_int, value: c_int) {
 	unsafe {
@@ -377,33 +334,21 @@ pub fn HotSwapBind(buttonID: c_int, category: c_int, value: c_int) {
 		sprintf(uniqueID.as_mut_ptr(), b"hotswap%d\0".as_ptr() as *const c_char, buttonID);
 
 		match category {
-		HOTSWAP_CAT_WEAPON => {
-			let cmd_str = va(
-				b"%s %d\n\0".as_ptr() as *const c_char,
-				WEAPONBINDSTR.as_ptr() as *const c_char,
-				value,
-			);
-			HotSwapBind_internal(uniqueID.as_ptr(), cmd_str);
-		}
-		HOTSWAP_CAT_ITEM => {
-			if value >= 0 && (value as usize) < ITEMCOMMANDS.len() {
-				if let Some(cmd) = ITEMCOMMANDS[value as usize] {
-					HotSwapBind_internal(uniqueID.as_ptr(), cmd.as_ptr() as *const c_char);
-				} else {
-					assert!(false, "itemCommands[value] is NULL");
-				}
+			HOTSWAP_CAT_WEAPON => {
+				HotSwapBind_internal(uniqueID.as_ptr(), va(b"%s %d\n\0".as_ptr() as *const c_char, WEAPONBINDSTR.as_ptr() as *const c_char, value));
 			}
-		}
-		HOTSWAP_CAT_FORCE => {
-			let cmd_str = va(
-				b"useGivenForce %d\n\0".as_ptr() as *const c_char,
-				value,
-			);
-			HotSwapBind_internal(uniqueID.as_ptr(), cmd_str);
-		}
-		_ => {
-			assert!(false, "HotSwapBind: invalid category");
-		}
+			HOTSWAP_CAT_ITEM => {
+				// Unchecked indexing preserved to match the original C array subscript
+				// itemCommands[value] (no bounds check in the source).
+				assert!(!(*itemCommands.as_ptr().add(value as usize)).is_null());
+				HotSwapBind_internal(uniqueID.as_ptr(), *itemCommands.as_ptr().add(value as usize));
+			}
+			HOTSWAP_CAT_FORCE => {
+				HotSwapBind_internal(uniqueID.as_ptr(), va(b"useGivenForce %d\n\0".as_ptr() as *const c_char, value));
+			}
+			_ => {
+				assert!(false);
+			}
 		}
 	}
 }
