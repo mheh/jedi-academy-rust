@@ -1,11 +1,19 @@
 // Port of oracle/code/cgame/cg_media.h
+//
+// cg_media.h carries no #include directives of its own; it relies on the
+// including translation unit having already pulled in q_shared.h, cg_local.h,
+// etc.  Accordingly this module declares NO use imports derived from includes.
+// External types (vec4_t, qhandle_t, sfxHandle_t, ffHandle_t, fxHandle_t,
+// gameState_t, glconfig_t, clientInfo_t, vec3_t) and constants
+// (MAX_QPATH, MAX_MODELS, MAX_SOUNDS, MAX_FORCES, MAX_CHARSKINS,
+// MAX_SUBMODELS, MAX_CLIENTS) are trusted to be in scope from the crate graph.
+#![allow(non_snake_case, non_camel_case_types, non_upper_case_globals)]
 
-use core::ffi::{c_int, c_char};
+use core::ffi::{c_char, c_int};
 
 pub const NUM_CROSSHAIRS: usize = 9;
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum footstep_t {
     FOOTSTEP_STONEWALK,
     FOOTSTEP_STONERUN,
@@ -42,24 +50,19 @@ pub const ICON_INVENTORY: c_int = 2;
 
 pub const MAX_HUD_TICS: usize = 4;
 
-// Type aliases for handles
-pub type qhandle_t = c_int;
-pub type sfxHandle_t = c_int;
-pub type fxHandle_t = c_int;
-pub type ffHandle_t = c_int;
 
 #[repr(C)]
-pub struct HUDMenuItem_s {
+pub struct HUDMenuItem_s
+{
     pub menuName: *mut c_char,
     pub itemName: *mut c_char,
     pub xPos: c_int,
     pub yPos: c_int,
     pub width: c_int,
     pub height: c_int,
-    pub color: [f32; 4],  // vec4_t
+    pub color: vec4_t,
     pub background: qhandle_t,
 }
-
 pub type HUDMenuItem_t = HUDMenuItem_s;
 
 extern "C" {
@@ -70,9 +73,10 @@ extern "C" {
     pub static mut otherHUDBits: [HUDMenuItem_t; 0];
 }
 
+
 #[repr(C)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum otherhudbits_t {
+pub enum otherhudbits_t
+{
     OHB_HEALTHAMOUNT = 0,
     OHB_ARMORAMOUNT,
     OHB_FORCEAMOUNT,
@@ -89,9 +93,13 @@ pub enum otherhudbits_t {
 
 pub const NUM_CHUNK_MODELS: usize = 4;
 
+// Porting note: C source has an anonymous `typedef enum { ... };` with no
+// type alias name.  Synthetic name `chunk_type_e` was added to satisfy Rust
+// syntax.  Variants are re-exported at module scope with `pub use
+// chunk_type_e::*` to match C's global-scope enum constant semantics.
 #[repr(C)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum chunk_types_t {
+pub enum chunk_type_e
+{
     CHUNK_METAL1 = 0,
     CHUNK_METAL2,
     CHUNK_ROCK1,
@@ -102,6 +110,7 @@ pub enum chunk_types_t {
     CHUNK_WHITE_METAL,
     NUM_CHUNK_TYPES,
 }
+pub use chunk_type_e::*;
 
 // all of the model, shader, and sound references that are
 // loaded at gamestate time are stored in cgMedia_t
@@ -114,7 +123,7 @@ pub struct cgMedia_t {
 
     pub crosshairShader: [qhandle_t; NUM_CROSSHAIRS],
     pub backTileShader: qhandle_t,
-    //	pub noammoShader: qhandle_t,
+//	pub noammoShader: qhandle_t,
 
     pub numberShaders: [qhandle_t; 11],
     pub smallnumberShaders: [qhandle_t; 11],
@@ -123,7 +132,7 @@ pub struct cgMedia_t {
     pub loadTick: qhandle_t,
     pub loadTickCap: qhandle_t,
 
-    // HUD artwork
+    //			HUD artwork
     pub currentBackground: c_int,
     pub weaponbox: qhandle_t,
     pub weaponIconBackground: qhandle_t,
@@ -132,8 +141,8 @@ pub struct cgMedia_t {
     pub turretComputerOverlayShader: qhandle_t,
     pub turretCrossHairShader: qhandle_t,
 
-    //Chunks
-    pub chunkModels: [[qhandle_t; 4]; 8],  // NUM_CHUNK_TYPES = 8
+//Chunks
+    pub chunkModels: [[qhandle_t; 4]; chunk_type_e::NUM_CHUNK_TYPES as usize],
     pub chunkSound: sfxHandle_t,
     pub grateSound: sfxHandle_t,
     pub rockBreakSound: sfxHandle_t,
@@ -237,7 +246,7 @@ pub struct cgMedia_t {
 
     //new stuff for Jedi Academy
     //force power icons
-    //	pub forcePowerIcons: [qhandle_t; NUM_FORCE_POWERS],
+//	pub forcePowerIcons: [qhandle_t; NUM_FORCE_POWERS],
     pub rageRecShader: qhandle_t,
     pub playerShieldDamage: qhandle_t,
     pub forceSightBubble: qhandle_t,
@@ -264,10 +273,10 @@ pub struct cgMedia_t {
     pub overchargeLoopSound: sfxHandle_t,
     pub overchargeEndSound: sfxHandle_t,
 
-    //	pub useNothingSound: sfxHandle_t,
-    pub footsteps: [[sfxHandle_t; 4]; 25],  // FOOTSTEP_TOTAL = 25
+//	pub useNothingSound: sfxHandle_t,
+    pub footsteps: [[sfxHandle_t; 4]; footstep_t::FOOTSTEP_TOTAL as usize],
 
-    //	pub talkSound: sfxHandle_t,
+//	pub talkSound: sfxHandle_t,
     pub noAmmoSound: sfxHandle_t,
 
     pub landSound: sfxHandle_t,
@@ -295,35 +304,50 @@ pub struct cgMedia_t {
     //new stuff for Jedi Academy
     pub drainSound: sfxHandle_t,
 
-    // force feedback stuff
-    // #ifdef _IMMERSION
+    //force feedback stuff
+    #[cfg(feature = "immersion")]
     pub grenadeBounce1Force: ffHandle_t,
+    #[cfg(feature = "immersion")]
     pub grenadeBounce2Force: ffHandle_t,
 
+    #[cfg(feature = "immersion")]
     pub selectForce: ffHandle_t,
 
-    pub footstepForces: [[ffHandle_t; 4]; 25],  // FOOTSTEP_TOTAL = 25
+    #[cfg(feature = "immersion")]
+    pub footstepForces: [[ffHandle_t; 4]; footstep_t::FOOTSTEP_TOTAL as usize],
 
+    #[cfg(feature = "immersion")]
     pub noAmmoForce: ffHandle_t,
 
+    #[cfg(feature = "immersion")]
     pub landForce: ffHandle_t,
+    #[cfg(feature = "immersion")]
     pub messageLitForce: ffHandle_t,
 
+    #[cfg(feature = "immersion")]
     pub watrInForce: ffHandle_t,
+    #[cfg(feature = "immersion")]
     pub watrOutForce: ffHandle_t,
+    #[cfg(feature = "immersion")]
     pub watrUnForce: ffHandle_t,
 
+    #[cfg(feature = "immersion")]
     pub zoomStartForce: ffHandle_t,
+    #[cfg(feature = "immersion")]
     pub zoomLoopForce: ffHandle_t,
+    #[cfg(feature = "immersion")]
     pub zoomEndForce: ffHandle_t,
+    #[cfg(feature = "immersion")]
     pub disruptorZoomLoopForce: ffHandle_t,
     // #endif // _IMMERSION
 }
 
+
 // Stored FX handles
 //--------------------
 #[repr(C)]
-pub struct cgEffects_t {
+pub struct cgEffects_t
+{
     // BRYAR PISTOL
     pub bryarShotEffect: fxHandle_t,
     pub bryarPowerupShotEffect: fxHandle_t,
@@ -375,41 +399,19 @@ pub struct cgEffects_t {
     pub landingGravel: fxHandle_t,
 }
 
-// Stub types for types defined elsewhere
-#[repr(C)]
-pub struct gameState_t {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-pub struct glconfig_t {
-    _private: [u8; 0],
-}
-
-#[repr(C)]
-pub struct clientInfo_t {
-    _private: [u8; 0],
-}
 
 // The client game static (cgs) structure hold everything
 // loaded or calculated from the gamestate.  It will NOT
 // be cleared when a tournement restart is done, allowing
 // all clients to begin playing instantly
-pub const STRIPED_LEVELNAME_VARIATIONS: usize = 3;  // sigh, to cope with levels that use text from >1 SP file (plus 1 for common)
-pub const MAX_QPATH: usize = 64;  // Stub definition
-pub const MAX_MODELS: usize = 256;  // Stub definition
-pub const MAX_SOUNDS: usize = 256;  // Stub definition
-pub const MAX_FORCES: usize = 64;  // Stub definition
-pub const MAX_CHARSKINS: usize = 128;  // Stub definition
-pub const MAX_SUBMODELS: usize = 256;  // Stub definition
-pub const MAX_CLIENTS: usize = 64;  // Stub definition
+pub const STRIPED_LEVELNAME_VARIATIONS: usize = 3;	// sigh, to cope with levels that use text from >1 SP file (plus 1 for common)
 
 #[repr(C)]
 pub struct cgs_t {
-    pub gameState: gameState_t,        // gamestate from server
-    pub glconfig: glconfig_t,          // rendering configuration
+    pub gameState: gameState_t,			// gamestate from server
+    pub glconfig: glconfig_t,			// rendering configuration
 
-    pub serverCommandSequence: c_int,  // reliable command stream counter
+    pub serverCommandSequence: c_int,	// reliable command stream counter
 
     // parsed from serverinfo
     pub dmflags: c_int,
@@ -419,19 +421,21 @@ pub struct cgs_t {
     pub mapname: [c_char; MAX_QPATH],
     pub stripLevelName: [[c_char; MAX_QPATH]; STRIPED_LEVELNAME_VARIATIONS],
 
+    //
     // locally derived information from gamestate
+    //
     pub model_draw: [qhandle_t; MAX_MODELS],
     pub sound_precache: [sfxHandle_t; MAX_SOUNDS],
-    // #ifdef _IMMERSION
+    #[cfg(feature = "immersion")]
     pub force_precache: [ffHandle_t; MAX_FORCES],
-    // #endif // _IMMERSION
     // Ghoul2 start
     pub skins: [qhandle_t; MAX_CHARSKINS],
+
     // Ghoul2 end
 
     pub numInlineModels: c_int,
     pub inlineDrawModel: [qhandle_t; MAX_SUBMODELS],
-    pub inlineModelMidpoints: [[f32; 3]; MAX_SUBMODELS], // vec3_t
+    pub inlineModelMidpoints: [vec3_t; MAX_SUBMODELS],
 
     pub clientinfo: [clientInfo_t; MAX_CLIENTS],
 
