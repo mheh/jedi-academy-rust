@@ -5,7 +5,7 @@ under the **faithful-port** import-trust skill (`skills/faithful-port/`).
 
 - Originally **179 files / 697 stubs**, all introduced by single-file blind-port
   commits dated 2026-06-28 (pre-skill, before `08c3607`).
-- As of 2026-06-30: **100 done**, **79 files / 149 stubs remaining** (worklist
+- As of 2026-06-30: **105 done**, **74 files / 134 stubs remaining** (worklist
   verified in sync with `git grep -c '[u8; 0]'`, no drift). jpeg-6 and qcommon
   subsystems fully cleared.
 - ENGINE-SPLIT STRATEGY (owner decision 2026-06-30): the two engines `code/`
@@ -81,12 +81,12 @@ Verify a file is clean: `grep -c '\[u8; 0\]' <file>` returns 0.
 - [x] `src/code/jpeg-6/jdtrans.rs` (3)
 - [x] `src/code/jpeg-6/jdcolor.rs` (3)
 - [x] `src/code/jpeg-6/jctrans.rs` (3)
-- [ ] `src/code/game/ghoul2_shared_h.rs` (3)
-- [ ] `src/code/game/AI_Mark2.rs` (3)
-- [ ] `src/code/ff/IFC/ImmBox_h.rs` (3)
+- [x] `src/code/game/ghoul2_shared_h.rs` (3)
+- [x] `src/code/game/AI_Mark2.rs` (3)
+- [x] `src/code/ff/IFC/ImmBox_h.rs` (3)
 - [ ] `src/code/client/cl_input_hotswap.rs` (3)
-- [ ] `src/code/cgame/cg_media_h.rs` (3)
-- [ ] `src/code/cgame/cg_info.rs` (3)
+- [x] `src/code/cgame/cg_media_h.rs` (3)
+- [x] `src/code/cgame/cg_info.rs` (3)
 - [ ] `src/code/win32/win_stencilshadow.rs` (2)
 - [x] `src/code/RMG/RM_Objective.rs` (2)
 - [x] `src/code/RMG/RM_Objective_h.rs` (2)
